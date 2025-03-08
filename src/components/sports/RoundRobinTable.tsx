@@ -114,7 +114,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
   // 対戦表を作成
   const matchGrid = useMemo(() => {
     if (!sport.teams || !sport.matches) {
-      return [];
+      return {} as Record<string, Record<string, Match | null>>;
     }
 
     const grid: Record<string, Record<string, Match | null>> = {};
@@ -137,6 +137,21 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
 
     return grid;
   }, [sport.teams, sport.matches]);
+
+  const matchesByGroup: Record<string, Record<string, Match | null>> = sport.matches.reduce((acc, match) => {
+    const group = match.group || 'default';
+    if (!acc[group]) {
+      acc[group] = {};
+    }
+    acc[group][match.id] = match;
+    return acc;
+  }, {} as Record<string, Record<string, Match | null>>);
+
+  const groupKeys = Object.keys(matchesByGroup);
+  groupKeys.forEach(groupKey => {
+    const groupMatches = matchesByGroup[groupKey];
+    // ...existing code...
+  });
 
   if (!sport.teams || sport.teams.length === 0) {
     return (

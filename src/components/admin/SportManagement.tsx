@@ -133,7 +133,8 @@ const SportManagement: React.FC = () => {
 
     try {
       const coverImage = await uploadImage();
-      const sportData: Omit<Sport, 'id'> = {
+      const sportData: Sport = {
+        id: currentSport.id || '', // idを追加
         name: currentSport.name,
         eventId: currentSport.eventId,
         type: currentSport.type || 'tournament',
@@ -141,7 +142,7 @@ const SportManagement: React.FC = () => {
         rules: currentSport.rules || undefined,
         teams: currentSport.teams || [],
         matches: currentSport.matches || [],
-        coverImage, // nullの場合もundefinedとして扱われるようにする
+        coverImage: coverImage || null,
         customLayout: currentSport.customLayout
       };
 

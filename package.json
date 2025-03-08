@@ -56,6 +56,7 @@
   },
   "devDependencies": {
     "@types/styled-components": "^5.1.26",
-    "surge": "^0.23.1"
+    "surge": "^0.23.1",
+    "eslint-plugin-jsx-a11y": "^6.7.1"
   }
 }

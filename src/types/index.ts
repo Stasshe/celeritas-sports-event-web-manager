@@ -47,6 +47,7 @@ export interface Match {
   location?: string;
   status: "scheduled" | "inProgress" | "completed";
   notes?: string;
+  group?: string; // 追加
 }
 
 // カスタム形式のセル

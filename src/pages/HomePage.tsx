@@ -75,12 +75,12 @@ const HomePage: React.FC = () => {
               <MotionCard 
                 whileHover={{ 
                   scale: 1.05,
-                  boxShadow: "0px 10px 30px -5px rgba(0, 0, 0, 0.3)"
+                  
                 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-              >
+              >{/*boxShadow: "0px 10px 30px -5px rgba(0, 0, 0, 0.3)"*/}
                 <CardActionArea component={RouterLink} to={`/sport/${sport.id}`}>
                   <CardMedia
                     component="img"
@@ -110,7 +110,7 @@ const HomePage: React.FC = () => {
       )}
 
       {/* 管理者パネルへのリンク (管理者のみ表示) */}
-      {currentUser && currentUser.email === 'eterynity2024workplace@gmail.com' && (
+      
         <MotionFab
           color="primary"
           aria-label="admin"
@@ -121,7 +121,7 @@ const HomePage: React.FC = () => {
         >
           <AdminIcon />
         </MotionFab>
-      )}
+      
     </Container>
   );
 };

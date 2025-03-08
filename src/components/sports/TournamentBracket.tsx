@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, Paper, useTheme } from '@mui/material';
-import { Bracket } from 'react-bracket';
+import { Bracket, Seed } from 'react-bracket';
 import { Sport, Match, Team } from '../../types';
 import { useTranslation } from 'react-i18next';
 
@@ -115,7 +115,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ sport }) => {
       <Box sx={{ minWidth: 800 }}>
         <Bracket 
           rounds={bracketData.rounds}
-          renderSeedComponent={(seed, roundIdx, seedIdx) => {
+          renderSeedComponent={(seed: Seed, roundIdx: number, seedIdx: number) => {
             // react-bracketではカスタムレンダラーが異なるので適応
             const teams = seed.teams || [];
             const winnerIdx = (seed as any).winnerIdx;
@@ -149,7 +149,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ sport }) => {
               </Box>
             );
           }}
-          roundTitleComponent={(title, roundIdx) => (
+          roundTitleComponent={(title: string, roundIdx: number) => (
             <Typography 
               variant="body1" 
               sx={customStyles.roundHeader}
