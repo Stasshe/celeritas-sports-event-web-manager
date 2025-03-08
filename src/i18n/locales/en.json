@@ -1,0 +1,41 @@
+{
+  "common": {
+    "appName": "Sports Event Manager",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "create": "Create",
+    "login": "Login",
+    "logout": "Logout",
+    "darkMode": "Dark Mode"
+  },
+  "home": {
+    "title": "Sports Events",
+    "viewEvent": "View Event",
+    "adminPanel": "Admin Panel"
+  },
+  "events": {
+    "currentEvents": "Current Events",
+    "noEvents": "No events available",
+    "selectEvent": "Select an event"
+  },
+  "sports": {
+    "tournament": "Tournament",
+    "roundRobin": "Round Robin",
+    "custom": "Custom Format",
+    "noSports": "No sports available",
+    "selectSport": "Select a sport"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "events": "Event Management",
+    "sports": "Sports Management",
+    "settings": "Settings",
+    "createEvent": "Create Event",
+    "createSport": "Create Sport",
+    "editEvent": "Edit Event",
+    "editSport": "Edit Sport",
+    "help": "Help"
+  }
+}

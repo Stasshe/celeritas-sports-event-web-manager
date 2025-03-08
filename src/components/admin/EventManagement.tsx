@@ -1,0 +1,489 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControlLabel,
+  Switch,
+  Divider,
+  Grid,
+  CircularProgress,
+  Tooltip,
+  Snackbar,
+  Alert,
+  Chip
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Event as EventIcon,
+  FileUpload as UploadIcon,
+  Check as CheckIcon
+} from '@mui/icons-material';
+import { useDatabase } from '../../hooks/useDatabase';
+import { Event } from '../../types';
+import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../config/firebase';
+
+const MotionPaper = motion(Paper);
+const MotionListItem = motion(ListItem);
+
+const EventManagement: React.FC = () => {
+  const { t } = useTranslation();
+  const { data: events, loading, pushData, updateData, removeData } = useDatabase<Record<string, Event>>('/events');
+  
+  const [openDialog, setOpenDialog] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState<Partial<Event> | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error'}>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  const handleOpenDialog = (event?: Event) => {
+    if (event) {
+      setCurrentEvent({ ...event });
+      setIsEditing(true);
+      setImagePreview(event.coverImage || null);
+    } else {
+      setCurrentEvent({
+        name: '',
+        date: new Date().toISOString().split('T')[0],
+        description: '',
+        isActive: false,
+        sports: []
+      });
+      setIsEditing(false);
+      setImagePreview(null);
+    }
+    setImageFile(null);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setCurrentEvent(null);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, checked } = e.target;
+    if (name === 'isActive') {
+      setCurrentEvent(prev => prev ? { ...prev, [name]: checked } : prev);
+    } else {
+      setCurrentEvent(prev => prev ? { ...prev, [name]: value } : prev);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return currentEvent?.coverImage || null;
+
+    try {
+      setUploadingImage(true);
+      const storageRef = ref(storage, `event-covers/${Date.now()}-${imageFile.name}`);
+      const snapshot = await uploadBytes(storageRef, imageFile);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      return downloadURL;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setSnackbar({
+        open: true,
+        message: t('events.uploadError') || '画像のアップロードに失敗しました',
+        severity: 'error'
+      });
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSaveEvent = async () => {
+    if (!currentEvent?.name) return;
+
+    try {
+      const coverImage = await uploadImage();
+      const eventData = {
+        ...currentEvent,
+        coverImage,
+        sports: currentEvent.sports || []
+      };
+
+      if (isEditing && currentEvent.id) {
+        await updateData({ [currentEvent.id]: eventData });
+        
+        // 現在のイベントをアクティブにする場合、他のイベントを非アクティブにする
+        if (eventData.isActive && events) {
+          const updatedEvents = { ...events };
+          Object.keys(updatedEvents).forEach(key => {
+            if (key !== currentEvent.id && updatedEvents[key].isActive) {
+              updatedEvents[key] = { ...updatedEvents[key], isActive: false };
+            }
+          });
+          await updateData(updatedEvents);
+        }
+        
+        setSnackbar({
+          open: true,
+          message: t('events.updateSuccess') || 'イベントが更新されました',
+          severity: 'success'
+        });
+      } else {
+        // IDを明示的に削除して新規作成
+        const { id, ...newEventData } = eventData as any;
+        const newEventId = await pushData(newEventData);
+        
+        // 新しいイベントをアクティブにする場合、他のイベントを非アクティブにする
+        if (eventData.isActive && events && newEventId) {
+          const updatedEvents = { ...events };
+          Object.keys(updatedEvents).forEach(key => {
+            if (updatedEvents[key].isActive) {
+              updatedEvents[key] = { ...updatedEvents[key], isActive: false };
+            }
+          });
+          await updateData(updatedEvents);
+        }
+        
+        setSnackbar({
+          open: true,
+          message: t('events.createSuccess') || 'イベントが作成されました',
+          severity: 'success'
+        });
+      }
+      handleCloseDialog();
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: isEditing ? (t('events.updateError') || 'イベントの更新に失敗しました') : (t('events.createError') || 'イベントの作成に失敗しました'),
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await removeData(`/${eventId}`);
+      setSnackbar({
+        open: true,
+        message: t('events.deleteSuccess') || 'イベントが削除されました',
+        severity: 'success'
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: t('events.deleteError') || 'イベントの削除に失敗しました',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleSetActive = async (eventId: string) => {
+    if (!events) return;
+
+    try {
+      const updatedEvents = { ...events };
+      
+      // 全てのイベントを非アクティブにする
+      Object.keys(updatedEvents).forEach(key => {
+        updatedEvents[key] = { ...updatedEvents[key], isActive: key === eventId };
+      });
+      
+      await updateData(updatedEvents);
+      
+      setSnackbar({
+        open: true,
+        message: t('events.setActiveSuccess') || 'アクティブイベントが設定されました',
+        severity: 'success'
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: t('events.setActiveError') || 'アクティブイベントの設定に失敗しました',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const eventList = events ? Object.values(events) : [];
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5">{t('admin.eventManagement') || 'イベント管理'}</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenDialog()}
+        >
+          {t('admin.createEvent') || 'イベント作成'}
+        </Button>
+      </Box>
+
+      <MotionPaper
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        elevation={3}
+        sx={{ mb: 4 }}
+      >
+        {eventList.length > 0 ? (
+          <List>
+            {eventList.map((event, index) => (
+              <React.Fragment key={event.id}>
+                <MotionListItem
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  secondaryAction={
+                    <Box>
+                      {event.isActive ? (
+                        <Tooltip title={t('events.activeEvent') || 'アクティブイベント'}>
+                          <IconButton edge="end" color="success" disabled>
+                            <CheckIcon />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title={t('events.setActive') || 'アクティブに設定'}>
+                          <IconButton 
+                            edge="end" 
+                            onClick={() => handleSetActive(event.id)}
+                          >
+                            <EventIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <IconButton edge="end" onClick={() => handleOpenDialog(event)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton 
+                        edge="end" 
+                        color="error" 
+                        onClick={() => handleDeleteEvent(event.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  }
+                >
+                  <ListItemAvatar>
+                    <Avatar 
+                      src={event.coverImage || undefined}
+                      alt={event.name}
+                      variant="rounded"
+                    >
+                      <EventIcon />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography component="span" variant="h6">
+                          {event.name}
+                        </Typography>
+                        {event.isActive && (
+                          <Chip 
+                            label={t('events.active') || 'アクティブ'} 
+                            color="success" 
+                            size="small" 
+                            sx={{ ml: 1 }}
+                          />
+                        )}
+                      </Box>
+                    }
+                    secondary={
+                      <>
+                        <Typography component="span" variant="body2" color="text.primary">
+                          {new Date(event.date).toLocaleDateString()}
+                        </Typography>
+                        <Typography variant="body2">
+                          {event.description}
+                        </Typography>
+                      </>
+                    }
+                  />
+                </MotionListItem>
+                {index < eventList.length - 1 && <Divider variant="inset" component="li" />}
+              </React.Fragment>
+            ))}
+          </List>
+        ) : (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography color="text.secondary">
+              {t('events.noEvents') || 'イベントがありません'}
+            </Typography>
+          </Box>
+        )}
+      </MotionPaper>
+
+      {/* イベント作成/編集ダイアログ */}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {isEditing ? (t('admin.editEvent') || 'イベント編集') : (t('admin.createEvent') || 'イベント作成')}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={7}>
+              <TextField
+                name="name"
+                label={t('events.name') || 'イベント名'}
+                value={currentEvent?.name || ''}
+                onChange={handleInputChange}
+                fullWidth
+                margin="normal"
+                required
+              />
+              <TextField
+                name="date"
+                label={t('events.date') || '日付'}
+                type="date"
+                value={currentEvent?.date || ''}
+                onChange={handleInputChange}
+                fullWidth
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                name="description"
+                label={t('events.description') || '説明'}
+                value={currentEvent?.description || ''}
+                onChange={handleInputChange}
+                fullWidth
+                margin="normal"
+                multiline
+                rows={4}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    name="isActive"
+                    checked={currentEvent?.isActive || false}
+                    onChange={handleInputChange}
+                    color="primary"
+                  />
+                }
+                label={t('events.setAsActive') || 'アクティブとして設定する'}
+              />
+            </Grid>
+            <Grid item xs={12} sm={5}>
+              <Typography variant="subtitle1" gutterBottom>
+                {t('events.coverImage') || 'カバー画像'}
+              </Typography>
+              <Box 
+                sx={{
+                  width: '100%',
+                  height: 200,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  border: '1px dashed grey',
+                  borderRadius: 1,
+                  mb: 2,
+                  backgroundImage: imagePreview ? `url(${imagePreview})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                {!imagePreview && (
+                  <Typography color="text.secondary">
+                    {t('events.noImage') || '画像がありません'}
+                  </Typography>
+                )}
+              </Box>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadIcon />}
+                fullWidth
+              >
+                {t('events.uploadImage') || '画像をアップロード'}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </Button>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>
+            {t('common.cancel') || 'キャンセル'}
+          </Button>
+          <Button
+            onClick={handleSaveEvent}
+            variant="contained"
+            disabled={!currentEvent?.name || uploadingImage}
+          >
+            {uploadingImage ? (
+              <CircularProgress size={24} />
+            ) : isEditing ? (
+              t('common.save') || '保存'
+            ) : (
+              t('common.create') || '作成'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* スナックバー通知 */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default EventManagement;

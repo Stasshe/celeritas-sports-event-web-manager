@@ -1,0 +1,41 @@
+{
+  "common": {
+    "appName": "Gestionnaire d'Événements Sportifs",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "create": "Créer",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "darkMode": "Mode Sombre"
+  },
+  "home": {
+    "title": "Événements Sportifs",
+    "viewEvent": "Voir l'événement",
+    "adminPanel": "Panneau d'administration"
+  },
+  "events": {
+    "currentEvents": "Événements actuels",
+    "noEvents": "Aucun événement disponible",
+    "selectEvent": "Sélectionner un événement"
+  },
+  "sports": {
+    "tournament": "Tournoi",
+    "roundRobin": "Tournoi à la ronde",
+    "custom": "Format personnalisé",
+    "noSports": "Aucun sport disponible",
+    "selectSport": "Sélectionner un sport"
+  },
+  "admin": {
+    "title": "Panneau d'administration",
+    "events": "Gestion des événements",
+    "sports": "Gestion des sports",
+    "settings": "Paramètres",
+    "createEvent": "Créer un événement",
+    "createSport": "Créer un sport",
+    "editEvent": "Modifier l'événement",
+    "editSport": "Modifier le sport",
+    "help": "Aide"
+  }
+}

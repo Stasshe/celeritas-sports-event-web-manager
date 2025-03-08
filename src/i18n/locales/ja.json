@@ -1,0 +1,41 @@
+{
+  "common": {
+    "appName": "スポーツイベント管理",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "edit": "編集",
+    "delete": "削除",
+    "create": "作成",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "darkMode": "ダークモード"
+  },
+  "home": {
+    "title": "スポーツイベント",
+    "viewEvent": "イベントを見る",
+    "adminPanel": "管理パネル"
+  },
+  "events": {
+    "currentEvents": "現在のイベント",
+    "noEvents": "イベントがありません",
+    "selectEvent": "イベントを選択"
+  },
+  "sports": {
+    "tournament": "トーナメント",
+    "roundRobin": "総当たり戦",
+    "custom": "カスタム形式",
+    "noSports": "競技がありません",
+    "selectSport": "競技を選択"
+  },
+  "admin": {
+    "title": "管理パネル",
+    "events": "イベント管理",
+    "sports": "競技管理",
+    "settings": "設定",
+    "createEvent": "イベント作成",
+    "createSport": "競技作成",
+    "editEvent": "イベント編集",
+    "editSport": "競技編集",
+    "help": "ヘルプ"
+  }
+}

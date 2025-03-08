@@ -1,0 +1,6 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": "auth != null && auth.email == 'eterynity2024workplace@gmail.com'"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "common": {
+    "appName": "Sportevent-Manager",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "create": "Erstellen",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "darkMode": "Dunkelmodus"
+  },
+  "home": {
+    "title": "Sportveranstaltungen",
+    "viewEvent": "Veranstaltung anzeigen",
+    "adminPanel": "Administrationsbereich"
+  },
+  "events": {
+    "currentEvents": "Aktuelle Veranstaltungen",
+    "noEvents": "Keine Veranstaltungen verfügbar",
+    "selectEvent": "Veranstaltung auswählen"
+  },
+  "sports": {
+    "tournament": "Turnier",
+    "roundRobin": "Jeder gegen Jeden",
+    "custom": "Benutzerdefiniertes Format",
+    "noSports": "Keine Sportarten verfügbar",
+    "selectSport": "Sportart auswählen"
+  },
+  "admin": {
+    "title": "Administrationsbereich",
+    "events": "Veranstaltungsverwaltung",
+    "sports": "Sportverwaltung",
+    "settings": "Einstellungen",
+    "createEvent": "Veranstaltung erstellen",
+    "createSport": "Sport erstellen",
+    "editEvent": "Veranstaltung bearbeiten",
+    "editSport": "Sport bearbeiten",
+    "help": "Hilfe"
+  }
+}
