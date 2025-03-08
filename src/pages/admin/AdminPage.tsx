@@ -28,7 +28,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import EventManagement from '../../components/admin/EventManagement';
 import SportManagement from '../../components/admin/SportManagement';
-// SettingsPanelコンポーネントを正しいパスからインポート
+
 import SettingsPanel from '../../components/admin/SettingsPanel';
 
 const MotionBox = motion(Box);

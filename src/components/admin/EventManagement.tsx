@@ -128,8 +128,13 @@ const EventManagement: React.FC = () => {
 
     try {
       const coverImage = await uploadImage();
+      
+      // 必要なイベントデータを明示的に型付け
       const eventData = {
-        ...currentEvent,
+        name: currentEvent.name,
+        date: currentEvent.date || new Date().toISOString().split('T')[0],
+        description: currentEvent.description || '',
+        isActive: currentEvent.isActive || false,
         coverImage,
         sports: currentEvent.sports || []
       };
@@ -154,9 +159,8 @@ const EventManagement: React.FC = () => {
           severity: 'success'
         });
       } else {
-        // IDを明示的に削除して新規作成
-        const { id, ...newEventData } = eventData as any;
-        const newEventId = await pushData(newEventData);
+        // 新規作成時はpushDataを使用（idフィールドは不要）
+        const newEventId = await pushData(eventData);
         
         // 新しいイベントをアクティブにする場合、他のイベントを非アクティブにする
         if (eventData.isActive && events && newEventId) {
@@ -206,14 +210,14 @@ const EventManagement: React.FC = () => {
     if (!events) return;
 
     try {
-      const updatedEvents = { ...events };
+      const updatedEvents: Record<string, Partial<Event>> = {};
       
       // 全てのイベントを非アクティブにする
-      Object.keys(updatedEvents).forEach(key => {
-        updatedEvents[key] = { ...updatedEvents[key], isActive: key === eventId };
+      Object.keys(events).forEach(key => {
+        updatedEvents[key] = { isActive: key === eventId };
       });
       
-      await updateData(updatedEvents);
+      await updateData(updatedEvents as Partial<Record<string, Event>>);
       
       setSnackbar({
         open: true,

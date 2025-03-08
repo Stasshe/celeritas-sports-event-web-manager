@@ -48,9 +48,9 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
   };
 
   // データの削除
-  const removeData = async () => {
+  const removeData = async (subPath: string = '') => {
     try {
-      await remove(ref(database, path));
+      await remove(ref(database, path + subPath));
       return true;
     } catch (error) {
       setError(error as Error);
@@ -59,11 +59,12 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
   };
 
   // 新しいデータの追加（キーを自動生成）
-  const pushData = async (newData: Omit<T, 'id'>) => {
+  const pushData = async <U extends Omit<T extends Record<string, infer R> ? R : never, 'id'>>(newData: U): Promise<string | null> => {
     try {
       const newRef = push(ref(database, path));
-      await set(newRef, { ...newData, id: newRef.key });
-      return newRef.key;
+      const newId = newRef.key!;
+      await set(newRef, { ...newData, id: newId });
+      return newId;
     } catch (error) {
       setError(error as Error);
       return null;
