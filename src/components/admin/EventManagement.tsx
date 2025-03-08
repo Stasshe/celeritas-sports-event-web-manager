@@ -130,12 +130,12 @@ const EventManagement: React.FC = () => {
       const coverImage = await uploadImage();
       
       // 必要なイベントデータを明示的に型付け
-      const eventData = {
+      const eventData: Omit<Event, 'id'> = {
         name: currentEvent.name,
         date: currentEvent.date || new Date().toISOString().split('T')[0],
         description: currentEvent.description || '',
         isActive: currentEvent.isActive || false,
-        coverImage,
+        coverImage: coverImage || null,
         sports: currentEvent.sports || []
       };
 
@@ -214,10 +214,13 @@ const EventManagement: React.FC = () => {
       
       // 全てのイベントを非アクティブにする
       Object.keys(events).forEach(key => {
-        updatedEvents[key] = { isActive: key === eventId };
+        updatedEvents[key] = { 
+          ...events[key],
+          isActive: key === eventId 
+        };
       });
       
-      await updateData(updatedEvents as Partial<Record<string, Event>>);
+      await updateData(updatedEvents as unknown as Partial<Record<string, Event>>);
       
       setSnackbar({
         open: true,

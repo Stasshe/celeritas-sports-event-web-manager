@@ -5,7 +5,7 @@ export interface Event {
   date: string;
   description: string;
   isActive: boolean;
-  coverImage?: string;
+  coverImage?: string | null; // nullも許容するように変更
   sports: string[]; // スポーツIDの配列
 }
 
@@ -15,7 +15,7 @@ export interface Sport {
   name: string;
   eventId: string;
   type: "tournament" | "roundRobin" | "custom"; // 競技形式
-  coverImage?: string;
+  coverImage?: string | null; // nullも許容するように変更
   description?: string;
   rules?: string;
   teams: Team[];

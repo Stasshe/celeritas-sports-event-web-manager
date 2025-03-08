@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { 
   Container, 
   Typography, 
@@ -26,6 +26,7 @@ const MotionFab = motion(Fab);
 const HomePage: React.FC = () => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
   const { data: sports, loading: sportsLoading } = useDatabase<Record<string, Sport>>('/sports');
   const [activeEvent, setActiveEvent] = useState<Event | null>(null);
@@ -117,8 +118,7 @@ const HomePage: React.FC = () => {
           sx={{ position: 'fixed', bottom: 30, right: 30 }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          component={Link}
-          href="/admin"
+          onClick={() => navigate('/admin')}
         >
           <AdminIcon />
         </MotionFab>

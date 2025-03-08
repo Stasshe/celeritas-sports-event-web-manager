@@ -134,14 +134,15 @@ const SportManagement: React.FC = () => {
     try {
       const coverImage = await uploadImage();
       const sportData: Omit<Sport, 'id'> = {
-        name: currentSport.name || '',
-        eventId: currentSport.eventId || '',
+        name: currentSport.name,
+        eventId: currentSport.eventId,
         type: currentSport.type || 'tournament',
         description: currentSport.description || '',
+        rules: currentSport.rules || undefined,
         teams: currentSport.teams || [],
         matches: currentSport.matches || [],
-        coverImage: coverImage || null,
-        // 他の必須プロパティがあれば追加
+        coverImage, // nullの場合もundefinedとして扱われるようにする
+        customLayout: currentSport.customLayout
       };
 
       if (isEditing && currentSport.id) {
@@ -197,8 +198,12 @@ const SportManagement: React.FC = () => {
     if (!updateEventData) return;
     
     try {
-      // Eventオブジェクトのsportsプロパティだけを明示的に型付け
-      await updateEventData({ [eventId]: { sports } as Partial<Event> });
+      const eventUpdate = {
+        [eventId]: {
+          sports
+        }
+      };
+      await updateEventData(eventUpdate as unknown as Partial<Record<string, Event>>);
     } catch (error) {
       console.error('Error updating event sports:', error);
     }
