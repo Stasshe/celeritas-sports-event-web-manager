@@ -10,8 +10,7 @@ import {
   CardMedia,
   Fab, 
   Box, 
-  CircularProgress,
-  Link
+  CircularProgress
 } from '@mui/material';
 import { AdminPanelSettings as AdminIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';

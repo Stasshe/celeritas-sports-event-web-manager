@@ -30,11 +30,11 @@ const NotFoundPage: React.FC = () => {
         </motion.div>
         
         <Typography variant="h5" component="h2" gutterBottom>
-          {t('notFound.title')}
+          {t('notFound.title') || 'ページが見つかりません'}
         </Typography>
         
         <Typography color="text.secondary" align="center" sx={{ mb: 4 }}>
-          {t('notFound.message')}
+          {t('notFound.message') || 'お探しのページは存在しないか、削除された可能性があります。'}
         </Typography>
         
         <Button 
@@ -42,7 +42,7 @@ const NotFoundPage: React.FC = () => {
           color="primary" 
           onClick={() => navigate('/')}
         >
-          {t('common.backToHome')}
+          {t('common.backToHome') || 'ホームに戻る'}
         </Button>
       </Box>
     </Container>
