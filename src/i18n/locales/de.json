@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Sportevent-Manager",
+    "appName": "Sportereignis-Manager",
     "save": "Speichern",
     "cancel": "Abbrechen",
     "edit": "Bearbeiten",
@@ -8,24 +8,49 @@
     "create": "Erstellen",
     "login": "Anmelden",
     "logout": "Abmelden",
-    "darkMode": "Dunkelmodus"
+    "darkMode": "Dunkelmodus",
+    "back": "Zurück",
+    "share": "Teilen",
+    "yes": "Ja",
+    "no": "Nein"
   },
   "home": {
     "title": "Sportveranstaltungen",
     "viewEvent": "Veranstaltung anzeigen",
-    "adminPanel": "Administrationsbereich"
+    "adminPanel": "Administrationsbereich",
+    "noActiveEvent": "Keine aktive Veranstaltung",
+    "sportCount": "{{count}} Sportarten",
+    "noSports": "Keine Sportarten verfügbar"
   },
   "events": {
     "currentEvents": "Aktuelle Veranstaltungen",
     "noEvents": "Keine Veranstaltungen verfügbar",
-    "selectEvent": "Veranstaltung auswählen"
+    "selectEvent": "Veranstaltung auswählen",
+    "eventDetails": "Veranstaltungsdetails",
+    "date": "Datum",
+    "alternativeDate": "Alternativdatum",
+    "location": "Ort",
+    "description": "Beschreibung",
+    "organizers": "Organisatoren",
+    "noOrganizers": "Keine Organisatoren zugewiesen"
   },
   "sports": {
     "tournament": "Turnier",
     "roundRobin": "Jeder gegen Jeden",
     "custom": "Benutzerdefiniertes Format",
     "noSports": "Keine Sportarten verfügbar",
-    "selectSport": "Sportart auswählen"
+    "selectSport": "Sportart auswählen",
+    "details": "Sportdetails",
+    "teams": "Teams",
+    "matches": "Spiele",
+    "roster": "Aufstellung",
+    "rules": "Regeln",
+    "manual": "Handbuch",
+    "noTeams": "Keine Teams registriert",
+    "teamCount": "{{count}} Teams",
+    "memberCount": "{{count}} Mitglieder",
+    "noMembers": "Keine Mitglieder",
+    "notFound": "Sport nicht gefunden"
   },
   "admin": {
     "title": "Administrationsbereich",
