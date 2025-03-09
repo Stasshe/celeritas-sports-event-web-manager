@@ -1,41 +1,65 @@
 {
-  "common": {
-    "appName": "スポーツイベント管理",
-    "save": "保存",
-    "cancel": "キャンセル",
-    "edit": "編集",
-    "delete": "削除",
-    "create": "作成",
-    "login": "ログイン",
-    "logout": "ログアウト",
-    "darkMode": "ダークモード"
+  "name": "sports-event-web-manager",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@g-loot/react-tournament-brackets": "^1.0.30",
+    "@mui/icons-material": "^5.14.3",
+    "@mui/material": "^5.14.3",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.46",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "firebase": "^10.3.0",
+    "firebase-admin": "^13.2.0",
+    "framer-motion": "^10.16.1",
+    "i18next": "^23.4.6",
+    "joi": "^17.13.3",
+    "react": "^18.2.0",
+    "react-color": "^2.19.3",
+    "react-dom": "^18.2.0",
+    "react-i18next": "^13.2.0",
+    "react-router-dom": "^6.15.0",
+    "react-scripts": "^5.0.1",
+    "styled-components": "^4.1.3",
+    "typescript": "^4.9.5",
+    "web-vitals": "^2.1.4"
   },
-  "home": {
-    "title": "スポーツイベント",
-    "viewEvent": "イベントを見る",
-    "adminPanel": "管理パネル"
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "deploy": "npm run build && npx surge ./build sports-event-manager.surge.sh",
+    "preview": "serve -s build"
   },
-  "events": {
-    "currentEvents": "現在のイベント",
-    "noEvents": "イベントがありません",
-    "selectEvent": "イベントを選択"
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
   },
-  "sports": {
-    "tournament": "トーナメント",
-    "roundRobin": "総当たり戦",
-    "custom": "カスタム形式",
-    "noSports": "競技がありません",
-    "selectSport": "競技を選択"
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
-  "admin": {
-    "title": "管理パネル",
-    "events": "イベント管理",
-    "sports": "競技管理",
-    "settings": "設定",
-    "createEvent": "イベント作成",
-    "createSport": "競技作成",
-    "editEvent": "イベント編集",
-    "editSport": "競技編集",
-    "help": "ヘルプ"
+  "devDependencies": {
+    "@types/styled-components": "^5.1.26",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "surge": "^0.23.1",
+    "serve": "^14.2.1"
   }
 }
