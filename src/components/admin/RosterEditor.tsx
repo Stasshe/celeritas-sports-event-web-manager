@@ -189,7 +189,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
     const gradeKey = getCurrentGradeKey();
     
     // nullチェックを追加
-    if (roster && roster[gradeKey] && className in roster[gradeKey]) {
+    if (roster && roster[gradeKey] && className in roster[gradeKey]!) {
       const updatedRoster = { ...roster };
       const gradeData = { ...updatedRoster[gradeKey] };
       delete gradeData[className];

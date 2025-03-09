@@ -1,61 +1,107 @@
 import React, { useState } from 'react';
-import { Menu, MenuItem, Button } from '@mui/material';
+import {
+  Box,
+  Menu,
+  MenuItem,
+  IconButton,
+  Typography,
+  ListItemIcon,
+  ButtonBase
+} from '@mui/material';
+import {
+  Translate as TranslateIcon,
+  Check as CheckIcon
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
-const languages = [
-  { code: 'ja', name: '日本語' },
-  { code: 'en', name: 'English' },
-  { code: 'fr', name: 'Français' },
-  { code: 'de', name: 'Deutsch' }
-];
+interface LanguageSelectorProps {
+  variant?: 'icon' | 'text';
+}
 
-const LanguageSelector: React.FC = () => {
-  const { i18n } = useTranslation();
+const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'text' }) => {
+  const { i18n, t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'ja', name: '日本語' }
+  ];
+  
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
-
+  
   const handleClose = () => {
     setAnchorEl(null);
   };
-
-  const handleLanguageChange = (languageCode: string) => {
-    i18n.changeLanguage(languageCode);
+  
+  const handleLanguageChange = (code: string) => {
+    i18n.changeLanguage(code);
     handleClose();
+    // 言語設定をローカルストレージに保存
+    localStorage.setItem('preferredLanguage', code);
   };
-
-  // 現在選択されている言語を取得
-  const currentLanguage = languages.find(lang => lang.code === i18n.language)?.name || '日本語';
-
+  
+  const getCurrentLanguageName = () => {
+    const currentLanguage = languages.find(lang => lang.code === i18n.language);
+    return currentLanguage ? currentLanguage.name : languages[0].name;
+  };
+  
+  const isSelected = (code: string) => i18n.language === code;
+  
   return (
-    <>
-      <Button
-        color="inherit"
-        onClick={handleClick}
-        endIcon={<KeyboardArrowDownIcon />}
-      >
-        {currentLanguage}
-      </Button>
+    <Box>
+      {variant === 'text' ? (
+        // ButtonBase（ボタンの基本コンポーネント）を使用し、ネスト問題を解消
+        <ButtonBase
+          onClick={handleClick}
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            padding: '6px 12px',
+            borderRadius: 1,
+            '&:hover': {
+              bgcolor: 'action.hover',
+            }
+          }}
+        >
+          
+          <Typography variant="body2">
+            {getCurrentLanguageName()}
+          </Typography>
+        </ButtonBase>
+      ) : (
+        <IconButton
+          color="inherit"
+          aria-label="select language"
+          onClick={handleClick}
+        >
+          <TranslateIcon />
+        </IconButton>
+      )}
+      
       <Menu
         anchorEl={anchorEl}
-        open={open}
+        open={Boolean(anchorEl)}
         onClose={handleClose}
+        keepMounted
       >
         {languages.map((language) => (
-          <MenuItem 
-            key={language.code} 
+          <MenuItem
+            key={language.code}
             onClick={() => handleLanguageChange(language.code)}
-            selected={i18n.language === language.code}
+            selected={isSelected(language.code)}
           >
-            {language.name}
+            <ListItemIcon sx={{ minWidth: 36, visibility: isSelected(language.code) ? 'visible' : 'hidden' }}>
+              <CheckIcon fontSize="small" />
+            </ListItemIcon>
+            <Typography variant="body2">
+              {language.name}
+            </Typography>
           </MenuItem>
         ))}
       </Menu>
-    </>
+    </Box>
   );
 };
 
