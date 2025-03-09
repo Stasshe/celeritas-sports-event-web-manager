@@ -53,7 +53,12 @@ import CreateSportDialog from '../admin/dialogs/CreateSportDialog';
 
 const drawerWidth = 280;
 
-const AdminLayout: React.FC = () => {
+// 型定義を明示的に追加
+interface AdminLayoutProps {
+  children: React.ReactNode;
+}
+
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { mode, toggleColorMode, alpha } = useThemeContext();
@@ -458,16 +463,18 @@ const AdminLayout: React.FC = () => {
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { sm: `calc(100% - ${drawerOpen ? drawerWidth : 0}px)` },
-          ml: { sm: drawerOpen ? `${drawerWidth}px` : 0 },
-          transition: theme.transitions.create(['margin', 'width'], {
+          width: `calc(100% - ${drawerOpen ? drawerWidth : 0}px)`,
+          ml: `${drawerOpen ? drawerWidth : 0}px`,
+          transition: theme.transitions.create(['width', 'margin'], {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
+          height: '100vh',
+          overflow: 'auto',
+          pt: { xs: 8, sm: 10 }
         }}
       >
-        <Toolbar /> {/* AppBarの下の空白 */}
-        <Outlet />
+        {children}
       </Box>
       
       {/* スナックバー */}

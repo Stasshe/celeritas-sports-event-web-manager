@@ -66,11 +66,11 @@ const SportPage: React.FC = () => {
               sx={{ mr: 1 }} 
             />
           </Grid>
-          {sport.coverImage && (
+          {sport.coverImageUrl && (
             <Grid item xs={12} md={6}>
               <Box 
                 component="img"
-                src={sport.coverImage}
+                src={sport.coverImageUrl}
                 alt={sport.name}
                 sx={{
                   width: '100%',

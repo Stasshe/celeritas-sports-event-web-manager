@@ -123,7 +123,7 @@ const HomePage: React.FC = () => {
                   <CardMedia
                     component="img"
                     height="140"
-                    image={sport.coverImage || "https://source.unsplash.com/random?sports"}
+                    image={sport.coverImageUrl || "https://source.unsplash.com/random?sports"}
                     alt={sport.name}
                   />
                   <CardContent>
