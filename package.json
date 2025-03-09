@@ -35,7 +35,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy": "npm run build && npx surge ./build sports-event-manager.surge.sh"
+    "deploy": "npm run build && npx surge ./build sports-event-manager.surge.sh",
+    "preview": "serve -s build"
   },
   "eslintConfig": {
     "extends": [
@@ -58,6 +59,7 @@
   "devDependencies": {
     "@types/styled-components": "^5.1.26",
     "eslint-plugin-jsx-a11y": "^6.10.2",
-    "surge": "^0.23.1"
+    "surge": "^0.23.1",
+    "serve": "^14.2.1"
   }
 }

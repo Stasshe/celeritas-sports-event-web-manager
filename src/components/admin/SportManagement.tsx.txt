@@ -41,7 +41,7 @@ import { Event, Sport } from '../../types';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../config/firebase';
+
 import { useNavigate } from 'react-router-dom';
 
 const MotionPaper = motion(Paper);
