@@ -1,5 +1,41 @@
 # sports-event-web-manager
 
-./setup-permissions.sh
+このプロジェクトは、スポーツイベントの管理を支援するウェブアプリケーションです。ユーザーはイベントの作成、編集、削除、および参加者の管理を行うことができます。
 
-./start.sh./start.sh
+## 主な機能
+
+- イベントの作成、編集、削除
+- 参加者の登録および管理
+- イベントのスケジュール管理
+- 通知機能
+
+## インストール方法
+
+1. リポジトリをクローンします。
+    ```bash
+    git clone https://github.com/yourusername/sports-event-web-manager.git
+    ```
+2. プロジェクトディレクトリに移動します。
+    ```bash
+    cd sports-event-web-manager
+    ```
+3. 必要な依存関係をインストールします。
+    ```bash
+    npm install
+    ```
+
+## 使用方法
+
+1. 開発サーバーを起動します。
+    ```bash
+    npm start
+    ```
+2. ブラウザで `http://localhost:3000` にアクセスします。
+
+## 貢献
+
+貢献を歓迎します。プルリクエストを送る前に、まずイシューを立ててください。
+
+## ライセンス
+
+このプロジェクトはMITライセンスの下で提供されています。

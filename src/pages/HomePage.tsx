@@ -10,9 +10,13 @@ import {
   CardMedia,
   Fab, 
   Box, 
-  CircularProgress
+  CircularProgress,
+  Stack,
 } from '@mui/material';
-import { AdminPanelSettings as AdminIcon } from '@mui/icons-material';
+import { 
+  AdminPanelSettings as AdminIcon,
+  Login as LoginIcon 
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../hooks/useDatabase';
 import { Event, Sport } from '../types';
@@ -47,11 +51,45 @@ const HomePage: React.FC = () => {
     }
   }, [events, sports]);
 
+  // ログインボタンを別コンポーネントとして切り出し
+  const FloatingButtons = () => (
+    <Stack
+      direction="column"
+      spacing={2}
+      sx={{ position: 'fixed', bottom: 30, right: 30 }}
+    >
+      {currentUser ? (
+        <MotionFab
+          color="primary"
+          aria-label="admin"
+          onClick={() => navigate('/admin')}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <AdminIcon />
+        </MotionFab>
+      ) : (
+        <MotionFab
+          color="secondary"
+          aria-label="login"
+          onClick={() => navigate('/login')}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <LoginIcon />
+        </MotionFab>
+      )}
+    </Stack>
+  );
+
   if (eventsLoading || sportsLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-        <CircularProgress />
-      </Box>
+      <>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+          <CircularProgress />
+        </Box>
+        <FloatingButtons />
+      </>
     );
   }
 
@@ -75,12 +113,12 @@ const HomePage: React.FC = () => {
               <MotionCard 
                 whileHover={{ 
                   scale: 1.05,
-                  boxShadow: "0px 10px 30px -5px rgba(0, 0, 0, 0.3)"
+                  
                 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-              >
+              >{/*boxShadow: "0px 10px 30px -5px rgba(0, 0, 0, 0.3)"*/}
                 <CardActionArea component={RouterLink} to={`/sport/${sport.id}`}>
                   <CardMedia
                     component="img"
@@ -109,19 +147,7 @@ const HomePage: React.FC = () => {
         </Box>
       )}
 
-      {/* 管理者パネルへのリンク (管理者のみ表示) */}
-      {currentUser && currentUser.email === 'eterynity2024workplace@gmail.com' && (
-        <MotionFab
-          color="primary"
-          aria-label="admin"
-          sx={{ position: 'fixed', bottom: 30, right: 30 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => navigate('/admin')}
-        >
-          <AdminIcon />
-        </MotionFab>
-      )}
+      <FloatingButtons />
     </Container>
   );
 };

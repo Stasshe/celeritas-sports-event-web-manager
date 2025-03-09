@@ -13,8 +13,3 @@ npm install
 # 開発サーバーの起動（標準のreact-scriptsを使用）
 echo "開発サーバーを起動しています..."
 npm start
-
-# esbuildを使用する場合は以下のコメントを外してください
-# echo "esbuildを使った開発サーバーを起動しています..."
-# bash setup-esbuild.sh
-# npm run start:esbuild

@@ -36,7 +36,7 @@ const MotionBox = motion(Box);
 const AdminPage: React.FC = () => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(true);
 
@@ -89,9 +89,11 @@ const AdminPage: React.FC = () => {
             padding: theme.spacing(0, 1),
             ...theme.mixins.toolbar 
           }}>
-            <IconButton onClick={toggleDrawer}>
-              <ChevronLeftIcon />
-            </IconButton>
+            <span>
+              <IconButton onClick={toggleDrawer}>
+                <ChevronLeftIcon />
+              </IconButton>
+            </span>
           </Box>
           <Divider />
           <List>
@@ -152,15 +154,17 @@ const AdminPage: React.FC = () => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             {!drawerOpen && (
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                onClick={toggleDrawer}
-                edge="start"
-                sx={{ mr: 2 }}
-              >
-                <MenuIcon />
-              </IconButton>
+              <span>
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  onClick={toggleDrawer}
+                  edge="start"
+                  sx={{ mr: 2 }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              </span>
             )}
             <Typography variant="h4" component="h1">
               {t('admin.title')}

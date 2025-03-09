@@ -129,8 +129,8 @@ const EventManagement: React.FC = () => {
     try {
       const coverImage = await uploadImage();
       
-      // 必要なイベントデータを明示的に型付け
-      const eventData: Omit<Event, 'id'> = {
+      const eventData: Event = {
+        id: currentEvent.id || '', // idを追加
         name: currentEvent.name,
         date: currentEvent.date || new Date().toISOString().split('T')[0],
         description: currentEvent.description || '',
