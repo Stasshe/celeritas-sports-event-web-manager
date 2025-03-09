@@ -40,6 +40,7 @@ import AdminLayout from '../../components/layout/AdminLayout';
 import { motion } from 'framer-motion';
 import CreateEventDialog from '../../components/admin/dialogs/CreateEventDialog';
 import CreateSportDialog from '../../components/admin/dialogs/CreateSportDialog';
+import { useAdminLayout } from '../../contexts/AdminLayoutContext'; // 正しいパスに修正
 
 const MotionPaper = motion(Paper);
 const MotionCard = motion(Card);
@@ -48,17 +49,15 @@ const AdminPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { alpha } = useThemeContext();
+  const { showSnackbar, setSavingStatus } = useAdminLayout(); // AdminLayoutコンテキストを使用
   const { data: events, loading: eventsLoading, updateData: updateEvents } = useDatabase<Record<string, Event>>('/events');
   const { data: sports, loading: sportsLoading } = useDatabase<Record<string, Sport>>('/sports');
   
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [createSportDialogOpen, setCreateSportDialogOpen] = useState(false);
-  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
-
+  const [savingStatusLocal, setSavingStatusLocal] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  
   // 最初にアクティブなイベントを選択
   useEffect(() => {
     if (events) {
@@ -92,20 +91,11 @@ const AdminPage: React.FC = () => {
       await updateEvents(updates);
       
       setSavingStatus('saved');
-      setSnackbarMessage(t('admin.activeEventUpdated') || 'アクティブイベントが更新されました');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
+      showSnackbar(t('admin.activeEventUpdated') || 'アクティブイベントが更新されました', 'success');
     } catch (error) {
       console.error('Error setting active event:', error);
       setSavingStatus('error');
-      setSnackbarMessage(t('admin.error') || 'エラーが発生しました');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    } finally {
-      // 5秒後に保存状態をリセット
-      setTimeout(() => {
-        setSavingStatus('idle');
-      }, 5000);
+      showSnackbar(t('admin.error') || 'エラーが発生しました', 'error');
     }
   };
 
@@ -128,13 +118,13 @@ const AdminPage: React.FC = () => {
   // 手動保存（将来的な実装のためのプレースホルダー）
   const handleManualSave = () => {
     setSavingStatus('saving');
+    setSavingStatusLocal('saving');
     
     // 保存処理のシミュレーション
     setTimeout(() => {
       setSavingStatus('saved');
-      setSnackbarMessage(t('admin.savedSuccessfully') || '保存しました');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
+      setSavingStatusLocal('saved');
+      showSnackbar(t('admin.savedSuccessfully') || '保存しました', 'success');
     }, 800);
   };
 
@@ -204,9 +194,9 @@ const AdminPage: React.FC = () => {
                 variant="contained"
                 startIcon={<SaveIcon />}
                 onClick={handleManualSave}
-                disabled={savingStatus === 'saving'}
+                disabled={savingStatusLocal === 'saving'}
               >
-                {savingStatus === 'saving' ? t('admin.saving') : t('admin.save')}
+                {savingStatusLocal === 'saving' ? t('admin.saving') : t('admin.save')}
               </Button>
             </Box>
           </Grid>
@@ -398,9 +388,7 @@ const AdminPage: React.FC = () => {
         onClose={() => setCreateEventDialogOpen(false)}
         onSuccess={() => {
           setCreateEventDialogOpen(false);
-          setSnackbarMessage(t('admin.eventCreated') || 'イベントが作成されました');
-          setSnackbarSeverity('success');
-          setSnackbarOpen(true);
+          showSnackbar(t('admin.eventCreated') || 'イベントが作成されました', 'success');
         }}
       />
       
@@ -409,30 +397,14 @@ const AdminPage: React.FC = () => {
         onClose={() => setCreateSportDialogOpen(false)}
         onSuccess={(sportId: string) => {
           setCreateSportDialogOpen(false);
-          setSnackbarMessage(t('admin.sportCreated') || '競技が作成されました');
-          setSnackbarSeverity('success');
-          setSnackbarOpen(true);
+          showSnackbar(t('admin.sportCreated') || '競技が作成されました', 'success');
           // 作成された競技の編集ページにリダイレクト
           navigate(`/admin/sports/${sportId}`);
         }}
         eventId={selectedEventId || ''}
       />
       
-      {/* スナックバー */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          sx={{ width: '100%' }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      {/* スナックバーは削除 - AdminLayoutのスナックバーを使用 */}
     </AdminLayout>
   );
 };

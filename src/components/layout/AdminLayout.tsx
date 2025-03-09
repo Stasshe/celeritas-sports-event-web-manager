@@ -3,60 +3,55 @@ import {
   Box,
   AppBar,
   Toolbar,
+  Drawer,
   IconButton,
   Typography,
-  Drawer,
+  Divider,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
-  ListItemButton,
   Collapse,
-  Divider,
   Button,
-  Snackbar,
-  Alert,
-  Tooltip,
-  useTheme,
-  Badge,
+  Avatar,
   Menu,
   MenuItem,
-  Avatar,
-  CircularProgress
+  Snackbar,
+  Alert,
+  CircularProgress,
+  Chip,
+  Tooltip,
+  useTheme
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
+  Dashboard as DashboardIcon,
   Event as EventIcon,
   SportsSoccer as SportIcon,
   Settings as SettingsIcon,
-  Dashboard as DashboardIcon,
-  Help as HelpIcon,
+  ExpandLess,
+  ExpandMore,
   Add as AddIcon,
   Save as SaveIcon,
-  Check as CheckIcon,
-  Warning as WarningIcon,
-  Person as PersonIcon,
-  Brightness4 as DarkModeIcon,
-  Brightness7 as LightModeIcon
+  Help as HelpIcon,
+  AccountCircle
 } from '@mui/icons-material';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useThemeContext } from '../../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { useThemeContext } from '../../contexts/ThemeContext';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
-import CreateEventDialog from '../admin/dialogs/CreateEventDialog';
-import CreateSportDialog from '../admin/dialogs/CreateSportDialog';
+import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 
-const drawerWidth = 280;
-
-// 型定義を明示的に追加
+// AdminLayout の props 型定義を明示的に追加
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
+
+const drawerWidth = 280;
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { t } = useTranslation();
@@ -65,9 +60,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useAuth();
+  const { showSnackbar, savingStatus, setSavingStatus } = useAdminLayout(); // 外部コンテキストを使用
   
   const [drawerOpen, setDrawerOpen] = useState(true);
-  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
@@ -77,28 +72,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // イベント展開状態
   const [expandedEventIds, setExpandedEventIds] = useState<string[]>([]);
   
-  // ダイアログ
-  const [createEventDialog, setCreateEventDialog] = useState(false);
-  const [createSportDialog, setCreateSportDialog] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string>('');
-  
   // データ取得
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
   const { data: sports, loading: sportsLoading } = useDatabase<Record<string, Sport>>('/sports');
-  
-  // 現在のパスに基づいてアクティブなメニューを設定
+
+  // 現在のパスに基づいて適切なイベントを展開
   useEffect(() => {
     if (location.pathname.includes('/admin/events/') && events) {
       const eventId = location.pathname.split('/').pop();
       if (eventId && events[eventId]) {
-        setExpandedEventIds(prev => 
-          prev.includes(eventId) ? prev : [...prev, eventId]
-        );
+        setExpandedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
       }
     }
-  }, [location.pathname, events]);
+    
+    if (location.pathname.includes('/admin/sports/') && events && sports) {
+      const sportId = location.pathname.split('/').pop();
+      if (sportId && sports[sportId]) {
+        const sport = sports[sportId];
+        const eventId = sport.eventId;
+        setExpandedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
+      }
+    }
+  }, [location.pathname, events, sports]);
   
-  // 自動保存シミュレーション（実際の実装ではAPIレスポンスなどに基づいて更新される）
+  // 自動保存シミュレーション
   const simulateAutoSave = () => {
     if (Math.random() > 0.8) {
       // エラーをシミュレート (20%の確率)
@@ -139,16 +136,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const handleSportClick = (sportId: string) => {
     navigate(`/admin/sports/${sportId}`);
   };
-  
+
   const handleCreateEvent = () => {
-    setCreateEventDialog(true);
+    // イベント作成ダイアログを表示する処理（後で実装）
+    navigate('/admin/events/new');
   };
   
   const handleCreateSport = (eventId: string) => {
-    setSelectedEventId(eventId);
-    setCreateSportDialog(true);
+    // 競技作成ダイアログを表示する処理（後で実装）
+    navigate(`/admin/sports/new?eventId=${eventId}`);
   };
-  
+
   // ユーザーメニュー
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -167,13 +165,26 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     }
   };
 
-  // アクティブなイベントを取得
-  const activeEvent = events ? Object.values(events).find(event => event.isActive) : null;
-  
   // イベントごとの競技リストを取得
   const getSportsByEventId = (eventId: string) => {
     if (!sports) return [];
     return Object.values(sports).filter(sport => sport.eventId === eventId);
+  };
+
+  // 新しいスナックバー状態
+  const [snackbarLocal, setSnackbarLocal] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
+  
+  // スナックバーを閉じる
+  const handleCloseSnackbar = () => {
+    setSnackbarLocal(prev => ({ ...prev, open: false }));
   };
 
   return (
@@ -187,76 +198,92 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
+          width: `calc(100% - ${drawerOpen ? drawerWidth : 0}px)`,
+          ml: `${drawerOpen ? drawerWidth : 0}px`,
         }}
       >
         <Toolbar>
           <IconButton
             color="inherit"
             aria-label="open drawer"
-            onClick={handleDrawerToggle}
             edge="start"
+            onClick={handleDrawerToggle}
             sx={{ mr: 2 }}
           >
             <MenuIcon />
           </IconButton>
-          
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {t('admin.title')}
           </Typography>
           
-          {/* 保存状態と保存ボタン */}
+          {/* 保存状態表示 */}
           <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-            {hasUnsavedChanges ? (
-              <Tooltip title={t('admin.unsavedChanges')}>
-                <Badge color="warning" variant="dot">
-                  <WarningIcon color="warning" sx={{ mr: 1 }} />
-                </Badge>
-              </Tooltip>
-            ) : (
-              lastSaved && (
-                <Tooltip title={`${t('admin.lastSaved')}: ${lastSaved.toLocaleTimeString()}`}>
-                  <CheckIcon color="success" sx={{ mr: 1 }} />
-                </Tooltip>
-              )
+            {hasUnsavedChanges && (
+              <Chip 
+                label={t('admin.unsavedChanges')} 
+                color="warning" 
+                size="small" 
+                sx={{ mr: 1 }}
+              />
             )}
-            
-            <Button
-              variant="outlined"
-              startIcon={savingStatus === 'saving' ? <CircularProgress size={16} /> : <SaveIcon />}
-              onClick={handleManualSave}
-              disabled={savingStatus === 'saving'}
-              color="inherit"
-              size="small"
-              sx={{ borderColor: 'rgba(255,255,255,0.5)', color: 'white' }}
-            >
-              {savingStatus === 'saving' ? t('admin.saving') : t('admin.save')}
-            </Button>
+            {savingStatus === 'saving' ? (
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <CircularProgress size={16} sx={{ mr: 1 }} />
+                <Typography variant="body2">{t('admin.saving')}</Typography>
+              </Box>
+            ) : savingStatus === 'saved' ? (
+              <Typography variant="body2" color="text.secondary">
+                {lastSaved && t('admin.lastSaved', { time: lastSaved.toLocaleTimeString() })}
+              </Typography>
+            ) : savingStatus === 'error' ? (
+              <Typography variant="body2" color="error">
+                {t('admin.saveError')}
+              </Typography>
+            ) : null}
           </Box>
           
-          {/* テーマ切り替えボタン */}
-          <Tooltip title={mode === 'light' ? t('admin.darkMode') : t('admin.lightMode')}>
-            <IconButton onClick={toggleColorMode} color="inherit">
-              {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
+          {/* 保存ボタン */}
+          <Tooltip title={t('admin.saveChanges')}>
+            <IconButton color="inherit" onClick={handleManualSave}>
+              <SaveIcon />
             </IconButton>
           </Tooltip>
           
           {/* 設定ボタン */}
           <Tooltip title={t('admin.settings')}>
-            <IconButton color="inherit" onClick={() => navigate('/admin/settings')}>
+            <IconButton 
+              color="inherit"
+              onClick={() => navigate('/admin/settings')}
+            >
               <SettingsIcon />
             </IconButton>
           </Tooltip>
           
-          {/* ユーザーアバター */}
+          {/* ヘルプボタン */}
+          <Tooltip title={t('admin.help')}>
+            <IconButton 
+              color="inherit"
+              onClick={() => navigate('/admin/help')}
+            >
+              <HelpIcon />
+            </IconButton>
+          </Tooltip>
+          
+          {/* ユーザーメニュー */}
           <IconButton
-            onClick={handleUserMenuOpen}
-            size="small"
-            sx={{ ml: 1 }}
+            size="large"
+            edge="end"
+            aria-label="account of current user"
             aria-controls="menu-appbar"
             aria-haspopup="true"
+            onClick={handleUserMenuOpen}
+            color="inherit"
           >
-            <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.dark }}>
-              <PersonIcon />
+            <Avatar 
+              sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}
+              alt={currentUser?.email || 'User'}
+            >
+              {currentUser?.email?.charAt(0).toUpperCase() || 'U'}
             </Avatar>
           </IconButton>
           <Menu
@@ -275,29 +302,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             onClose={handleUserMenuClose}
           >
             <MenuItem disabled>
-              <Typography variant="body2">{currentUser?.email}</Typography>
+              <Typography variant="body2">
+                {currentUser?.email}
+              </Typography>
             </MenuItem>
             <Divider />
-            <MenuItem onClick={() => {
-              handleUserMenuClose();
-              navigate('/admin/settings');
-            }}>
-              <ListItemIcon>
-                <SettingsIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={t('admin.settings')} />
-            </MenuItem>
             <MenuItem onClick={handleLogout}>
-              <ListItemIcon>
-                <SettingsIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={t('auth.logout')} />
+              {t('auth.logout')}
             </MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
       
-      {/* サイドバー */}
+      {/* サイドドロワー */}
       <Drawer
         variant="persistent"
         anchor="left"
@@ -305,156 +322,138 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          whiteSpace: 'nowrap',
-          boxSizing: 'border-box',
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
           '& .MuiDrawer-paper': {
             width: drawerWidth,
-            overflowX: 'hidden',
-            transition: theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
+            boxSizing: 'border-box',
           },
         }}
       >
-        <Toolbar />
-        <Box sx={{ overflow: 'auto' }}>
-          <List>
-            {/* ダッシュボード */}
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => navigate('/admin')}
-                selected={location.pathname === '/admin'}
-              >
-                <ListItemIcon>
-                  <DashboardIcon />
-                </ListItemIcon>
-                <ListItemText primary={t('admin.dashboard')} />
-              </ListItemButton>
-            </ListItem>
-            
-            {/* イベント一覧のヘッダー */}
-            <ListItem
-              sx={{ 
-                bgcolor: theme.palette.background.default,
-                mt: 1
-              }}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          padding: theme.spacing(0, 1),
+          ...theme.mixins.toolbar 
+        }}>
+          <Typography variant="h6" sx={{ ml: 2 }}>
+            {t('app.name')}
+          </Typography>
+          <IconButton onClick={handleDrawerToggle}>
+            <ChevronLeftIcon />
+          </IconButton>
+        </Box>
+        <Divider />
+        
+        {/* ダッシュボードリンク */}
+        <List>
+          <ListItem disablePadding>
+            <ListItemButton 
+              selected={location.pathname === '/admin'}
+              onClick={() => navigate('/admin')}
             >
-              <ListItemText 
-                primary={<Typography variant="subtitle2" color="text.secondary">{t('admin.events')}</Typography>}
-              />
-              <Tooltip title={t('admin.createEvent')}>
-                <IconButton edge="end" onClick={handleCreateEvent} size="small">
-                  <AddIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </ListItem>
-            
-            {/* イベントリスト */}
-            {eventsLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : events && Object.values(events).length > 0 ? (
-              Object.values(events).map((event) => (
-                <React.Fragment key={event.id}>
-                  <ListItemButton
+              <ListItemIcon>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText primary={t('admin.dashboard')} />
+            </ListItemButton>
+          </ListItem>
+        </List>
+        
+        <Divider />
+        
+        {/* イベントリスト */}
+        <List
+          subheader={
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1 }}>
+              <Typography variant="subtitle2">
+                {t('admin.events')}
+              </Typography>
+              <Button
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={handleCreateEvent}
+              >
+                {t('admin.create')}
+              </Button>
+            </Box>
+          }
+        >
+          {eventsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : events && Object.values(events).length > 0 ? (
+            Object.values(events).map((event) => (
+              <React.Fragment key={event.id}>
+                <ListItem disablePadding>
+                  <ListItemButton 
                     onClick={() => handleEventClick(event.id)}
                     selected={location.pathname === `/admin/events/${event.id}`}
-                    sx={{ 
-                      pl: 2,
-                      bgcolor: event.isActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent'
-                    }}
                   >
                     <ListItemIcon>
                       <EventIcon color={event.isActive ? "primary" : "inherit"} />
                     </ListItemIcon>
-                    <ListItemText primary={event.name} />
-                    {expandedEventIds.includes(event.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                    <ListItemText 
+                      primary={event.name} 
+                      secondary={new Date(event.date).toLocaleDateString()}
+                    />
+                    {expandedEventIds.includes(event.id) ? <ExpandLess /> : <ExpandMore />}
                   </ListItemButton>
-                  
-                  {/* 展開時に表示される競技リスト */}
-                  <Collapse in={expandedEventIds.includes(event.id)} timeout="auto" unmountOnExit>
-                    <List component="div" disablePadding>
-                      {sportsLoading ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 1 }}>
-                          <CircularProgress size={20} />
-                        </Box>
-                      ) : (
-                        getSportsByEventId(event.id).map(sport => (
-                          <ListItemButton
-                            key={sport.id}
-                            sx={{ pl: 4 }}
-                            onClick={() => handleSportClick(sport.id)}
-                            selected={location.pathname === `/admin/sports/${sport.id}`}
-                          >
-                            <ListItemIcon>
-                              <SportIcon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText primary={sport.name} />
-                          </ListItemButton>
-                        ))
-                      )}
-                      
-                      {/* 競技追加ボタン */}
-                      <ListItemButton
-                        sx={{ pl: 4 }}
-                        onClick={() => handleCreateSport(event.id)}
-                      >
+                </ListItem>
+                
+                {/* 競技リスト（展開されている場合のみ表示） */}
+                <Collapse in={expandedEventIds.includes(event.id)} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {/* 競技作成ボタン */}
+                    <ListItem disablePadding>
+                      <ListItemButton sx={{ pl: 4 }} onClick={() => handleCreateSport(event.id)}>
                         <ListItemIcon>
-                          <AddIcon fontSize="small" color="primary" />
+                          <AddIcon fontSize="small" />
                         </ListItemIcon>
                         <ListItemText 
-                          primary={
-                            <Typography variant="body2" color="primary">
-                              {t('admin.addSport')}
-                            </Typography>
-                          }
+                          primary={t('admin.createSport')}
+                          primaryTypographyProps={{ variant: 'body2' }}
                         />
                       </ListItemButton>
-                    </List>
-                  </Collapse>
-                </React.Fragment>
-              ))
-            ) : (
-              <Box sx={{ p: 2, textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary">
-                  {t('admin.noEvents')}
-                </Typography>
-                <Button
-                  startIcon={<AddIcon />}
-                  onClick={handleCreateEvent}
-                  size="small"
-                  sx={{ mt: 1 }}
-                >
-                  {t('admin.createEvent')}
-                </Button>
-              </Box>
-            )}
-          </List>
-          
-          <Divider sx={{ my: 2 }} />
-          
-          {/* その他のメニュー */}
-          <List>
-            <ListItemButton onClick={() => navigate('/admin/settings')}>
-              <ListItemIcon>
-                <SettingsIcon />
-              </ListItemIcon>
-              <ListItemText primary={t('admin.settings')} />
-            </ListItemButton>
-            <ListItemButton onClick={() => navigate('/admin/help')}>
-              <ListItemIcon>
-                <HelpIcon />
-              </ListItemIcon>
-              <ListItemText primary={t('admin.help')} />
-            </ListItemButton>
-          </List>
-        </Box>
+                    </ListItem>
+                    
+                    {/* 競技一覧 */}
+                    {getSportsByEventId(event.id).map((sport) => (
+                      <ListItem disablePadding key={sport.id}>
+                        <ListItemButton 
+                          sx={{ pl: 4 }}
+                          selected={location.pathname === `/admin/sports/${sport.id}`}
+                          onClick={() => handleSportClick(sport.id)}
+                        >
+                          <ListItemIcon>
+                            <SportIcon fontSize="small" />
+                          </ListItemIcon>
+                          <ListItemText 
+                            primary={sport.name}
+                            primaryTypographyProps={{ variant: 'body2' }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                    
+                    {getSportsByEventId(event.id).length === 0 && (
+                      <ListItem sx={{ pl: 4 }}>
+                        <ListItemText 
+                          secondary={t('admin.noSportsInEvent')}
+                          secondaryTypographyProps={{ variant: 'body2' }}
+                        />
+                      </ListItem>
+                    )}
+                  </List>
+                </Collapse>
+              </React.Fragment>
+            ))
+          ) : (
+            <ListItem sx={{ pl: 2 }}>
+              <ListItemText secondary={t('admin.noEvents')} />
+            </ListItem>
+          )}
+        </List>
       </Drawer>
       
       {/* メインコンテンツ */}
@@ -469,52 +468,41 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          height: '100vh',
+          height: '100%', // '100vh'から'100%'に変更
           overflow: 'auto',
-          pt: { xs: 8, sm: 10 }
+          pt: { xs: 8, sm: 10 },
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {children}
-      </Box>
-      
-      {/* スナックバー */}
-      <Snackbar
-        open={savingStatus === 'saved' || savingStatus === 'error'}
-        autoHideDuration={3000}
-        onClose={() => setSavingStatus('idle')}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          severity={savingStatus === 'saved' ? 'success' : 'error'}
-          sx={{ width: '100%' }}
+        
+        {/* 共通のスナックバー */}
+        <Snackbar
+          open={savingStatus === 'saved' || savingStatus === 'error' || snackbarLocal.open}
+          autoHideDuration={6000}
+          onClose={() => {
+            setSavingStatus('idle');
+            handleCloseSnackbar();
+          }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          {savingStatus === 'saved' 
-            ? t('admin.saveSuccess')
-            : t('admin.saveError')
-          }
-        </Alert>
-      </Snackbar>
-      
-      {/* ダイアログ */}
-      <CreateEventDialog
-        open={createEventDialog}
-        onClose={() => setCreateEventDialog(false)}
-        onSuccess={() => {
-          setCreateEventDialog(false);
-          setLastSaved(new Date());
-        }}
-      />
-      
-      <CreateSportDialog
-        open={createSportDialog}
-        onClose={() => setCreateSportDialog(false)}
-        onSuccess={(sportId: string) => {
-          setCreateSportDialog(false);
-          setLastSaved(new Date());
-          navigate(`/admin/sports/${sportId}`);
-        }}
-        eventId={selectedEventId}
-      />
+          <Alert 
+            onClose={() => {
+              setSavingStatus('idle');
+              handleCloseSnackbar();
+            }}
+            severity={snackbarLocal.open ? snackbarLocal.severity : (savingStatus === 'saved' ? 'success' : 'error')}
+            sx={{ width: '100%' }}
+          >
+            {snackbarLocal.open ? snackbarLocal.message : (
+              savingStatus === 'saved' 
+                ? t('admin.savedSuccessfully')
+                : t('admin.saveError')
+            )}
+          </Alert>
+        </Snackbar>
+      </Box>
     </Box>
   );
 };

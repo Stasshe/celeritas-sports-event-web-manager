@@ -7,40 +7,43 @@ import LanguageSelector from './LanguageSelector';
 
 interface LayoutProps {
   children: ReactNode;
+  hideHeader?: boolean; // AdminLayoutとの重複を避けるためのオプション
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { mode, toggleColorMode } = useThemeContext();
   
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {t('common.appName')}
-          </Typography>
-          
-          <IconButton 
-            size="large"
-            color="inherit"
-            aria-label="language selector"
-          >
-            <Translate />
-            <LanguageSelector />
-          </IconButton>
-          
-          <IconButton 
-            size="large"
-            color="inherit"
-            onClick={toggleColorMode}
-            aria-label="toggle dark mode"
-          >
-            {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+      {!hideHeader && (
+        <AppBar position="static">
+          <Toolbar>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              {t('common.appName')}
+            </Typography>
+            
+            <IconButton 
+              size="large"
+              color="inherit"
+              aria-label="language selector"
+            >
+              <Translate />
+              <LanguageSelector />
+            </IconButton>
+            
+            <IconButton 
+              size="large"
+              color="inherit"
+              onClick={toggleColorMode}
+              aria-label="toggle dark mode"
+            >
+              {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
+          </Toolbar>
+        </AppBar>
+      )}
       
       <Container component="main" sx={{ 
         flexGrow: 1, 

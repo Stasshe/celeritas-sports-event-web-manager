@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -37,7 +37,7 @@ interface CreateEventDialogProps {
 
 const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, onSuccess, event }) => {
   const { t } = useTranslation();
-  const { pushData, updateData } = useDatabase<Event>('/events');
+  const { pushData, updateData, data: allEventsData } = useDatabase<Event>('/events');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<Event> & { organizers: Organizer[] }>(
@@ -60,6 +60,32 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
     role: 'member',
     grade: 2
   });
+  
+  // ダイアログが開かれたときに初期値をセット
+  useEffect(() => {
+    if (open) {
+      if (event) {
+        setNewEvent({ ...event });
+      } else {
+        setNewEvent({
+          name: '',
+          date: new Date().toISOString().split('T')[0],
+          alternativeDate: '',
+          description: '',
+          isActive: false,
+          organizers: [],
+          sports: []
+        });
+      }
+      
+      setNewOrganizer({
+        id: `org_${Date.now()}`,
+        name: '',
+        role: 'member',
+        grade: 2
+      });
+    }
+  }, [open, event]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
@@ -118,7 +144,8 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
         description: newEvent.description || '',
         isActive: newEvent.isActive || false,
         organizers: newEvent.organizers || [],
-        sports: newEvent.sports || []
+        sports: newEvent.sports || [],
+        createdAt: new Date().toISOString() // 作成日時を追加
       };
       
       if (event) {
@@ -129,8 +156,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
         const newId = await pushData(eventData as any);
         
         // 新規イベントをアクティブにする場合、他のイベントを非アクティブに
-        if (eventData.isActive) {
-          const allEventsData = await useDatabase<Record<string, Event>>('/events').data;
+        if (eventData.isActive && newId) {
           if (allEventsData) {
             const updates: Record<string, Event> = {};
             
@@ -168,7 +194,28 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      fullWidth 
+      maxWidth="md"
+      TransitionProps={{
+        onExited: () => {
+          // ダイアログが閉じられた後にステートをリセット
+          if (!event) {
+            setNewEvent({
+              name: '',
+              date: new Date().toISOString().split('T')[0],
+              alternativeDate: '',
+              description: '',
+              isActive: false,
+              organizers: [],
+              sports: []
+            });
+          }
+        }
+      }}
+    >
       <DialogTitle>
         {event ? t('event.edit') : t('event.create')}
       </DialogTitle>

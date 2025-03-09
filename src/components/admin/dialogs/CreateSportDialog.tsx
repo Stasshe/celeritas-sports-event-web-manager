@@ -43,8 +43,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   const { pushData, updateData } = useDatabase<Sport>('/sports');
-  const { updateData: updateEvent } = useDatabase<Event>('/events');
-  const { data: events } = useDatabase<Record<string, Event>>('/events');
+  const { data: events, updateData: updateEvent } = useDatabase<Record<string, Event>>('/events');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSport, setNewSport] = useState<Partial<Sport> & { organizers: Organizer[] }>(
@@ -140,7 +139,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
       setIsSubmitting(true);
       
       // 初期設定を追加
-      const sportData = {
+      const sportData: Omit<Sport, 'id'> = {
         name: newSport.name,
         eventId: newSport.eventId,
         type: newSport.type || 'tournament',
@@ -199,38 +198,35 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         }
       }
       
-      // 名簿データの設定
-      if (newSport.roster) {
-        sportData.roster = newSport.roster;
-      }
+      let sportId: string = '';
       
       if (sport && sport.id) {
         // 既存競技の更新
+        sportId = sport.id;
         await updateData({ [sport.id]: {...sportData, id: sport.id} });
-        onSuccess(sport.id);
       } else {
-        // 新規競技作成 - as constで型安全に
-        const newId = await pushData(sportData as any);
-        if (newId) {
-          // イベントの競技リストを更新
-          if (events && events[eventId]) {
-            const event = events[eventId];
-            const updatedSports = [...(event.sports || [])];
-            if (!updatedSports.includes(newId)) {
-              updatedSports.push(newId);
-              
-              // イベントを更新
-              await updateEvent({ 
-                [eventId]: {
-                  ...event,
-                  sports: updatedSports
-                }
-              });
-            }
+        // 新規競技作成 - nullチェックを追加
+        const newSportId = await pushData(sportData as any);
+        if (newSportId && events && events[eventId]) {
+          sportId = newSportId;
+          const event = events[eventId];
+          const updatedSports = [...(event.sports || [])];
+          if (!updatedSports.includes(newSportId)) {
+            updatedSports.push(newSportId);
+            
+            // イベントを更新
+            await updateEvent({ 
+              [eventId]: {
+                ...event,
+                sports: updatedSports
+              }
+            });
           }
-          
-          onSuccess(newId);
         }
+      }
+      
+      if (sportId) {
+        onSuccess(sportId);
       }
     } catch (error) {
       console.error('Error saving sport:', error);
@@ -264,7 +260,28 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      fullWidth 
+      maxWidth="md"
+      TransitionProps={{
+        onExited: () => {
+          // ダイアログが閉じられた後にステートをリセット
+          if (!sport) {
+            setNewSport({
+              name: '',
+              eventId,
+              type: 'tournament',
+              description: '',
+              organizers: [],
+              teams: [],
+              matches: []
+            });
+          }
+        }
+      }}
+    >
       <DialogTitle>
         {sport ? t('sport.edit') : t('sport.create')}
       </DialogTitle>

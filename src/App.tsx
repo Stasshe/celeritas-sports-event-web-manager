@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { CustomThemeProvider } from './contexts/ThemeContext';
+import { AdminLayoutProvider } from './contexts/AdminLayoutContext';
 import './i18n/i18n';
 
 // Pages
@@ -23,31 +24,33 @@ function App() {
     <CustomThemeProvider>
       <CssBaseline />
       <AuthProvider>
-        <Router>
-          <Layout>
+        <AdminLayoutProvider>
+          <Router>
             <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/sport/:sportId" element={<SportPage />} />
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<Layout><HomePage /></Layout>} />
+              <Route path="/sport/:sportId" element={<Layout><SportPage /></Layout>} />
+              <Route path="/login" element={<Layout><LoginPage /></Layout>} />
               
-              {/* 管理者用ルート - 認証必須 */}
+              {/* 管理者用ルート - 認証必須かつヘッダー非表示 */}
               <Route 
                 path="/admin/*" 
                 element={
                   <ProtectedRoute>
-                    <Routes>
-                      <Route path="/" element={<AdminPage />} />
-                      <Route path="/scoring/:sportId" element={<ScoringPage />} />
-                      <Route path="/help" element={<AdminHelpPage />} />
-                    </Routes>
+                    <Layout hideHeader={true}>
+                      <Routes>
+                        <Route path="/" element={<AdminPage />} />
+                        <Route path="/scoring/:sportId" element={<ScoringPage />} />
+                        <Route path="/help" element={<AdminHelpPage />} />
+                      </Routes>
+                    </Layout>
                   </ProtectedRoute>
                 } 
               />
               
-              <Route path="*" element={<NotFoundPage />} />
+              <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
             </Routes>
-          </Layout>
-        </Router>
+          </Router>
+        </AdminLayoutProvider>
       </AuthProvider>
     </CustomThemeProvider>
   );

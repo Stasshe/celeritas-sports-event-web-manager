@@ -9,6 +9,7 @@ export interface Event {
   organizers: Organizer[]; // 担当者リスト
   sports: string[]; // スポーツIDの配列
   coverImageUrl?: string; // カバー画像URL追加
+  createdAt?: string; // オプショナルなcreatedAt属性を追加
 }
 
 // 担当者タイプ
