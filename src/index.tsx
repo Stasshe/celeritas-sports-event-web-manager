@@ -15,4 +15,4 @@ root.render(
 );
 
 // パフォーマンス測定が必要な場合はコメントを解除します
-// reportWebVitals(console.log);
+reportWebVitals(console.log);
