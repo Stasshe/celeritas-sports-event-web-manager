@@ -36,6 +36,7 @@ import {
   Add as AddIcon,
   Save as SaveIcon,
   Help as HelpIcon,
+  Home as HomeIcon,
   AccountCircle
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -238,6 +239,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </Box>
           
           {/* アクションボタン群 */}
+          <Tooltip title={t('admin.home')}>
+            <IconButton color="inherit" onClick={() => navigate('/')}>
+              <HomeIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip title={t('admin.saveChanges')}>
             <IconButton color="inherit" onClick={handleManualSave}>
               <SaveIcon />
