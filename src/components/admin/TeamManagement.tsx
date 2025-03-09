@@ -39,23 +39,6 @@ import { motion } from 'framer-motion';
 import { CompactPicker } from 'react-color';
 import { useThemeContext } from '../../contexts/ThemeContext';
 
-// react-color のための型定義
-declare module 'react-color' {
-  export interface ColorResult {
-    hex: string;
-    rgb: { r: number; g: number; b: number; a: number };
-    hsl: { h: number; s: number; l: number; a: number };
-  }
-  
-  export interface ColorPickerProps {
-    color?: string;
-    onChange?: (color: ColorResult) => void;
-    onChangeComplete?: (color: ColorResult) => void;
-  }
-  
-  export const CompactPicker: React.FC<ColorPickerProps>;
-}
-
 interface TeamManagementProps {
   sport: Sport;
   onUpdate: (sport: Sport) => void;

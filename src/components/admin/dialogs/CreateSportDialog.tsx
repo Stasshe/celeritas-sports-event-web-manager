@@ -149,25 +149,40 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         teams: newSport.teams || [],
         matches: newSport.matches || [],
         rules: newSport.rules || '',
-        manual: newSport.manual || ''
-      };
-      
-      // 競技形式に合わせて初期設定を追加
-      if (sportData.type === 'tournament') {
-        sportData.tournamentSettings = newSport.tournamentSettings || {
+        manual: newSport.manual || '',
+        // 初期値を設定
+        tournamentSettings: {
           hasThirdPlaceMatch: true,
           hasRepechage: false
-        };
-      } else if (sportData.type === 'roundRobin') {
-        sportData.roundRobinSettings = newSport.roundRobinSettings || {
+        },
+        roundRobinSettings: {
           winPoints: 3,
           drawPoints: 1,
           losePoints: 0,
           considerLosePoints: false
-        };
+        },
+        customLayout: [] as any[],
+        roster: {
+          grade1: {},
+          grade2: {},
+          grade3: {}
+        }
+      };
+      
+      // 競技形式に合わせて特定の設定を上書き
+      if (sportData.type === 'tournament') {
+        if (newSport.tournamentSettings) {
+          sportData.tournamentSettings = newSport.tournamentSettings;
+        }
+      } else if (sportData.type === 'roundRobin') {
+        if (newSport.roundRobinSettings) {
+          sportData.roundRobinSettings = newSport.roundRobinSettings;
+        }
       } else if (sportData.type === 'custom') {
         // カスタム形式の場合は空のレイアウトを作成
-        if (!newSport.customLayout) {
+        if (newSport.customLayout) {
+          sportData.customLayout = newSport.customLayout;
+        } else {
           const emptyLayout = Array(5).fill(0).map((_, rowIndex) => 
             Array(5).fill(0).map((_, colIndex) => ({
               id: `cell_${rowIndex}_${colIndex}_${Date.now()}`,
@@ -183,13 +198,9 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         }
       }
       
-      // 名簿データの初期化
-      if (!sportData.roster) {
-        sportData.roster = {
-          grade1: {},
-          grade2: {},
-          grade3: {}
-        };
+      // 名簿データの設定
+      if (newSport.roster) {
+        sportData.roster = newSport.roster;
       }
       
       if (sport && sport.id) {
@@ -197,8 +208,8 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         await updateData({ [sport.id]: {...sportData, id: sport.id} });
         onSuccess(sport.id);
       } else {
-        // 新規競技作成
-        const newId = await pushData({...sportData});
+        // 新規競技作成 - as constで型安全に
+        const newId = await pushData(sportData as any);
         if (newId) {
           // イベントの競技リストを更新
           if (events && events[eventId]) {

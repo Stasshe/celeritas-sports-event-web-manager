@@ -27,19 +27,19 @@ declare module 'react-color' {
     triangle?: 'hide' | 'top-left' | 'top-right' | 'hide';
   }
 
-  // Common components
-  export class AlphaPicker extends React.Component<ColorPickerProps> {}
-  export class BlockPicker extends React.Component<ColorPickerProps> {}
-  export class ChromePicker extends React.Component<ColorPickerProps> {}
-  export class CirclePicker extends React.Component<ColorPickerProps> {}
-  export class CompactPicker extends React.Component<ColorPickerProps> {}
-  export class GithubPicker extends React.Component<ColorPickerProps> {}
-  export class HuePicker extends React.Component<ColorPickerProps> {}
-  export class MaterialPicker extends React.Component<ColorPickerProps> {}
-  export class PhotoshopPicker extends React.Component<ColorPickerProps> {}
-  export class SketchPicker extends React.Component<ColorPickerProps> {}
-  export class SliderPicker extends React.Component<ColorPickerProps> {}
-  export class SwatchesPicker extends React.Component<ColorPickerProps> {}
-  export class TwitterPicker extends React.Component<ColorPickerProps> {}
-  export class CustomPicker extends React.Component<ColorPickerProps> {}
+  // 共通コンポーネント
+  export const AlphaPicker: React.ComponentType<ColorPickerProps>;
+  export const BlockPicker: React.ComponentType<ColorPickerProps>;
+  export const ChromePicker: React.ComponentType<ColorPickerProps>;
+  export const CirclePicker: React.ComponentType<ColorPickerProps>;
+  export const CompactPicker: React.ComponentType<ColorPickerProps>;
+  export const GithubPicker: React.ComponentType<ColorPickerProps>;
+  export const HuePicker: React.ComponentType<ColorPickerProps>;
+  export const MaterialPicker: React.ComponentType<ColorPickerProps>;
+  export const PhotoshopPicker: React.ComponentType<ColorPickerProps>;
+  export const SketchPicker: React.ComponentType<ColorPickerProps>;
+  export const SliderPicker: React.ComponentType<ColorPickerProps>;
+  export const SwatchesPicker: React.ComponentType<ColorPickerProps>;
+  export const TwitterPicker: React.ComponentType<ColorPickerProps>;
+  export const CustomPicker: React.ComponentType<ColorPickerProps>;
 }

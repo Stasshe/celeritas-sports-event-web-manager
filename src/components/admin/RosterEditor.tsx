@@ -153,9 +153,12 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
       
       // 既存クラスを削除（名前が変更された場合に備えて）
       if (editingClass && editingClass !== newClassName) {
-        const gradeData = updatedRoster[gradeKey] || {};
-        delete gradeData[editingClass];
-        updatedRoster[gradeKey] = gradeData;
+        // 安全にアクセス
+        if (updatedRoster[gradeKey]) {
+          const gradeData = { ...updatedRoster[gradeKey] };
+          delete gradeData[editingClass];
+          updatedRoster[gradeKey] = gradeData;
+        }
       }
       
       // gradeKeyが存在しない場合は初期化
