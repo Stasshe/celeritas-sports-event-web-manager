@@ -110,8 +110,8 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
     try {
       setIsSubmitting(true);
       
-      // 明示的な型宣言を追加（never型エラーの修正）
-      const eventData = {
+      // 明示的な型定義を行い、インデックスシグネチャの問題を解決
+      const eventData: Omit<Event, 'id'> = {
         name: newEvent.name,
         date: newEvent.date || new Date().toISOString().split('T')[0],
         alternativeDate: newEvent.alternativeDate,
@@ -119,14 +119,14 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
         isActive: newEvent.isActive || false,
         organizers: newEvent.organizers || [],
         sports: newEvent.sports || []
-      } as const;
+      };
       
       if (event) {
         // 既存イベントの更新
         await updateData({ [event.id]: {...eventData, id: event.id} });
       } else {
         // 新規イベント作成
-        const newId = await pushData(eventData);
+        const newId = await pushData(eventData as any);
         
         // 新規イベントをアクティブにする場合、他のイベントを非アクティブに
         if (eventData.isActive) {

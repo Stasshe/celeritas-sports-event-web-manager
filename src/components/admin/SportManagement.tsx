@@ -69,7 +69,7 @@ const SportManagement: React.FC = () => {
     if (sport) {
       setCurrentSport({ ...sport });
       setIsEditing(true);
-      setImagePreview(sport.coverImage || null);
+      setImagePreview(sport.coverImageUrl || null);
     } else {
       setCurrentSport({
         name: '',
@@ -99,15 +99,21 @@ const SportManagement: React.FC = () => {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCurrentSport(prev => ({
+          ...prev,
+          coverImageUrl: reader.result as string
+        }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const uploadImage = async (): Promise<string | null> => {
-    if (!imageFile) return currentSport?.coverImage || null;
+    if (!imageFile) return currentSport?.coverImageUrl || null;
 
     try {
       setUploadingImage(true);
@@ -132,7 +138,7 @@ const SportManagement: React.FC = () => {
     if (!currentSport?.name || !currentSport?.eventId) return;
 
     try {
-      const coverImage = await uploadImage();
+      const coverImageUrl = await uploadImage();
       const sportData: Sport = {
         id: currentSport.id || '', // idを追加
         name: currentSport.name,
@@ -142,8 +148,9 @@ const SportManagement: React.FC = () => {
         rules: currentSport.rules || undefined,
         teams: currentSport.teams || [],
         matches: currentSport.matches || [],
-        coverImage: coverImage || null,
-        customLayout: currentSport.customLayout
+        coverImageUrl: coverImageUrl || undefined, // nullの代わりにundefinedを使用
+        customLayout: currentSport.customLayout,
+        organizers: currentSport.organizers || [] // organizersプロパティを追加
       };
 
       if (isEditing && currentSport.id) {
@@ -333,7 +340,7 @@ const SportManagement: React.FC = () => {
                   >
                     <ListItemAvatar>
                       <Avatar 
-                        src={sport.coverImage || undefined}
+                        src={sport.coverImageUrl || undefined}
                         alt={sport.name}
                         variant="rounded"
                       >

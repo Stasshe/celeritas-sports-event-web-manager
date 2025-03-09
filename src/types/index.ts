@@ -8,6 +8,7 @@ export interface Event {
   isActive: boolean; // 現在表示したい行事かどうか
   organizers: Organizer[]; // 担当者リスト
   sports: string[]; // スポーツIDの配列
+  coverImageUrl?: string; // カバー画像URL追加
 }
 
 // 担当者タイプ
@@ -50,6 +51,7 @@ export interface Sport {
     grade2?: Record<string, string[]>; // クラス名: 名前リスト 2年生
     grade3?: Record<string, string[]>; // クラス名: 名前リスト 3年生
   };
+  coverImageUrl?: string; // カバー画像のURLを追加
 }
 
 // チームタイプ

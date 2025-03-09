@@ -116,7 +116,9 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
       setEditingClass(className);
       setNewClassName(className);
       const gradeKey = getCurrentGradeKey();
-      setClassMembers(roster[gradeKey]?.[className] || []);
+      // roster の存在確認と安全なアクセス
+      const gradeData = roster?.[gradeKey] || {};
+      setClassMembers(gradeData[className] || []);
       setIsNewClass(false);
     } else {
       // 新規クラス作成
@@ -152,13 +154,12 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
       const updatedRoster = { ...roster };
       
       // 既存クラスを削除（名前が変更された場合に備えて）
-      if (editingClass && editingClass !== newClassName) {
-        // 安全にアクセス
-        if (updatedRoster[gradeKey]) {
-          const gradeData = { ...updatedRoster[gradeKey] };
+      if (editingClass && editingClass !== newClassName && updatedRoster[gradeKey]) {
+        const gradeData = { ...updatedRoster[gradeKey] };
+        if (editingClass in gradeData) {
           delete gradeData[editingClass];
-          updatedRoster[gradeKey] = gradeData;
         }
+        updatedRoster[gradeKey] = gradeData;
       }
       
       // gradeKeyが存在しない場合は初期化
@@ -186,11 +187,13 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
 
   const handleDeleteClass = (className: string) => {
     const gradeKey = getCurrentGradeKey();
-    const gradeData = roster?.[gradeKey];
     
-    if (gradeData && className in gradeData) {
+    // nullチェックを追加
+    if (roster && roster[gradeKey] && className in roster[gradeKey]) {
       const updatedRoster = { ...roster };
-      delete updatedRoster[gradeKey][className];
+      const gradeData = { ...updatedRoster[gradeKey] };
+      delete gradeData[className];
+      updatedRoster[gradeKey] = gradeData;
       
       setRoster(updatedRoster);
       

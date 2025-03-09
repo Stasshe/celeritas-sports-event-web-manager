@@ -63,7 +63,7 @@ const EventManagement: React.FC = () => {
     if (event) {
       setCurrentEvent({ ...event });
       setIsEditing(true);
-      setImagePreview(event.coverImage || null);
+      setImagePreview(event.coverImageUrl || null);
     } else {
       setCurrentEvent({
         name: '',
@@ -102,7 +102,7 @@ const EventManagement: React.FC = () => {
   };
 
   const uploadImage = async (): Promise<string | null> => {
-    if (!imageFile) return currentEvent?.coverImage || null;
+    if (!imageFile) return currentEvent?.coverImageUrl || null;
 
     try {
       setUploadingImage(true);
@@ -127,7 +127,7 @@ const EventManagement: React.FC = () => {
     if (!currentEvent?.name) return;
 
     try {
-      const coverImage = await uploadImage();
+      const coverImageUrl = await uploadImage();
       
       const eventData: Event = {
         id: currentEvent.id || '', // idを追加
@@ -135,8 +135,9 @@ const EventManagement: React.FC = () => {
         date: currentEvent.date || new Date().toISOString().split('T')[0],
         description: currentEvent.description || '',
         isActive: currentEvent.isActive || false,
-        coverImage: coverImage || null,
-        sports: currentEvent.sports || []
+        coverImageUrl: coverImageUrl || undefined,
+        sports: currentEvent.sports || [],
+        organizers: currentEvent.organizers || [] // organizersプロパティを追加
       };
 
       if (isEditing && currentEvent.id) {
@@ -311,7 +312,7 @@ const EventManagement: React.FC = () => {
                 >
                   <ListItemAvatar>
                     <Avatar 
-                      src={event.coverImage || undefined}
+                      src={event.coverImageUrl}
                       alt={event.name}
                       variant="rounded"
                     >

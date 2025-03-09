@@ -151,18 +151,19 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         rules: newSport.rules || '',
         manual: newSport.manual || '',
         // 初期値を設定
-        tournamentSettings: {
+        tournamentSettings: newSport.tournamentSettings || {
           hasThirdPlaceMatch: true,
           hasRepechage: false
         },
-        roundRobinSettings: {
+        roundRobinSettings: newSport.roundRobinSettings || {
           winPoints: 3,
           drawPoints: 1,
           losePoints: 0,
           considerLosePoints: false
         },
-        customLayout: [] as any[],
-        roster: {
+        customLayout: newSport.customLayout || [],
+        // 明示的に非nullのrosterオブジェクトを指定
+        roster: newSport.roster || {
           grade1: {},
           grade2: {},
           grade3: {}
