@@ -27,7 +27,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ sport }) => {
       nextMatchId: null, // TODO: トーナメント構造に基づいて設定
       tournamentRoundText: `${t('tournament.round')} ${match.round}`,
       startTime: match.date || '',
-      state: match.status === 'completed' ? 'DONE' : 'SCHEDULED',
+      state: match.status === 'completed' ? ('DONE' as 'DONE') : ('SCHEDULED' as 'SCHEDULED'),
       participants: [
         {
           id: match.team1Id,

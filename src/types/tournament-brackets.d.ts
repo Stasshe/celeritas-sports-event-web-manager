@@ -19,6 +19,16 @@ declare module '@g-loot/react-tournament-brackets' {
     matches: Match[];
     matchComponent?: React.ComponentType<any>;
     svgWrapper?: React.ComponentType<any>;
+    options?: {
+      style?: {
+        roundHeader?: {
+          backgroundColor?: string;
+          color?: string;
+        };
+        connectorColor?: string;
+        connectorColorHighlight?: string;
+      };
+    };
   }
 
   export const SingleEliminationBracket: React.FC<SingleEliminationBracketProps>;
