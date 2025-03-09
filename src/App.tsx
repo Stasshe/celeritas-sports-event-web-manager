@@ -10,8 +10,11 @@ import './i18n/i18n';
 import HomePage from './pages/HomePage';
 import SportPage from './pages/SportPage';
 import AdminPage from './pages/admin/AdminPage';
+import EventEditPage from './pages/admin/EventEditPage';
+import SportEditPage from './pages/admin/SportEditPage';
 import ScoringPage from './pages/admin/ScoringPage';
 import AdminHelpPage from './pages/admin/AdminHelpPage';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -39,8 +42,11 @@ function App() {
                     <Layout hideHeader={true}>
                       <Routes>
                         <Route path="/" element={<AdminPage />} />
-                        <Route path="/scoring/:sportId" element={<ScoringPage />} />
-                        <Route path="/help" element={<AdminHelpPage />} />
+                        <Route path="events/:eventId" element={<EventEditPage />} />
+                        <Route path="sports/:sportId" element={<SportEditPage />} />
+                        <Route path="scoring/:sportId" element={<ScoringPage />} />
+                        <Route path="settings" element={<AdminSettingsPage />} />
+                        <Route path="help" element={<AdminHelpPage />} />
                       </Routes>
                     </Layout>
                   </ProtectedRoute>

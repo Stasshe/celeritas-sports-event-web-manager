@@ -78,19 +78,23 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   // 現在のパスに基づいて適切なイベントを展開
   useEffect(() => {
-    if (location.pathname.includes('/admin/events/') && events) {
-      const eventId = location.pathname.split('/').pop();
-      if (eventId && events[eventId]) {
-        setExpandedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
+    if (events && sports) {
+      if (location.pathname.includes('/admin/events/')) {
+        const eventId = location.pathname.split('/').pop();
+        if (eventId && events[eventId]) {
+          setExpandedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
+        }
       }
-    }
-    
-    if (location.pathname.includes('/admin/sports/') && events && sports) {
-      const sportId = location.pathname.split('/').pop();
-      if (sportId && sports[sportId]) {
-        const sport = sports[sportId];
-        const eventId = sport.eventId;
-        setExpandedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
+      
+      if (location.pathname.includes('/admin/sports/')) {
+        const sportId = location.pathname.split('/').pop();
+        if (sportId && sports[sportId]) {
+          const sport = sports[sportId];
+          const eventId = sport.eventId;
+          if (eventId && events[eventId]) {
+            setExpandedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
+          }
+        }
       }
     }
   }, [location.pathname, events, sports]);
@@ -124,12 +128,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
   
   const handleEventClick = (eventId: string) => {
-    if (expandedEventIds.includes(eventId)) {
-      setExpandedEventIds(expandedEventIds.filter(id => id !== eventId));
-    } else {
-      setExpandedEventIds([...expandedEventIds, eventId]);
-    }
+    // イベントID展開のトグル処理
+    setExpandedEventIds(prev => 
+      prev.includes(eventId) 
+        ? prev.filter(id => id !== eventId) 
+        : [...prev, eventId]
+    );
     
+    // イベント編集ページへのナビゲーション処理
     navigate(`/admin/events/${eventId}`);
   };
   

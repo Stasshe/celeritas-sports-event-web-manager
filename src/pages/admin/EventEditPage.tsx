@@ -74,7 +74,7 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
 };
 
 const EventEditPage: React.FC = () => {
-  const { eventId } = useParams<{ eventId: string }>();
+  const { eventId } = useParams<{ eventId?: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { alpha } = useThemeContext();

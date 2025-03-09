@@ -72,7 +72,7 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
 };
 
 const SportEditPage: React.FC = () => {
-  const { sportId } = useParams<{ sportId: string }>();
+  const { sportId } = useParams<{ sportId?: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
