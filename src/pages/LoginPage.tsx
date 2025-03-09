@@ -34,8 +34,8 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    if (email !== 'eterynity2024workplace@gmail.com') {
-      setError(t('login.invalidAdminEmail') || '管理者のメールアドレスではありません。');
+    if (!email || !password) {
+      setError(t('login.fillAllFields') || 'すべての項目を入力してください。');
       return;
     }
 
@@ -44,8 +44,21 @@ const LoginPage: React.FC = () => {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      setError(errorMessage);
+      if (error instanceof Error) {
+        switch (error.message) {
+          case 'auth/invalid-credential':
+            setError(t('login.invalidCredentials') || 'メールアドレスまたはパスワードが間違っています。');
+            break;
+          case 'auth/user-not-found':
+            setError(t('login.userNotFound') || 'ユーザーが見つかりません。');
+            break;
+          case 'auth/wrong-password':
+            setError(t('login.wrongPassword') || 'パスワードが間違っています。');
+            break;
+          default:
+            setError(t('login.unknownError') || '認証エラーが発生しました。');
+        }
+      }
     } finally {
       setLoading(false);
     }
