@@ -46,6 +46,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
+import CreateEventDialog from '../admin/dialogs/CreateEventDialog';
+import CreateSportDialog from '../admin/dialogs/CreateSportDialog';
 
 // AdminLayout の props 型定義を明示的に追加
 interface AdminLayoutProps {
@@ -145,13 +147,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   const handleCreateEvent = () => {
-    // イベント作成ダイアログを表示する処理（後で実装）
-    navigate('/admin/events/new');
+    setEventDialogOpen(true);
   };
   
   const handleCreateSport = (eventId: string) => {
-    // 競技作成ダイアログを表示する処理（後で実装）
-    navigate(`/admin/sports/new?eventId=${eventId}`);
+    setSelectedEventId(eventId);
+    setSportDialogOpen(true);
   };
 
   // ユーザーメニュー
@@ -192,6 +193,23 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // スナックバーを閉じる
   const handleCloseSnackbar = () => {
     setSnackbarLocal(prev => ({ ...prev, open: false }));
+  };
+
+  // ダイアログの状態
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [sportDialogOpen, setSportDialogOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+
+  // 成功時のハンドラー
+  const handleEventSuccess = () => {
+    setEventDialogOpen(false);
+    showSnackbar(t('admin.eventCreated'), 'success');
+  };
+
+  const handleSportSuccess = (sportId: string) => {
+    setSportDialogOpen(false);
+    showSnackbar(t('admin.sportCreated'), 'success');
+    navigate(`/admin/sports/${sportId}`);
   };
 
   return (
@@ -336,6 +354,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             minWidth: theme.spacing(5),
             justifyContent: drawerOpen ? 'initial' : 'center',
           },
+          '& .MuiListItemButton-root': {
+            borderRadius: 1,
+            mx: 1,
+            my: 0.5,
+          },
+          '& .MuiListItemButton-root.Mui-selected': {
+            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.2),
+            }
+          }
         }}
       >
         <Toolbar variant="dense" /> {/* トップバーのスペース確保 */}
@@ -514,6 +543,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </Alert>
         </Snackbar>
       </Box>
+
+      {/* ダイアログの追加 */}
+      <CreateEventDialog
+        open={eventDialogOpen}
+        onClose={() => setEventDialogOpen(false)}
+        onSuccess={handleEventSuccess}
+      />
+
+      <CreateSportDialog
+        open={sportDialogOpen}
+        onClose={() => setSportDialogOpen(false)}
+        onSuccess={handleSportSuccess}
+        eventId={selectedEventId}
+      />
     </Box>
   );
 };

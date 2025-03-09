@@ -8,24 +8,49 @@
     "create": "Create",
     "login": "Login",
     "logout": "Logout",
-    "darkMode": "Dark Mode"
+    "darkMode": "Dark Mode",
+    "back": "Back",
+    "share": "Share",
+    "yes": "Yes",
+    "no": "No"
   },
   "home": {
     "title": "Sports Events",
     "viewEvent": "View Event",
-    "adminPanel": "Admin Panel"
+    "adminPanel": "Admin Panel",
+    "noActiveEvent": "No Active Event",
+    "sportCount": "{{count}} sports",
+    "noSports": "No sports available"
   },
   "events": {
     "currentEvents": "Current Events",
     "noEvents": "No events available",
-    "selectEvent": "Select an event"
+    "selectEvent": "Select an event",
+    "eventDetails": "Event Details",
+    "date": "Date",
+    "alternativeDate": "Alternative Date",
+    "location": "Location",
+    "description": "Description",
+    "organizers": "Organizers",
+    "noOrganizers": "No organizers assigned"
   },
   "sports": {
     "tournament": "Tournament",
     "roundRobin": "Round Robin",
     "custom": "Custom Format",
     "noSports": "No sports available",
-    "selectSport": "Select a sport"
+    "selectSport": "Select a sport",
+    "details": "Sport Details",
+    "teams": "Teams",
+    "matches": "Matches",
+    "roster": "Roster",
+    "rules": "Rules",
+    "manual": "Manual",
+    "noTeams": "No teams registered",
+    "teamCount": "{{count}} teams",
+    "memberCount": "{{count}} members",
+    "noMembers": "No members",
+    "notFound": "Sport not found"
   },
   "admin": {
     "title": "Admin Panel",

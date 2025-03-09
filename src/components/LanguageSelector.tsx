@@ -24,7 +24,9 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'text' })
   
   const languages = [
     { code: 'en', name: 'English' },
-    { code: 'ja', name: '日本語' }
+    { code: 'ja', name: '日本語' },
+    { code: 'fr', name: 'Français' },
+    { code: 'de', name: 'Deutsch' }
   ];
   
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
