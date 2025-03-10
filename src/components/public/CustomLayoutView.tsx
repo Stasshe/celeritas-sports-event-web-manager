@@ -110,4 +110,5 @@ const CustomLayoutView: React.FC<CustomLayoutViewProps> = ({ sport }) => {
   );
 };
 
+
 export default CustomLayoutView;

@@ -3,610 +3,444 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Card,
   CardContent,
-  TextField,
   Button,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  IconButton,
   Divider,
+  Avatar,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  useTheme,
-  SelectChangeEvent
+  Stack,
+  Grid,
+  useTheme
 } from '@mui/material';
 import {
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Engineering as SetupIcon
+  DragHandle as DragIcon,
+  Shuffle as ShuffleIcon,
+  RestartAlt as ResetIcon,
+  Check as CheckIcon
 } from '@mui/icons-material';
-import { Sport, Match, Team } from '../../../types';
+import { Sport, Team, Player } from '../../../types';
 import { useTranslation } from 'react-i18next';
-import { useThemeContext } from '../../../contexts/ThemeContext';
-import TeamManagement from '../TeamManagement';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
-interface TournamentScoringProps {
+interface TournamentSeedingProps {
   sport: Sport;
-  onUpdate: (sport: Sport) => void;
+  onSave: (seededTeams: (Team | null)[]) => void;
+  onCancel: () => void;
+  firstRoundMatchCount: number;
 }
 
-interface MatchNode {
-  match: Match;
-  nextMatchId?: string;
-  round: number;
-  position: number;
-}
-
-const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }) => {
+const TournamentSeeding: React.FC<TournamentSeedingProps> = ({ 
+  sport, 
+  onSave, 
+  onCancel,
+  firstRoundMatchCount 
+}) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { alpha } = useThemeContext();
   
-  const [editingMatch, setEditingMatch] = useState<Match | null>(null);
-  const [matches, setMatches] = useState<Match[]>(sport.matches || []);
-  const [showTeamManagement, setShowTeamManagement] = useState(false);
-  const [tournamentStructure, setTournamentStructure] = useState<MatchNode[][]>([]);
-  const [setupDialogOpen, setSetupDialogOpen] = useState(false);
-  const [setupConfig, setSetupConfig] = useState({
-    teamCount: sport.teams?.length || 4,
-    hasThirdPlace: sport.tournamentSettings?.hasThirdPlaceMatch || false
-  });
+  const [availableTeams, setAvailableTeams] = useState<Team[]>([]);
+  const [seededTeams, setSeededTeams] = useState<(Team | null)[]>([]);
+  const [teamRosters, setTeamRosters] = useState<Record<string, Player[]>>({});
   
-  // 試合一覧が変更されたらスポーツデータを更新
+  // 初期化 - 名簿とシード情報を設定
   useEffect(() => {
-    const updatedSport = { ...sport, matches };
-    onUpdate(updatedSport);
-  }, [matches]);
-  
-  // トーナメント構造を構築
-  useEffect(() => {
-    if (matches.length > 0) {
-      buildTournamentStructure();
-    }
-  }, [matches]);
-
-  // トーナメント構造を構築する関数
-  const buildTournamentStructure = () => {
-    // 最大のラウンドを特定
-    const maxRound = Math.max(...matches.map(m => m.round), 1);
-    
-    // ラウンドごとに試合を整理
-    const roundMatches: MatchNode[][] = Array(maxRound).fill(null).map(() => []);
-    
-    // 試合データをノードに変換してラウンドごとに格納
-    matches.forEach(match => {
-      roundMatches[match.round - 1].push({
-        match,
-        round: match.round,
-        position: match.matchNumber
-      });
-    });
-    
-    // 各ラウンドの試合を位置でソート
-    roundMatches.forEach(round => {
-      round.sort((a, b) => a.position - b.position);
-    });
-    
-    setTournamentStructure(roundMatches);
-  };
-  
-  // 試合編集ダイアログを開く
-  const handleEditMatch = (match: Match) => {
-    setEditingMatch({ ...match });
-  };
-  
-  // 試合編集をキャンセル
-  const handleCancelEdit = () => {
-    setEditingMatch(null);
-  };
-  
-  // 試合データの保存
-  const handleSaveMatch = () => {
-    if (!editingMatch) return;
-    
-    const updatedMatches = matches.map(match => 
-      match.id === editingMatch.id ? editingMatch : match
-    );
-    
-    // 勝者が決まった場合、次のラウンドの対応する試合を更新
-    if (editingMatch.team1Score !== editingMatch.team2Score) {
-      const winnerId = editingMatch.team1Score > editingMatch.team2Score 
-        ? editingMatch.team1Id 
-        : editingMatch.team2Id;
-      
-      // 勝者を設定
-      const matchWithWinner = { ...editingMatch, winnerId };
-      
-      // 更新するマッチのインデックスを探す
-      const matchIndex = updatedMatches.findIndex(m => m.id === editingMatch.id);
-      updatedMatches[matchIndex] = matchWithWinner;
-      
-      // 次のラウンドの対応する試合を探す
-      const nextRound = editingMatch.round + 1;
-      const matchesInNextRound = matches.filter(m => m.round === nextRound);
-      
-      // 現在の位置に基づいて、次のラウンドのどの位置に進むかを計算
-      const nextPosition = Math.ceil(editingMatch.matchNumber / 2);
-      const nextMatch = matchesInNextRound.find(m => m.matchNumber === nextPosition);
-      
-      if (nextMatch) {
-        // 試合の位置（奇数か偶数か）に基づいて、team1かteam2に勝者を設定
-        const isOdd = editingMatch.matchNumber % 2 === 1;
-        const updatedNextMatch = {
-          ...nextMatch,
-          team1Id: isOdd ? winnerId : nextMatch.team1Id,
-          team2Id: !isOdd ? winnerId : nextMatch.team2Id
-        };
-        
-        // 次の試合を更新
-        const nextMatchIndex = updatedMatches.findIndex(m => m.id === nextMatch.id);
-        updatedMatches[nextMatchIndex] = updatedNextMatch;
-      }
-    }
-    
-    setMatches(updatedMatches);
-    setEditingMatch(null);
-  };
-  
-  // 試合結果の変更を処理
-  const handleMatchChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent<string>) => {
-    const { name, value } = e.target;
-    if (!name || !editingMatch) return;
-    
-    if (name === 'team1Score' || name === 'team2Score') {
-      const numValue = parseInt(value as string) || 0;
-      setEditingMatch(prev => prev ? { ...prev, [name]: numValue } : null);
-    } else if (name === 'team1Id' || name === 'team2Id' || name === 'status') {
-      setEditingMatch(prev => prev ? { ...prev, [name]: value as string } : null);
-    } else {
-      setEditingMatch(prev => prev ? { ...prev, [name]: value } : null);
-    }
-  };
-  
-  // トーナメントの自動セットアップ
-  const handleSetupTournament = () => {
-    const { teamCount, hasThirdPlace } = setupConfig;
-    
-    // 試合数と構造を計算
-    const matchCount = teamCount - 1;
-    const roundCount = Math.ceil(Math.log2(teamCount));
-    
-    // 新しい試合データを作成
-    const newMatches: Match[] = [];
-    
-    // 最初のラウンドの試合数を計算
-    const firstRoundMatches = Math.pow(2, Math.ceil(Math.log2(teamCount))) / 2;
-    
-    // 各ラウンドの試合を生成
-    for (let round = 1; round <= roundCount; round++) {
-      // 現在のラウンドの試合数を計算
-      const matchesInRound = round === 1 
-        ? firstRoundMatches 
-        : Math.pow(2, roundCount - round);
-      
-      for (let i = 0; i < matchesInRound; i++) {
-        newMatches.push({
-          id: `match_r${round}_${i+1}_${Date.now()}`,
-          team1Id: '',
-          team2Id: '',
-          team1Score: 0,
-          team2Score: 0,
-          round,
-          matchNumber: i + 1,
-          status: 'scheduled'
+    if (sport.teams) {
+      // 既存の試合から既に配置されたチームを取得
+      const assignedTeamIds = new Set<string>();
+      if (sport.matches) {
+        sport.matches.filter(m => m.round === 1).forEach(match => {
+          if (match.team1Id) assignedTeamIds.add(match.team1Id);
+          if (match.team2Id) assignedTeamIds.add(match.team2Id);
         });
       }
-    }
-    
-    // 3位決定戦が必要な場合は追加
-    if (hasThirdPlace) {
-      newMatches.push({
-        id: `match_third_place_${Date.now()}`,
-        team1Id: '',
-        team2Id: '',
-        team1Score: 0,
-        team2Score: 0,
-        round: roundCount,
-        matchNumber: 0, // 特別な位置として0を使用
-        status: 'scheduled'
-      });
-    }
-    
-    // 既存の試合をクリアして新しい構造を設定
-    setMatches(newMatches);
-    
-    // トーナメント設定を更新
-    const updatedSport = { 
-      ...sport, 
-      matches: newMatches,
-      tournamentSettings: {
-        ...(sport.tournamentSettings || {}),
-        hasThirdPlaceMatch: hasThirdPlace,
-        hasRepechage: sport.tournamentSettings?.hasRepechage || false
+      
+      // 利用可能なチームと既にシードされたチームを分ける
+      const available = [...sport.teams].filter(team => !assignedTeamIds.has(team.id));
+      
+      // ロスター情報を整理
+      const rosterByTeam: Record<string, Player[]> = {};
+      if (sport.roster && sport.roster.length > 0) {
+        sport.roster.forEach(player => {
+          if (player.teamId) {
+            if (!rosterByTeam[player.teamId]) {
+              rosterByTeam[player.teamId] = [];
+            }
+            rosterByTeam[player.teamId].push(player);
+          }
+        });
       }
-    };
-    
-    onUpdate(updatedSport);
-    setSetupDialogOpen(false);
-  };
+      
+      // シード用のチーム配列を作成（第1ラウンドの試合数 × 2）
+      const seedCount = firstRoundMatchCount * 2;
+      const seeds = Array(seedCount).fill(null);
+      
+      // 既存のマッチから既にシードされているチームを配置
+      if (sport.matches) {
+        const firstRoundMatches = sport.matches.filter(m => m.round === 1)
+          .sort((a, b) => a.matchNumber - b.matchNumber);
+        
+        firstRoundMatches.forEach(match => {
+          const idx1 = (match.matchNumber - 1) * 2;
+          const idx2 = idx1 + 1;
+          
+          if (match.team1Id) {
+            const team = sport.teams.find(t => t.id === match.team1Id) || null;
+            seeds[idx1] = team;
+            // 利用可能リストから削除
+            const availIdx = available.findIndex(t => t.id === match.team1Id);
+            if (availIdx >= 0) {
+              available.splice(availIdx, 1);
+            }
+          }
+          
+          if (match.team2Id) {
+            const team = sport.teams.find(t => t.id === match.team2Id) || null;
+            seeds[idx2] = team;
+            // 利用可能リストから削除
+            const availIdx = available.findIndex(t => t.id === match.team2Id);
+            if (availIdx >= 0) {
+              available.splice(availIdx, 1);
+            }
+          }
+        });
+      }
+      
+      setAvailableTeams(available);
+      setSeededTeams(seeds);
+      setTeamRosters(rosterByTeam);
+    }
+  }, [sport, firstRoundMatchCount]);
 
-  // チーム名を取得する関数
-  const getTeamName = (teamId: string) => {
-    const team = sport.teams?.find(team => team.id === teamId);
-    return team ? team.name : t('tournament.tbd');
+  // ドラッグ＆ドロップ処理
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+    
+    const { source, destination } = result;
+    
+    // 利用可能なチームからシードへ
+    if (source.droppableId === 'available-teams' && destination.droppableId.startsWith('seed-')) {
+      const seedIndex = parseInt(destination.droppableId.split('-')[1]);
+      const teamIndex = source.index;
+      
+      const newAvailableTeams = [...availableTeams];
+      const team = newAvailableTeams.splice(teamIndex, 1)[0];
+      
+      const newSeededTeams = [...seededTeams];
+      
+      // 既存のチームを入れ替える場合
+      if (newSeededTeams[seedIndex]) {
+        newAvailableTeams.push(newSeededTeams[seedIndex]!);
+      }
+      
+      newSeededTeams[seedIndex] = team;
+      
+      setAvailableTeams(newAvailableTeams);
+      setSeededTeams(newSeededTeams);
+    }
+    
+    // シード間での入れ替え
+    else if (source.droppableId.startsWith('seed-') && destination.droppableId.startsWith('seed-')) {
+      const sourceSeedIndex = parseInt(source.droppableId.split('-')[1]);
+      const destSeedIndex = parseInt(destination.droppableId.split('-')[1]);
+      
+      const newSeededTeams = [...seededTeams];
+      const temp = newSeededTeams[sourceSeedIndex];
+      newSeededTeams[sourceSeedIndex] = newSeededTeams[destSeedIndex];
+      newSeededTeams[destSeedIndex] = temp;
+      
+      setSeededTeams(newSeededTeams);
+    }
+    
+    // シードから利用可能なチームへ
+    else if (source.droppableId.startsWith('seed-') && destination.droppableId === 'available-teams') {
+      const seedIndex = parseInt(source.droppableId.split('-')[1]);
+      
+      const newSeededTeams = [...seededTeams];
+      const team = newSeededTeams[seedIndex];
+      newSeededTeams[seedIndex] = null;
+      
+      if (team) {
+        const newAvailableTeams = [...availableTeams, team];
+        setAvailableTeams(newAvailableTeams);
+      }
+      
+      setSeededTeams(newSeededTeams);
+    }
   };
   
-  // チームリストを取得
-  const getTeamOptions = () => {
-    return sport.teams?.map(team => (
-      <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
-    )) || [];
+  // 自動シード処理
+  const handleRandomSeed = () => {
+    const combinedTeams = [...availableTeams];
+    seededTeams.forEach(team => {
+      if (team) combinedTeams.push(team);
+    });
+    
+    // チームをランダムにシャッフル
+    const shuffled = [...combinedTeams].sort(() => 0.5 - Math.random());
+    
+    // シードに配置
+    const newSeededTeams = Array(seededTeams.length).fill(null);
+    const newAvailableTeams = [...shuffled];
+    
+    for (let i = 0; i < Math.min(seededTeams.length, shuffled.length); i++) {
+      newSeededTeams[i] = newAvailableTeams.shift() || null;
+    }
+    
+    setSeededTeams(newSeededTeams);
+    setAvailableTeams(newAvailableTeams);
+  };
+  
+  // シードのリセット処理
+  const handleClearSeeds = () => {
+    const allTeams = [...availableTeams];
+    seededTeams.forEach(team => {
+      if (team) allTeams.push(team);
+    });
+    
+    setAvailableTeams(allTeams);
+    setSeededTeams(Array(seededTeams.length).fill(null));
+  };
+  
+  // シードを保存
+  const handleSave = () => {
+    onSave(seededTeams);
+  };
+
+  // チームのロスター情報を表示
+  const renderTeamRoster = (team: Team | null) => {
+    if (!team) return null;
+    
+    const roster = teamRosters[team.id] || [];
+    
+    if (roster.length === 0) {
+      return (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+          {t('tournament.noPlayers')}
+        </Typography>
+      );
+    }
+    
+    return (
+      <Stack direction="row" spacing={0.5} sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
+        {roster.slice(0, 3).map(player => (
+          <Chip
+            key={player.id}
+            label={player.name}
+            size="small"
+            variant="outlined"
+            sx={{ fontSize: '0.7rem' }}
+          />
+        ))}
+        {roster.length > 3 && (
+          <Chip
+            label={`+${roster.length - 3}`}
+            size="small"
+            sx={{ fontSize: '0.7rem' }}
+          />
+        )}
+      </Stack>
+    );
   };
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography variant="h6">
-            {t('tournament.title')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('tournament.description')}
-          </Typography>
-        </Box>
-        <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, alignItems: 'center' }}>
+        <Typography variant="h6">
+          {t('tournament.seeding')}
+        </Typography>
+        <Stack direction="row" spacing={1}>
           <Button
             variant="outlined"
-            startIcon={<SetupIcon />}
-            onClick={() => setSetupDialogOpen(true)}
-            sx={{ mr: 1 }}
+            startIcon={<ShuffleIcon />}
+            onClick={handleRandomSeed}
+            size="small"
           >
-            {t('tournament.setup')}
+            {t('tournament.randomSeed')}
           </Button>
           <Button
             variant="outlined"
-            onClick={() => setShowTeamManagement(!showTeamManagement)}
+            startIcon={<ResetIcon />}
+            onClick={handleClearSeeds}
+            color="warning"
+            size="small"
           >
-            {showTeamManagement 
-              ? t('tournament.hideTeams') 
-              : t('tournament.manageTeams')
-            }
+            {t('tournament.clearSeeds')}
           </Button>
-        </Box>
+        </Stack>
       </Box>
       
-      {/* チーム管理セクション */}
-      {showTeamManagement && (
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <TeamManagement sport={sport} onUpdate={onUpdate} />
-        </Paper>
-      )}
-      
-      {/* トーナメント表 */}
-      <Box sx={{ overflowX: 'auto', mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2, minWidth: tournamentStructure.length * 280 }}>
-          {/* 各ラウンド */}
-          {tournamentStructure.map((roundMatches, roundIndex) => (
-            <Box 
-              key={roundIndex}
-              sx={{ 
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                justifyContent: 'space-around',
-                p: 1
-              }}
-            >
-              <Typography variant="h6" sx={{ textAlign: 'center', mb: 2 }}>
-                {roundIndex === tournamentStructure.length - 1 
-                  ? t('tournament.final') 
-                  : t('tournament.round', { round: roundIndex + 1 })}
+      <Typography variant="body2" color="text.secondary" paragraph>
+        {t('tournament.seedingInstructions')}
+      </Typography>
+
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Grid container spacing={2}>
+          {/* 左側：利用可能なチーム */}
+          <Grid item xs={12} md={4}>
+            <Paper sx={{ p: 2, height: '100%' }}>
+              <Typography variant="subtitle1" gutterBottom>
+                {t('tournament.availableTeams')}
               </Typography>
+              <Divider sx={{ mb: 2 }} />
               
-              {/* 各マッチカード */}
-              {roundMatches.map((matchNode) => (
-                <Card 
-                  key={matchNode.match.id} 
-                  elevation={2} 
-                  sx={{ 
-                    mb: 2,
-                    border: '1px solid',
-                    borderColor: theme.palette.divider,
-                    borderLeft: `4px solid ${
-                      matchNode.match.status === 'completed' 
-                        ? theme.palette.success.main 
-                        : matchNode.match.status === 'inProgress'
-                        ? theme.palette.warning.main
-                        : theme.palette.grey[300]
-                    }`
-                  }}
-                >
-                  <CardContent sx={{ position: 'relative' }}>
-                    <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => handleEditMatch(matchNode.match)}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                    
-                    <Typography variant="caption" color="text.secondary">
-                      {t('match.number', { number: matchNode.match.matchNumber })}
-                    </Typography>
-                    
-                    <Box sx={{ mt: 1 }}>
-                      {/* チーム1 */}
-                      <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        p: 1,
-                        backgroundColor: matchNode.match.winnerId === matchNode.match.team1Id 
-                          ? alpha(theme.palette.success.light, 0.1)
-                          : 'transparent',
-                        borderRadius: 1
-                      }}>
-                        <Typography fontWeight={matchNode.match.winnerId === matchNode.match.team1Id ? 'bold' : 'normal'}>
-                          {getTeamName(matchNode.match.team1Id)}
-                        </Typography>
-                        <Typography fontWeight="bold">
-                          {matchNode.match.team1Score}
-                        </Typography>
-                      </Box>
-                      
-                      {/* チーム2 */}
-                      <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        p: 1,
-                        mt: 1,
-                        backgroundColor: matchNode.match.winnerId === matchNode.match.team2Id 
-                          ? alpha(theme.palette.success.light, 0.1)
-                          : 'transparent',
-                        borderRadius: 1
-                      }}>
-                        <Typography fontWeight={matchNode.match.winnerId === matchNode.match.team2Id ? 'bold' : 'normal'}>
-                          {getTeamName(matchNode.match.team2Id)}
-                        </Typography>
-                        <Typography fontWeight="bold">
-                          {matchNode.match.team2Score}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-                      <Chip 
-                        label={
-                          matchNode.match.status === 'completed' 
-                            ? t('match.completed') 
-                            : matchNode.match.status === 'inProgress'
-                            ? t('match.inProgress')
-                            : t('match.scheduled')
-                        }
-                        size="small"
-                        color={
-                          matchNode.match.status === 'completed' 
-                            ? 'success' 
-                            : matchNode.match.status === 'inProgress'
-                            ? 'warning'
-                            : 'default'
-                        }
-                      />
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {roundMatches.length === 0 && (
-                <Paper sx={{ p: 2, textAlign: 'center', opacity: 0.7 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {t('tournament.noMatches')}
-                  </Typography>
-                </Paper>
-              )}
-            </Box>
-          ))}
-          
-          {tournamentStructure.length === 0 && (
-            <Paper sx={{ p: 3, width: '100%', textAlign: 'center' }}>
-              <Typography paragraph>
-                {t('tournament.noStructure')}
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={() => setSetupDialogOpen(true)}
-                startIcon={<SetupIcon />}
-              >
-                {t('tournament.createStructure')}
-              </Button>
+              <Droppable droppableId="available-teams">
+                {(provided) => (
+                  <Box
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    sx={{ minHeight: 100 }}
+                  >
+                    {availableTeams.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', p: 2 }}>
+                        {t('tournament.noAvailableTeams')}
+                      </Typography>
+                    ) : (
+                      availableTeams.map((team, index) => (
+                        <Draggable key={team.id} draggableId={team.id} index={index}>
+                          {(provided, snapshot) => (
+                            <Card
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              elevation={snapshot.isDragging ? 6 : 1}
+                              sx={{
+                                mb: 1,
+                                transition: 'all 0.2s',
+                                transform: snapshot.isDragging ? 'scale(1.02)' : 'scale(1)',
+                                bgcolor: snapshot.isDragging ? 'background.paper' : 'transparent'
+                              }}
+                            >
+                              <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <DragIcon fontSize="small" sx={{ mr: 1, opacity: 0.5 }} />
+                                  <Box sx={{ flexGrow: 1 }}>
+                                    <Typography variant="body2" fontWeight="bold">
+                                      {team.name}
+                                    </Typography>
+                                    {renderTeamRoster(team)}
+                                  </Box>
+                                </Box>
+                              </CardContent>
+                            </Card>
+                          )}
+                        </Draggable>
+                      ))
+                    )}
+                    {provided.placeholder}
+                  </Box>
+                )}
+              </Droppable>
             </Paper>
-          )}
-        </Box>
+          </Grid>
+
+          {/* 右側：シード配置 */}
+          <Grid item xs={12} md={8}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                {t('tournament.seedPositions')}
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              
+              <Grid container spacing={2}>
+                {seededTeams.map((team, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={`seed-${index}`}>
+                    <Droppable droppableId={`seed-${index}`}>
+                      {(provided, snapshot) => (
+                        <Paper
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          variant="outlined"
+                          sx={{
+                            p: 1,
+                            height: '100%',
+                            minHeight: 80,
+                            bgcolor: snapshot.isDraggingOver ? alpha(theme.palette.primary.light, 0.05) : 'transparent',
+                            borderColor: snapshot.isDraggingOver ? theme.palette.primary.main : theme.palette.divider
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                            {t('tournament.seedNumber', { number: index + 1 })}
+                          </Typography>
+                          
+                          {team ? (
+                            <Draggable draggableId={`seeded-${team.id}`} index={0}>
+                              {(provided, snapshot) => (
+                                <Card
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  elevation={snapshot.isDragging ? 6 : 1}
+                                  sx={{
+                                    transition: 'all 0.2s',
+                                    transform: snapshot.isDragging ? 'scale(1.02)' : 'scale(1)',
+                                    bgcolor: snapshot.isDragging ? 'background.paper' : 'transparent',
+                                    borderLeft: `3px solid ${theme.palette.primary.main}`
+                                  }}
+                                >
+                                  <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                      <DragIcon fontSize="small" sx={{ mr: 1, opacity: 0.5 }} />
+                                      <Box sx={{ flexGrow: 1 }}>
+                                        <Typography variant="body2" fontWeight="bold">
+                                          {team.name}
+                                        </Typography>
+                                        {renderTeamRoster(team)}
+                                      </Box>
+                                    </Box>
+                                  </CardContent>
+                                </Card>
+                              )}
+                            </Draggable>
+                          ) : (
+                            <Box
+                              sx={{
+                                height: 40,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px dashed',
+                                borderColor: theme.palette.divider,
+                                borderRadius: 1
+                              }}
+                            >
+                              <Typography variant="body2" color="text.secondary">
+                                {t('tournament.dropTeamHere')}
+                              </Typography>
+                            </Box>
+                          )}
+                          {provided.placeholder}
+                        </Paper>
+                      )}
+                    </Droppable>
+                  </Grid>
+                ))}
+              </Grid>
+            </Paper>
+          </Grid>
+        </Grid>
+      </DragDropContext>
+      
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+        <Button onClick={onCancel} sx={{ mr: 1 }}>
+          {t('common.cancel')}
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSave}
+          startIcon={<CheckIcon />}
+          disabled={seededTeams.some(team => team === null)}
+        >
+          {t('tournament.saveSeeding')}
+        </Button>
       </Box>
-      
-      {/* 試合編集ダイアログ */}
-      <Dialog 
-        open={!!editingMatch} 
-        onClose={handleCancelEdit}
-        maxWidth="sm"
-        fullWidth
-      >
-        {editingMatch && (
-          <>
-            <DialogTitle>
-              {t('match.edit', { number: editingMatch.matchNumber, round: editingMatch.round })}
-            </DialogTitle>
-            <DialogContent dividers>
-              <Typography variant="subtitle1" gutterBottom>
-                {t('match.teams')}
-              </Typography>
-              
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t('match.team1')}</InputLabel>
-                    <Select
-                      name="team1Id"
-                      value={editingMatch.team1Id || ''}
-                      onChange={handleMatchChange}
-                    >
-                      <MenuItem value="">{t('tournament.tbd')}</MenuItem>
-                      {getTeamOptions()}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>{t('match.team2')}</InputLabel>
-                    <Select
-                      name="team2Id"
-                      value={editingMatch.team2Id || ''}
-                      onChange={handleMatchChange}
-                    >
-                      <MenuItem value="">{t('tournament.tbd')}</MenuItem>
-                      {getTeamOptions()}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-              
-              <Typography variant="subtitle1" gutterBottom>
-                {t('match.scores')}
-              </Typography>
-              
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    name="team1Score"
-                    label={t('match.scoreFor', { team: getTeamName(editingMatch.team1Id) })}
-                    type="number"
-                    fullWidth
-                    value={editingMatch.team1Score}
-                    onChange={handleMatchChange}
-                    InputProps={{ inputProps: { min: 0 } }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    name="team2Score"
-                    label={t('match.scoreFor', { team: getTeamName(editingMatch.team2Id) })}
-                    type="number"
-                    fullWidth
-                    value={editingMatch.team2Score}
-                    onChange={handleMatchChange}
-                    InputProps={{ inputProps: { min: 0 } }}
-                  />
-                </Grid>
-              </Grid>
-              
-              <Typography variant="subtitle1" gutterBottom>
-                {t('match.status')}
-              </Typography>
-              
-              <FormControl fullWidth>
-                <InputLabel>{t('match.status')}</InputLabel>
-                <Select
-                  name="status"
-                  value={editingMatch.status}
-                  onChange={handleMatchChange as (event: SelectChangeEvent<string>) => void}
-                >
-                  <MenuItem value="scheduled">{t('match.scheduled')}</MenuItem>
-                  <MenuItem value="inProgress">{t('match.inProgress')}</MenuItem>
-                  <MenuItem value="completed">{t('match.completed')}</MenuItem>
-                </Select>
-              </FormControl>
-              
-              <TextField
-                name="notes"
-                label={t('match.notes')}
-                multiline
-                rows={2}
-                fullWidth
-                margin="normal"
-                value={editingMatch.notes || ''}
-                onChange={handleMatchChange}
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCancelEdit}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSaveMatch}
-                startIcon={<SaveIcon />}
-              >
-                {t('common.save')}
-              </Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
-      
-      {/* トーナメント設定ダイアログ */}
-      <Dialog
-        open={setupDialogOpen}
-        onClose={() => setSetupDialogOpen(false)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>
-          {t('tournament.setup')}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            {t('tournament.setupWarning')}
-          </Typography>
-          
-          <FormControl fullWidth margin="normal">
-            <InputLabel>{t('tournament.teamCount')}</InputLabel>
-            <Select
-              value={setupConfig.teamCount}
-              onChange={(e) => setSetupConfig(prev => ({ ...prev, teamCount: Number(e.target.value) }))}
-            >
-              {[4, 8, 16, 32].map(count => (
-                <MenuItem key={count} value={count}>{count}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          <FormControl fullWidth margin="normal">
-            <InputLabel>{t('tournament.hasThirdPlace')}</InputLabel>
-            <Select
-              value={setupConfig.hasThirdPlace ? "true" : "false"}
-              onChange={(e: SelectChangeEvent) => setSetupConfig(prev => ({ ...prev, hasThirdPlace: e.target.value === 'true' }))}
-            >
-              <MenuItem value="true">{t('common.yes')}</MenuItem>
-              <MenuItem value="false">{t('common.no')}</MenuItem>
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSetupDialogOpen(false)}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSetupTournament}
-          >
-            {t('tournament.create')}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
 
-export default TournamentScoring;
+export default TournamentSeeding;
