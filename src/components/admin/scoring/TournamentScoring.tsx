@@ -36,6 +36,7 @@ import { useThemeContext } from '../../../contexts/ThemeContext';
 import { SingleEliminationBracket, SVGViewer } from '@g-loot/react-tournament-brackets';
 import MatchCard from './components/MatchCard';
 import MatchEditDialog from './components/MatchEditDialog';
+import TournamentMatchPlacer from './components/TournamentMatchPlacer';
 
 interface TournamentScoringProps {
   sport: Sport;
@@ -51,90 +52,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
   const [matches, setMatches] = useState<Match[]>(sport.matches || []);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [matchDialogOpen, setMatchDialogOpen] = useState(false);
-  const [teamRosters, setTeamRosters] = useState<Record<string, string[]>>({});
 
-  // トーナメント構造データの構築
-  const tournamentData = useMemo(() => {
-    const rounds: Match[][] = [];
-    const maxRound = Math.max(...matches.map(m => m.round));
-    
-    for (let i = 1; i <= maxRound; i++) {
-      rounds.push(matches.filter(m => m.round === i).sort((a, b) => a.matchNumber - b.matchNumber));
-    }
-
-    return rounds;
-  }, [matches]);
-
-  // 名簿データの初期化
-  useEffect(() => {
-    if (sport.roster) {
-      const rosters: Record<string, string[]> = {};
-      Object.keys(sport.roster).forEach(gradeKey => {
-        const gradeData = sport.roster?.[gradeKey as keyof typeof sport.roster];
-        if (gradeData) {
-          Object.entries(gradeData).forEach(([className, students]) => {
-            if (Array.isArray(students)) {
-              students.forEach(student => {
-                if (!rosters[className]) {
-                  rosters[className] = [];
-                }
-                rosters[className].push(student);
-              });
-            }
-          });
-        }
-      });
-      setTeamRosters(rosters);
-    }
-  }, [sport.roster]);
-
-  // 試合編集ダイアログを開く
-  const handleEditMatch = (match: Match) => {
-    setSelectedMatch(match);
-    setMatchDialogOpen(true);
-  };
-
-  // 試合データの更新
-  const handleMatchUpdate = (updatedMatch: Match) => {
-    const updatedMatches = matches.map(m =>
-      m.id === updatedMatch.id ? updatedMatch : m
-    );
-    setMatches(updatedMatches);
-    onUpdate({ ...sport, matches: updatedMatches });
-    setMatchDialogOpen(false);
-  };
-
-  // 新規試合の追加
-  const handleAddMatch = (round: number) => {
-    const newMatch: Match = {
-      id: `match_${Date.now()}`,
-      round,
-      matchNumber: matches.filter(m => m.round === round).length + 1,
-      team1Id: '',
-      team2Id: '',
-      team1Score: 0,
-      team2Score: 0,
-      status: 'scheduled',
-      date: new Date().toISOString().split('T')[0],
-    };
-    setSelectedMatch(newMatch);
-    setMatchDialogOpen(true);
-  };
-
-  // ドラッグ&ドロップの処理
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-
-    const { source, destination } = result;
-    const updatedMatches = [...matches];
-    const [removed] = updatedMatches.splice(source.index, 1);
-    updatedMatches.splice(destination.index, 0, removed);
-
-    setMatches(updatedMatches);
-    onUpdate({ ...sport, matches: updatedMatches });
-  };
-
-  // トーナメント表示用のデータ変換
+  // トーナメント表示用のデータ
   const bracketMatches = useMemo(() => {
     return matches.map(match => ({
       id: match.id,
@@ -164,11 +83,58 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
     }));
   }, [matches, sport.teams, t]);
 
+  // ラウンドごとの試合データを構築
+  const roundMatches = useMemo(() => {
+    const rounds: Match[][] = [];
+    const maxRound = Math.max(...matches.map(m => m.round), 0);
+    
+    for (let i = 1; i <= maxRound; i++) {
+      rounds[i] = matches.filter(m => m.round === i)
+        .sort((a, b) => a.matchNumber - b.matchNumber);
+    }
+
+    // 3位決定戦があれば最後に追加
+    const thirdPlaceMatch = matches.find(m => m.matchNumber === 0);
+    if (thirdPlaceMatch) {
+      rounds.push([thirdPlaceMatch]);
+    }
+
+    return rounds;
+  }, [matches]);
+
+  // 試合の編集
+  const handleEditMatch = (match: Match) => {
+    setSelectedMatch(match);
+    setMatchDialogOpen(true);
+  };
+
+  // 試合の更新
+  const handleMatchUpdate = (updatedMatch: Match) => {
+    const newMatches = matches.map(m => 
+      m.id === updatedMatch.id ? updatedMatch : m
+    );
+    setMatches(newMatches);
+    onUpdate({ ...sport, matches: newMatches });
+    setMatchDialogOpen(false);
+  };
+
   return (
     <Box>
-      {/* トーナメント表示 */}
+      {/* 自動配置コンポーネント */}
+      <TournamentMatchPlacer
+        sport={sport}
+        onMatchesUpdate={(newMatches) => {
+          setMatches(newMatches);
+          onUpdate({ ...sport, matches: newMatches });
+        }}
+      />
+
+      {/* トーナメント図の表示 */}
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ height: Math.max(400, matches.length * 50) }}>
+        <Box sx={{ 
+          height: Math.max(400, matches.length * 50),
+          overflowX: 'auto'
+        }}>
           <SingleEliminationBracket
             matches={bracketMatches}
             options={{
@@ -183,7 +149,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
             }}
             svgWrapper={({ children, ...props }) => (
               <SVGViewer
-                width={900}
+                width={Math.max(900, matches.length * 100)}
                 height={Math.max(400, matches.length * 50)}
                 {...props}
               >
@@ -195,66 +161,41 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
       </Paper>
 
       {/* ラウンドごとの試合リスト */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Grid container spacing={2}>
-          {tournamentData.map((roundMatches, roundIndex) => (
+      <Grid container spacing={2}>
+        {roundMatches.map((matches, roundIndex) => (
+          matches.length > 0 && (
             <Grid item xs={12} md={6} lg={4} key={roundIndex}>
               <Paper sx={{ p: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography variant="h6">
-                    {roundIndex === tournamentData.length - 1 ? 
-                      t('tournament.final') : 
-                      t('tournament.round', { number: roundIndex + 1 })}
-                  </Typography>
-                  <Button
-                    startIcon={<AddIcon />}
-                    onClick={() => handleAddMatch(roundIndex + 1)}
-                    size="small"
-                  >
-                    {t('tournament.addMatch')}
-                  </Button>
-                </Box>
-
-                <Droppable droppableId={`round-${roundIndex + 1}`}>
-                  {(provided) => (
-                    <Box ref={provided.innerRef} {...provided.droppableProps}>
-                      {roundMatches.map((match, index) => (
-                        <Draggable key={match.id} draggableId={match.id} index={index}>
-                          {(provided) => (
-                            <Card
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              sx={{ mb: 1 }}
-                            >
-                              <CardContent>
-                                {/* 試合の詳細表示と編集ボタン */}
-                                <MatchCard
-                                  match={match}
-                                  sport={sport}
-                                  onEdit={() => handleEditMatch(match)}
-                                />
-                              </CardContent>
-                            </Card>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </Box>
-                  )}
-                </Droppable>
+                <Typography variant="h6" gutterBottom>
+                  {roundIndex === roundMatches.length - 1 && matches[0]?.matchNumber === 0
+                    ? t('tournament.thirdPlace')
+                    : t('tournament.round', { number: roundIndex })}
+                </Typography>
+                <Stack spacing={1}>
+                  {matches.map(match => (
+                    <Card key={match.id}>
+                      <CardContent>
+                        <MatchCard
+                          match={match}
+                          sport={sport}
+                          onEdit={() => handleEditMatch(match)}
+                        />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Stack>
               </Paper>
             </Grid>
-          ))}
-        </Grid>
-      </DragDropContext>
+          )
+        ))}
+      </Grid>
 
       {/* 試合編集ダイアログ */}
       <MatchEditDialog
         open={matchDialogOpen}
         match={selectedMatch}
         sport={sport}
-        teamRosters={teamRosters}
+        teamRosters={sport.roster?.grade1 || {}}
         onClose={() => setMatchDialogOpen(false)}
         onSave={handleMatchUpdate}
       />
@@ -262,8 +203,4 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
   );
 };
 
-// ... 以下のコンポーネントも追加 ...
-// MatchCard
-// MatchEditDialog
-// TeamSelector
-// ScoreInput
+export default TournamentScoring;
