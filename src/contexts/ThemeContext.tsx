@@ -97,7 +97,6 @@ export const CustomThemeProvider = ({ children }: CustomThemeProviderProps) => {
     components: {
       MuiCssBaseline: {
         styleOverrides: `
-          @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap');
           :root {
             --app-height: 100%;
           }
