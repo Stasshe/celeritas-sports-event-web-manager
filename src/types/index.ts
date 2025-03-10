@@ -98,3 +98,10 @@ export interface User {
   email: string;
   isAdmin: boolean;
 }
+
+export interface Player {
+  id: string;
+  name: string;
+  grade: 1 | 2 | 3;
+  teamId: string;
+}

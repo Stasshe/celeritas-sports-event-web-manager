@@ -15,7 +15,8 @@ import {
   Chip,
   Stack,
   Grid,
-  useTheme
+  useTheme,
+  alpha
 } from '@mui/material';
 import {
   DragHandle as DragIcon,
@@ -23,18 +24,18 @@ import {
   RestartAlt as ResetIcon,
   Check as CheckIcon
 } from '@mui/icons-material';
-import { Sport, Team, Player } from '../../../types';
+import { Sport, Team, Player } from '../../../types/index';
 import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
-interface TournamentSeedingProps {
+interface TournamentScoringProps {
   sport: Sport;
   onSave: (seededTeams: (Team | null)[]) => void;
   onCancel: () => void;
   firstRoundMatchCount: number;
 }
 
-const TournamentSeeding: React.FC<TournamentSeedingProps> = ({ 
+const TournamentScoring: React.FC<TournamentScoringProps> = ({ 
   sport, 
   onSave, 
   onCancel,
@@ -64,8 +65,34 @@ const TournamentSeeding: React.FC<TournamentSeedingProps> = ({
       
       // ロスター情報を整理
       const rosterByTeam: Record<string, Player[]> = {};
-      if (sport.roster && sport.roster.length > 0) {
-        sport.roster.forEach(player => {
+      
+      // rosterをフラットな配列として処理（既に整形済みのデータとして扱う）
+      const players: Player[] = [];
+      
+      // チーム名簿データを処理
+      if (sport.roster) {
+        // 学年ごとの処理
+        ['grade1', 'grade2', 'grade3'].forEach(gradeKey => {
+          const gradeData = sport.roster?.[gradeKey as keyof typeof sport.roster];
+          if (gradeData) {
+            // クラスごとの処理
+            Object.entries(gradeData).forEach(([className, names]) => {
+              // 各名前をプレイヤーとして追加
+              names.forEach((name, idx) => {
+                const player: Player = {
+                  id: `${gradeKey}-${className}-${idx}`,
+                  name,
+                  grade: parseInt(gradeKey.replace('grade', '')) as 1 | 2 | 3,
+                  teamId: '' // デフォルトは空のチームID
+                };
+                players.push(player);
+              });
+            });
+          }
+        });
+        
+        // チームに割り当て済みのプレイヤーがいる場合は、そのデータを使用
+        players.forEach(player => {
           if (player.teamId) {
             if (!rosterByTeam[player.teamId]) {
               rosterByTeam[player.teamId] = [];
@@ -443,4 +470,4 @@ const TournamentSeeding: React.FC<TournamentSeedingProps> = ({
   );
 };
 
-export default TournamentSeeding;
+export default TournamentScoring;
