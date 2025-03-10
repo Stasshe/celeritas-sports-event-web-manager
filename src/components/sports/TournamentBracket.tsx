@@ -99,7 +99,7 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ sport }) => {
         <SingleEliminationBracket
           matches={matches}
           matchComponent={({ match, onMatchClick, onPartyClick, onMouseEnter, onMouseLeave, ...props }) => (
-            <Match
+            <CustomMatch
               match={match}
               onMatchClick={onMatchClick}
               onPartyClick={onPartyClick}
@@ -138,10 +138,9 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ sport }) => {
   );
 };
 
-// カスタムマッチコンポーネント
-const Match = ({ match, onMatchClick, onPartyClick, onMouseEnter, onMouseLeave, topParty, bottomParty, ...props }: any) => {
+// カスタムマッチコンポーネント名を変更
+const CustomMatch = ({ match, onMatchClick, onPartyClick, onMouseEnter, onMouseLeave, topParty, bottomParty, ...props }: any) => {
   const theme = useTheme();
-
   return (
     <foreignObject
       x={props.x}
