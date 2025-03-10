@@ -2,51 +2,19 @@ import { useEffect, useState } from 'react';
 import { database } from '../config/firebase';
 import { ref, onValue, set, update, remove, push, DataSnapshot } from 'firebase/database';
 
-// グローバルキャッシュの型定義
-interface Cache {
-  [path: string]: {
-    data: any;
-    timestamp: number;
-    subscribers: number;
-  };
-}
-
-// メモリ内キャッシュ
-const globalCache: Cache = {};
-
-// キャッシュの有効期間（5分）
-const CACHE_DURATION = 5 * 60 * 1000;
-
 export function useDatabase<T>(path: string, initialValue: T | null = null) {
-  const [data, setData] = useState<T | null>(() => {
-    // キャッシュからの初期値取得
-    const cached = globalCache[path];
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      return cached.data;
-    }
-    return initialValue;
-  });
-  const [loading, setLoading] = useState(!globalCache[path]);
+  const [data, setData] = useState<T | null>(initialValue);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // キャッシュのサブスクライバーをインクリメント
-    if (!globalCache[path]) {
-      globalCache[path] = { data: null, timestamp: 0, subscribers: 0 };
-    }
-    globalCache[path].subscribers++;
-
+    setLoading(true);
     const dbRef = ref(database, path);
+
     const unsubscribe = onValue(
       dbRef,
       (snapshot: DataSnapshot) => {
         const newData = snapshot.val();
-        // キャッシュを更新
-        globalCache[path] = {
-          data: newData,
-          timestamp: Date.now(),
-          subscribers: globalCache[path].subscribers
-        };
         setData(newData as T);
         setLoading(false);
       },
@@ -57,11 +25,6 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     );
 
     return () => {
-      // クリーンアップ時にサブスクライバーをデクリメント
-      globalCache[path].subscribers--;
-      if (globalCache[path].subscribers === 0) {
-        delete globalCache[path];
-      }
       unsubscribe();
     };
   }, [path]);

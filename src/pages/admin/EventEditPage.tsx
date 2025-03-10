@@ -46,7 +46,7 @@ import { motion } from 'framer-motion';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext'; // 正しいパスに修正
-
+import DeleteConfirmationDialog from '../../components/admin/dialogs/DeleteConfirmationDialog';
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -80,12 +80,13 @@ const EventEditPage: React.FC = () => {
   const { alpha } = useThemeContext();
   const { showSnackbar, setSavingStatus } = useAdminLayout(); // AdminLayoutコンテキストを使用
   
-  const { data: event, loading: eventLoading, updateData: updateEvent } = useDatabase<Event>(`/events/${eventId}`);
+  const { data: event, loading: eventLoading, updateData: updateEvent, removeData } = useDatabase<Event>(`/events/${eventId}`);
   
   const [localEvent, setLocalEvent] = useState<Event | null>(null);
   const [saveStatus, setSaveStatusLocal] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [activeTab, setActiveTab] = useState(0);
   const [autoSaveTimerId, setAutoSaveTimerId] = useState<NodeJS.Timeout | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // 新規担当者ための状態
   const [newOrganizer, setNewOrganizer] = useState<Organizer>({
@@ -206,6 +207,18 @@ const EventEditPage: React.FC = () => {
         return t('event.roleMember');
       default:
         return role;
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!localEvent) return;
+    
+    try {
+      await removeData();
+      showSnackbar(t('event.deleteSuccess'), 'success');
+      navigate('/admin');
+    } catch (error) {
+      showSnackbar(t('event.deleteError'), 'error');
     }
   };
   
@@ -407,6 +420,29 @@ const EventEditPage: React.FC = () => {
               </Grid>
             </Grid>
           </Paper>
+
+          <Paper sx={{ p: 3, mt: 3, bgcolor: alpha('#f44336', 0.05) }}>
+            <Typography variant="h6" color="error" gutterBottom>
+              {t('event.dangerZone')}
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                {t('event.deleteEvent')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {t('event.deleteEventWarning')}
+              </Typography>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                {t('event.deleteEventButton')}
+              </Button>
+            </Box>
+          </Paper>
         </TabPanel>
         
         {/* 担当者タブ */}
@@ -541,6 +577,14 @@ const EventEditPage: React.FC = () => {
         </TabPanel>
         
         {/* スナックバーは削除 - AdminLayoutのスナックバーを使用 */}
+        <DeleteConfirmationDialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onConfirm={handleDelete}
+          title={t('event.deleteConfirmTitle')}
+          itemName={localEvent?.name || ''}
+          type="event"
+        />
       </Container>
     </AdminLayout>
   );

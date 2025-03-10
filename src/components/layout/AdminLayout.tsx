@@ -143,7 +143,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
   
   const handleSportClick = (sportId: string) => {
-    navigate(`/admin/sports/${sportId}`);
+    // 現在のパスと異なる場合のみナビゲーション
+    if (location.pathname !== `/admin/sports/${sportId}`) {
+      navigate(`/admin/sports/${sportId}`, { replace: true });
+    }
   };
 
   const handleCreateEvent = () => {
@@ -466,6 +469,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                           sx={{ pl: 4 }}
                           selected={location.pathname === `/admin/sports/${sport.id}`}
                           onClick={() => handleSportClick(sport.id)}
+                          disabled={location.pathname === `/admin/sports/${sport.id}`}
                         >
                           <ListItemIcon>
                             <SportIcon fontSize="small" />

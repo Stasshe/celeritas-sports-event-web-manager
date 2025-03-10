@@ -17,7 +17,10 @@
     "viewEvent": "イベントを見る",
     "adminPanel": "管理パネル"
   },
-  "events": {
+  "auth" : {
+    "logout" : "ログアウト"
+  },
+  "event": {
     "currentEvents": "現在のイベント",
     "noEvents": "イベントがありません",
     "selectEvent": "イベントを選択",

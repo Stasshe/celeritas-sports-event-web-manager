@@ -78,7 +78,9 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'text' })
           aria-label="select language"
           onClick={handleClick}
         >
-          <TranslateIcon />
+          <div onClick={handleClick}>
+            <TranslateIcon />
+          </div>
         </IconButton>
       )}
       
