@@ -50,43 +50,60 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    if (!editedMatch) return;
     const { name, value } = e.target;
-    setEditedMatch(prev => ({
-      ...prev!,
-      [name]: value
-    }));
+    setEditedMatch(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [name]: value
+      };
+    });
   };
 
   const handleScoreChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     team: 'team1' | 'team2'
   ) => {
+    if (!editedMatch) return;
     const score = parseInt(e.target.value) || 0;
-    setEditedMatch(prev => ({
-      ...prev!,
-      [`${team}Score`]: score
-    }));
+    setEditedMatch(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [`${team}Score`]: score
+      };
+    });
   };
 
   const handleTeamChange = (teamId: string, position: 'team1' | 'team2') => {
-    setEditedMatch(prev => ({
-      ...prev!,
-      [`${position}Id`]: teamId
-    }));
+    if (!editedMatch) return;
+    setEditedMatch(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [`${position}Id`]: teamId
+      };
+    });
   };
 
   const handleStatusChange = (e: SelectChangeEvent<'scheduled' | 'inProgress' | 'completed'>) => {
+    if (!editedMatch) return;
+    
     const status = e.target.value as 'scheduled' | 'inProgress' | 'completed';
-    setEditedMatch((prev: Match) => ({
-      ...prev,
-      status,
-      // 勝者は prev を使用して計算
-      winnerId: status === 'completed'
-        ? (prev.team1Score > prev.team2Score ? prev.team1Id
-           : prev.team2Score > prev.team1Score ? prev.team2Id
-           : undefined)
-        : undefined
-    }));
+    setEditedMatch(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        status,
+        // 勝者は現在の editedMatch を使用して計算
+        winnerId: status === 'completed'
+          ? (prev.team1Score > prev.team2Score ? prev.team1Id
+             : prev.team2Score > prev.team1Score ? prev.team2Id
+             : undefined)
+          : undefined
+      };
+    });
   };
 
   const handleSave = () => {
