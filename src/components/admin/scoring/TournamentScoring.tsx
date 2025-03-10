@@ -155,28 +155,39 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
               height: Math.max(400, matches.length * 50),
               overflowX: 'auto'
             }}>
-              <SingleEliminationBracket
-                matches={bracketMatches}
-                options={{
-                  style: {
-                    roundHeader: {
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText
-                    },
-                    connectorColor: theme.palette.divider,
-                    connectorColorHighlight: theme.palette.primary.main
-                  }
-                }}
-                svgWrapper={({ children, ...props }) => (
-                  <SVGViewer
-                    width={Math.max(900, matches.length * 100)}
-                    height={Math.max(400, matches.length * 50)}
-                    {...props}
-                  >
-                    {children}
-                  </SVGViewer>
-                )}
-              />
+              {bracketMatches.length > 0 && (
+                <SingleEliminationBracket
+                  matches={bracketMatches}
+                  options={{
+                    style: {
+                      roundHeader: {
+                        backgroundColor: theme.palette.primary.main,
+                        color: theme.palette.primary.contrastText
+                      },
+                      connectorColor: theme.palette.divider,
+                      connectorColorHighlight: theme.palette.primary.main
+                    }
+                  }}
+                  svgWrapper={({ children, ...props }) => (
+                    <SVGViewer
+                      width={Math.max(900, matches.length * 100)}
+                      height={Math.max(400, matches.length * 50)}
+                      background={theme.palette.background.paper}
+                      {...props}
+                    >
+                      {children}
+                    </SVGViewer>
+                  )}
+                  customStyle={{
+                    // カスタムスタイルを追加してデフォルトのpropsに依存しない
+                    backgroundColor: theme.palette.background.paper,
+                    roundBackground: theme.palette.background.default,
+                    textColor: theme.palette.text.primary,
+                    scoreBackground: theme.palette.action.hover,
+                    winnerBackground: theme.palette.success.light,
+                  }}
+                />
+              )}
             </Box>
           </Paper>
 

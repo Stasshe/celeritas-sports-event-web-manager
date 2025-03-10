@@ -36,18 +36,30 @@ declare module '@g-loot/react-tournament-brackets' {
         };
       };
     };
+    customStyle?: {
+      backgroundColor?: string;
+      roundBackground?: string;
+      textColor?: string;
+      scoreBackground?: string;
+      winnerBackground?: string;
+      roundHeader?: {
+        backgroundColor?: string;
+        color?: string;
+      };
+      connectorColor?: string;
+      connectorColorHighlight?: string;
+    };
   }
 
   export const SingleEliminationBracket: React.FC<SingleEliminationBracketProps>;
 
-  export interface SVGViewerProps {
+  export interface SVGViewerProps extends React.SVGAttributes<SVGSVGElement> {
     width: number;
     height: number;
     children: React.ReactNode;
     background?: string;
     SVGBackground?: string;
-    offsetX?: number;
-    offsetY?: number;
+    style?: React.CSSProperties;
   }
 
   export const SVGViewer: React.FC<SVGViewerProps>;
