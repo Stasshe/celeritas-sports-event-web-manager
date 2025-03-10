@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Gestionnaire d'Événements Sportifs",
+    "appName": "Gestionnaire d'événements sportifs",
     "save": "Enregistrer",
     "cancel": "Annuler",
     "edit": "Modifier",
@@ -8,24 +8,49 @@
     "create": "Créer",
     "login": "Connexion",
     "logout": "Déconnexion",
-    "darkMode": "Mode Sombre"
+    "darkMode": "Mode Sombre",
+    "back": "Retour",
+    "share": "Partager",
+    "yes": "Oui",
+    "no": "Non"
   },
   "home": {
-    "title": "Événements Sportifs",
+    "title": "Événements sportifs",
     "viewEvent": "Voir l'événement",
-    "adminPanel": "Panneau d'administration"
+    "adminPanel": "Panneau d'administration",
+    "noActiveEvent": "Aucun événement actif",
+    "sportCount": "{{count}} sports",
+    "noSports": "Aucun sport disponible"
   },
   "events": {
     "currentEvents": "Événements actuels",
     "noEvents": "Aucun événement disponible",
-    "selectEvent": "Sélectionner un événement"
+    "selectEvent": "Sélectionner un événement",
+    "eventDetails": "Détails de l'événement",
+    "date": "Date",
+    "alternativeDate": "Date alternative",
+    "location": "Lieu",
+    "description": "Description",
+    "organizers": "Organisateurs",
+    "noOrganizers": "Aucun organisateur assigné"
   },
   "sports": {
     "tournament": "Tournoi",
-    "roundRobin": "Tournoi à la ronde",
+    "roundRobin": "Tournoi toutes rondes",
     "custom": "Format personnalisé",
     "noSports": "Aucun sport disponible",
-    "selectSport": "Sélectionner un sport"
+    "selectSport": "Sélectionner un sport",
+    "details": "Détails du sport",
+    "teams": "Équipes",
+    "matches": "Matches",
+    "roster": "Liste des joueurs",
+    "rules": "Règles",
+    "manual": "Manuel",
+    "noTeams": "Aucune équipe enregistrée",
+    "teamCount": "{{count}} équipes",
+    "memberCount": "{{count}} membres",
+    "noMembers": "Aucun membre",
+    "notFound": "Sport non trouvé"
   },
   "admin": {
     "title": "Panneau d'administration",

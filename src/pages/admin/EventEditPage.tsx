@@ -46,7 +46,7 @@ import { motion } from 'framer-motion';
 import AdminLayout from '../../components/layout/AdminLayout';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext'; // 正しいパスに修正
-
+import DeleteConfirmationDialog from '../../components/admin/dialogs/DeleteConfirmationDialog';
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -80,12 +80,13 @@ const EventEditPage: React.FC = () => {
   const { alpha } = useThemeContext();
   const { showSnackbar, setSavingStatus } = useAdminLayout(); // AdminLayoutコンテキストを使用
   
-  const { data: event, loading: eventLoading, updateData: updateEvent } = useDatabase<Event>(`/events/${eventId}`);
+  const { data: event, loading: eventLoading, updateData: updateEvent, removeData } = useDatabase<Event>(`/events/${eventId}`);
   
   const [localEvent, setLocalEvent] = useState<Event | null>(null);
   const [saveStatus, setSaveStatusLocal] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [activeTab, setActiveTab] = useState(0);
   const [autoSaveTimerId, setAutoSaveTimerId] = useState<NodeJS.Timeout | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // 新規担当者ための状態
   const [newOrganizer, setNewOrganizer] = useState<Organizer>({
@@ -208,6 +209,18 @@ const EventEditPage: React.FC = () => {
         return role;
     }
   };
+
+  const handleDelete = async () => {
+    if (!localEvent) return;
+    
+    try {
+      await removeData();
+      showSnackbar(t('event.deleteSuccess'), 'success');
+      navigate('/admin');
+    } catch (error) {
+      showSnackbar(t('event.deleteError'), 'error');
+    }
+  };
   
   if (eventLoading) {
     return (
@@ -236,13 +249,13 @@ const EventEditPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <Container maxWidth="xl">
-        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Container maxWidth="lg">
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
               <ArrowBackIcon />
             </IconButton>
-            <Typography variant="h4" component="h1">
+            <Typography variant="h5" component="h1">
               {localEvent.name}
             </Typography>
             {localEvent.isActive && (
@@ -265,7 +278,7 @@ const EventEditPage: React.FC = () => {
           </Button>
         </Box>
         
-        <Paper sx={{ mb: 4 }}>
+        <Paper sx={{ mb: 2 }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
@@ -280,133 +293,137 @@ const EventEditPage: React.FC = () => {
         
         {/* 基本情報タブ */}
         <TabPanel value={activeTab} index={0}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              {t('event.details')}
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  name="name"
-                  label={t('event.name')}
-                  fullWidth
-                  margin="normal"
-                  value={localEvent.name}
-                  onChange={handleInputChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-                
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Paper sx={{ p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            {t('event.details')}
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+          
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
                     <TextField
-                      name="date"
-                      label={t('event.date')}
-                      type="date"
+                      name="name"
+                      label={t('event.name')}
                       fullWidth
                       margin="normal"
-                      value={localEvent.date || ''}
+                      value={localEvent.name}
                       onChange={handleInputChange}
                       InputLabelProps={{ shrink: true }}
+                    />
+                    
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          name="date"
+                          label={t('event.date')}
+                          type="date"
+                          fullWidth
+                          margin="normal"
+                          value={localEvent.date || ''}
+                          onChange={handleInputChange}
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          name="alternativeDate"
+                          label={t('event.alternativeDate')}
+                          type="date"
+                          fullWidth
+                          margin="normal"
+                          value={localEvent.alternativeDate || ''}
+                          onChange={handleInputChange}
+                          InputLabelProps={{ shrink: true }}
+                          helperText={t('event.alternativeDateHelp')}
+                        />
+                      </Grid>
+                    </Grid>
+                    
+                    <TextField
+                      name="description"
+                      label={t('event.description')}
+                      fullWidth
+                      multiline
+                      rows={4}
+                      margin="normal"
+                      value={localEvent.description || ''}
+                      onChange={handleInputChange}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          name="isActive"
+                          checked={localEvent.isActive}
+                          onChange={handleInputChange}
+                          color="primary"
+                        />
+                      }
+                      label={t('event.setActive')}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      name="alternativeDate"
-                      label={t('event.alternativeDate')}
-                      type="date"
+                  
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="h6" gutterBottom>
+                      {t('event.stats')}
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    
+                    <Paper 
+                      variant="outlined" 
+                      sx={{ p: 2, mb: 3, bgcolor: alpha('#f5f5f5', 0.1) }}
+                    >
+                      <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            {t('event.sportsCount')}
+                          </Typography>
+                          <Typography variant="h6">
+                            {localEvent.sports ? localEvent.sports.length : 0}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            {t('event.organizersCount')}
+                          </Typography>
+                          <Typography variant="h6">
+                            {localEvent.organizers ? localEvent.organizers.length : 0}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Typography variant="body2" color="text.secondary">
+                            {t('event.created')}
+                          </Typography>
+                          <Typography variant="body1">
+                            {/* createdAtがない場合は日時情報を表示しない */}
+                            {localEvent.createdAt 
+                              ? new Date(localEvent.createdAt).toLocaleString()
+                              : '-'
+                            }
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                    
+                    <Typography variant="subtitle2" gutterBottom>
+                      {t('event.manageSports')}
+                    </Typography>
+                    <Button
+                      variant="outlined"
                       fullWidth
-                      margin="normal"
-                      value={localEvent.alternativeDate || ''}
-                      onChange={handleInputChange}
-                      InputLabelProps={{ shrink: true }}
-                      helperText={t('event.alternativeDateHelp')}
-                    />
+                      onClick={() => navigate('/admin')}
+                      startIcon={<ArrowBackIcon />}
+                    >
+                      {t('event.backToSportsManagement')}
+                    </Button>
                   </Grid>
                 </Grid>
-                
-                <TextField
-                  name="description"
-                  label={t('event.description')}
-                  fullWidth
-                  multiline
-                  rows={4}
-                  margin="normal"
-                  value={localEvent.description || ''}
-                  onChange={handleInputChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-                
-                <FormControlLabel
-                  control={
-                    <Switch
-                      name="isActive"
-                      checked={localEvent.isActive}
-                      onChange={handleInputChange}
-                      color="primary"
-                    />
-                  }
-                  label={t('event.setActive')}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <Typography variant="h6" gutterBottom>
-                  {t('event.stats')}
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                
-                <Paper 
-                  variant="outlined" 
-                  sx={{ p: 2, mb: 3, bgcolor: alpha('#f5f5f5', 0.1) }}
-                >
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        {t('event.sportsCount')}
-                      </Typography>
-                      <Typography variant="h6">
-                        {localEvent.sports ? localEvent.sports.length : 0}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        {t('event.organizersCount')}
-                      </Typography>
-                      <Typography variant="h6">
-                        {localEvent.organizers ? localEvent.organizers.length : 0}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant="body2" color="text.secondary">
-                        {t('event.created')}
-                      </Typography>
-                      <Typography variant="body1">
-                        {/* createdAtがない場合は日時情報を表示しない */}
-                        {localEvent.createdAt 
-                          ? new Date(localEvent.createdAt).toLocaleString()
-                          : '-'
-                        }
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </Paper>
-                
-                <Typography variant="subtitle2" gutterBottom>
-                  {t('event.manageSports')}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  onClick={() => navigate('/admin')}
-                  startIcon={<ArrowBackIcon />}
-                >
-                  {t('event.backToSportsManagement')}
-                </Button>
-              </Grid>
+              </Paper>
             </Grid>
-          </Paper>
+          </Grid>
         </TabPanel>
         
         {/* 担当者タブ */}
@@ -541,6 +558,14 @@ const EventEditPage: React.FC = () => {
         </TabPanel>
         
         {/* スナックバーは削除 - AdminLayoutのスナックバーを使用 */}
+        <DeleteConfirmationDialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onConfirm={handleDelete}
+          title={t('event.deleteConfirmTitle')}
+          itemName={localEvent?.name || ''}
+          type="event"
+        />
       </Container>
     </AdminLayout>
   );

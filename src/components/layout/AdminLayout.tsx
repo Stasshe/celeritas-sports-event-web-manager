@@ -36,6 +36,7 @@ import {
   Add as AddIcon,
   Save as SaveIcon,
   Help as HelpIcon,
+  Home as HomeIcon,
   AccountCircle
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -45,13 +46,16 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
+import CreateEventDialog from '../admin/dialogs/CreateEventDialog';
+import CreateSportDialog from '../admin/dialogs/CreateSportDialog';
 
 // AdminLayout の props 型定義を明示的に追加
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-const drawerWidth = 280;
+// drawerWidthを小さく
+const drawerWidth = 240;
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { t } = useTranslation();
@@ -140,17 +144,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
   
   const handleSportClick = (sportId: string) => {
-    navigate(`/admin/sports/${sportId}`);
+    // 現在のパスと異なる場合のみナビゲーション
+    if (location.pathname !== `/admin/sports/${sportId}`) {
+      navigate(`/admin/sports/${sportId}`, { replace: true });
+    }
   };
 
   const handleCreateEvent = () => {
-    // イベント作成ダイアログを表示する処理（後で実装）
-    navigate('/admin/events/new');
+    setEventDialogOpen(true);
   };
   
   const handleCreateSport = (eventId: string) => {
-    // 競技作成ダイアログを表示する処理（後で実装）
-    navigate(`/admin/sports/new?eventId=${eventId}`);
+    setSelectedEventId(eventId);
+    setSportDialogOpen(true);
   };
 
   // ユーザーメニュー
@@ -193,31 +199,40 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     setSnackbarLocal(prev => ({ ...prev, open: false }));
   };
 
+  // ダイアログの状態
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [sportDialogOpen, setSportDialogOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+
+  // 成功時のハンドラー
+  const handleEventSuccess = () => {
+    setEventDialogOpen(false);
+    showSnackbar(t('admin.eventCreated'), 'success');
+  };
+
+  const handleSportSuccess = (sportId: string) => {
+    setSportDialogOpen(false);
+    showSnackbar(t('admin.sportCreated'), 'success');
+    navigate(`/admin/sports/${sportId}`);
+  };
+
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
-      {/* アプリバー */}
+      {/* トップツールバー（常時表示） */}
       <AppBar
         position="fixed"
+        color="default"
+        elevation={1}
         sx={{
-          zIndex: theme.zIndex.drawer + 1,
-          transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-          width: `calc(100% - ${drawerOpen ? drawerWidth : 0}px)`,
-          ml: `${drawerOpen ? drawerWidth : 0}px`,
+          zIndex: theme.zIndex.drawer + 2,
+          bgcolor: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(8px)',
+          '& .MuiToolbar-root': {
+            minHeight: 48, // ツールバーの高さを小さく
+          }
         }}
       >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
+        <Toolbar variant="dense" sx={{ minHeight: 48 }}>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {t('admin.title')}
           </Typography>
@@ -248,40 +263,31 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             ) : null}
           </Box>
           
-          {/* 保存ボタン */}
+          {/* アクションボタン群 */}
+          <Tooltip title={t('admin.home')}>
+            <IconButton color="inherit" onClick={() => navigate('/')}>
+              <HomeIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip title={t('admin.saveChanges')}>
             <IconButton color="inherit" onClick={handleManualSave}>
               <SaveIcon />
             </IconButton>
           </Tooltip>
-          
-          {/* 設定ボタン */}
           <Tooltip title={t('admin.settings')}>
-            <IconButton 
-              color="inherit"
-              onClick={() => navigate('/admin/settings')}
-            >
+            <IconButton color="inherit" onClick={() => navigate('/admin/settings')}>
               <SettingsIcon />
             </IconButton>
           </Tooltip>
-          
-          {/* ヘルプボタン */}
           <Tooltip title={t('admin.help')}>
-            <IconButton 
-              color="inherit"
-              onClick={() => navigate('/admin/help')}
-            >
+            <IconButton color="inherit" onClick={() => navigate('/admin/help')}>
               <HelpIcon />
             </IconButton>
           </Tooltip>
-          
           {/* ユーザーメニュー */}
           <IconButton
             size="large"
             edge="end"
-            aria-label="account of current user"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
             onClick={handleUserMenuOpen}
             color="inherit"
           >
@@ -319,33 +325,72 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </Menu>
         </Toolbar>
       </AppBar>
-      
-      {/* サイドドロワー */}
+
+      {/* サイドバー（折りたたみ可能） */}
       <Drawer
-        variant="persistent"
-        anchor="left"
+        variant="permanent"
         open={drawerOpen}
         sx={{
-          width: drawerWidth,
+          width: drawerOpen ? drawerWidth : theme.spacing(7),
           flexShrink: 0,
+          whiteSpace: 'nowrap',
+          boxSizing: 'border-box',
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+          overflowX: 'hidden',
           '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
+            position: 'relative', // 追加：absoluteからrelativeに変更
+            width: drawerOpen ? drawerWidth : theme.spacing(7),
+            transition: theme.transitions.create('width', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
+            overflowX: 'hidden',
+            borderRight: `1px solid ${theme.palette.divider}`,
+            height: '100%',
           },
+          '& .MuiListItemText-root': {
+            opacity: drawerOpen ? 1 : 0,
+            transition: theme.transitions.create('opacity', {
+              duration: theme.transitions.duration.enteringScreen,
+            }),
+          },
+          '& .MuiListItemIcon-root': {
+            minWidth: theme.spacing(5),
+            justifyContent: drawerOpen ? 'initial' : 'center',
+          },
+          '& .MuiListItemButton-root': {
+            py: 0.5, // リストアイテムの高さを小さく
+            minHeight: 40,
+            borderRadius: 1,
+            mx: 1,
+            my: 0.5,
+          },
+          '& .MuiListItemButton-root.Mui-selected': {
+            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.2),
+            }
+          }
         }}
       >
+        <Toolbar variant="dense" /> {/* トップバーのスペース確保 */}
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
-          justifyContent: 'space-between',
+          justifyContent: drawerOpen ? 'space-between' : 'center',
           padding: theme.spacing(0, 1),
-          ...theme.mixins.toolbar 
+          minHeight: 48,
         }}>
-          <Typography variant="h6" sx={{ ml: 2 }}>
-            {t('app.name')}
-          </Typography>
+          {drawerOpen && (
+            <Typography variant="h6" sx={{ ml: 2 }}>
+              {t('app.name')}
+            </Typography>
+          )}
           <IconButton onClick={handleDrawerToggle}>
-            <ChevronLeftIcon />
+            {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
         </Box>
         <Divider />
@@ -430,6 +475,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                           sx={{ pl: 4 }}
                           selected={location.pathname === `/admin/sports/${sport.id}`}
                           onClick={() => handleSportClick(sport.id)}
+                          disabled={location.pathname === `/admin/sports/${sport.id}`}
                         >
                           <ListItemIcon>
                             <SportIcon fontSize="small" />
@@ -467,16 +513,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: `calc(100% - ${drawerOpen ? drawerWidth : 0}px)`,
-          ml: `${drawerOpen ? drawerWidth : 0}px`,
-          transition: theme.transitions.create(['width', 'margin'], {
+          p: 2, // パディングを小さく
+          transition: theme.transitions.create('margin', {
             easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
+            duration: theme.transitions.duration.enteringScreen,
           }),
-          height: '100%', // '100vh'から'100%'に変更
+          height: '100%',
           overflow: 'auto',
-          pt: { xs: 8, sm: 10 },
+          pt: { xs: 6, sm: 6 }, // 上部余白を小さく
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -509,6 +553,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </Alert>
         </Snackbar>
       </Box>
+
+      {/* ダイアログの追加 */}
+      <CreateEventDialog
+        open={eventDialogOpen}
+        onClose={() => setEventDialogOpen(false)}
+        onSuccess={handleEventSuccess}
+      />
+
+      <CreateSportDialog
+        open={sportDialogOpen}
+        onClose={() => setSportDialogOpen(false)}
+        onSuccess={handleSportSuccess}
+        eventId={selectedEventId}
+      />
     </Box>
   );
 };

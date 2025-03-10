@@ -7,13 +7,15 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // データの読み取りとリアルタイム監視
   useEffect(() => {
+    setLoading(true);
     const dbRef = ref(database, path);
+
     const unsubscribe = onValue(
       dbRef,
       (snapshot: DataSnapshot) => {
-        setData(snapshot.val() as T);
+        const newData = snapshot.val();
+        setData(newData as T);
         setLoading(false);
       },
       (error) => {
@@ -22,7 +24,9 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [path]);
 
   // データの書き込み

@@ -21,6 +21,7 @@ import NotFoundPage from './pages/NotFoundPage';
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import { Box, CircularProgress } from '@mui/material';
 
 function App() {
   return (
@@ -34,12 +35,15 @@ function App() {
               <Route path="/sport/:sportId" element={<Layout><SportPage /></Layout>} />
               <Route path="/login" element={<Layout><LoginPage /></Layout>} />
               
-              {/* 管理者用ルート - 認証必須かつヘッダー非表示 */}
-              <Route 
-                path="/admin/*" 
-                element={
-                  <ProtectedRoute>
-                    <Layout hideHeader={true}>
+              {/* 管理者用ルートの修正 */}
+              <Route path="/admin/*" element={
+                <ProtectedRoute>
+                  <Layout hideHeader={true}>
+                    <React.Suspense fallback={
+                      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                        <CircularProgress />
+                      </Box>
+                    }>
                       <Routes>
                         <Route path="/" element={<AdminPage />} />
                         <Route path="events/:eventId" element={<EventEditPage />} />
@@ -48,10 +52,10 @@ function App() {
                         <Route path="settings" element={<AdminSettingsPage />} />
                         <Route path="help" element={<AdminHelpPage />} />
                       </Routes>
-                    </Layout>
-                  </ProtectedRoute>
-                } 
-              />
+                    </React.Suspense>
+                  </Layout>
+                </ProtectedRoute>
+              } />
               
               <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
             </Routes>

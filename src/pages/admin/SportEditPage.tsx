@@ -44,6 +44,7 @@ import CustomScoring from '../../components/admin/scoring/CustomScoring';
 import RosterEditor from '../../components/admin/RosterEditor';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import AdminLayout from '../../components/layout/AdminLayout';
+import DeleteConfirmationDialog from '../../components/admin/dialogs/DeleteConfirmationDialog';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -78,7 +79,7 @@ const SportEditPage: React.FC = () => {
   const theme = useTheme();
   const { alpha } = useThemeContext();
   
-  const { data: sport, loading: sportLoading, updateData: updateSport } = useDatabase<Sport>(`/sports/${sportId}`);
+  const { data: sport, loading: sportLoading, updateData: updateSport, removeData } = useDatabase<Sport>(`/sports/${sportId}`);
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
   
   const [activeTab, setActiveTab] = useState(0);
@@ -92,6 +93,8 @@ const SportEditPage: React.FC = () => {
     role: 'member',
     grade: 2
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // 初期データロード
   useEffect(() => {
@@ -99,6 +102,14 @@ const SportEditPage: React.FC = () => {
       setLocalSport(JSON.parse(JSON.stringify(sport)));
     }
   }, [sport]);
+
+  // sportIdが変更されたときにlocalSportをリセット
+  useEffect(() => {
+    setLocalSport(null);
+    if (sport) {
+      setLocalSport(JSON.parse(JSON.stringify(sport)));
+    }
+  }, [sportId, sport]);
 
   // データ変更時の自動保存設定
   useEffect(() => {
@@ -122,6 +133,18 @@ const SportEditPage: React.FC = () => {
       }
     };
   }, [localSport]);
+
+  // スポーツIDが変更されたときにローディング状態を設定
+  useEffect(() => {
+    setIsLoading(true);
+    // 少なくとも500msはローディングを表示
+    const timer = setTimeout(() => {
+      if (sport) {
+        setIsLoading(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [sportId, sport]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -239,6 +262,35 @@ const SportEditPage: React.FC = () => {
     });
   };
 
+  const handleDelete = async () => {
+    try {
+      await removeData();
+      setShowSnackbar(true);
+      navigate('/admin');
+    } catch (error) {
+      setShowSnackbar(true);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: '80vh' 
+        }}>
+          <CircularProgress />
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            {t('sport.loading')}
+          </Typography>
+        </Box>
+      </AdminLayout>
+    );
+  }
+
   if (sportLoading || eventsLoading) {
     return (
       <AdminLayout>
@@ -266,13 +318,13 @@ const SportEditPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <Container maxWidth="xl">
-        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Container maxWidth="lg">
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
               <ArrowBackIcon />
             </IconButton>
-            <Typography variant="h4" component="h1">
+            <Typography variant="h5" component="h1">
               {localSport.name}
             </Typography>
             <Chip 
@@ -293,7 +345,7 @@ const SportEditPage: React.FC = () => {
           </Button>
         </Box>
 
-        <Paper sx={{ mb: 4 }}>
+        <Paper sx={{ mb: 2 }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
@@ -311,9 +363,9 @@ const SportEditPage: React.FC = () => {
 
         {/* ホームタブ */}
         <TabPanel value={activeTab} index={0}>
-          <Grid container spacing={4}>
+          <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, mb: 4, height: '100%' }}>
+              <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
                 <Typography variant="h6" gutterBottom>
                   {t('sport.details')}
                 </Typography>
@@ -359,7 +411,7 @@ const SportEditPage: React.FC = () => {
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, mb: 4, height: '100%' }}>
+              <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
                 <Typography variant="h6" gutterBottom>
                   {t('sport.organizers')}
                 </Typography>
@@ -435,7 +487,7 @@ const SportEditPage: React.FC = () => {
                 </Box>
               </Paper>
               
-              <Paper sx={{ p: 3 }}>
+              <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   {t('sport.quickActions')}
                 </Typography>
@@ -691,8 +743,40 @@ const SportEditPage: React.FC = () => {
                 {t('sport.customSettingsMessage')}
               </Typography>
             )}
+
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" color="error" gutterBottom>
+                {t('sport.dangerZone')}
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              
+              <Box sx={{ bgcolor: alpha('#f44336', 0.05), p: 3, borderRadius: 1 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  {t('sport.deleteSport')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {t('sport.deleteSportWarning')}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  {t('sport.deleteSportButton')}
+                </Button>
+              </Box>
+            </Box>
           </Paper>
         </TabPanel>
+
+        <DeleteConfirmationDialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onConfirm={handleDelete}
+          title={t('sport.deleteConfirmTitle')}
+          itemName={localSport?.name || ''}
+          type="sport"
+        />
 
         {/* 保存通知 */}
         <Snackbar 
