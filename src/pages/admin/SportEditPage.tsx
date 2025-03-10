@@ -319,12 +319,12 @@ const SportEditPage: React.FC = () => {
   return (
     <AdminLayout>
       <Container maxWidth="lg">
-        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
               <ArrowBackIcon />
             </IconButton>
-            <Typography variant="h4" component="h1">
+            <Typography variant="h5" component="h1">
               {localSport.name}
             </Typography>
             <Chip 
@@ -345,7 +345,7 @@ const SportEditPage: React.FC = () => {
           </Button>
         </Box>
 
-        <Paper sx={{ mb: 4 }}>
+        <Paper sx={{ mb: 2 }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
@@ -363,9 +363,9 @@ const SportEditPage: React.FC = () => {
 
         {/* ホームタブ */}
         <TabPanel value={activeTab} index={0}>
-          <Grid container spacing={4}>
+          <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, mb: 4, height: '100%' }}>
+              <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
                 <Typography variant="h6" gutterBottom>
                   {t('sport.details')}
                 </Typography>
@@ -411,7 +411,7 @@ const SportEditPage: React.FC = () => {
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, mb: 4, height: '100%' }}>
+              <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
                 <Typography variant="h6" gutterBottom>
                   {t('sport.organizers')}
                 </Typography>
@@ -487,7 +487,7 @@ const SportEditPage: React.FC = () => {
                 </Box>
               </Paper>
               
-              <Paper sx={{ p: 3 }}>
+              <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   {t('sport.quickActions')}
                 </Typography>

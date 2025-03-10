@@ -54,7 +54,8 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-const drawerWidth = 280;
+// drawerWidthを小さく
+const drawerWidth = 240;
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { t } = useTranslation();
@@ -226,9 +227,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           zIndex: theme.zIndex.drawer + 2,
           bgcolor: alpha(theme.palette.background.paper, 0.8),
           backdropFilter: 'blur(8px)',
+          '& .MuiToolbar-root': {
+            minHeight: 48, // ツールバーの高さを小さく
+          }
         }}
       >
-        <Toolbar variant="dense">
+        <Toolbar variant="dense" sx={{ minHeight: 48 }}>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {t('admin.title')}
           </Typography>
@@ -327,7 +331,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         variant="permanent"
         open={drawerOpen}
         sx={{
-          width: drawerOpen ? drawerWidth : theme.spacing(9),
+          width: drawerOpen ? drawerWidth : theme.spacing(7),
           flexShrink: 0,
           whiteSpace: 'nowrap',
           boxSizing: 'border-box',
@@ -338,7 +342,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           overflowX: 'hidden',
           '& .MuiDrawer-paper': {
             position: 'relative', // 追加：absoluteからrelativeに変更
-            width: drawerOpen ? drawerWidth : theme.spacing(9),
+            width: drawerOpen ? drawerWidth : theme.spacing(7),
             transition: theme.transitions.create('width', {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
@@ -358,6 +362,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             justifyContent: drawerOpen ? 'initial' : 'center',
           },
           '& .MuiListItemButton-root': {
+            py: 0.5, // リストアイテムの高さを小さく
+            minHeight: 40,
             borderRadius: 1,
             mx: 1,
             my: 0.5,
@@ -507,14 +513,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 2, // パディングを小さく
           transition: theme.transitions.create('margin', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.enteringScreen,
           }),
           height: '100%',
           overflow: 'auto',
-          pt: { xs: 6, sm: 7 }, // ツールバー分の余白調整
+          pt: { xs: 6, sm: 6 }, // 上部余白を小さく
           display: 'flex',
           flexDirection: 'column',
         }}
