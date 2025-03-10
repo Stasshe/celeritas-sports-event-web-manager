@@ -11,25 +11,25 @@ export class TournamentStructureHelper {
   }
 
   static generateInitialMatches(teamCount: number): Array<{round: number, matchNumber: number}> {
+    if (teamCount <= 0) return [];
+    
     const matches: Array<{round: number, matchNumber: number}> = [];
     const totalRounds = this.calculateTotalRounds(teamCount);
-    const firstRoundMatches = this.calculateFirstRoundMatches(teamCount);
+    const perfectBracketTeams = Math.pow(2, totalRounds);
+    const firstRoundMatchCount = Math.ceil(teamCount / 2);
 
     // First round matches
-    for (let i = 1; i <= firstRoundMatches; i++) {
+    for (let i = 1; i <= firstRoundMatchCount; i++) {
       matches.push({ round: 1, matchNumber: i });
     }
 
     // Remaining rounds
     for (let round = 2; round <= totalRounds; round++) {
-      const matchesInRound = Math.pow(2, totalRounds - round);
+      const matchesInRound = Math.ceil(firstRoundMatchCount / Math.pow(2, round - 1));
       for (let match = 1; match <= matchesInRound; match++) {
         matches.push({ round, matchNumber: match });
       }
     }
-
-    // Add third place match if needed
-    matches.push({ round: totalRounds, matchNumber: 0 }); // Special match number 0 for third place
 
     return matches;
   }

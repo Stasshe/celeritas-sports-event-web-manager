@@ -37,6 +37,7 @@ import { SingleEliminationBracket, SVGViewer } from '@g-loot/react-tournament-br
 import MatchCard from './components/MatchCard';
 import MatchEditDialog from './components/MatchEditDialog';
 import TournamentMatchPlacer from './components/TournamentMatchPlacer';
+import TournamentBuilder from './components/TournamentBuilder';
 
 interface TournamentScoringProps {
   sport: Sport;
@@ -83,14 +84,26 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
     }));
   }, [matches, sport.teams, t]);
 
-  // ラウンドごとの試合データを構築
+  // ラウンドごとの試合データを構築（修正）
   const roundMatches = useMemo(() => {
-    const rounds: Match[][] = [];
-    const maxRound = Math.max(...matches.map(m => m.round), 0);
+    if (!matches || matches.length === 0) {
+      return [];
+    }
+
+    const regularMatches = matches.filter(m => m.matchNumber !== 0);
+    const maxRound = Math.max(...regularMatches.map(m => m.round), 0);
     
+    const rounds: Match[][] = [];
+    
+    // 各ラウンドの試合を格納
     for (let i = 1; i <= maxRound; i++) {
-      rounds[i] = matches.filter(m => m.round === i)
+      const matchesInRound = regularMatches
+        .filter(m => m.round === i)
         .sort((a, b) => a.matchNumber - b.matchNumber);
+      
+      if (matchesInRound.length > 0) {
+        rounds.push(matchesInRound);
+      }
     }
 
     // 3位決定戦があれば最後に追加
@@ -120,75 +133,94 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
 
   return (
     <Box>
-      {/* 自動配置コンポーネント */}
-      <TournamentMatchPlacer
+      <TournamentBuilder
         sport={sport}
-        onMatchesUpdate={(newMatches) => {
+        onMatchesCreate={(newMatches) => {
           setMatches(newMatches);
           onUpdate({ ...sport, matches: newMatches });
         }}
       />
 
-      {/* トーナメント図の表示 */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ 
-          height: Math.max(400, matches.length * 50),
-          overflowX: 'auto'
-        }}>
-          <SingleEliminationBracket
-            matches={bracketMatches}
-            options={{
-              style: {
-                roundHeader: {
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText
-                },
-                connectorColor: theme.palette.divider,
-                connectorColorHighlight: theme.palette.primary.main
-              }
-            }}
-            svgWrapper={({ children, ...props }) => (
-              <SVGViewer
-                width={Math.max(900, matches.length * 100)}
-                height={Math.max(400, matches.length * 50)}
-                {...props}
-              >
-                {children}
-              </SVGViewer>
-            )}
-          />
-        </Box>
-      </Paper>
+      {matches.length > 0 ? (
+        <>
+          {/* トーナメント図の表示 */}
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <Box sx={{ 
+              height: Math.max(400, matches.length * 50),
+              overflowX: 'auto'
+            }}>
+              <SingleEliminationBracket
+                matches={bracketMatches}
+                options={{
+                  style: {
+                    roundHeader: {
+                      backgroundColor: theme.palette.primary.main,
+                      color: theme.palette.primary.contrastText
+                    },
+                    connectorColor: theme.palette.divider,
+                    connectorColorHighlight: theme.palette.primary.main
+                  }
+                }}
+                svgWrapper={({ children, ...props }) => (
+                  <SVGViewer
+                    width={Math.max(900, matches.length * 100)}
+                    height={Math.max(400, matches.length * 50)}
+                    {...props}
+                  >
+                    {children}
+                  </SVGViewer>
+                )}
+              />
+            </Box>
+          </Paper>
 
-      {/* ラウンドごとの試合リスト */}
-      <Grid container spacing={2}>
-        {roundMatches.map((matches, roundIndex) => (
-          matches.length > 0 && (
-            <Grid item xs={12} md={6} lg={4} key={roundIndex}>
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  {roundIndex === roundMatches.length - 1 && matches[0]?.matchNumber === 0
-                    ? t('tournament.thirdPlace')
-                    : t('tournament.round', { number: roundIndex })}
-                </Typography>
-                <Stack spacing={1}>
-                  {matches.map(match => (
-                    <Card key={match.id}>
-                      <CardContent>
-                        <MatchCard
-                          match={match}
-                          sport={sport}
-                          onEdit={() => handleEditMatch(match)}
-                        />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Stack>
-              </Paper>
-            </Grid>
-          )
-        ))}
-      </Grid>
+          {/* ラウンドごとの試合リスト */}
+          <Grid container spacing={2}>
+            {roundMatches.length > 0 ? (
+              roundMatches.map((matches, roundIndex) => (
+                <Grid item xs={12} md={6} lg={4} key={roundIndex}>
+                  <Paper sx={{ p: 2 }}>
+                    <Typography variant="h6" gutterBottom>
+                      {matches[0]?.matchNumber === 0
+                        ? t('tournament.thirdPlace')
+                        : roundIndex === roundMatches.length - 2 && !matches.find(m => m.matchNumber === 0)
+                        ? t('tournament.final')
+                        : t('tournament.round', { number: roundIndex + 1 })}
+                    </Typography>
+                    <Stack spacing={1}>
+                      {matches.map(match => (
+                        <Card key={match.id}>
+                          <CardContent>
+                            <MatchCard
+                              match={match}
+                              sport={sport}
+                              onEdit={() => handleEditMatch(match)}
+                            />
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </Stack>
+                  </Paper>
+                </Grid>
+              ))
+            ) : (
+              <Grid item xs={12}>
+                <Paper sx={{ p: 3, textAlign: 'center' }}>
+                  <Typography color="text.secondary">
+                    {t('tournament.noMatches')}
+                  </Typography>
+                </Paper>
+              </Grid>
+            )}
+          </Grid>
+        </>
+      ) : (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography color="text.secondary">
+            {t('tournament.noMatches')}
+          </Typography>
+        </Paper>
+      )}
 
       {/* 試合編集ダイアログ */}
       <MatchEditDialog

@@ -25,35 +25,36 @@ const TournamentMatchPlacer: React.FC<TournamentMatchPlacerProps> = ({
   const { t } = useTranslation();
 
   const handleAutoPlace = () => {
+    if (!sport.teams || sport.teams.length === 0) {
+      return;
+    }
+
     const teams = [...sport.teams];
-    // ランダムにチームを並び替え
     const shuffledTeams = teams.sort(() => Math.random() - 0.5);
-    
-    // トーナメント構造を生成
     const structure = TournamentStructureHelper.generateInitialMatches(teams.length);
     
-    // マッチを生成
-    const matches: Match[] = structure.map((matchInfo, index) => {
-      const team1Index = index * 2;
-      const team2Index = index * 2 + 1;
-      
-      return {
+    const matches: Match[] = [];
+    let teamIndex = 0;
+
+    // 各ラウンドのマッチを生成
+    structure.forEach((matchInfo, index) => {
+      // 最初のラウンドのみチームを割り当て
+      const match: Match = {
         id: `match_${Date.now()}_${index}`,
         round: matchInfo.round,
         matchNumber: matchInfo.matchNumber,
-        team1Id: shuffledTeams[team1Index]?.id || '',
-        team2Id: shuffledTeams[team2Index]?.id || '',
+        team1Id: matchInfo.round === 1 ? shuffledTeams[teamIndex++]?.id || '' : '',
+        team2Id: matchInfo.round === 1 ? shuffledTeams[teamIndex++]?.id || '' : '',
         team1Score: 0,
         team2Score: 0,
         status: 'scheduled',
         date: new Date().toISOString().split('T')[0],
       };
+      matches.push(match);
     });
 
     onMatchesUpdate(matches);
   };
-
-  // ... その他の必要な機能を実装 ...
 
   return (
     <Box>
@@ -65,8 +66,6 @@ const TournamentMatchPlacer: React.FC<TournamentMatchPlacerProps> = ({
           {t('tournament.autoPlace')}
         </Button>
       </Stack>
-
-      {/* 既存のマッチ表示部分 */}
     </Box>
   );
 };
