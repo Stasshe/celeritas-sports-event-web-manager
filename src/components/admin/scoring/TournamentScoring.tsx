@@ -56,10 +56,13 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
 
   // トーナメント表示用のデータ
   const bracketMatches = useMemo(() => {
+    if (!sport.teams || !matches.length) return [];
+
     return matches.map(match => ({
       id: match.id,
-      name: match.matchNumber === 0 ? t('tournament.thirdPlace') :
-        `${t('tournament.round')} ${match.round} - ${match.matchNumber}`,
+      name: match.matchNumber === 0 
+        ? t('tournament.thirdPlace') 
+        : `${t('tournament.round')} ${match.round} - ${match.matchNumber}`,
       nextMatchId: matches.find(m => 
         m.round === match.round + 1 && 
         Math.ceil(match.matchNumber / 2) === m.matchNumber
@@ -70,15 +73,19 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
       participants: [
         {
           id: match.team1Id || 'tbd',
-          name: sport.teams.find(t => t.id === match.team1Id)?.name || t('tournament.tbd'),
+          name: match.team1Id 
+            ? sport.teams.find(t => t.id === match.team1Id)?.name || t('tournament.tbd')
+            : t('tournament.tbd'),
           score: match.team1Score,
-          isWinner: match.winnerId === match.team1Id
+          isWinner: Boolean(match.winnerId === match.team1Id)
         },
         {
           id: match.team2Id || 'tbd',
-          name: sport.teams.find(t => t.id === match.team2Id)?.name || t('tournament.tbd'),
+          name: match.team2Id
+            ? sport.teams.find(t => t.id === match.team2Id)?.name || t('tournament.tbd')
+            : t('tournament.tbd'),
           score: match.team2Score,
-          isWinner: match.winnerId === match.team2Id
+          isWinner: Boolean(match.winnerId === match.team2Id)
         }
       ]
     }));
@@ -89,10 +96,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
     if (!matches || matches.length === 0) {
       return [];
     }
-
     const regularMatches = matches.filter(m => m.matchNumber !== 0);
     const maxRound = Math.max(...regularMatches.map(m => m.round), 0);
-    
     const rounds: Match[][] = [];
     
     // 各ラウンドの試合を格納
@@ -100,18 +105,15 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
       const matchesInRound = regularMatches
         .filter(m => m.round === i)
         .sort((a, b) => a.matchNumber - b.matchNumber);
-      
       if (matchesInRound.length > 0) {
         rounds.push(matchesInRound);
       }
     }
-
     // 3位決定戦があれば最後に追加
     const thirdPlaceMatch = matches.find(m => m.matchNumber === 0);
     if (thirdPlaceMatch) {
       rounds.push([thirdPlaceMatch]);
     }
-
     return rounds;
   }, [matches]);
 
@@ -135,12 +137,16 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
     <Box>
       <TournamentBuilder
         sport={sport}
-        onMatchesCreate={(newMatches) => {
+        onMatchesCreate={(newMatches, selectedTeams) => {
           setMatches(newMatches);
-          onUpdate({ ...sport, matches: newMatches });
+          onUpdate({ 
+            ...sport, 
+            matches: newMatches,
+            teams: selectedTeams  // 選択されたチーム情報を更新
+          });
         }}
       />
-
+      
       {matches.length > 0 ? (
         <>
           {/* トーナメント図の表示 */}
@@ -227,9 +233,9 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
         open={matchDialogOpen}
         match={selectedMatch}
         sport={sport}
+        onSave={handleMatchUpdate}
         teamRosters={sport.roster?.grade1 || {}}
         onClose={() => setMatchDialogOpen(false)}
-        onSave={handleMatchUpdate}
       />
     </Box>
   );
