@@ -88,4 +88,59 @@ export class TournamentStructureHelper {
 
     return placements;
   }
+
+  // 試合の状態を自動判定する
+  static getMatchStatus(match: { team1Score: number; team2Score: number }): 'scheduled' | 'inProgress' | 'completed' {
+    if (match.team1Score === 0 && match.team2Score === 0) return 'scheduled';
+    if (match.team1Score > 0 || match.team2Score > 0) return 'completed';
+    return 'inProgress';
+  }
+
+  // シードまたは不在チームを判定する
+  static isNoTeam(matchId: string, teamId: string | null, matches: any[]): boolean {
+    if (!teamId) return true;
+    
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return true;
+
+    // 前のラウンドからの進出待ちの場合はシード/不在チームではない
+    const previousMatch = matches.find(m => 
+      m.round === match.round - 1 && 
+      (m.team1Id === teamId || m.team2Id === teamId)
+    );
+
+    return !previousMatch && !teamId;
+  }
+
+  // 待機中の状態を判定する
+  static isWaiting(matchId: string, teamId: string | null, matches: any[]): boolean {
+    if (!teamId) return false;
+    
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return false;
+
+    // 両方のチームが待機中の場合は待機中として扱わない
+    const bothWaiting = match.team1Id && match.team2Id && matches.some(m => 
+      m.round === match.round - 1 && 
+      !m.winnerId && 
+      (m.team1Id === match.team1Id || m.team2Id === match.team1Id) &&
+      (m.team1Id === match.team2Id || m.team2Id === match.team2Id)
+    );
+
+    if (bothWaiting) return false;
+
+    // 前の試合の勝者を待っている場合
+    return matches.some(m => 
+      m.round === match.round - 1 && 
+      !m.winnerId && 
+      (m.team1Id === teamId || m.team2Id === teamId)
+    );
+  }
+
+  // トーナメントに得点が存在するかチェック
+  static hasExistingScores(matches: any[]): boolean {
+    return matches.some(match => 
+      match.team1Score > 0 || match.team2Score > 0 || match.winnerId
+    );
+  }
 }

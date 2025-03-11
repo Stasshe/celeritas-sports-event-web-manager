@@ -2,7 +2,7 @@ declare module '@g-loot/react-tournament-brackets' {
   export interface Participant {
     id: string;
     name: string;
-    status?: string | null;
+    status?: 'no-team' | 'waiting' | null;  // 型を具体的に指定
     score?: number | null;
     isWinner?: boolean;
   }

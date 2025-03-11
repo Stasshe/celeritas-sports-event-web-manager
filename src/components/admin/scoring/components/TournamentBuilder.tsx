@@ -50,6 +50,13 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
   const generateTournament = () => {
     if (!selectedTeams.length) return;
 
+    // 既存の得点があるか確認
+    if (sport.matches && TournamentStructureHelper.hasExistingScores(sport.matches)) {
+      if (!window.confirm(t('tournament.confirmReset'))) {
+        return;
+      }
+    }
+
     const matches: Match[] = [];
     let matchId = 1;
 

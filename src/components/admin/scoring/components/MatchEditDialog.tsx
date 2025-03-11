@@ -69,6 +69,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
     const score = parseInt(e.target.value) || 0;
     setEditedMatch(prev => {
       if (!prev) return prev;
+      
       return {
         ...prev,
         [`${team}Score`]: score
@@ -114,38 +115,9 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {editedMatch.id ? 
-          t('match.editTitle', { number: editedMatch.matchNumber }) :
-          t('match.newTitle')}
-      </DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              name="matchNumber"
-              label={t('match.number')}
-              type="number"
-              fullWidth
-              value={editedMatch.matchNumber}
-              onChange={handleInputChange}
-              inputProps={{ min: 0 }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>{t('match.status')}</InputLabel>
-              <Select
-                value={editedMatch.status}
-                onChange={handleStatusChange}
-                label={t('match.status')}
-              >
-                <MenuItem value="scheduled">{t('match.scheduled')}</MenuItem>
-                <MenuItem value="inProgress">{t('match.inProgress')}</MenuItem>
-                <MenuItem value="completed">{t('match.completed')}</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+          
 
           <Grid item xs={12}>
             <Box sx={{ mb: 2 }}>
