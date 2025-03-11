@@ -153,7 +153,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                 {t('match.team1')}
               </Typography>
               <TeamSelector
-                selectedTeamId={editedMatch.team1Id}
+                selectedTeamId={editedMatch.team1Id || ''}
                 teams={sport.teams}
                 rosters={teamRosters}
                 onChange={(teamId) => handleTeamChange(teamId, 'team1')}
@@ -175,7 +175,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                 {t('match.team2')}
               </Typography>
               <TeamSelector
-                selectedTeamId={editedMatch.team2Id}
+                selectedTeamId={editedMatch.team2Id || ''}
                 teams={sport.teams}
                 rosters={teamRosters}
                 onChange={(teamId) => handleTeamChange(teamId, 'team2')}
