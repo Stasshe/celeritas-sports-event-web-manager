@@ -32,46 +32,30 @@ const TournamentView: React.FC<TournamentViewProps> = ({ sport }) => {
   const theme = useTheme();
   const { alpha } = useThemeContext();
 
-  const calculateDisplayName = (match: any, teamId: string, teams: any[]) => {
-    if (!teamId) {
-      const prevRoundMatches = sport.matches.filter(m => 
-        m.round === match.round - 1 &&
-        Math.ceil(m.matchNumber / 2) === match.matchNumber
-      );
-      if (prevRoundMatches.length > 0) {
-        return t('tournament.winnerOf', { match: prevRoundMatches[0].matchNumber });
-      }
-      return t('tournament.tbd');
-    }
-    const team = teams.find(t => t.id === teamId);
-    return team ? team.name : t('tournament.tbd');
-  };
-
   // トーナメントデータの変換
-  const bracketMatches = sport.matches.map(match => ({
-    id: match.id,
-    name: match.matchNumber === 0 
-      ? t('tournament.thirdPlaceMatch')
-      : `${t('tournament.round')} ${match.round}`,
+  const bracketMatches = sport.matches.map(m => ({
+    id: m.id,
+    name: m.matchNumber === 0 ? t('tournament.thirdPlace') :
+      `${t('tournament.round')} ${m.round} - ${m.matchNumber}`,
     nextMatchId: sport.matches.find(m2 => 
-      m2.round === match.round + 1 && 
-      Math.ceil(match.matchNumber / 2) === m2.matchNumber
+      m2.round === m.round + 1 && 
+      Math.ceil(m.matchNumber / 2) === m2.matchNumber
     )?.id || null,
-    tournamentRoundText: `${t('tournament.round')} ${match.round}`,
-    startTime: match.date || new Date().toISOString(),
-    state: getMatchState(match.status),
+    tournamentRoundText: m.round.toString(),
+    startTime: m.date || new Date().toISOString(),
+    state: getMatchState(m.status),
     participants: [
       {
-        id: match.team1Id || `seed-${match.round}-${match.matchNumber}-1`,
-        name: calculateDisplayName(match, match.team1Id, sport.teams),
-        score: match.team1Score,
-        isWinner: match.winnerId === match.team1Id
+        id: m.team1Id || 'tbd',
+        name: sport.teams.find(t => t.id === m.team1Id)?.name || t('tournament.tbd'),
+        score: m.team1Score,
+        isWinner: m.winnerId === m.team1Id
       },
       {
-        id: match.team2Id || `seed-${match.round}-${match.matchNumber}-2`,
-        name: calculateDisplayName(match, match.team2Id, sport.teams),
-        score: match.team2Score,
-        isWinner: match.winnerId === match.team2Id
+        id: m.team2Id || 'tbd',
+        name: sport.teams.find(t => t.id === m.team2Id)?.name || t('tournament.tbd'),
+        score: m.team2Score,
+        isWinner: m.winnerId === m.team2Id
       }
     ]
   }));

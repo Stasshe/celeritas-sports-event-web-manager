@@ -1,95 +1,43 @@
-interface TournamentMatch {
-  id: string;
-  round: number;
-  matchNumber: number;
-  teamIndexes: number[];
-  isSeed: boolean;
-  nextMatchNumber: number;
-  nextMatchId?: string;
-}
-
-interface TournamentStructure {
-  matches: TournamentMatch[];
-  seedTeamIndex: number;
-  firstRoundStartIndex: number;
-  teamIndexMapping: number[];
-}
-
 export class TournamentStructureHelper {
-  static createMatchStructure(teamCount: number): TournamentStructure {
-    if (teamCount < 2) return { matches: [], seedTeamIndex: 0, firstRoundStartIndex: 0, teamIndexMapping: [] };
+  static calculateTotalRounds(teamCount: number): number {
+    return Math.ceil(Math.log2(teamCount));
+  }
 
-    const matches: TournamentMatch[] = [];
-    let matchId = 1;
+  static calculateFirstRoundMatches(teamCount: number): number {
+    const totalRounds = this.calculateTotalRounds(teamCount);
+    const perfectBracketTeams = Math.pow(2, totalRounds);
+    const firstRoundMatches = teamCount - (perfectBracketTeams / 2);
+    return Math.max(0, firstRoundMatches);
+  }
 
-    // トーナメントの基本構造を計算
-    const rounds = Math.ceil(Math.log2(teamCount));
-    const fullBracketSize = Math.pow(2, rounds);
-    const firstRoundTeamCount = teamCount - 1; // 1チームをシードとして確保
-    const firstRoundMatchCount = Math.floor(firstRoundTeamCount / 2);
-    const remainingTeams = firstRoundTeamCount % 2; // 1回戦後の余りチーム
+  static generateInitialMatches(teamCount: number): Array<{round: number, matchNumber: number}> {
+    if (teamCount <= 0) return [];
+    
+    const matches: Array<{round: number, matchNumber: number}> = [];
+    const totalRounds = this.calculateTotalRounds(teamCount);
+    const perfectBracketTeams = Math.pow(2, totalRounds);
+    const firstRoundMatchCount = Math.ceil(teamCount / 2);
 
-    // 1回戦の試合を生成
-    let currentTeamIndex = 1; // インデックス0はシードチーム用に予約
-    for (let i = 0; i < firstRoundMatchCount; i++) {
-      matches.push({
-        id: `match_${matchId++}`,
-        round: 1,
-        matchNumber: i + 1,
-        teamIndexes: [currentTeamIndex, currentTeamIndex + 1],
-        isSeed: false,
-        nextMatchNumber: Math.ceil((i + 1) / 2)
-      });
-      currentTeamIndex += 2;
+    // First round matches
+    for (let i = 1; i <= firstRoundMatchCount; i++) {
+      matches.push({ round: 1, matchNumber: i });
     }
 
-    // 2回戦の試合を生成
-    const secondRoundMatchCount = Math.ceil((firstRoundMatchCount + remainingTeams + 1) / 2);
-    let secondRoundTeamPlaced = false;
-
-    for (let i = 0; i < secondRoundMatchCount; i++) {
-      const isFirstMatch = i === 0;
-      matches.push({
-        id: `match_${matchId++}`,
-        round: 2,
-        matchNumber: i + 1,
-        teamIndexes: isFirstMatch && !secondRoundTeamPlaced ? [0] : [], // シードチームを配置
-        isSeed: isFirstMatch && !secondRoundTeamPlaced,
-        nextMatchNumber: Math.ceil((i + 1) / 2)
-      });
-      if (isFirstMatch) secondRoundTeamPlaced = true;
-    }
-
-    // 3回戦以降の試合を生成
-    for (let round = 3; round <= rounds; round++) {
-      const matchesInRound = Math.pow(2, rounds - round);
-      for (let i = 0; i < matchesInRound; i++) {
-        matches.push({
-          id: `match_${matchId++}`,
-          round,
-          matchNumber: i + 1,
-          teamIndexes: [],
-          isSeed: false,
-          nextMatchNumber: Math.ceil((i + 1) / 2)
-        });
+    // Remaining rounds
+    for (let round = 2; round <= totalRounds; round++) {
+      const matchesInRound = Math.ceil(firstRoundMatchCount / Math.pow(2, round - 1));
+      for (let match = 1; match <= matchesInRound; match++) {
+        matches.push({ round, matchNumber: match });
       }
     }
 
-    // マッチの接続関係を設定
-    matches.forEach(match => {
-      if (match.round < rounds) {
-        match.nextMatchId = matches.find(m => 
-          m.round === match.round + 1 && 
-          m.matchNumber === match.nextMatchNumber
-        )?.id;
-      }
-    });
+    return matches;
+  }
 
+  static getNextMatchInfo(currentRound: number, currentMatchNumber: number): { round: number, matchNumber: number } {
     return {
-      matches,
-      seedTeamIndex: 0,
-      firstRoundStartIndex: 1,
-      teamIndexMapping: Array.from({ length: teamCount }, (_, i) => i)
+      round: currentRound + 1,
+      matchNumber: Math.ceil(currentMatchNumber / 2)
     };
   }
 }
