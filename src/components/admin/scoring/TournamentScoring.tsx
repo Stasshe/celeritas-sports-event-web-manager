@@ -59,29 +59,41 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
   const [hasThirdPlace, setHasThirdPlace] = useState(false);
 
   // 参加者の状態を判定する関数を修正
-  const getParticipantStatus = (teamId: string | null, matchId: string): 'no-team' | 'waiting' | null => {
+  const getParticipantStatus = (teamId: string | null, match: Match): 'no-team' | 'waiting' | null => {
     if (!teamId) return 'no-team';
-    
-    const match = matches.find(m => m.id === matchId);
-    if (!match) return null;
 
-    // 両方のチームが待機中の場合はnullを返す（通常表示）
-    const bothWaiting = match.team1Id && match.team2Id && matches.some(m => 
-      m.round === match.round - 1 && 
-      !m.winnerId && 
-      (m.team1Id === match.team1Id || m.team2Id === match.team1Id) &&
-      (m.team1Id === match.team2Id || m.team2Id === match.team2Id)
-    );
-    if (bothWaiting) return null;
-    
-    // 前の試合の勝者を待っている場合
+    // シード試合の判定
+    if (TournamentStructureHelper.isNoTeam(teamId, match, matches)) return 'no-team';
+
+    // 両チームが揃っているかチェック
+    if (match.team1Id && match.team2Id) {
+      const team1HasPrevious = matches.some(m => 
+        m.round === match.round - 1 && 
+        (m.team1Id === match.team1Id || m.team2Id === match.team1Id)
+      );
+      const team2HasPrevious = matches.some(m => 
+        m.round === match.round - 1 && 
+        (m.team1Id === match.team2Id || m.team2Id === match.team2Id)
+      );
+
+      // 両チームとも前の試合がある場合は通常表示
+      if (team1HasPrevious && team2HasPrevious) return null;
+    }
+
+    // このチームの前の試合をチェック
     const previousMatch = matches.find(m => 
       m.round === match.round - 1 && 
-      (m.team1Id === teamId || m.team2Id === teamId) &&
-      !m.winnerId
+      (m.team1Id === teamId || m.team2Id === teamId)
     );
-    
-    return previousMatch ? 'waiting' : null;
+
+    // 前の試合がある場合かつその勝者が未定の場合は待機状態
+    if (previousMatch && !previousMatch.winnerId) return 'waiting';
+
+    // 対戦相手の有無をチェック
+    const hasOpponent = match.team1Id && match.team2Id;
+    if (!hasOpponent) return 'waiting';
+
+    return null;
   };
 
   // 試合の状態を判定する関数を追加
@@ -109,43 +121,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
       return sport.teams.find(t => t.id === teamId)?.name || t('tournament.tbd');
     };
 
-    const getParticipantStatus = (teamId: string | null, match: Match): 'no-team' | 'waiting' | null => {
-      if (!teamId) return 'no-team';
-
-      // シード試合の判定
-      if (TournamentStructureHelper.isNoTeam(teamId, match, matches)) return 'no-team';
-
-      // 両チームが揃っているかチェック
-      if (match.team1Id && match.team2Id) {
-        const team1HasPrevious = matches.some(m => 
-          m.round === match.round - 1 && 
-          (m.team1Id === match.team1Id || m.team2Id === match.team1Id)
-        );
-        const team2HasPrevious = matches.some(m => 
-          m.round === match.round - 1 && 
-          (m.team1Id === match.team2Id || m.team2Id === match.team2Id)
-        );
-
-        // 両チームとも前の試合がある場合は通常表示
-        if (team1HasPrevious && team2HasPrevious) return null;
-      }
-
-      // このチームの前の試合をチェック
-      const previousMatch = matches.find(m => 
-        m.round === match.round - 1 && 
-        (m.team1Id === teamId || m.team2Id === teamId)
-      );
-
-      // 前の試合がある場合かつその勝者が未定の場合は待機状態
-      if (previousMatch && !previousMatch.winnerId) return 'waiting';
-
-      // 対戦相手の有無をチェック
-      const hasOpponent = match.team1Id && match.team2Id;
-      if (!hasOpponent) return 'waiting';
-
-      return null;
-    };
-
     return matches
       .sort((a, b) => {
         // ラウンドとマッチナンバーでソート
@@ -161,7 +136,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
           ? t('tournament.thirdPlace')
           : match.round === maxRound && match.matchNumber === 1
           ? t('tournament.final')
-          : `${t('tournament.round')} ${match.round} - ${match.matchNumber}`,
+          : `${t('tournament.round')}${match.round} - ${t('match.number', { number: match.matchNumber })}`,
         nextMatchId: match.matchNumber === 0 ? null :
           matches.find(m =>
             m.round === match.round + 1 &&
@@ -322,7 +297,9 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                           borderColor: theme.palette.divider,
                           borderRadius: 1,
                           overflow: 'hidden',
-                          backgroundColor: theme.palette.background.paper,
+                          backgroundColor: (topParty.status === 'no-team' && bottomParty.status === 'no-team') 
+                            ? theme.palette.grey[100] 
+                            : theme.palette.background.paper,
                           boxShadow: 1
                         }}
                       >
@@ -338,7 +315,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                             p: 0.5,
                             display: 'flex',
                             justifyContent: 'space-between',
-                            backgroundColor: topParty.isWinner ? theme.palette.success.light : 'transparent',
+                            backgroundColor: topParty.isWinner 
+                              ? theme.palette.primary.light
+                              : topParty.status === 'no-team' && !TournamentStructureHelper.isNoTeam(topParty.id, match, matches)
+                              ? theme.palette.grey[200]
+                              : 'transparent',
                             '&:hover': { backgroundColor: theme.palette.action.hover }
                           }}
                           onClick={() => onPartyClick && onPartyClick(topParty)}
@@ -346,14 +327,25 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                           <Typography variant="body2" noWrap sx={{ 
                             maxWidth: '70%', 
                             fontWeight: topParty.isWinner ? 'bold' : 'normal',
-                            color: topParty.status === 'waiting' ? theme.palette.warning.main :
-                                  topParty.status === 'no-team' ? theme.palette.text.disabled :
-                                  'inherit'
+                            color: topParty.status === 'no-team' && !TournamentStructureHelper.isNoTeam(topParty.id, match, matches)
+                              ? theme.palette.text.secondary
+                              : topParty.name === t('tournament.seed')
+                              ? theme.palette.text.disabled
+                              : topParty.name === t('tournament.tbd')
+                              ? theme.palette.warning.main
+                              : topParty.isWinner
+                              ? theme.palette.primary.main
+                              : topParty.status === 'waiting'
+                              ? theme.palette.warning.main
+                              : 'inherit'
                           }}>
                             {topParty.name}
                             {topParty.status === 'waiting' && ' (待機中)'}
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                          <Typography variant="body2" sx={{ 
+                            fontWeight: 'bold',
+                            color: topParty.isWinner ? theme.palette.primary.main : 'inherit'
+                          }}>
                             {topParty.score !== null ? topParty.score : '-'}
                           </Typography>
                         </Box>
@@ -364,7 +356,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                             p: 0.5,
                             display: 'flex',
                             justifyContent: 'space-between',
-                            backgroundColor: bottomParty.isWinner ? theme.palette.success.light : 'transparent',
+                            backgroundColor: bottomParty.isWinner 
+                              ? theme.palette.primary.light 
+                              : bottomParty.status === 'no-team' && !TournamentStructureHelper.isNoTeam(bottomParty.id, match, matches)
+                              ? theme.palette.grey[200]
+                              : 'transparent',
                             borderTop: `1px solid ${theme.palette.divider}`,
                             '&:hover': { backgroundColor: theme.palette.action.hover }
                           }}
@@ -373,14 +369,25 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                           <Typography variant="body2" noWrap sx={{ 
                             maxWidth: '70%', 
                             fontWeight: bottomParty.isWinner ? 'bold' : 'normal',
-                            color: bottomParty.status === 'waiting' ? theme.palette.warning.main :
-                                  bottomParty.status === 'no-team' ? theme.palette.text.disabled :
-                                  'inherit'
+                            color: bottomParty.status === 'no-team' && !TournamentStructureHelper.isNoTeam(bottomParty.id, match, matches)
+                              ? theme.palette.text.secondary
+                              : bottomParty.name === t('tournament.seed')
+                              ? theme.palette.text.disabled
+                              : bottomParty.name === t('tournament.tbd')
+                              ? theme.palette.warning.main
+                              : bottomParty.isWinner
+                              ? theme.palette.primary.main
+                              : bottomParty.status === 'waiting'
+                              ? theme.palette.warning.main
+                              : 'inherit'
                           }}>
                             {bottomParty.name}
                             {bottomParty.status === 'waiting' && ' (待機中)'}
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                          <Typography variant="body2" sx={{ 
+                            fontWeight: 'bold',
+                            color: bottomParty.isWinner ? theme.palette.primary.main : 'inherit'
+                          }}>
                             {bottomParty.score !== null ? bottomParty.score : '-'}
                           </Typography>
                         </Box>
@@ -416,13 +423,18 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                     <Typography variant="h6" gutterBottom>
                       {matches[0]?.matchNumber === 0
                         ? t('tournament.thirdPlace')
-                        : roundIndex === roundMatches.length - 2 && !matches.find(m => m.matchNumber === 0)
+                        : roundIndex === roundMatches.length - 2
                         ? t('tournament.final')
-                        : t('tournament.round', { number: roundIndex + 1 })}
+                        : `${t('tournament.round')} ${roundIndex + 1}`}
                     </Typography>
                     <Stack spacing={1}>
                       {matches.map(match => (
-                        <Card key={match.id}>
+                        <Card 
+                          key={match.id}
+                          sx={{ 
+                            bgcolor: (!match.team1Id || !match.team2Id) ? theme.palette.grey[100] : 'inherit'
+                          }}
+                        >
                           <CardContent>
                             <MatchCard
                               match={match}
