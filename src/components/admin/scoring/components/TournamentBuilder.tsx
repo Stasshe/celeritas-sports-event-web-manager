@@ -66,19 +66,39 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
       const matchPlacements = placements.filter(p => 
         p.round === match.round && p.matchNumber === match.matchNumber
       );
+
+      const team1Placement = matchPlacements.find(p => p.position === 'team1');
+      const team2Placement = matchPlacements.find(p => p.position === 'team2');
       
       return {
         id: `match_${index + 1}`,
         round: match.round,
         matchNumber: match.matchNumber,
-        team1Id: matchPlacements.find(p => p.position === 'team1')?.teamId || '',
-        team2Id: matchPlacements.find(p => p.position === 'team2')?.teamId || '',
+        team1Id: team1Placement?.teamId || '',
+        team2Id: team2Placement?.teamId || '',
         team1Score: 0,
         team2Score: 0,
         status: 'scheduled',
         date: new Date().toISOString().split('T')[0],
         winnerId: ''
       };
+    });
+
+    // 1回戦の不戦勝チームを自動的に次のラウンドに進出させる
+    matches.forEach(match => {
+      if (match.round === 1 && ((match.team1Id && !match.team2Id) || (!match.team1Id && match.team2Id))) {
+        const winningTeamId = match.team1Id || match.team2Id;
+        const nextMatch = matches.find(m =>
+          m.round === 2 && Math.ceil(match.matchNumber / 2) === m.matchNumber
+        );
+        if (nextMatch) {
+          if (match.matchNumber % 2 !== 0) {
+            nextMatch.team1Id = winningTeamId;
+          } else {
+            nextMatch.team2Id = winningTeamId;
+          }
+        }
+      }
     });
 
     onMatchesCreate(matches, selectedTeams);

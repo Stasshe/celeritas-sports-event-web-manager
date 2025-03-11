@@ -130,46 +130,56 @@ export class TournamentStructureHelper {
   static isNoTeam(teamId: string | null, match: any, matches: any[]): boolean {
     if (!teamId) return true;
 
-    // チームは存在するが、前のラウンドからの進出待ちではない場合はシード扱い
+    // 1回戦の場合
+    if (match.round === 1) {
+      // シードポジションのチーム（対戦相手が空）は不戦勝として扱う
+      const currentMatch = matches.find(m => m.id === match.id);
+      return currentMatch && 
+        ((currentMatch.team1Id === teamId && !currentMatch.team2Id) || 
+         (currentMatch.team2Id === teamId && !currentMatch.team1Id));
+    }
+
+    // 2回戦以降の場合
+    // 前のラウンドからの進出待ちではない（シード）場合のみtrue
     const previousMatch = matches.find(m => 
       m.round === match.round - 1 && 
       (m.team1Id === teamId || m.team2Id === teamId)
     );
 
-    // シード判定: チームはいるが前の試合がない場合
     return Boolean(teamId && !previousMatch);
   }
 
   // 待機中の状態を判定する
   static isWaiting(teamId: string | null, match: any, matches: any[]): boolean {
-    if (!teamId) return false;
+    if (!teamId || match.round === 1) return false;
 
-    // 両チームが揃っているか確認
+    // シードチームは待機状態にならない
+    if (this.isNoTeam(teamId, match, matches)) return false;
+
+    // 両チームが揃っている場合の特別処理
     if (match.team1Id && match.team2Id) {
-      const team1PrevMatch = matches.find(m => 
-        m.round === match.round - 1 && 
-        (m.team1Id === match.team1Id || m.team2Id === match.team1Id)
-      );
-      const team2PrevMatch = matches.find(m => 
-        m.round === match.round - 1 && 
-        (m.team1Id === match.team2Id || m.team2Id === match.team2Id)
-      );
-
-      // 両チームとも前の試合があり、どちらも完了していない場合
-      if (team1PrevMatch && team2PrevMatch && 
-          !team1PrevMatch.winnerId && !team2PrevMatch.winnerId) {
-        return false; // 通常表示に切り替え
-      }
+      const team1IsWaiting = this.checkTeamIsWaiting(match.team1Id, match.round, matches);
+      const team2IsWaiting = this.checkTeamIsWaiting(match.team2Id, match.round, matches);
+      
+      // 両チームとも前の試合からの勝者待ちの場合は通常の試合として扱う
+      if (team1IsWaiting && team2IsWaiting) return false;
+      
+      // 片方のチームだけが待機中の場合は待機状態
+      return teamId === match.team1Id ? team1IsWaiting : team2IsWaiting;
     }
 
-    // 前の試合の勝者を待っている場合
+    // 個別チームの待機状態をチェック
+    return this.checkTeamIsWaiting(teamId, match.round, matches);
+  }
+
+  // チームが待機中かどうかをチェックするヘルパーメソッド
+  private static checkTeamIsWaiting(teamId: string, round: number, matches: any[]): boolean {
     const previousMatch = matches.find(m => 
-      m.round === match.round - 1 && 
-      (m.team1Id === teamId || m.team2Id === teamId) &&
-      !m.winnerId
+      m.round === round - 1 && 
+      (m.team1Id === teamId || m.team2Id === teamId)
     );
 
-    return Boolean(previousMatch);
+    return Boolean(previousMatch && !previousMatch.winnerId);
   }
 
   // 勝者を次の試合に自動的に進出させる
