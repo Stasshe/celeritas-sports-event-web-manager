@@ -1,3 +1,11 @@
+interface TeamPlacement {
+  matchId: number;
+  round: number;
+  matchNumber: number;
+  position: 'team1' | 'team2';  // 明示的なリテラル型の定義
+  teamId: string;
+}
+
 export class TournamentStructureHelper {
   static calculateTotalRounds(teamCount: number): number {
     return Math.ceil(Math.log2(teamCount));
@@ -15,21 +23,18 @@ export class TournamentStructureHelper {
     
     const matches: Array<{round: number, matchNumber: number}> = [];
     const totalRounds = this.calculateTotalRounds(teamCount);
-    const perfectBracketTeams = Math.pow(2, totalRounds);
-    const firstRoundMatchCount = Math.ceil(teamCount / 2);
-
-    // First round matches
-    for (let i = 1; i <= firstRoundMatchCount; i++) {
+    
+    // 1回戦のマッチを生成（最初の1試合 + 残りの単独試合）
+    for (let i = 1; i <= teamCount - 1; i++) {
       matches.push({ round: 1, matchNumber: i });
     }
 
-    // Remaining rounds
-    for (let round = 2; round <= totalRounds; round++) {
-      const matchesInRound = Math.ceil(firstRoundMatchCount / Math.pow(2, round - 1));
-      for (let match = 1; match <= matchesInRound; match++) {
-        matches.push({ round, matchNumber: match });
-      }
-    }
+    // 2回戦のマッチを生成（2試合）
+    matches.push({ round: 2, matchNumber: 1 }); // 1回戦勝者 vs 3番目のチーム
+    matches.push({ round: 2, matchNumber: 2 }); // 4番目 vs 5番目のチーム
+
+    // 決勝戦
+    matches.push({ round: 3, matchNumber: 1 });
 
     return matches;
   }
@@ -39,5 +44,48 @@ export class TournamentStructureHelper {
       round: currentRound + 1,
       matchNumber: Math.ceil(currentMatchNumber / 2)
     };
+  }
+
+  static calculateTeamPlacements(teams: any[]): TeamPlacement[] {
+    const placements: TeamPlacement[] = [];
+    const totalTeams = teams.length;
+    let matchId = 1;
+
+    // 1回戦の最初の試合（2チーム対戦）
+    placements.push({
+      matchId,
+      round: 1,
+      matchNumber: 1,
+      position: 'team1',
+      teamId: teams[0].id
+    });
+    placements.push({
+      matchId,
+      round: 1,
+      matchNumber: 1,
+      position: 'team2',
+      teamId: teams[1].id
+    });
+
+    // 残りのチームを1回戦の別々の試合に配置（vs none）
+    for (let i = 2; i < totalTeams; i++) {
+      matchId++;
+      placements.push({
+        matchId,
+        round: 1,
+        matchNumber: i,
+        position: 'team1',
+        teamId: teams[i].id
+      });
+      placements.push({
+        matchId,
+        round: 1,
+        matchNumber: i,
+        position: 'team2',
+        teamId: '' // 空の対戦相手
+      });
+    }
+
+    return placements;
   }
 }

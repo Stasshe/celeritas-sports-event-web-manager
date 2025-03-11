@@ -1,4 +1,4 @@
-import React, { useState, memo, useEffect, useMemo } from 'react';
+import React, { useState, memo, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -7,68 +7,33 @@ import {
   List,
   ListItem,
   ListItemText,
-  IconButton,
 } from '@mui/material';
-import { 
-  Delete as DeleteIcon,
-  SwapVert as SwapVertIcon,
-} from '@mui/icons-material';
 import { Match, Sport, Team } from '../../../../types';
 import { useTranslation } from 'react-i18next';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { TournamentStructureHelper } from './TournamentStructureHelper';
 
 interface TournamentBuilderProps {
   sport: Sport;
   onMatchesCreate: (matches: Match[], selectedTeams: Team[]) => void;
 }
 
-// メモ化されたドラッグ可能なチームアイテムコンポーネント
-const DraggableTeamItem = memo(({ team, index, onRemove }: any) => {
-  const { t } = useTranslation();
-  return (
-    <Draggable draggableId={team.id} index={index}>
-      {(provided) => (
-        <ListItem
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          secondaryAction={
-            <IconButton edge="end" onClick={() => onRemove(team.id)}>
-              <DeleteIcon />
-            </IconButton>
-          }
-        >
-          <SwapVertIcon sx={{ mr: 2, color: 'text.secondary' }} />
-          <ListItemText 
-            primary={team.name}
-            secondary={`${t('tournament.members')}: ${team.members?.length || 0}`}
-          />
-        </ListItem>
-      )}
-    </Draggable>
-  );
-});
-
 export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBuilderProps) => {
   const { t } = useTranslation();
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
 
-  // コンポーネントマウント時に名簿からチームを自動生成
+  // 名簿からチームを自動生成
   useEffect(() => {
     if (sport.roster) {
       const teams: Team[] = [];
       const grades = ['grade1', 'grade2', 'grade3'];
       
-      // 全学年の名簿をループ
       grades.forEach(gradeKey => {
         const classes = sport.roster?.[gradeKey as keyof typeof sport.roster] || {};
         
-        // 各クラスをチームとして追加
         Object.entries(classes).forEach(([className, members]) => {
           if (members && members.length > 0) {
-            const teamId = `team_${gradeKey}_${className}`;
             teams.push({
-              id: teamId,
+              id: `team_${gradeKey}_${className}`,
               name: `${gradeKey}-${className}`,
               members: members
             });
@@ -76,74 +41,89 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
         });
       });
 
-      // チームが見つかった場合のみ更新
       if (teams.length > 0) {
         setSelectedTeams(teams);
       }
     }
   }, [sport.roster]);
 
-  const handleTeamRemove = (teamId: string) => {
-    setSelectedTeams(prev => prev.filter(t => t.id !== teamId));
-  };
-
-  // DragDropContextのエラーを修正するためにmemoize
-  const handleDragEnd = useMemo(() => (result: any) => {
-    if (!result.destination) return;
-    
-    setSelectedTeams(prev => {
-      const items = Array.from(prev);
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
-      return items;
-    });
-  }, []);
-
   const generateTournament = () => {
     if (!selectedTeams.length) return;
 
-    const rounds = Math.ceil(Math.log2(selectedTeams.length));
     const matches: Match[] = [];
     let matchId = 1;
 
-    // 1回戦のマッチを生成
-    const firstRoundMatches = Math.pow(2, rounds - 1);
-    for (let i = 0; i < firstRoundMatches; i++) {
-      const team1Index = i * 2;
-      const team2Index = i * 2 + 1;
+    // 1回戦の試合を生成
+    // 最初の試合（2チーム対戦）
+    matches.push({
+      id: `match_${matchId++}`,
+      round: 1,
+      matchNumber: 1,
+      team1Id: selectedTeams[0].id,
+      team2Id: selectedTeams[1].id,
+      team1Score: 0,
+      team2Score: 0,
+      status: 'scheduled',
+      date: new Date().toISOString().split('T')[0],
+      winnerId: ''
+    });
 
+    // 残りのチームの1回戦試合（vs none）
+    for (let i = 2; i < selectedTeams.length; i++) {
       matches.push({
-        id: `match_${matchId}`,
+        id: `match_${matchId++}`,
         round: 1,
-        matchNumber: i + 1,
-        team1Id: selectedTeams[team1Index]?.id || '',
-        team2Id: team2Index < selectedTeams.length ? selectedTeams[team2Index].id : '',
+        matchNumber: i,
+        team1Id: selectedTeams[i].id,
+        team2Id: '', // 空の対戦相手
         team1Score: 0,
         team2Score: 0,
         status: 'scheduled',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        winnerId: ''
       });
-      matchId++;
     }
 
-    // 2回戦以降のマッチを生成
-    for (let round = 2; round <= rounds; round++) {
-      const matchesInRound = Math.pow(2, rounds - round);
-      for (let i = 0; i < matchesInRound; i++) {
-        matches.push({
-          id: `match_${matchId}`,
-          round,
-          matchNumber: i + 1,
-          team1Id: '',
-          team2Id: '',
-          team1Score: 0,
-          team2Score: 0,
-          status: 'scheduled',
-          date: new Date().toISOString().split('T')[0]
-        });
-        matchId++;
-      }
-    }
+    // 2回戦の試合を生成（2試合）
+    matches.push({
+      id: `match_${matchId++}`,
+      round: 2,
+      matchNumber: 1,
+      team1Id: '',  // 1回戦の勝者が進出
+      team2Id: selectedTeams[2].id,  // 3番目のチーム
+      team1Score: 0,
+      team2Score: 0,
+      status: 'scheduled',
+      date: new Date().toISOString().split('T')[0],
+      winnerId: ''
+    });
+
+    matches.push({
+      id: `match_${matchId++}`,
+      round: 2,
+      matchNumber: 2,
+      team1Id: selectedTeams[3].id,  // 4番目のチーム
+      team2Id: selectedTeams[4].id,  // 5番目のチーム
+      team1Score: 0,
+      team2Score: 0,
+      status: 'scheduled',
+      date: new Date().toISOString().split('T')[0],
+      winnerId: ''
+    });
+
+    // 決勝戦
+    matches.push({
+      id: `match_${matchId++}`,
+      round: 3,
+      matchNumber: 1,
+      team1Id: '',
+      team2Id: '',
+      team1Score: 0,
+      team2Score: 0,
+      status: 'scheduled',
+      date: new Date().toISOString().split('T')[0],
+      winnerId: ''
+    });
 
     onMatchesCreate(matches, selectedTeams);
   };
@@ -157,32 +137,16 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
 
         {selectedTeams.length > 0 ? (
           <>
-            <Box sx={{ mb: 2 }}>
-              <Typography color="text.secondary" gutterBottom>
-                {t('tournament.selectedTeams', { count: selectedTeams.length })}
-              </Typography>
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="teams">
-                  {(provided) => (
-                    <List
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      sx={{ bgcolor: 'background.paper' }}
-                    >
-                      {selectedTeams.map((team, index) => (
-                        <DraggableTeamItem
-                          key={team.id}
-                          team={team}
-                          index={index}
-                          onRemove={handleTeamRemove}
-                        />
-                      ))}
-                      {provided.placeholder}
-                    </List>
-                  )}
-                </Droppable>
-              </DragDropContext>
-            </Box>
+            <List sx={{ mb: 2 }}>
+              {selectedTeams.map((team, index) => (
+                <ListItem key={team.id}>
+                  <ListItemText 
+                    primary={team.name}
+                    secondary={`${t('tournament.members')}: ${team.members?.length || 0}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
 
             <Button
               variant="contained"
