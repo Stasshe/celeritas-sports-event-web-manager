@@ -23,18 +23,23 @@ export class TournamentStructureHelper {
     
     const matches: Array<{round: number, matchNumber: number}> = [];
     const totalRounds = this.calculateTotalRounds(teamCount);
+    const perfectBracketSize = Math.pow(2, totalRounds);
+    const firstRoundTeams = teamCount + (perfectBracketSize - teamCount);
+    const firstRoundMatches = firstRoundTeams / 2;
+    const byeTeams = perfectBracketSize - teamCount;
     
-    // 1回戦のマッチを生成（最初の1試合 + 残りの単独試合）
-    for (let i = 1; i <= teamCount - 1; i++) {
+    // 1回戦の試合を生成
+    for (let i = 1; i <= firstRoundMatches; i++) {
       matches.push({ round: 1, matchNumber: i });
     }
 
-    // 2回戦のマッチを生成（2試合）
-    matches.push({ round: 2, matchNumber: 1 }); // 1回戦勝者 vs 3番目のチーム
-    matches.push({ round: 2, matchNumber: 2 }); // 4番目 vs 5番目のチーム
-
-    // 決勝戦
-    matches.push({ round: 3, matchNumber: 1 });
+    // 2回戦以降の試合を生成
+    for (let round = 2; round <= totalRounds; round++) {
+      const matchesInRound = Math.pow(2, totalRounds - round);
+      for (let i = 1; i <= matchesInRound; i++) {
+        matches.push({ round, matchNumber: i });
+      }
+    }
 
     return matches;
   }
@@ -51,42 +56,74 @@ export class TournamentStructureHelper {
     const totalTeams = teams.length;
     let matchId = 1;
 
-    // 1回戦の最初の試合（2チーム対戦）
-    placements.push({
-      matchId,
-      round: 1,
-      matchNumber: 1,
-      position: 'team1',
-      teamId: teams[0].id
-    });
-    placements.push({
-      matchId,
-      round: 1,
-      matchNumber: 1,
-      position: 'team2',
-      teamId: teams[1].id
-    });
-
-    // 残りのチームを1回戦の別々の試合に配置（vs none）
-    for (let i = 2; i < totalTeams; i++) {
-      matchId++;
-      placements.push({
-        matchId,
-        round: 1,
-        matchNumber: i,
-        position: 'team1',
-        teamId: teams[i].id
-      });
-      placements.push({
-        matchId,
-        round: 1,
-        matchNumber: i,
-        position: 'team2',
-        teamId: '' // 空の対戦相手
-      });
+    // トーナメントの基本構造を計算
+    const totalRounds = this.calculateTotalRounds(totalTeams);
+    const perfectBracketSize = Math.pow(2, totalRounds);
+    const byeTeams = perfectBracketSize - totalTeams;
+    
+    // シード位置を計算（バイナリインデックス方式）
+    const seedPositions: number[] = [];
+    for (let i = 1; i <= perfectBracketSize; i++) {
+      seedPositions.push(this.calculateSeedPosition(i, perfectBracketSize));
     }
 
+    // チームを配置（シードポジションに基づく）
+    let teamIndex = 0;
+    let matchNumber = 1;
+    let currentRound = 1;
+    const usedPositions = new Set<number>();
+
+    // チームを配置
+    for (let pos of seedPositions) {
+      if (teamIndex >= totalTeams) break;
+
+      // この位置が既に使用されているか、またはバイポジションとして予約されているかをチェック
+      if (!usedPositions.has(pos)) {
+        const team = teams[teamIndex];
+        const matchInRound = Math.ceil(pos / 2);
+        const isUpperPosition = pos % 2 === 1;
+
+        placements.push({
+          matchId: matchInRound,
+          round: 1,
+          matchNumber: matchInRound,
+          position: isUpperPosition ? 'team1' : 'team2',
+          teamId: team.id
+        });
+
+        usedPositions.add(pos);
+        teamIndex++;
+      }
+    }
+
+    // 空きポジションを埋める
+    seedPositions.forEach((pos, index) => {
+      if (!usedPositions.has(pos)) {
+        const matchInRound = Math.ceil(pos / 2);
+        const isUpperPosition = pos % 2 === 1;
+
+        placements.push({
+          matchId: matchInRound,
+          round: 1,
+          matchNumber: matchInRound,
+          position: isUpperPosition ? 'team1' : 'team2',
+          teamId: ''
+        });
+      }
+    });
+
     return placements;
+  }
+
+  // シードポジションを計算するヘルパーメソッド
+  private static calculateSeedPosition(seed: number, totalPositions: number): number {
+    if (totalPositions <= 1) return 1;
+    
+    if (seed <= totalPositions / 2) {
+      return 2 * this.calculateSeedPosition(seed, totalPositions / 2) - 1;
+    } else {
+      return 2 * this.calculateSeedPosition(totalPositions + 1 - seed, totalPositions / 2);
+    }
   }
 
   // シードまたは不在チームを判定する
