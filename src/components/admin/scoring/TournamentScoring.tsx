@@ -84,17 +84,66 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
     return previousMatch ? 'waiting' : null;
   };
 
+  // 試合の状態を判定する関数を追加
+  const getMatchState = (match: Match): 'DONE' | 'PLAYING' | 'SCHEDULED' => {
+    if (match.status === 'completed' || match.winnerId) return 'DONE';
+    if (match.team1Score > 0 || match.team2Score > 0) return 'PLAYING';
+    return 'SCHEDULED';
+  };
+
   // トーナメント表示用のデータ
   const bracketMatches = useMemo(() => {
     if (!sport.teams || !matches.length) return [];
 
     const maxRound = Math.max(...matches.map(m => m.round));
     
-    const getMatchState = (match: Match): 'DONE' | 'PLAYING' | 'SCHEDULED' => {
-      if (match.team1Score > 0 || match.team2Score > 0) return 'DONE';
-      const hasAwaitingTeams = getParticipantStatus(match.team1Id, match.id) === 'waiting' ||
-                              getParticipantStatus(match.team2Id, match.id) === 'waiting';
-      return hasAwaitingTeams ? 'SCHEDULED' : 'PLAYING';
+    const getParticipantName = (teamId: string | null, match: Match, position: 'team1' | 'team2'): string => {
+      if (!teamId) {
+        // シード試合の空きポジションの場合
+        const otherTeamId = position === 'team1' ? match.team2Id : match.team1Id;
+        if (otherTeamId && TournamentStructureHelper.isNoTeam(otherTeamId, match, matches)) {
+          return t('tournament.seed');
+        }
+        return t('tournament.tbd');
+      }
+      return sport.teams.find(t => t.id === teamId)?.name || t('tournament.tbd');
+    };
+
+    const getParticipantStatus = (teamId: string | null, match: Match): 'no-team' | 'waiting' | null => {
+      if (!teamId) return 'no-team';
+
+      // シード試合の判定
+      if (TournamentStructureHelper.isNoTeam(teamId, match, matches)) return 'no-team';
+
+      // 両チームが揃っているかチェック
+      if (match.team1Id && match.team2Id) {
+        const team1HasPrevious = matches.some(m => 
+          m.round === match.round - 1 && 
+          (m.team1Id === match.team1Id || m.team2Id === match.team1Id)
+        );
+        const team2HasPrevious = matches.some(m => 
+          m.round === match.round - 1 && 
+          (m.team1Id === match.team2Id || m.team2Id === match.team2Id)
+        );
+
+        // 両チームとも前の試合がある場合は通常表示
+        if (team1HasPrevious && team2HasPrevious) return null;
+      }
+
+      // このチームの前の試合をチェック
+      const previousMatch = matches.find(m => 
+        m.round === match.round - 1 && 
+        (m.team1Id === teamId || m.team2Id === teamId)
+      );
+
+      // 前の試合がある場合かつその勝者が未定の場合は待機状態
+      if (previousMatch && !previousMatch.winnerId) return 'waiting';
+
+      // 対戦相手の有無をチェック
+      const hasOpponent = match.team1Id && match.team2Id;
+      if (!hasOpponent) return 'waiting';
+
+      return null;
     };
 
     return matches
@@ -124,29 +173,17 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
         participants: [
           {
             id: match.team1Id || `seed-${match.round}-${match.matchNumber}-1`,
-            name: match.team1Id 
-              ? sport.teams.find(t => t.id === match.team1Id)?.name || t('tournament.tbd')
-              : t('tournament.tbd'),
+            name: getParticipantName(match.team1Id, match, 'team1'),
             score: match.team1Score || undefined,
             isWinner: Boolean(match.winnerId === match.team1Id),
-            status: TournamentStructureHelper.isNoTeam(match.team1Id, match, matches)
-              ? 'no-team'
-              : TournamentStructureHelper.isWaiting(match.team1Id, match, matches)
-              ? 'waiting'
-              : null
+            status: getParticipantStatus(match.team1Id, match)
           } as Participant,
           {
             id: match.team2Id || `seed-${match.round}-${match.matchNumber}-2`,
-            name: match.team2Id
-              ? sport.teams.find(t => t.id === match.team2Id)?.name || t('tournament.tbd')
-              : t('tournament.tbd'),
+            name: getParticipantName(match.team2Id, match, 'team2'),
             score: match.team2Score || undefined,
             isWinner: Boolean(match.winnerId === match.team2Id),
-            status: TournamentStructureHelper.isNoTeam(match.team2Id, match, matches)
-              ? 'no-team'
-              : TournamentStructureHelper.isWaiting(match.team2Id, match, matches)
-              ? 'waiting'
-              : null
+            status: getParticipantStatus(match.team2Id, match)
           } as Participant
         ]
       }));
