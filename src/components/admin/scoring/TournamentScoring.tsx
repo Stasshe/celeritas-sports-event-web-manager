@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import {
   Box,
   Button,
@@ -205,86 +205,19 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
           {/* トーナメント図の表示 */}
           <Paper sx={{ p: 2, mb: 3 }}>
             <Box sx={{ 
-              height: Math.max(500, matches.length * 100),
               overflowX: 'auto',
-              overflowY: 'hidden'
+              overflowY: 'hidden',
+              width: '100%',
+              position: 'relative'
             }}>
-              {bracketMatches.length > 0 && (
+              <Box sx={{ 
+                height: Math.max(500, matches.length * 100),
+                minWidth: Math.max(1200, matches.length * 250),
+                position: 'relative'
+              }}>
                 <SingleEliminationBracket
                   matches={bracketMatches}
-                  matchComponent={({
-                    match,
-                    onMatchClick,
-                    onPartyClick,
-                    topParty,
-                    bottomParty,
-                    ...props
-                  }) => (
-                    <foreignObject
-                      x={props.x - props.width / 2}
-                      y={props.y - props.height / 2}
-                      width={props.width}
-                      height={props.height}
-                    >
-                      <Box
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          border: '1px solid',
-                          borderColor: theme.palette.divider,
-                          borderRadius: 1,
-                          overflow: 'hidden',
-                          backgroundColor: theme.palette.background.paper,
-                          boxShadow: 1
-                        }}
-                      >
-                        <Box sx={{ p: 0.5, backgroundColor: theme.palette.grey[100], borderBottom: `1px solid ${theme.palette.divider}` }}>
-                          <Typography variant="caption" noWrap>
-                            {match.name}
-                          </Typography>
-                        </Box>
-                        
-                        {/* 上側のチーム */}
-                        <Box
-                          sx={{
-                            p: 0.5,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            backgroundColor: topParty.isWinner ? theme.palette.success.light : 'transparent',
-                            '&:hover': { backgroundColor: theme.palette.action.hover }
-                          }}
-                          onClick={() => onPartyClick && onPartyClick(topParty)}
-                        >
-                          <Typography variant="body2" noWrap sx={{ maxWidth: '70%', fontWeight: topParty.isWinner ? 'bold' : 'normal' }}>
-                            {topParty.name}
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                            {topParty.score !== null ? topParty.score : '-'}
-                          </Typography>
-                        </Box>
-                        
-                        {/* 下側のチーム */}
-                        <Box
-                          sx={{
-                            p: 0.5,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            backgroundColor: bottomParty.isWinner ? theme.palette.success.light : 'transparent',
-                            borderTop: `1px solid ${theme.palette.divider}`,
-                            '&:hover': { backgroundColor: theme.palette.action.hover }
-                          }}
-                          onClick={() => onPartyClick && onPartyClick(bottomParty)}
-                        >
-                          <Typography variant="body2" noWrap sx={{ maxWidth: '70%', fontWeight: bottomParty.isWinner ? 'bold' : 'normal' }}>
-                            {bottomParty.name}
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                            {bottomParty.score !== null ? bottomParty.score : '-'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </foreignObject>
-                  )}
+                  matchComponent={CustomMatch}
                   options={{
                     style: {
                       roundHeader: {
@@ -293,26 +226,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                         fontWeight: 'bold'
                       },
                       connectorColor: theme.palette.divider,
-                      connectorColorHighlight: theme.palette.primary.main,
-                      matchBackground: {
-                        wonColor: theme.palette.success.light,
-                        lostColor: theme.palette.grey[100]
-                      }
+                      connectorColorHighlight: theme.palette.primary.main
                     }
                   }}
-                  svgWrapper={({ children, ...props }) => (
-                    <SVGViewer
-                      width={Math.max(1200, matches.length * 250)}
-                      height={Math.max(500, matches.length * 100)}
-                      background={theme.palette.background.paper}
-                      SVGBackground={theme.palette.background.paper}
-                      {...props}
-                    >
-                      {children}
-                    </SVGViewer>
-                  )}
                 />
-              )}
+              </Box>
             </Box>
           </Paper>
 
@@ -378,5 +296,97 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
     </Box>
   );
 };
+
+// カスタムマッチコンポーネント
+const CustomMatch = memo(({ match, onMatchClick, onPartyClick, topParty, bottomParty, ...props }: any) => {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  
+  return (
+    <foreignObject
+      x={props.x - props.width / 2}
+      y={props.y - props.height / 2}
+      width={props.width}
+      height={props.height}
+    >
+      <Box
+        sx={{
+          width: '100%',
+          height: '100%',
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 1,
+          bgcolor: 'background.paper',
+          boxShadow: 1,
+          overflow: 'hidden'
+        }}
+      >
+        <Box sx={{ 
+          p: 0.5, 
+          bgcolor: match.isSeed ? 'primary.light' : 'grey.100',
+          borderBottom: 1, 
+          borderColor: 'divider',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}>
+          <Typography variant="caption" noWrap>
+            {match.name}
+          </Typography>
+          {match.isSeed && (
+            <Chip
+              label={t('tournament.seed')}
+              size="small"
+              color="primary"
+              sx={{ height: 16 }}
+            />
+          )}
+        </Box>
+        
+        {/* 上側のチーム */}
+        <Box
+          sx={{
+            p: 0.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            bgcolor: topParty.isWinner ? 'success.light' : 'transparent',
+            borderBottom: 1,
+            borderColor: 'divider',
+            '&:hover': { bgcolor: 'action.hover' }
+          }}
+          onClick={() => onPartyClick && onPartyClick(topParty)}
+        >
+          <Typography variant="body2" noWrap sx={{ flex: 1, fontWeight: topParty.isWinner ? 'bold' : 'normal' }}>
+            {topParty.name || 'Unknown'}
+          </Typography>
+          <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>
+            {topParty.score ?? '-'}
+          </Typography>
+        </Box>
+        
+        {/* 下側のチーム */}
+        <Box
+          sx={{
+            p: 0.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            bgcolor: bottomParty.isWinner ? 'success.light' : 'transparent',
+            '&:hover': { bgcolor: 'action.hover' }
+          }}
+          onClick={() => onPartyClick && onPartyClick(bottomParty)}
+        >
+          <Typography variant="body2" noWrap sx={{ flex: 1, fontWeight: bottomParty.isWinner ? 'bold' : 'normal' }}>
+            {bottomParty.name || 'Unknown'}
+          </Typography>
+          <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>
+            {bottomParty.score ?? '-'}
+          </Typography>
+        </Box>
+      </Box>
+    </foreignObject>
+  );
+});
 
 export default TournamentScoring;

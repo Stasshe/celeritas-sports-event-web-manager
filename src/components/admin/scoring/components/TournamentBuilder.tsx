@@ -12,6 +12,7 @@ import {
 import { Match, Sport, Team } from '../../../../types';
 import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { TournamentStructureHelper } from './TournamentStructureHelper';
 
 interface TournamentBuilderProps {
   sport: Sport;
@@ -27,19 +28,15 @@ const DraggableTeamItem = memo(({ team, index }: { team: Team; index: number }) 
         <ListItem
           ref={provided.innerRef}
           {...provided.draggableProps}
+          {...provided.dragHandleProps} // ドラッグハンドルを追加
           sx={{
             bgcolor: snapshot.isDragging ? 'action.hover' : 'background.paper',
-            '& .dragHandle': {
-              visibility: snapshot.isDragging ? 'visible' : 'hidden',
-            },
-            '&:hover .dragHandle': {
-              visibility: 'visible',
-            }
+            cursor: 'move'
           }}
         >
           <ListItemText 
             primary={team.name}
-            secondary={`${t('tournament.members')}: ${team.members?.length || 0}`}
+            secondary={t('tournament.members', { count: team.members?.length || 0 })}
           />
         </ListItem>
       )}
@@ -53,15 +50,13 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
 
   // コンポーネントマウント時に名簿からチームを自動生成
   useEffect(() => {
-    if (sport.roster) {
+    if (sport.roster && (!sport.teams || sport.teams.length === 0)) {
       const teams: Team[] = [];
       const grades = ['grade1', 'grade2', 'grade3'];
       
-      // 全学年の名簿をループ
       grades.forEach(gradeKey => {
         const classes = sport.roster?.[gradeKey as keyof typeof sport.roster] || {};
         
-        // 各クラスをチームとして追加
         Object.entries(classes).forEach(([className, members]) => {
           if (members && members.length > 0) {
             const teamId = `team_${gradeKey}_${className}`;
@@ -74,12 +69,13 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
         });
       });
 
-      // チームが見つかった場合のみ更新
       if (teams.length > 0) {
         setSelectedTeams(teams);
       }
+    } else if (sport.teams && sport.teams.length > 0) {
+      setSelectedTeams(sport.teams);
     }
-  }, [sport.roster]);
+  }, [sport.roster, sport.teams]);
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
@@ -92,49 +88,34 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
 
   const generateTournament = () => {
     if (!selectedTeams.length) return;
+    
+    const tournamentStructure = TournamentStructureHelper.createMatchStructure(selectedTeams.length);
+    const matches: Match[] = tournamentStructure.matches.map((match) => {
+      let team1Id = '', team2Id = '';
+      
+      if (match.isSeed) {
+        // シードチームの配置
+        team1Id = selectedTeams[match.teamIndexes[0]]?.id || '';
+      } else if (match.round === 1) {
+        // 1回戦のチーム配置
+        team1Id = selectedTeams[match.teamIndexes[0]]?.id || '';
+        team2Id = selectedTeams[match.teamIndexes[1]]?.id || '';
+      }
 
-    const rounds = Math.ceil(Math.log2(selectedTeams.length));
-    const matches: Match[] = [];
-    let matchId = 1;
-
-    // 1回戦のマッチを生成
-    const firstRoundMatches = Math.pow(2, rounds - 1);
-    for (let i = 0; i < firstRoundMatches; i++) {
-      const team1Index = i * 2;
-      const team2Index = i * 2 + 1;
-
-      matches.push({
-        id: `match_${matchId}`,
-        round: 1,
-        matchNumber: i + 1,
-        team1Id: selectedTeams[team1Index]?.id || '',
-        team2Id: team2Index < selectedTeams.length ? selectedTeams[team2Index].id : '',
+      return {
+        id: match.id,
+        round: match.round,
+        matchNumber: match.matchNumber,
+        team1Id,
+        team2Id,
         team1Score: 0,
         team2Score: 0,
         status: 'scheduled',
-        date: new Date().toISOString().split('T')[0]
-      });
-      matchId++;
-    }
-
-    // 2回戦以降のマッチを生成
-    for (let round = 2; round <= rounds; round++) {
-      const matchesInRound = Math.pow(2, rounds - round);
-      for (let i = 0; i < matchesInRound; i++) {
-        matches.push({
-          id: `match_${matchId}`,
-          round,
-          matchNumber: i + 1,
-          team1Id: '',
-          team2Id: '',
-          team1Score: 0,
-          team2Score: 0,
-          status: 'scheduled',
-          date: new Date().toISOString().split('T')[0]
-        });
-        matchId++;
-      }
-    }
+        winnerId: '',
+        date: new Date().toISOString().split('T')[0],
+        isSeed: match.isSeed
+      };
+    });
 
     onMatchesCreate(matches, selectedTeams);
   };
