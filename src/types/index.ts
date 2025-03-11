@@ -64,19 +64,20 @@ export interface Team {
   logo?: string;
 }
 
-// 試合タイプ
+export type MatchStatus = 'scheduled' | 'inProgress' | 'completed';
+
 export interface Match {
   id: string;
-  team1Id: string;
-  team2Id: string;
+  round: number;
+  matchNumber: number;
+  team1Id?: string;
+  team2Id?: string;
   team1Score: number;
   team2Score: number;
   winnerId?: string;
-  round: number; // トーナメントの場合のラウンド
-  matchNumber: number; // 試合番号
+  status: MatchStatus;
   date?: string;
   location?: string;
-  status: "scheduled" | "inProgress" | "completed";
   notes?: string;
   group?: string; // 追加
 }

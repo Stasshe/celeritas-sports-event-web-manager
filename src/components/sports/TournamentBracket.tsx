@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, Paper, useTheme } from '@mui/material';
-import { SingleEliminationBracket, SVGViewer } from '@g-loot/react-tournament-brackets';
+import { SingleEliminationBracket, SVGViewer, TournamentMatchState } from '@g-loot/react-tournament-brackets';
 import { Sport } from '../../types';
 import { useTranslation } from 'react-i18next';
 
@@ -12,75 +12,65 @@ const TournamentBracket: React.FC<TournamentBracketProps> = ({ sport }) => {
   const { t } = useTranslation();
   const theme = useTheme();
 
-  // トーナメントの試合データを階層的に構築
   const matches = useMemo(() => {
     if (!sport.matches || !sport.teams) return [];
 
-    // チームマップを作成
-    const teamMap = sport.teams.reduce((acc, team) => {
-      acc[team.id] = team;
-      return acc;
-    }, {} as Record<string, any>);
+    const maxRound = Math.max(...sport.matches.map(m => m.round));
     
-    // ラウンドと位置でソートされたマッチのコピーを作成
-    const sortedMatches = [...sport.matches].sort((a, b) => {
-      if (a.round !== b.round) return a.round - b.round;
-      return a.matchNumber - b.matchNumber;
-    });
-    
-    // 次の試合IDを計算する関数
-    const calculateNextMatchId = (match: any) => {
-      if (match.round === Math.max(...sport.matches.map(m => m.round))) {
-        return null; // 最終ラウンドには次の試合はない
+    const getMatchState = (status: string): TournamentMatchState => {
+      switch (status) {
+        case 'completed':
+          return 'DONE';
+        case 'inProgress':
+          return 'PLAYING';
+        default:
+          return 'SCHEDULED';
       }
-      
-      const nextRound = match.round + 1;
-      const nextPosition = Math.ceil(match.matchNumber / 2);
-      const nextMatch = sortedMatches.find(m => m.round === nextRound && m.matchNumber === nextPosition);
-      
-      return nextMatch ? nextMatch.id : null;
     };
 
-    // マッチを@g-loot/react-tournament-bracketsの形式に変換
-    return sortedMatches.map(match => {
-      // 特殊な試合（3位決定戦など）か判定
-      const isSpecialMatch = match.matchNumber === 0;
-      
-      return {
+    return sport.matches
+      .sort((a, b) => {
+        if (a.round !== b.round) return a.round - b.round;
+        if (a.matchNumber === 0) return 1;
+        if (b.matchNumber === 0) return -1;
+        return a.matchNumber - b.matchNumber;
+      })
+      .map(match => ({
         id: match.id,
-        name: isSpecialMatch 
-          ? t('tournament.thirdPlaceMatch') 
-          : `${t('tournament.round')} ${match.round} - ${t('match.number', { number: match.matchNumber })}`,
-        nextMatchId: calculateNextMatchId(match),
-        tournamentRoundText: isSpecialMatch 
-          ? t('tournament.thirdPlaceMatch') 
-          : match.round === Math.max(...sport.matches.map(m => m.round)) && match.matchNumber === 1 
-            ? t('tournament.final') 
-            : `${t('tournament.round')} ${match.round}`,
-        startTime: match.date || '',
-        state: match.status === 'completed' 
-          ? 'DONE' as const
-          : match.status === 'inProgress' 
-            ? 'PLAYING' as const
-            : 'SCHEDULED' as const,
+        name: match.matchNumber === 0
+          ? t('tournament.thirdPlace')
+          : match.round === maxRound && match.matchNumber === 1
+          ? t('tournament.final')
+          : `${t('tournament.round')} ${match.round} - ${match.matchNumber}`,
+        nextMatchId: match.matchNumber === 0 ? null :
+          sport.matches.find(m =>
+            m.round === match.round + 1 &&
+            Math.ceil(match.matchNumber / 2) === m.matchNumber
+          )?.id || null,
+        tournamentRoundText: match.round.toString(),
+        startTime: match.date || new Date().toISOString(),
+        state: getMatchState(match.status),
         participants: [
           {
             id: match.team1Id || `seed-${match.round}-${match.matchNumber}-1`,
-            name: teamMap[match.team1Id]?.name || t('tournament.tbd'),
-            status: null,
+            name: match.team1Id 
+              ? sport.teams.find(t => t.id === match.team1Id)?.name || t('tournament.tbd')
+              : t('tournament.tbd'),
             score: match.team1Score,
-            isWinner: match.winnerId === match.team1Id
+            isWinner: Boolean(match.winnerId === match.team1Id),
+            status: null
           },
           {
             id: match.team2Id || `seed-${match.round}-${match.matchNumber}-2`,
-            name: teamMap[match.team2Id]?.name || t('tournament.tbd'),
-            status: null,
+            name: match.team2Id
+              ? sport.teams.find(t => t.id === match.team2Id)?.name || t('tournament.tbd')
+              : t('tournament.tbd'),
             score: match.team2Score,
-            isWinner: match.winnerId === match.team2Id
+            isWinner: Boolean(match.winnerId === match.team2Id),
+            status: null
           }
         ]
-      };
-    });
+      }));
   }, [sport.matches, sport.teams, t]);
 
   if (!sport.matches || sport.matches.length === 0) {

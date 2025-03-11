@@ -13,9 +13,11 @@ declare module '@g-loot/react-tournament-brackets' {
     nextMatchId: string | null;
     tournamentRoundText: string;
     startTime: string;
-    state: 'DONE' | 'PLAYING' | 'SCHEDULED' | 'NO_SHOW' | 'WALK_OVER';
+    state: TournamentMatchState;
     participants: Participant[];
   }
+
+  export type TournamentMatchState = 'DONE' | 'PLAYING' | 'SCHEDULED' | 'NO_SHOW' | 'WALK_OVER';
 
   export interface SingleEliminationBracketProps {
     matches: Match[];

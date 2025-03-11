@@ -38,6 +38,8 @@ import MatchCard from './components/MatchCard';
 import MatchEditDialog from './components/MatchEditDialog';
 import TournamentMatchPlacer from './components/TournamentMatchPlacer';
 import TournamentBuilder from './components/TournamentBuilder';
+import TournamentBracketDisplay from './components/TournamentBracketDisplay';
+import MatchQuickEditDialog from './components/MatchQuickEditDialog';
 
 interface TournamentScoringProps {
   sport: Sport;
@@ -163,6 +165,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
 
   return (
     <Box>
+      {/* チーム選択とトーナメント生成 */}
       <TournamentBuilder
         sport={sport}
         onMatchesCreate={(newMatches, selectedTeams) => {
@@ -170,184 +173,93 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
           onUpdate({ 
             ...sport, 
             matches: newMatches,
-            teams: selectedTeams  // 選択されたチーム情報を更新
+            teams: selectedTeams
           });
         }}
       />
       
-      {matches.length > 0 ? (
-        <>
-          {/* トーナメント図の表示 */}
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Box sx={{ 
-              height: Math.max(500, matches.length * 100),
-              overflowX: 'auto',
-              overflowY: 'hidden'
-            }}>
-              {bracketMatches.length > 0 && (
-                <SingleEliminationBracket
-                  matches={bracketMatches}
-                  matchComponent={({
-                    match,
-                    onMatchClick,
-                    onPartyClick,
-                    topParty,
-                    bottomParty,
-                    ...props
-                  }) => (
-                    <foreignObject
-                      x={props.x - props.width / 2}
-                      y={props.y - props.height / 2}
-                      width={props.width}
-                      height={props.height}
-                    >
-                      <Box
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          border: '1px solid',
-                          borderColor: theme.palette.divider,
-                          borderRadius: 1,
-                          overflow: 'hidden',
-                          backgroundColor: theme.palette.background.paper,
-                          boxShadow: 1
-                        }}
-                      >
-                        <Box sx={{ p: 0.5, backgroundColor: theme.palette.grey[100], borderBottom: `1px solid ${theme.palette.divider}` }}>
-                          <Typography variant="caption" noWrap>
-                            {match.name}
-                          </Typography>
-                        </Box>
-                        
-                        {/* 上側のチーム */}
-                        <Box
-                          sx={{
-                            p: 0.5,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            backgroundColor: topParty.isWinner ? theme.palette.success.light : 'transparent',
-                            '&:hover': { backgroundColor: theme.palette.action.hover }
-                          }}
-                          onClick={() => onPartyClick && onPartyClick(topParty)}
-                        >
-                          <Typography variant="body2" noWrap sx={{ maxWidth: '70%', fontWeight: topParty.isWinner ? 'bold' : 'normal' }}>
-                            {topParty.name}
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                            {topParty.score !== null ? topParty.score : '-'}
-                          </Typography>
-                        </Box>
-                        
-                        {/* 下側のチーム */}
-                        <Box
-                          sx={{
-                            p: 0.5,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            backgroundColor: bottomParty.isWinner ? theme.palette.success.light : 'transparent',
-                            borderTop: `1px solid ${theme.palette.divider}`,
-                            '&:hover': { backgroundColor: theme.palette.action.hover }
-                          }}
-                          onClick={() => onPartyClick && onPartyClick(bottomParty)}
-                        >
-                          <Typography variant="body2" noWrap sx={{ maxWidth: '70%', fontWeight: bottomParty.isWinner ? 'bold' : 'normal' }}>
-                            {bottomParty.name}
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                            {bottomParty.score !== null ? bottomParty.score : '-'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </foreignObject>
-                  )}
-                  options={{
-                    style: {
-                      roundHeader: {
-                        backgroundColor: theme.palette.primary.main,
-                        color: theme.palette.primary.contrastText,
-                        fontWeight: 'bold'
-                      },
-                      connectorColor: theme.palette.divider,
-                      connectorColorHighlight: theme.palette.primary.main,
-                      matchBackground: {
-                        wonColor: theme.palette.success.light,
-                        lostColor: theme.palette.grey[100]
-                      }
-                    }
-                  }}
-                  svgWrapper={({ children, ...props }) => (
-                    <SVGViewer
-                      width={Math.max(1200, matches.length * 250)}
-                      height={Math.max(500, matches.length * 100)}
-                      background={theme.palette.background.paper}
-                      SVGBackground={theme.palette.background.paper}
-                      {...props}
-                    >
-                      {children}
-                    </SVGViewer>
-                  )}
-                />
-              )}
+      {/* トーナメント表示 */}
+      {matches.length > 0 && (
+        <Box sx={{ my: 3 }}>
+          <Paper sx={{ p: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                {t('tournament.bracket')}
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ShuffleIcon />}
+                onClick={() => {
+                  const shuffledMatches = [...matches]
+                    .filter(m => m.round === 1)
+                    .sort(() => Math.random() - 0.5);
+                  const otherMatches = matches.filter(m => m.round !== 1);
+                  setMatches([...shuffledMatches, ...otherMatches]);
+                }}
+              >
+                {t('tournament.shuffleFirstRound')}
+              </Button>
             </Box>
+            <TournamentBracketDisplay
+              matches={bracketMatches}
+              sport={sport}
+              onMatchUpdate={handleMatchUpdate}
+              isEditable={true}
+            />
           </Paper>
 
-          {/* ラウンドごとの試合リスト */}
+          {/* マッチリスト表示（ラウンドごと） */}
           <Grid container spacing={2}>
-            {roundMatches.length > 0 ? (
-              roundMatches.map((matches, roundIndex) => (
-                <Grid item xs={12} md={6} lg={4} key={roundIndex}>
-                  <Paper sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {matches[0]?.matchNumber === 0
-                        ? t('tournament.thirdPlace')
-                        : roundIndex === roundMatches.length - 2 && !matches.find(m => m.matchNumber === 0)
-                        ? t('tournament.final')
-                        : t('tournament.round', { number: roundIndex + 1 })}
-                    </Typography>
-                    <Stack spacing={1}>
-                      {matches.map(match => (
-                        <Card key={match.id}>
-                          <CardContent>
-                            <MatchCard
-                              match={match}
-                              sport={sport}
-                              onEdit={() => handleEditMatch(match)}
-                            />
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </Stack>
-                  </Paper>
-                </Grid>
-              ))
-            ) : (
-              <Grid item xs={12}>
-                <Paper sx={{ p: 3, textAlign: 'center' }}>
-                  <Typography color="text.secondary">
-                    {t('tournament.noMatches')}
+            {roundMatches.map((roundMatchList, index) => (
+              <Grid item xs={12} md={6} lg={4} key={index}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {roundMatchList[0].matchNumber === 0 
+                      ? t('tournament.thirdPlace')
+                      : index === roundMatches.length - 1
+                      ? t('tournament.final')
+                      : t('tournament.round', { number: index + 1 })}
                   </Typography>
+                  <Stack spacing={1}>
+                    {roundMatchList.map(match => (
+                      <Card 
+                        key={match.id}
+                        sx={{
+                          '&:hover': {
+                            boxShadow: 3,
+                            cursor: 'pointer'
+                          }
+                        }}
+                        onClick={() => handleEditMatch(match)}
+                      >
+                        <CardContent>
+                          <MatchCard
+                            match={match}
+                            sport={sport}
+                            showEdit={false}
+                          />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Stack>
                 </Paper>
               </Grid>
-            )}
+            ))}
           </Grid>
-        </>
-      ) : (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="text.secondary">
-            {t('tournament.noMatches')}
-          </Typography>
-        </Paper>
+        </Box>
       )}
 
-      {/* 試合編集ダイアログ */}
-      <MatchEditDialog
-        open={matchDialogOpen}
-        match={selectedMatch}
-        sport={sport}
-        onSave={handleMatchUpdate}
-        teamRosters={sport.roster?.grade1 || {}}
-        onClose={() => setMatchDialogOpen(false)}
-      />
+      {/* クイック編集ダイアログ */}
+      {selectedMatch && (
+        <MatchQuickEditDialog
+          open={matchDialogOpen}
+          match={selectedMatch}
+          sport={sport}
+          onClose={() => setMatchDialogOpen(false)}
+          onSave={handleMatchUpdate}
+        />
+      )}
     </Box>
   );
 };
