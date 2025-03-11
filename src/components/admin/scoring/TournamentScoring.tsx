@@ -20,7 +20,9 @@ import {
   Card,
   CardContent,
   Tooltip,
-  useTheme
+  useTheme,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -53,6 +55,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
   const [matches, setMatches] = useState<Match[]>(sport.matches || []);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [matchDialogOpen, setMatchDialogOpen] = useState(false);
+  const [hasThirdPlace, setHasThirdPlace] = useState(false);
 
   // トーナメント表示用のデータ
   const bracketMatches = useMemo(() => {
@@ -161,18 +164,40 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
     setMatchDialogOpen(false);
   };
 
+  const handleMatchesCreate = (newMatches: Match[], selectedTeams: Team[]) => {
+    setMatches(newMatches);
+    onUpdate({ 
+      ...sport, 
+      matches: newMatches,
+      teams: selectedTeams  // 選択されたチーム情報を更新
+    });
+  };
+
   return (
     <Box>
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6">
+            {t('tournament.settings')}
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={hasThirdPlace}
+                onChange={(e) => {
+                  setHasThirdPlace(e.target.checked);
+                  // 3位決定戦の追加/削除ロジックをここに実装
+                }}
+              />
+            }
+            label={t('tournament.hasThirdPlace')}
+          />
+        </Box>
+      </Paper>
+
       <TournamentBuilder
         sport={sport}
-        onMatchesCreate={(newMatches, selectedTeams) => {
-          setMatches(newMatches);
-          onUpdate({ 
-            ...sport, 
-            matches: newMatches,
-            teams: selectedTeams  // 選択されたチーム情報を更新
-          });
-        }}
+        onMatchesCreate={handleMatchesCreate}
       />
       
       {matches.length > 0 ? (
@@ -339,15 +364,17 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
         </Paper>
       )}
 
-      {/* 試合編集ダイアログ */}
-      <MatchEditDialog
-        open={matchDialogOpen}
-        match={selectedMatch}
-        sport={sport}
-        onSave={handleMatchUpdate}
-        teamRosters={sport.roster?.grade1 || {}}
-        onClose={() => setMatchDialogOpen(false)}
-      />
+      {/* ダイアログのパフォーマンス最適化 */}
+      {matchDialogOpen && selectedMatch && (
+        <MatchEditDialog
+          open={true}
+          match={selectedMatch}
+          sport={sport}
+          onSave={handleMatchUpdate}
+          teamRosters={sport.roster?.grade1 || {}}
+          onClose={() => setMatchDialogOpen(false)}
+        />
+      )}
     </Box>
   );
 };

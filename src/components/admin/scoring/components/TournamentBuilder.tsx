@@ -1,23 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, memo, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
   Paper,
-  Grid,
   Button,
-  Chip,
-  Stack,
-  FormControlLabel,
-  Switch,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   List,
   ListItem,
   ListItemText,
@@ -25,7 +11,6 @@ import {
 } from '@mui/material';
 import { 
   Delete as DeleteIcon,
-  Edit as EditIcon,
   SwapVert as SwapVertIcon,
 } from '@mui/icons-material';
 import { Match, Sport, Team } from '../../../../types';
@@ -34,65 +19,95 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 interface TournamentBuilderProps {
   sport: Sport;
-  onMatchesCreate: (matches: Match[], selectedTeams: Team[]) => void;  // 引数を追加
+  onMatchesCreate: (matches: Match[], selectedTeams: Team[]) => void;
 }
 
-export const TournamentBuilder: React.FC<TournamentBuilderProps> = ({ sport, onMatchesCreate }) => {
+// メモ化されたドラッグ可能なチームアイテムコンポーネント
+const DraggableTeamItem = memo(({ team, index, onRemove }: any) => {
+  const { t } = useTranslation();
+  return (
+    <Draggable draggableId={team.id} index={index}>
+      {(provided) => (
+        <ListItem
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          secondaryAction={
+            <IconButton edge="end" onClick={() => onRemove(team.id)}>
+              <DeleteIcon />
+            </IconButton>
+          }
+        >
+          <SwapVertIcon sx={{ mr: 2, color: 'text.secondary' }} />
+          <ListItemText 
+            primary={team.name}
+            secondary={`${t('tournament.members')}: ${team.members?.length || 0}`}
+          />
+        </ListItem>
+      )}
+    </Draggable>
+  );
+});
+
+export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBuilderProps) => {
   const { t } = useTranslation();
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
-  const [hasThirdPlace, setHasThirdPlace] = useState(true);
-  const [isTeamSelectionOpen, setIsTeamSelectionOpen] = useState(false);
 
-  // 名簿データからチーム候補を生成
-  const generateTeamCandidates = () => {
-    const candidates: Team[] = [];
-    const roster = sport.roster || {};
-    
-    Object.entries(roster).forEach(([grade, classes]) => {
-      Object.entries(classes).forEach(([className, members]) => {
-        const teamName = `${grade}-${className}`;
-        candidates.push({
-          id: `team_${teamName}`,
-          name: teamName,
-          members: members
+  // コンポーネントマウント時に名簿からチームを自動生成
+  useEffect(() => {
+    if (sport.roster) {
+      const teams: Team[] = [];
+      const grades = ['grade1', 'grade2', 'grade3'];
+      
+      // 全学年の名簿をループ
+      grades.forEach(gradeKey => {
+        const classes = sport.roster?.[gradeKey as keyof typeof sport.roster] || {};
+        
+        // 各クラスをチームとして追加
+        Object.entries(classes).forEach(([className, members]) => {
+          if (members && members.length > 0) {
+            const teamId = `team_${gradeKey}_${className}`;
+            teams.push({
+              id: teamId,
+              name: `${gradeKey}-${className}`,
+              members: members
+            });
+          }
         });
       });
-    });
-    return candidates;
-  };
 
-  const handleTeamSelect = (team: Team) => {
-    if (!selectedTeams.find(t => t.id === team.id)) {
-      setSelectedTeams([...selectedTeams, team]);
+      // チームが見つかった場合のみ更新
+      if (teams.length > 0) {
+        setSelectedTeams(teams);
+      }
     }
-  };
+  }, [sport.roster]);
 
   const handleTeamRemove = (teamId: string) => {
-    setSelectedTeams(selectedTeams.filter(t => t.id !== teamId));
+    setSelectedTeams(prev => prev.filter(t => t.id !== teamId));
   };
 
-  const handleDragEnd = (result: any) => {
+  // DragDropContextのエラーを修正するためにmemoize
+  const handleDragEnd = useMemo(() => (result: any) => {
     if (!result.destination) return;
     
-    const items = Array.from(selectedTeams);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setSelectedTeams(items);
-  };
+    setSelectedTeams(prev => {
+      const items = Array.from(prev);
+      const [reorderedItem] = items.splice(result.source.index, 1);
+      items.splice(result.destination.index, 0, reorderedItem);
+      return items;
+    });
+  }, []);
 
   const generateTournament = () => {
     if (!selectedTeams.length) return;
 
-    // ラウンド数を計算（切り上げ）
     const rounds = Math.ceil(Math.log2(selectedTeams.length));
     const matches: Match[] = [];
     let matchId = 1;
 
-    // 1回戦のマッチを生成（シード順を考慮）
+    // 1回戦のマッチを生成
     const firstRoundMatches = Math.pow(2, rounds - 1);
-    const byes = Math.pow(2, rounds) - selectedTeams.length; // 不戦勝数
-
     for (let i = 0; i < firstRoundMatches; i++) {
       const team1Index = i * 2;
       const team2Index = i * 2 + 1;
@@ -117,7 +132,7 @@ export const TournamentBuilder: React.FC<TournamentBuilderProps> = ({ sport, onM
       for (let i = 0; i < matchesInRound; i++) {
         matches.push({
           id: `match_${matchId}`,
-          round: round,
+          round,
           matchNumber: i + 1,
           team1Id: '',
           team2Id: '',
@@ -130,22 +145,6 @@ export const TournamentBuilder: React.FC<TournamentBuilderProps> = ({ sport, onM
       }
     }
 
-    // 3位決定戦を追加
-    if (hasThirdPlace) {
-      matches.push({
-        id: `match_${matchId}`,
-        round: rounds,
-        matchNumber: 0,
-        team1Id: '',
-        team2Id: '',
-        team1Score: 0,
-        team2Score: 0,
-        status: 'scheduled',
-        date: new Date().toISOString().split('T')[0]
-      });
-    }
-
-    // onMatchesCreateに選択されたチーム情報も渡す
     onMatchesCreate(matches, selectedTeams);
   };
 
@@ -156,118 +155,51 @@ export const TournamentBuilder: React.FC<TournamentBuilderProps> = ({ sport, onM
           {t('tournament.builder')}
         </Typography>
 
-        {/* トーナメント設定 */}
-        <Box sx={{ mb: 2 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={hasThirdPlace}
-                onChange={(e) => setHasThirdPlace(e.target.checked)}
-              />
-            }
-            label={t('tournament.hasThirdPlace')}
-          />
-        </Box>
+        {selectedTeams.length > 0 ? (
+          <>
+            <Box sx={{ mb: 2 }}>
+              <Typography color="text.secondary" gutterBottom>
+                {t('tournament.selectedTeams', { count: selectedTeams.length })}
+              </Typography>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="teams">
+                  {(provided) => (
+                    <List
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      sx={{ bgcolor: 'background.paper' }}
+                    >
+                      {selectedTeams.map((team, index) => (
+                        <DraggableTeamItem
+                          key={team.id}
+                          team={team}
+                          index={index}
+                          onRemove={handleTeamRemove}
+                        />
+                      ))}
+                      {provided.placeholder}
+                    </List>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </Box>
 
-        {/* チーム選択と並び替え */}
-        <Box sx={{ mb: 2 }}>
-          <Button
-            variant="outlined"
-            onClick={() => setIsTeamSelectionOpen(true)}
-            sx={{ mb: 2 }}
-          >
-            {t('tournament.selectTeams')}
-          </Button>
-
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="teams">
-              {(provided) => (
-                <List
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  sx={{ bgcolor: 'background.paper' }}
-                >
-                  {selectedTeams.map((team, index) => (
-                    <Draggable key={team.id} draggableId={team.id} index={index}>
-                      {(provided) => (
-                        <ListItem
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          secondaryAction={
-                            <IconButton 
-                              edge="end" 
-                              aria-label="delete"
-                              onClick={() => handleTeamRemove(team.id)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          }
-                        >
-                          <SwapVertIcon sx={{ mr: 2, color: 'text.secondary' }} />
-                          <ListItemText 
-                            primary={team.name}
-                            secondary={`${t('tournament.members')}: ${team.members?.length || 0}`}
-                          />
-                        </ListItem>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </List>
-              )}
-            </Droppable>
-          </DragDropContext>
-        </Box>
-
-        {/* トーナメント生成ボタン */}
-        <Button
-          variant="contained"
-          onClick={generateTournament}
-          disabled={selectedTeams.length < 2}
-          fullWidth
-        >
-          {t('tournament.generate')}
-        </Button>
+            <Button
+              variant="contained"
+              onClick={generateTournament}
+              fullWidth
+            >
+              {t('tournament.generate')}
+            </Button>
+          </>
+        ) : (
+          <Typography color="text.secondary" align="center">
+            {t('tournament.noRoster')}
+          </Typography>
+        )}
       </Paper>
-
-      {/* チーム選択ダイアログ */}
-      <Dialog 
-        open={isTeamSelectionOpen} 
-        onClose={() => setIsTeamSelectionOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>{t('tournament.selectTeams')}</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2}>
-            {generateTeamCandidates().map((team) => (
-              <Grid item xs={12} sm={6} key={team.id}>
-                <Paper
-                  sx={{
-                    p: 2,
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: 'action.hover' }
-                  }}
-                  onClick={() => handleTeamSelect(team)}
-                >
-                  <Typography variant="subtitle1">{team.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {t('tournament.members')}: {team.members?.length || 0}
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsTeamSelectionOpen(false)}>
-            {t('common.close')}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
-};
+});
 
 export default TournamentBuilder;
