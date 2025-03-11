@@ -35,7 +35,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Sport, Match, Team } from '../../../types';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '../../../contexts/ThemeContext';
-import { SingleEliminationBracket, SVGViewer } from '@g-loot/react-tournament-brackets';
+import { SingleEliminationBracket, SVGViewer, Participant } from '@g-loot/react-tournament-brackets';
 import MatchCard from './components/MatchCard';
 import MatchEditDialog from './components/MatchEditDialog';
 //import TournamentMatchPlacer from './components/TournamentMatchPlacer';
@@ -127,19 +127,27 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
             name: match.team1Id 
               ? sport.teams.find(t => t.id === match.team1Id)?.name || t('tournament.tbd')
               : t('tournament.tbd'),
-            score: match.team1Score,
+            score: match.team1Score || undefined,
             isWinner: Boolean(match.winnerId === match.team1Id),
-            status: getParticipantStatus(match.team1Id, match.id)
-          },
+            status: TournamentStructureHelper.isNoTeam(match.team1Id, match, matches)
+              ? 'no-team'
+              : TournamentStructureHelper.isWaiting(match.team1Id, match, matches)
+              ? 'waiting'
+              : null
+          } as Participant,
           {
             id: match.team2Id || `seed-${match.round}-${match.matchNumber}-2`,
             name: match.team2Id
               ? sport.teams.find(t => t.id === match.team2Id)?.name || t('tournament.tbd')
               : t('tournament.tbd'),
-            score: match.team2Score,
+            score: match.team2Score || undefined,
             isWinner: Boolean(match.winnerId === match.team2Id),
-            status: getParticipantStatus(match.team2Id, match.id)
-          }
+            status: TournamentStructureHelper.isNoTeam(match.team2Id, match, matches)
+              ? 'no-team'
+              : TournamentStructureHelper.isWaiting(match.team2Id, match, matches)
+              ? 'waiting'
+              : null
+          } as Participant
         ]
       }));
   }, [matches, sport.teams, t]);
@@ -178,20 +186,24 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
 
   // 試合の更新
   const handleMatchUpdate = (updatedMatch: Match) => {
-    // 試合状態を自動判定
     const status = TournamentStructureHelper.getMatchStatus(updatedMatch);
     const newMatch = {
       ...updatedMatch,
       status,
-      // 勝者は点数により自動判定
       winnerId: updatedMatch.team1Score > updatedMatch.team2Score ? updatedMatch.team1Id :
-               updatedMatch.team2Score > updatedMatch.team1Score ? updatedMatch.team2Id :
-               undefined
+                updatedMatch.team2Score > updatedMatch.team1Score ? updatedMatch.team2Id :
+                undefined
     };
 
-    const newMatches = matches.map(m => 
+    let newMatches = matches.map(m => 
       m.id === newMatch.id ? newMatch : m
     );
+
+    // 勝者が決定した場合、次の試合に自動進出
+    if (newMatch.winnerId) {
+      newMatches = TournamentStructureHelper.progressWinnerToNextMatch(newMatch, newMatches);
+    }
+
     setMatches(newMatches);
     onUpdate({ ...sport, matches: newMatches });
     setMatchDialogOpen(false);
