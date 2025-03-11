@@ -1,4 +1,4 @@
-import React, { useState, memo, useEffect } from 'react';
+import React, { useState, memo, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -7,8 +7,12 @@ import {
   List,
   ListItem,
   ListItemText,
+  IconButton,
 } from '@mui/material';
-
+import { 
+  Delete as DeleteIcon,
+  SwapVert as SwapVertIcon,
+} from '@mui/icons-material';
 import { Match, Sport, Team } from '../../../../types';
 import { useTranslation } from 'react-i18next';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -19,24 +23,22 @@ interface TournamentBuilderProps {
 }
 
 // メモ化されたドラッグ可能なチームアイテムコンポーネント
-const DraggableTeamItem = memo(({ team, index }: { team: Team; index: number }) => {
+const DraggableTeamItem = memo(({ team, index, onRemove }: any) => {
   const { t } = useTranslation();
   return (
     <Draggable draggableId={team.id} index={index}>
-      {(provided, snapshot) => (
+      {(provided) => (
         <ListItem
           ref={provided.innerRef}
           {...provided.draggableProps}
-          sx={{
-            bgcolor: snapshot.isDragging ? 'action.hover' : 'background.paper',
-            '& .dragHandle': {
-              visibility: snapshot.isDragging ? 'visible' : 'hidden',
-            },
-            '&:hover .dragHandle': {
-              visibility: 'visible',
-            }
-          }}
+          {...provided.dragHandleProps}
+          secondaryAction={
+            <IconButton edge="end" onClick={() => onRemove(team.id)}>
+              <DeleteIcon />
+            </IconButton>
+          }
         >
+          <SwapVertIcon sx={{ mr: 2, color: 'text.secondary' }} />
           <ListItemText 
             primary={team.name}
             secondary={`${t('tournament.members')}: ${team.members?.length || 0}`}
@@ -81,14 +83,21 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
     }
   }, [sport.roster]);
 
-  const handleDragEnd = (result: any) => {
+  const handleTeamRemove = (teamId: string) => {
+    setSelectedTeams(prev => prev.filter(t => t.id !== teamId));
+  };
+
+  // DragDropContextのエラーを修正するためにmemoize
+  const handleDragEnd = useMemo(() => (result: any) => {
     if (!result.destination) return;
     
-    const items = Array.from(selectedTeams);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    setSelectedTeams(items);
-  };
+    setSelectedTeams(prev => {
+      const items = Array.from(prev);
+      const [reorderedItem] = items.splice(result.source.index, 1);
+      items.splice(result.destination.index, 0, reorderedItem);
+      return items;
+    });
+  }, []);
 
   const generateTournament = () => {
     if (!selectedTeams.length) return;
@@ -158,18 +167,14 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
                     <List
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      sx={{ 
-                        bgcolor: 'background.paper',
-                        border: 1,
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                      }}
+                      sx={{ bgcolor: 'background.paper' }}
                     >
                       {selectedTeams.map((team, index) => (
                         <DraggableTeamItem
                           key={team.id}
                           team={team}
                           index={index}
+                          onRemove={handleTeamRemove}
                         />
                       ))}
                       {provided.placeholder}
