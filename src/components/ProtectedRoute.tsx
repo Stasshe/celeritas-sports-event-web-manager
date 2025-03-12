@@ -16,7 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <div>ローディング中...</div>;
   }
 
-  if (!currentUser || !isAdmin) {
+  if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
 
