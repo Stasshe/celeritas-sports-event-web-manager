@@ -315,11 +315,13 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                             p: 0.5,
                             display: 'flex',
                             justifyContent: 'space-between',
-                            backgroundColor: topParty.isWinner 
-                              ? theme.palette.primary.light
-                              : topParty.status === 'no-team' && !TournamentStructureHelper.isNoTeam(topParty.id, match, matches)
-                              ? theme.palette.grey[200]
-                              : 'transparent',
+                            backgroundColor: topParty.name === t('tournament.seed')
+                            ? theme.palette.text.disabled  // seed は灰色
+                            : topParty.name === t('tournament.tbd')
+                            ? 'inherit'
+                            : topParty.isWinner
+                            ? theme.palette.primary.light // 勝者は青
+                            : 'inherit',
                             '&:hover': { backgroundColor: theme.palette.action.hover }
                           }}
                           onClick={() => onPartyClick && onPartyClick(topParty)}
@@ -327,16 +329,12 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                           <Typography variant="body2" noWrap sx={{ 
                             maxWidth: '70%', 
                             fontWeight: topParty.isWinner ? 'bold' : 'normal',
-                            color: topParty.status === 'no-team' && !TournamentStructureHelper.isNoTeam(topParty.id, match, matches)
-                              ? theme.palette.text.secondary
-                              : topParty.name === t('tournament.seed')
-                              ? theme.palette.text.disabled
+                            color: topParty.name === t('tournament.seed')
+                              ? theme.palette.text.disabled  // seed は灰色
                               : topParty.name === t('tournament.tbd')
-                              ? theme.palette.warning.main
+                              ? theme.palette.warning.main  // tbd はオレンジ
                               : topParty.isWinner
-                              ? theme.palette.primary.main
-                              : topParty.status === 'waiting'
-                              ? theme.palette.warning.main
+                              ? theme.palette.primary.main // 勝者は青
                               : 'inherit'
                           }}>
                             {topParty.name}
@@ -344,9 +342,9 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                           </Typography>
                           <Typography variant="body2" sx={{ 
                             fontWeight: 'bold',
-                            color: topParty.isWinner ? theme.palette.primary.main : 'inherit'
+                            color: topParty.isWinner ? theme.palette.primary.light : 'inherit'
                           }}>
-                            {topParty.score !== null ? topParty.score : '-'}
+                            {topParty.score ? topParty.score : 0}
                           </Typography>
                         </Box>
                         
@@ -358,8 +356,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                             justifyContent: 'space-between',
                             backgroundColor: bottomParty.isWinner 
                               ? theme.palette.primary.light 
-                              : bottomParty.status === 'no-team' && !TournamentStructureHelper.isNoTeam(bottomParty.id, match, matches)
-                              ? theme.palette.grey[200]
+                              : bottomParty.name === t('tournament.seed') || bottomParty.name === t('tournament.tbd')
+                              ? theme.palette.grey[100]  // seed と tbd のセルを灰色に
                               : 'transparent',
                             borderTop: `1px solid ${theme.palette.divider}`,
                             '&:hover': { backgroundColor: theme.palette.action.hover }
@@ -369,12 +367,13 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                           <Typography variant="body2" noWrap sx={{ 
                             maxWidth: '70%', 
                             fontWeight: bottomParty.isWinner ? 'bold' : 'normal',
-                            color: bottomParty.status === 'no-team' && !TournamentStructureHelper.isNoTeam(bottomParty.id, match, matches)
-                              ? theme.palette.text.secondary
-                              : bottomParty.name === t('tournament.seed')
-                              ? theme.palette.text.disabled
+                            bgcolor: (bottomParty.name === t('tournament.seed') || bottomParty.name === t('tournament.tbd'))
+                              ? theme.palette.grey[100]  // seed と tbd の背景色を灰色に
+                              : 'transparent',
+                            color: bottomParty.name === t('tournament.seed')
+                              ? theme.palette.text.disabled  // seed は灰色
                               : bottomParty.name === t('tournament.tbd')
-                              ? theme.palette.warning.main
+                              ? theme.palette.warning.main  // tbd はオレンジ
                               : bottomParty.isWinner
                               ? theme.palette.primary.main
                               : bottomParty.status === 'waiting'
@@ -388,7 +387,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                             fontWeight: 'bold',
                             color: bottomParty.isWinner ? theme.palette.primary.main : 'inherit'
                           }}>
-                            {bottomParty.score !== null ? bottomParty.score : '-'}
+                            {bottomParty.score !== null ? bottomParty.score : 0}
                           </Typography>
                         </Box>
                       </Box>
@@ -432,7 +431,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
                         <Card 
                           key={match.id}
                           sx={{ 
-                            bgcolor: (!match.team1Id || !match.team2Id) ? theme.palette.grey[100] : 'inherit'
+                            bgcolor: (!match.team1Id || !match.team2Id || 
+                                    match.team1Id === t('tournament.tbd') || 
+                                    match.team2Id === t('tournament.tbd'))
+                              ? theme.palette.grey[100]  // tbd を含む試合カードも灰色に
+                              : 'inherit'
                           }}
                         >
                           <CardContent>
