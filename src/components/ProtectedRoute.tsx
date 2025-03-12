@@ -10,7 +10,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { currentUser, loading } = useAuth();
 
   // admin@example.comのみを管理者と認識する
-  const isAdmin = currentUser?.email === 'eterynity2024workplace@gmail.com';
+  //const isAdmin = currentUser?.email === 'eterynity2024workplace@gmail.com';
 
   if (loading) {
     return <div>ローディング中...</div>;

@@ -437,6 +437,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
           </Paper>
 
           {/* ラウンドごとの試合リスト */}
+          {/* readOnlyモードの場合は試合カードを非表示 */}
+          {readOnly ? null : (
           <Grid container spacing={2}>
             {roundMatches.length > 0 ? (
               roundMatches.map((matches, roundIndex) => (
@@ -484,6 +486,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               </Grid>
             )}
           </Grid>
+          )}
         </>
       ) : (
         <Paper sx={{ p: 3, textAlign: 'center' }}>
