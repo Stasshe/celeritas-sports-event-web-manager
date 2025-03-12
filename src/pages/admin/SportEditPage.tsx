@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -45,6 +45,7 @@ import RosterEditor from '../../components/admin/RosterEditor';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import AdminLayout from '../../components/layout/AdminLayout';
 import DeleteConfirmationDialog from '../../components/admin/dialogs/DeleteConfirmationDialog';
+import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -78,8 +79,11 @@ const SportEditPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { alpha } = useThemeContext();
+  const { setSavingStatus } = useAdminLayout();
+  const isProcessingRef = useRef(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  const { data: sport, loading: sportLoading, updateData: updateSport, removeData } = useDatabase<Sport>(`/sports/${sportId}`);
+  const { data: sport, loading: sportLoading, updateData, removeData } = useDatabase<Sport>(`/sports/${sportId}`);
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
   
   const [activeTab, setActiveTab] = useState(0);
@@ -113,29 +117,53 @@ const SportEditPage: React.FC = () => {
     }
   }, [sportId, sport]);
 
+  // 保存処理を改善
+  const handleSave = useCallback(async () => {
+    if (!localSport || isProcessingRef.current) return;
+
+    isProcessingRef.current = true;
+    setSavingStatus('saving');
+
+    try {
+      const result = await updateData(localSport);
+      if (result) {
+        setSavingStatus('saved');
+        // 成功時に最新のデータを保持
+        setLocalSport(localSport);
+      } else {
+        setSavingStatus('error');
+      }
+    } catch (error) {
+      console.error('Error saving sport:', error);
+      setSavingStatus('error');
+    } finally {
+      isProcessingRef.current = false;
+    }
+  }, [localSport, updateData, setSavingStatus]);
+
+  
   // データ変更時の自動保存設定を改善
   useEffect(() => {
-    if (!localSport || !sport || isProcessing) return;
+    if (!localSport || !sport || isProcessing || isProcessingRef.current) return;
 
     if (JSON.stringify(localSport) !== JSON.stringify(sport)) {
-      if (autoSaveTimerId) {
-        clearTimeout(autoSaveTimerId);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
       
-      const timerId = setTimeout(() => {
-        if (!isDialogOpen) { // isDialogOpenを使用
+      saveTimeoutRef.current = setTimeout(() => {
+        if (!isDialogOpen) {
           handleSave();
         }
       }, 3000);
-      setAutoSaveTimerId(timerId);
     }
 
     return () => {
-      if (autoSaveTimerId) {
-        clearTimeout(autoSaveTimerId);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [localSport, isProcessing, isDialogOpen]); // isDialogOpenを依存配列に追加
+  }, [localSport, sport, isProcessing, isDialogOpen, handleSave]);
 
   // スポーツIDが変更されたときにローディング状態を設定
   useEffect(() => {
@@ -153,27 +181,15 @@ const SportEditPage: React.FC = () => {
     setActiveTab(newValue);
   };
 
-  // 保存処理を改善
-  const handleSave = async () => {
-    if (!localSport || isProcessing) return;
-
-    setIsProcessing(true);
-    setSaveStatus('saving');
-    try {
-      await updateSport(localSport);
-      setSaveStatus('saved');
-      setShowSnackbar(true);
-    } catch (error) {
-      console.error('Error saving sport data:', error);
-      setSaveStatus('error');
-      setShowSnackbar(true);
-    } finally {
-      setIsProcessing(false);
-      setTimeout(() => {
-        setSaveStatus('idle');
-      }, 5000);
-    }
-  };
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      isProcessingRef.current = false;
+    };
+  }, []);
 
   const handleSnackbarClose = () => {
     setShowSnackbar(false);

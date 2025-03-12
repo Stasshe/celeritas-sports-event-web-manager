@@ -69,7 +69,11 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     return new Promise((resolve, reject) => {
       updateQueueRef.current.push({
         data: updates,
-        resolve: () => resolve(true),
+        resolve: () => {
+          // データを更新した後にステートも更新
+          setData(updates);
+          resolve(true);
+        },
         reject: () => reject(false)
       });
       processUpdateQueue();

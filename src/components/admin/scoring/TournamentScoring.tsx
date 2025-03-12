@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Box,
   Button,
@@ -348,21 +348,45 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     </ForeignObject>
   ), [theme, t]);
 
-  // 更新を制御するためのデバウンス処理
+  const savingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdateRef = useRef<Sport | null>(null);
+
+  // 更新を制御するためのデバウンス処理を改善
   useEffect(() => {
-    if (updateQueue && !isSaving) {
-      const timer = setTimeout(async () => {
-        setIsSaving(true);
-        try {
-          await onUpdate(updateQueue);
-        } finally {
-          setIsSaving(false);
-          setUpdateQueue(null);
-        }
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (!updateQueue || isSaving) return;
+
+    if (savingTimeoutRef.current) {
+      clearTimeout(savingTimeoutRef.current);
     }
+
+    pendingUpdateRef.current = updateQueue;
+    setIsSaving(true);
+
+    savingTimeoutRef.current = setTimeout(async () => {
+      try {
+        await onUpdate(pendingUpdateRef.current!);
+        pendingUpdateRef.current = null;
+      } finally {
+        setIsSaving(false);
+        setUpdateQueue(null);
+      }
+    }, 1000);
+
+    return () => {
+      if (savingTimeoutRef.current) {
+        clearTimeout(savingTimeoutRef.current);
+      }
+    };
   }, [updateQueue, isSaving, onUpdate]);
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (savingTimeoutRef.current) {
+        clearTimeout(savingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <Box>

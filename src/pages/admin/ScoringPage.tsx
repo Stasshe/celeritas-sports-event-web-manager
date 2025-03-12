@@ -42,45 +42,40 @@ const ScoringPage: React.FC = () => {
   const isProcessingRef = useRef(false);
 
   const handleSportUpdate = useCallback(async (updatedSport: Sport) => {
-      if (isProcessingRef.current) return;
-  
-      // 既存のタイマーをクリア
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-  
-      // 最新の更新内容を保持
-      pendingUpdateRef.current = updatedSport;
-      setLocalSport(updatedSport);
-  
-      updateTimeoutRef.current = setTimeout(async () => {
-        if (!pendingUpdateRef.current) return;
-  
-        isProcessingRef.current = true;
-        setSaveStatus('saving');
-  
-        try {
-          await updateData(pendingUpdateRef.current);
+    if (isProcessingRef.current) return;
+
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+
+    pendingUpdateRef.current = updatedSport;
+    setLocalSport(updatedSport);
+
+    updateTimeoutRef.current = setTimeout(async () => {
+      if (!pendingUpdateRef.current) return;
+
+      isProcessingRef.current = true;
+      setSaveStatus('saving');
+
+      try {
+        const result = await updateData(pendingUpdateRef.current);
+        if (result) {
           setSaveStatus('saved');
-          setShowSnackbar(true);
-          
-          // 成功したら状態をクリア
+          setLocalSport(pendingUpdateRef.current);
           pendingUpdateRef.current = null;
-          
-          // 一定時間後に通知を非表示
-          setTimeout(() => {
-            setSaveStatus('idle');
-            setShowSnackbar(false);
-          }, 2000);
-        } catch (error) {
-          console.error('Update failed:', error);
+        } else {
           setSaveStatus('error');
-          setShowSnackbar(true);
-        } finally {
-          isProcessingRef.current = false;
         }
-      }, 1000);
-    }, [updateData]);
+        setShowSnackbar(true);
+      } catch (error) {
+        console.error('Update failed:', error);
+        setSaveStatus('error');
+        setShowSnackbar(true);
+      } finally {
+        isProcessingRef.current = false;
+      }
+    }, 1000);
+  }, [updateData]);
 
   useEffect(() => {
     if (sport && !localSport) {
