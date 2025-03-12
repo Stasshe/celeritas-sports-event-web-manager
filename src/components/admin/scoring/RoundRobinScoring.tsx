@@ -177,39 +177,39 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
     }
   };
 
-  const handleSaveMatch = () => {
+  const handleSaveMatch = async () => {
     if (selectedMatch) {
-      // 勝者を自動判定
-      let updatedMatch = { ...selectedMatch };
-      
-      if (updatedMatch.team1Score > updatedMatch.team2Score) {
-        updatedMatch.winnerId = updatedMatch.team1Id;
-      } else if (updatedMatch.team1Score < updatedMatch.team2Score) {
-        updatedMatch.winnerId = updatedMatch.team2Id;
-      } else {
-        updatedMatch.winnerId = undefined; // 同点の場合は勝者なし
-      }
+      try {
+        // 勝者を自動判定
+        let updatedMatch = { ...selectedMatch };
+        
+        if (updatedMatch.team1Score > updatedMatch.team2Score) {
+          updatedMatch.winnerId = updatedMatch.team1Id;
+        } else if (updatedMatch.team1Score < updatedMatch.team2Score) {
+          updatedMatch.winnerId = updatedMatch.team2Id;
+        } else {
+          updatedMatch.winnerId = undefined; // 同点の場合は勝者なし
+        }
 
-      // マッチリストを更新
-      const matchExists = matches.some(m => m.id === updatedMatch.id);
-      let updatedMatches: Match[];
-      
-      if (matchExists) {
-        updatedMatches = matches.map(m => m.id === updatedMatch.id ? updatedMatch : m);
-      } else {
-        updatedMatches = [...matches, updatedMatch];
+        // マッチリストを更新
+        const updatedMatches = matches.map(m => 
+          m.id === updatedMatch.id ? updatedMatch : m
+        );
+        
+        // スポーツデータを更新（エラーハンドリングを追加）
+        await onUpdate({
+          ...sport,
+          matches: updatedMatches
+        });
+
+        setMatches(updatedMatches);
+        handleCloseDialog();
+      } catch (error) {
+        console.error('Error saving match:', error);
+        // エラー表示などの処理を追加
+        return false;
       }
-      
-      setMatches(updatedMatches);
-      
-      // スポーツデータを更新
-      onUpdate({
-        ...sport,
-        matches: updatedMatches
-      });
     }
-    
-    handleCloseDialog();
   };
 
   // チーム名を取得する関数

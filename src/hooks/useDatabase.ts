@@ -34,11 +34,22 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
   // データの書き込み
   const setData_ = async (newData: T) => {
     try {
-      await set(ref(database, path), newData);
+      const dbRef = ref(database, path);
+      // オンライン状態を確認
+      if (!navigator.onLine) {
+        throw new Error('You are offline');
+      }
+      
+      // 保存を試みる
+      const result = await set(dbRef, newData);
+      // 保存が成功したかどうかを確認
+      if (result !== undefined) {
+        throw new Error('Failed to save data');
+      }
       return true;
     } catch (error) {
-      setError(error as Error);
-      return false;
+      console.error('Save error:', error);
+      throw error; // エラーを上位に伝播
     }
   };
 
@@ -69,12 +80,17 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     return new Promise((resolve, reject) => {
       updateQueueRef.current.push({
         data: updates,
-        resolve: () => {
-          // データを更新した後にステートも更新
-          setData(updates);
-          resolve(true);
+        resolve: async () => {
+          try {
+            await setData_(updates);
+            setData(updates);
+            resolve(true);
+          } catch (error) {
+            console.error('Update error:', error);
+            reject(error);
+          }
         },
-        reject: () => reject(false)
+        reject: () => reject(new Error('Update failed'))
       });
       processUpdateQueue();
     });

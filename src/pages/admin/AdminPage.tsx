@@ -115,17 +115,18 @@ const AdminPage: React.FC = () => {
     navigate(`/admin/sports/${sportId}`);
   };
 
-  // 手動保存（将来的な実装のためのプレースホルダー）
-  const handleManualSave = () => {
+  // 手動保存
+  const handleManualSave = async () => {
     setSavingStatus('saving');
-    setSavingStatusLocal('saving');
-    
-    // 保存処理のシミュレーション
-    setTimeout(() => {
+    try {
+      // ここで実際の保存処理を行う
+      // 現在の実装では何もしない
+      await new Promise(resolve => setTimeout(resolve, 500));
       setSavingStatus('saved');
-      setSavingStatusLocal('saved');
-      showSnackbar(t('admin.savedSuccessfully') || '保存しました', 'success');
-    }, 800);
+    } catch (error) {
+      setSavingStatus('error');
+      console.error('Save error:', error);
+    }
   };
 
   // 設定ページに移動

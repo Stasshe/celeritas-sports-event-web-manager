@@ -12,6 +12,9 @@ interface AdminLayoutContextType {
 const AdminLayoutContext = createContext<AdminLayoutContextType | null>(null);
 
 export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
   const savingStatusRef = useRef<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const snackbarTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasUnsavedChangesRef = useRef(false);
@@ -31,6 +34,26 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
   });
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // オンライン状態の監視を追加
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => {
+      setIsOnline(false);
+      updateSavingStatus('error');
+      showSnackbar('オフライン状態です。インターネット接続を確認してください', 'error');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // 未保存の変更がある場合の警告表示
   useEffect(() => {
@@ -77,35 +100,50 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, []);
 
-  const setSavingStatus = useCallback((status: 'idle' | 'saving' | 'saved' | 'error') => {
+  const updateSavingStatus = useCallback((status: 'idle' | 'saving' | 'saved' | 'error') => {
+    // オフライン時は保存を許可しない
+    if (status === 'saving' && !isOnline) {
+      showSnackbar('オフライン状態では保存できません', 'error', {
+        icon: <WarningIcon />,
+        autoHideDuration: 4000
+      });
+      setSavingStatus('error');
+      return;
+    }
+
     if (snackbarTimeoutRef.current) {
       clearTimeout(snackbarTimeoutRef.current);
     }
 
     savingStatusRef.current = status;
+    setSavingStatus(status);
     hasUnsavedChangesRef.current = status === 'saving';
     setHasUnsavedChanges(status === 'saving');
 
-    if (status === 'saving') {
-      showSnackbar('保存中...', 'info', {
-        icon: <CircularProgress size={20} />,
-        progress: true,
-        autoHideDuration: 3000
-      });
-    } else if (status === 'saved') {
-      showSnackbar('変更が保存されました', 'success', {
-        icon: <SaveIcon />,
-        autoHideDuration: 2000
-      });
-      hasUnsavedChangesRef.current = false;
-      setHasUnsavedChanges(false);
-    } else if (status === 'error') {
-      showSnackbar('保存に失敗しました', 'error', {
-        icon: <WarningIcon />,
-        autoHideDuration: 4000
-      });
+    switch (status) {
+      case 'saving':
+        showSnackbar('保存中...', 'info', {
+          icon: <CircularProgress size={20} />,
+          progress: true,
+          autoHideDuration: 3000
+        });
+        break;
+      case 'saved':
+        showSnackbar('変更が保存されました', 'success', {
+          icon: <SaveIcon />,
+          autoHideDuration: 2000
+        });
+        hasUnsavedChangesRef.current = false;
+        setHasUnsavedChanges(false);
+        break;
+      case 'error':
+        showSnackbar('保存に失敗しました', 'error', {
+          icon: <WarningIcon />,
+          autoHideDuration: 4000
+        });
+        break;
     }
-  }, [showSnackbar]);
+  }, [isOnline, showSnackbar]);
 
   const handleSnackbarClose = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
@@ -113,7 +151,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const value = {
     showSnackbar,
-    setSavingStatus,
+    setSavingStatus: updateSavingStatus,
     savingStatus: savingStatusRef.current
   };
 

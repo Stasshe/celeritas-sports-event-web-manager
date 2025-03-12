@@ -103,28 +103,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     }
   }, [location.pathname, events, sports]);
   
-  // 自動保存シミュレーション
-  const simulateAutoSave = () => {
-    if (Math.random() > 0.8) {
-      // エラーをシミュレート (20%の確率)
-      setSavingStatus('error');
-      setHasUnsavedChanges(true);
-    } else {
-      // 成功をシミュレート
+  // 自動保存シミュレーションを削除
+  const simulateAutoSave = async () => {
+    try {
+      // 実際の保存処理を行う（ここではダミー）
+      await new Promise(resolve => setTimeout(resolve, 500));
       setSavingStatus('saved');
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
+    } catch (error) {
+      setSavingStatus('error');
+      setHasUnsavedChanges(true);
+      console.error('Error saving:', error);
     }
   };
   
   // 手動保存
-  const handleManualSave = () => {
+  const handleManualSave = async () => {
     setSavingStatus('saving');
-    
-    // 保存処理のシミュレーション
-    setTimeout(() => {
-      simulateAutoSave();
-    }, 800);
+    try {
+      await simulateAutoSave();
+    } catch (error) {
+      setSavingStatus('error');
+      console.error('Manual save error:', error);
+    }
   };
   
   const handleDrawerToggle = () => {
@@ -527,29 +529,23 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       >
         {children}
         
-        {/* 共通のスナックバー */}
+        {/* 単一のスナックバー */}
         <Snackbar
-          open={savingStatus === 'saved' || savingStatus === 'error' || snackbarLocal.open}
+          open={savingStatus === 'saved' || savingStatus === 'error'}
           autoHideDuration={6000}
-          onClose={() => {
-            setSavingStatus('idle');
-            handleCloseSnackbar();
-          }}
+          onClose={() => setSavingStatus('idle')}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
           <Alert 
-            onClose={() => {
-              setSavingStatus('idle');
-              handleCloseSnackbar();
-            }}
-            severity={snackbarLocal.open ? snackbarLocal.severity : (savingStatus === 'saved' ? 'success' : 'error')}
+            onClose={() => setSavingStatus('idle')}
+            severity={savingStatus === 'saved' ? 'success' : 'error'}
             sx={{ width: '100%' }}
           >
-            {snackbarLocal.open ? snackbarLocal.message : (
-              savingStatus === 'saved' 
-                ? t('admin.savedSuccessfully')
-                : t('admin.saveError')
-            )}
+            {savingStatus === 'saved' 
+              ? t('settings.savedSuccessfully') 
+              : savingStatus === 'error'
+                ? t('settings.saveError')
+                : ''}
           </Alert>
         </Snackbar>
       </Box>
