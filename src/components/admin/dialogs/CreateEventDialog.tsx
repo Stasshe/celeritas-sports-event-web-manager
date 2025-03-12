@@ -25,7 +25,7 @@ import {
   Delete as DeleteIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { Event, Organizer } from '../../../types';
+import { Event, Organizer } from '../../../types/index';
 import { useDatabase } from '../../../hooks/useDatabase';
 
 interface CreateEventDialogProps {
@@ -37,7 +37,7 @@ interface CreateEventDialogProps {
 
 const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, onSuccess, event }) => {
   const { t } = useTranslation();
-  const { pushData, updateData, data: allEventsData } = useDatabase<Event>('/events');
+  const { pushData, updateData, data: allEventsData } = useDatabase<Record<string, Event>>('/events');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<Event> & { organizers: Organizer[] }>(

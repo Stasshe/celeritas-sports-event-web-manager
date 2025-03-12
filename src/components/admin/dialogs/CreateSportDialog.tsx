@@ -23,7 +23,7 @@ import {
   Delete as DeleteIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { Sport, Organizer, Event } from '../../../types';
+import { Sport, Organizer, Event } from '../../../types/index';
 import { useDatabase } from '../../../hooks/useDatabase';
 
 interface CreateSportDialogProps {
@@ -42,7 +42,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   sport 
 }) => {
   const { t } = useTranslation();
-  const { pushData, updateData } = useDatabase<Sport>('/sports');
+  const { pushData, updateData } = useDatabase<Record<string, Sport>>('/sports');
   const { data: events, updateData: updateEvent } = useDatabase<Record<string, Event>>('/events');
   
   const [isSubmitting, setIsSubmitting] = useState(false);

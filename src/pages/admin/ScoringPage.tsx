@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Container, 
@@ -35,6 +35,10 @@ const ScoringPage: React.FC = () => {
   
   // スポーツデータのローカルコピー
   const [localSport, setLocalSport] = useState<Sport | null>(null);
+
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdateRef = useRef<Sport | null>(null);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     if (sport && !localSport) {
@@ -92,35 +96,47 @@ const ScoringPage: React.FC = () => {
     setShowSnackbar(false);
   };
 
-  // スポーツデータの更新ハンドラ（子コンポーネントから呼ばれる）
-  const handleSportUpdate = async (updatedSport: Sport) => {
-    // 即時に状態を更新
-    setLocalSport(updatedSport);
+  // スポーツデータの更新ハンドラを改善
+  const handleSportUpdate = useCallback(async (updatedSport: Sport) => {
+    if (isProcessingRef.current) return;
 
     // 既存のタイマーをクリア
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
     }
 
-    // 新しいタイマーを設定（デバウンス処理）
-    const timer = setTimeout(async () => {
-      if (!isProcessing) {
-        setIsProcessing(true);
-        setSaveStatus('saving');
-        try {
-          await updateData(updatedSport);
-          setSaveStatus('saved');
-        } catch (error) {
-          console.error('Update failed:', error);
-          setSaveStatus('error');
-        } finally {
-          setIsProcessing(false);
-        }
-      }
-    }, 500); // 500ms後に保存を実行
+    // 最新の更新内容を保持
+    pendingUpdateRef.current = updatedSport;
+    setLocalSport(updatedSport);
 
-    setSaveTimeout(timer);
-  };
+    updateTimeoutRef.current = setTimeout(async () => {
+      if (!pendingUpdateRef.current) return;
+
+      isProcessingRef.current = true;
+      setSaveStatus('saving');
+
+      try {
+        await updateData(pendingUpdateRef.current);
+        setSaveStatus('saved');
+        setShowSnackbar(true);
+        
+        // 成功したら状態をクリア
+        pendingUpdateRef.current = null;
+        
+        // 一定時間後に通知を非表示
+        setTimeout(() => {
+          setSaveStatus('idle');
+          setShowSnackbar(false);
+        }, 2000);
+      } catch (error) {
+        console.error('Update failed:', error);
+        setSaveStatus('error');
+        setShowSnackbar(true);
+      } finally {
+        isProcessingRef.current = false;
+      }
+    }, 1000);
+  }, [updateData]);
 
   // クリーンアップ
   useEffect(() => {
@@ -128,6 +144,11 @@ const ScoringPage: React.FC = () => {
       if (saveTimeout) {
         clearTimeout(saveTimeout);
       }
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      isProcessingRef.current = false;
+      pendingUpdateRef.current = null;
     };
   }, [saveTimeout]);
 

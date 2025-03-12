@@ -80,6 +80,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
   const [hasThirdPlace, setHasThirdPlace] = useState(false);
   const [isDialogProcessing, setIsDialogProcessing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [updateQueue, setUpdateQueue] = useState<Sport | null>(null);
 
   // SVG要素を大文字で定義
   const ForeignObject = 'foreignObject';
@@ -245,13 +247,12 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
 
       setMatches(newMatches);
       
-      // データ更新中のフラグを設定
-      setIsUpdating(true);
-      try {
-        await onUpdate({ ...sport, matches: newMatches });
-      } finally {
-        setIsUpdating(false);
-      }
+      // 更新キューに追加
+      setUpdateQueue({
+        ...sport,
+        matches: newMatches
+      });
+
       setMatchDialogOpen(false);
     } finally {
       setIsDialogProcessing(false);
@@ -260,11 +261,15 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
 
   const handleMatchesCreate = (newMatches: Match[], selectedTeams: Team[]) => {
     setMatches(newMatches);
-    onUpdate({ 
-      ...sport, 
+    // 即時の状態更新
+    const updatedSport = {
+      ...sport,
       matches: newMatches,
-      teams: selectedTeams  // 選択されたチーム情報を更新
-    });
+      teams: selectedTeams
+    };
+
+    // 更新キューに追加
+    setUpdateQueue(updatedSport);
   };
 
   // トーナメント表示のコンポーネント部分を修正
@@ -391,6 +396,22 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
       </Box>
     </ForeignObject>
   ), [theme, t]);
+
+  // 更新を制御するためのデバウンス処理
+  useEffect(() => {
+    if (updateQueue && !isSaving) {
+      const timer = setTimeout(async () => {
+        setIsSaving(true);
+        try {
+          await onUpdate(updateQueue);
+        } finally {
+          setIsSaving(false);
+          setUpdateQueue(null);
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [updateQueue, isSaving, onUpdate]);
 
   return (
     <Box>
