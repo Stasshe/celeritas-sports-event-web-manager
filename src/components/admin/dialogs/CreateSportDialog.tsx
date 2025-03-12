@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -44,6 +44,10 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   const { t } = useTranslation();
   const { pushData, updateData } = useDatabase<Record<string, Sport>>('/sports');
   const { data: events, updateData: updateEvent } = useDatabase<Record<string, Event>>('/events');
+  
+  const isSubmittingRef = useRef(false);
+  const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingSportRef = useRef<Sport | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSport, setNewSport] = useState<Partial<Sport> & { organizers: Organizer[] }>(
@@ -133,12 +137,17 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
 
   // 型定義エラーを修正
   const handleSubmit = async () => {
-    if (!newSport.name || !newSport.eventId) return;
+    if (!newSport.name || !newSport.eventId || isSubmittingRef.current) return;
     
+    // 既存のタイマーをクリア
+    if (submitTimeoutRef.current) {
+      clearTimeout(submitTimeoutRef.current);
+    }
+
     try {
+      isSubmittingRef.current = true;
       setIsSubmitting(true);
-      
-      // 初期設定を追加
+
       const sportData: Omit<Sport, 'id'> = {
         name: newSport.name,
         eventId: newSport.eventId,
@@ -168,72 +177,62 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           grade3: {}
         }
       };
-      
-      // 競技形式に合わせて特定の設定を上書き
-      if (sportData.type === 'tournament') {
-        if (newSport.tournamentSettings) {
-          sportData.tournamentSettings = newSport.tournamentSettings;
-        }
-      } else if (sportData.type === 'roundRobin') {
-        if (newSport.roundRobinSettings) {
-          sportData.roundRobinSettings = newSport.roundRobinSettings;
-        }
-      } else if (sportData.type === 'custom') {
-        // カスタム形式の場合は空のレイアウトを作成
-        if (newSport.customLayout) {
-          sportData.customLayout = newSport.customLayout;
-        } else {
-          const emptyLayout = Array(5).fill(0).map((_, rowIndex) => 
-            Array(5).fill(0).map((_, colIndex) => ({
-              id: `cell_${rowIndex}_${colIndex}_${Date.now()}`,
-              rowIndex,
-              colIndex,
-              content: rowIndex === 0 || colIndex === 0 
-                ? (rowIndex === 0 && colIndex === 0 ? sportData.name : `${rowIndex === 0 ? '列' : '行'}${rowIndex === 0 ? colIndex : rowIndex}`) 
-                : '',
-              type: (rowIndex === 0 || colIndex === 0 ? 'header' : 'data') as 'header' | 'data' | 'score' | 'result'
-            }))
-          );
-          sportData.customLayout = emptyLayout;
-        }
-      }
-      
-      let sportId: string = '';
-      
-      if (sport && sport.id) {
-        // 既存競技の更新
-        sportId = sport.id;
-        await updateData({ [sport.id]: {...sportData, id: sport.id} });
-      } else {
-        // 新規競技作成 - nullチェックを追加
-        const newSportId = await pushData(sportData as any);
-        if (newSportId && events && events[eventId]) {
-          sportId = newSportId;
-          const event = events[eventId];
-          const updatedSports = [...(event.sports || [])];
-          if (!updatedSports.includes(newSportId)) {
-            updatedSports.push(newSportId);
-            
-            // イベントを更新
-            await updateEvent({ 
-              [eventId]: {
-                ...event,
-                sports: updatedSports
+
+      // 新しい処理をキューに追加
+      submitTimeoutRef.current = setTimeout(async () => {
+        try {
+          let sportId: string = '';
+          
+          if (sport && sport.id) {
+            sportId = sport.id;
+            await updateData({ [sport.id]: {...sportData, id: sport.id} });
+          } else {
+            const newSportId = await pushData(sportData as any);
+            if (newSportId && events && events[eventId]) {
+              sportId = newSportId;
+              const event = events[eventId];
+              const updatedSports = [...(event.sports || [])];
+              if (!updatedSports.includes(newSportId)) {
+                updatedSports.push(newSportId);
+                
+                // イベントを更新
+                await updateEvent({ 
+                  [eventId]: {
+                    ...event,
+                    sports: updatedSports
+                  }
+                });
               }
-            });
+            }
           }
+          
+          if (sportId) {
+            onSuccess(sportId);
+          }
+        } catch (error) {
+          console.error('Error saving sport:', error);
+        } finally {
+          isSubmittingRef.current = false;
+          setIsSubmitting(false);
         }
-      }
-      
-      if (sportId) {
-        onSuccess(sportId);
-      }
+      }, 100);
+
     } catch (error) {
-      console.error('Error saving sport:', error);
-    } finally {
+      console.error('Error preparing sport data:', error);
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (submitTimeoutRef.current) {
+        clearTimeout(submitTimeoutRef.current);
+      }
+      isSubmittingRef.current = false;
+    };
+  }, []);
   
   const getRoleLabel = (role: string) => {
     switch (role) {
