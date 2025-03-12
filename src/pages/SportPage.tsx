@@ -16,15 +16,26 @@ import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../hooks/useDatabase';
 import { Sport, Team, Match } from '../types';
-import TournamentBracket from '../components/sports/TournamentBracket';
+import TournamentScoring from '../components/admin/scoring/TournamentScoring';
 import RoundRobinTable from '../components/sports/RoundRobinTable';
 import CustomLayout from '../components/sports/CustomLayout';
+
 
 const SportPage: React.FC = () => {
   const { sportId } = useParams<{ sportId: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: sport, loading } = useDatabase<Sport>(`/sports/${sportId}`);
+  const { data: sport, loading, updateData } = useDatabase<Sport>(`/sports/${sportId}`);
+
+  const handleSportUpdate = async (updatedSport: Sport) => {
+    try {
+      await updateData(updatedSport);
+      return true;
+    } catch (error) {
+      console.error('Error updating sport:', error);
+      return false;
+    }
+  };
 
   if (loading) {
     return (
@@ -94,7 +105,13 @@ const SportPage: React.FC = () => {
       
       <Box sx={{ mt: 4 }}>
         {/* 競技形式によってコンポーネントを切り替え */}
-        {sport.type === 'tournament' && <TournamentBracket sport={sport} />}
+        {sport.type === 'tournament' && (
+          <TournamentScoring 
+            sport={sport} 
+            onUpdate={handleSportUpdate}
+            readOnly // 読み取り専用モードを追加
+          />
+        )}
         {sport.type === 'roundRobin' && <RoundRobinTable sport={sport} />}
         {sport.type === 'custom' && <CustomLayout sport={sport} />}
       </Box>

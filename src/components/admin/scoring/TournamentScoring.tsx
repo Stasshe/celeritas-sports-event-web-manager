@@ -41,10 +41,12 @@ import MatchEditDialog from './components/MatchEditDialog';
 //import TournamentMatchPlacer from './components/TournamentMatchPlacer';
 import TournamentBuilder from './components/TournamentBuilder';
 import { TournamentStructureHelper } from './components/TournamentStructureHelper';
+import { generateBracketMatches } from '../../../utils/tournamentViewHelper';
 
 interface TournamentScoringProps {
   sport: Sport;
   onUpdate: (updatedSport: Sport) => void;
+  readOnly?: boolean; // 読み取り専用モードを追加
 }
 
 // トーナメントブラケットのmatchComponentの型定義を追加
@@ -68,7 +70,11 @@ interface MatchComponentProps {
   height: number;
 }
 
-const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }) => {
+const TournamentScoring: React.FC<TournamentScoringProps> = ({ 
+  sport, 
+  onUpdate,
+  readOnly = false // デフォルトは編集可能
+}) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { alpha } = useThemeContext();
@@ -132,65 +138,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
   };
 
   // トーナメント表示用のデータ
-  const bracketMatches = useMemo(() => {
-    if (!sport.teams || !matches.length) return [];
-
-    const maxRound = Math.max(...matches.map(m => m.round));
-    
-    const getParticipantName = (teamId: string | null, match: Match, position: 'team1' | 'team2'): string => {
-      if (!teamId) {
-        // シード試合の空きポジションの場合
-        const otherTeamId = position === 'team1' ? match.team2Id : match.team1Id;
-        if (otherTeamId && TournamentStructureHelper.isNoTeam(otherTeamId, match, matches)) {
-          return t('tournament.seed');
-        }
-        return t('tournament.tbd');
-      }
-      return sport.teams.find(t => t.id === teamId)?.name || t('tournament.tbd');
-    };
-
-    return matches
-      .sort((a, b) => {
-        // ラウンドとマッチナンバーでソート
-        if (a.round !== b.round) return a.round - b.round;
-        // 3位決定戦は最後に
-        if (a.matchNumber === 0) return 1;
-        if (b.matchNumber === 0) return -1;
-        return a.matchNumber - b.matchNumber;
-      })
-      .map(match => ({
-        id: match.id,
-        name: match.matchNumber === 0
-          ? t('tournament.thirdPlace')
-          : match.round === maxRound && match.matchNumber === 1
-          ? t('tournament.final')
-          : `${t('tournament.round')}${match.round} - ${t('match.number', { number: match.matchNumber })}`,
-        nextMatchId: match.matchNumber === 0 ? null :
-          matches.find(m =>
-            m.round === match.round + 1 &&
-            Math.ceil(match.matchNumber / 2) === m.matchNumber
-          )?.id || null,
-        tournamentRoundText: match.round.toString(),
-        startTime: match.date || new Date().toISOString(),
-        state: getMatchState(match),
-        participants: [
-          {
-            id: match.team1Id || `seed-${match.round}-${match.matchNumber}-1`,
-          name: getParticipantName(match.team1Id, match, 'team1'),
-            score: match.team1Score || undefined,
-            isWinner: Boolean(match.winnerId === match.team1Id),
-            status: getParticipantStatus(match.team1Id, match)
-          } as Participant,
-          {
-            id: match.team2Id || `seed-${match.round}-${match.matchNumber}-2`,
-            name: getParticipantName(match.team2Id, match, 'team2'),
-            score: match.team2Score || undefined,
-            isWinner: Boolean(match.winnerId === match.team2Id),
-            status: getParticipantStatus(match.team2Id, match)
-          } as Participant
-        ]
-      }));
-  }, [matches, sport.teams, t]);
+  const bracketMatches = useMemo(() => generateBracketMatches(sport, t), [sport, t]);
 
   // ラウンドごとの試合データを構築（修正）
   const roundMatches = useMemo(() => {
@@ -220,12 +168,14 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
 
   // 試合の編集
   const handleEditMatch = (match: Match) => {
+    if (readOnly) return;
     setSelectedMatch(match);
     setMatchDialogOpen(true);
   };
 
   // 試合の更新（即時保存用）
   const handleMatchUpdate = async (updatedMatch: Match) => {
+    if (readOnly) return;
     setIsDialogProcessing(true);
     try {
       const status = TournamentStructureHelper.getMatchStatus(updatedMatch);
@@ -260,6 +210,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
   };
 
   const handleMatchesCreate = (newMatches: Match[], selectedTeams: Team[]) => {
+    if (readOnly) return;
     setMatches(newMatches);
     // 即時の状態更新
     const updatedSport = {
@@ -415,30 +366,36 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
 
   return (
     <Box>
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="h6">
-            {t('tournament.settings')}
-          </Typography>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={hasThirdPlace}
-                onChange={(e) => {
-                  setHasThirdPlace(e.target.checked);
-                  // 3位決定戦の追加/削除ロジックをここに実装
-                }}
-              />
-            }
-            label={t('tournament.hasThirdPlace')}
-          />
-        </Box>
-      </Paper>
+      {/* readOnlyモードの場合は設定パネルを非表示 */}
+      {!readOnly && (
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6">
+              {t('tournament.settings')}
+            </Typography>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={hasThirdPlace}
+                  onChange={(e) => {
+                    setHasThirdPlace(e.target.checked);
+                    // 3位決定戦の追加/削除ロジックをここに実装
+                  }}
+                />
+              }
+              label={t('tournament.hasThirdPlace')}
+            />
+          </Box>
+        </Paper>
+      )}
 
-      <TournamentBuilder
-        sport={sport}
-        onMatchesCreate={handleMatchesCreate}
-      />
+      {/* readOnlyモードの場合はビルダーを非表示 */}
+      {!readOnly && (
+        <TournamentBuilder
+          sport={sport}
+          onMatchesCreate={handleMatchesCreate}
+        />
+      )}
       
       {matches.length > 0 ? (
         <>
