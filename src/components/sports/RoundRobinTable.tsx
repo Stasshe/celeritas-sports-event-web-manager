@@ -10,7 +10,8 @@ import {
   TableHead, 
   TableRow,
   Tooltip,
-  useTheme
+  useTheme,
+  Grid
 } from '@mui/material';
 import { Sport, Team, Match } from '../../types';
 import { useTranslation } from 'react-i18next';
@@ -97,19 +98,32 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
       }
     });
 
-    // ポイント順にソート（同点の場合は得失点差、さらに同じ場合は得点数で）
+    // ソート順を設定に基づいて決定
     return Object.values(stats).sort((a, b) => {
-      if (b.points !== a.points) {
-        return b.points - a.points;
-      }
+      const rankingMethod = sport.roundRobinSettings?.rankingMethod || 'points';
       const goalDiffA = a.goalsFor - a.goalsAgainst;
       const goalDiffB = b.goalsFor - b.goalsAgainst;
-      if (goalDiffB !== goalDiffA) {
-        return goalDiffB - goalDiffA;
+
+      switch (rankingMethod) {
+        case 'goalDifference':
+          if (goalDiffB !== goalDiffA) return goalDiffB - goalDiffA;
+          return b.goalsFor - a.goalsFor;
+        case 'goals':
+          if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+          return goalDiffB - goalDiffA;
+        default: // 'points'
+          if (b.points !== a.points) return b.points - a.points;
+          if (goalDiffB !== goalDiffA) return goalDiffB - goalDiffA;
+          return b.goalsFor - a.goalsFor;
       }
-      return b.goalsFor - a.goalsFor;
     });
-  }, [sport.teams, sport.matches]);
+  }, [sport.teams, sport.matches, sport.roundRobinSettings?.rankingMethod]);
+
+  // 上位チームの抽出
+  const topTeams = useMemo(() => {
+    const displayCount = sport.roundRobinSettings?.displayRankCount || 3;
+    return teamStats.slice(0, displayCount);
+  }, [teamStats, sport.roundRobinSettings?.displayRankCount]);
 
   // 対戦表を作成
   const matchGrid = useMemo(() => {
@@ -165,6 +179,37 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
 
   return (
     <Box>
+      {/* 上位チーム表示 */}
+      <Paper sx={{ p: 2, mb: 4, bgcolor: theme.palette.primary.light }}>
+        <Typography variant="h6" gutterBottom color="primary.contrastText">
+          {t('roundRobin.topTeams')}
+        </Typography>
+        <Grid container spacing={2}>
+          {topTeams.map((team, index) => (
+            <Grid item xs={12} sm={6} md={4} key={team.teamId}>
+              <Paper sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="h4" sx={{ mr: 2, color: 'primary.main' }}>
+                    {index + 1}
+                  </Typography>
+                  <Typography variant="h6">{team.teamName}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2">{t('roundRobin.points')}: {team.points}</Typography>
+                  <Typography variant="body2">
+                    {t('roundRobin.record')}: {team.won}-{team.drawn}-{team.lost}
+                  </Typography>
+                </Box>
+                <Typography variant="body2">
+                  {t('roundRobin.goalRecord')}: {team.goalsFor}-{team.goalsAgainst} 
+                  ({team.goalsFor - team.goalsAgainst > 0 ? '+' : ''}{team.goalsFor - team.goalsAgainst})
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Paper>
+
       {/* 成績表 */}
       <Typography variant="h6" gutterBottom>
         {t('roundRobin.standings')}

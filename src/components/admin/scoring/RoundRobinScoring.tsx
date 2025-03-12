@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import { Sport, Match, Team } from '../../../types';
 import { useTranslation } from 'react-i18next';
+import RoundRobinTable from '../../sports/RoundRobinTable';
 
 interface RoundRobinScoringProps {
   sport: Sport;
@@ -38,11 +39,15 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
   const [matches, setMatches] = useState<Match[]>(sport.matches || []);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const teamsRef = useRef<Team[]>(sport.teams || []);
+  const matchesRef = useRef<Match[]>(sport.matches || []);
 
   // スポーツデータが更新されたときにローカルステートも更新
   useEffect(() => {
-    setMatches(sport.matches || []);
+    teamsRef.current = sport.teams || [];
+    matchesRef.current = sport.matches || [];
     setTeams(sport.teams || []);
+    setMatches(sport.matches || []);
   }, [sport]);
 
   // rosterから全チームを自動生成
@@ -310,6 +315,14 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
         </Table>
       </TableContainer>
 
+      {/* 閲覧用テーブルの追加 */}
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" gutterBottom>
+          {t('roundRobin.currentStandings')}
+        </Typography>
+        <RoundRobinTable sport={sport} />
+      </Box>
+      
       {/* スコア入力ダイアログ */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>

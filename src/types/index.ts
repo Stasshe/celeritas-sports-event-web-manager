@@ -38,12 +38,7 @@ export interface Sport {
     hasRepechage: boolean; // 敗者復活戦の有無
   };
   // 総当たり戦設定
-  roundRobinSettings?: {
-    winPoints: number; // 勝ち点
-    drawPoints: number; // 引き分け点
-    losePoints: number; // 負け点
-    considerLosePoints: boolean; // 負け点を考慮するか
-  };
+  roundRobinSettings?: Partial<RoundRobinSettings>;
   // カスタム形式の場合のデータ
   customLayout?: CustomCell[][];
   // 名簿データ
@@ -54,6 +49,26 @@ export interface Sport {
   };
   coverImageUrl?: string; // カバー画像のURLを追加
 }
+
+// 総当たり戦設定の型を明確に定義
+export interface RoundRobinSettings {
+  winPoints: number;
+  drawPoints: number;
+  losePoints: number;
+  considerLosePoints: boolean;
+  rankingMethod: 'points' | 'goalDifference' | 'goals';
+  displayRankCount: number;
+}
+
+// デフォルト設定を定義
+export const defaultRoundRobinSettings: RoundRobinSettings = {
+  winPoints: 3,
+  drawPoints: 1,
+  losePoints: 0,
+  considerLosePoints: false,
+  rankingMethod: 'points',
+  displayRankCount: 3
+};
 
 // チームタイプ
 export interface Team {

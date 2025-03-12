@@ -156,7 +156,16 @@
     "noRoundRobin": "総当たり戦がありません",
     "noCustom": "カスタム形式がありません",
     "noParticipants": "参加者がいません",
-    "noParticipantsInSport": "この競技には参加者がいません"
+    "noParticipantsInSport": "この競技には参加者がいません",
+    "rankingMethod": "順位決定方式",
+    "rankByPoints": "勝ち点方式",
+    "rankByGoalDiff": "得失点差方式",
+    "rankByGoals": "得点方式",
+    "displayRankCount": "表示順位数",
+    "topTeams": "上位チーム",
+    "record": "成績",
+    "goalRecord": "得失点",
+    "currentStandings": "現在の順位表"
   },
   "custom" : {
     "round": "ラウンド",

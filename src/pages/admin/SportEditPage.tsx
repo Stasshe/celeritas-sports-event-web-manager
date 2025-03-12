@@ -283,6 +283,32 @@ const SportEditPage: React.FC = () => {
     });
   };
 
+  const handleRoundRobinSettingsUpdate = (
+    key: keyof Required<Sport>['roundRobinSettings'], 
+    value: number | boolean | 'points' | 'goalDifference' | 'goals'
+  ) => {
+    const defaultSettings: Required<Sport>['roundRobinSettings'] = {
+      winPoints: 3,
+      drawPoints: 1,
+      losePoints: 0,
+      considerLosePoints: false,
+      rankingMethod: 'points',
+      displayRankCount: 3
+    };
+  
+    setLocalSport(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        roundRobinSettings: {
+          ...defaultSettings,
+          ...(prev.roundRobinSettings || {}),
+          [key]: value
+        }
+      };
+    });
+  };
+
   const handleDelete = async () => {
     try {
       await removeData();
@@ -656,24 +682,8 @@ const SportEditPage: React.FC = () => {
                     label={t('roundRobin.winPoints')}
                     type="number"
                     fullWidth
-                    value={localSport.roundRobinSettings?.winPoints || 3}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value) || 0;
-                      setLocalSport(prev => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          roundRobinSettings: {
-                            ...prev.roundRobinSettings || {
-                              drawPoints: 1,
-                              losePoints: 0,
-                              considerLosePoints: false
-                            },
-                            winPoints: value
-                          }
-                        };
-                      });
-                    }}
+                    value={localSport.roundRobinSettings?.winPoints ?? 3}
+                    onChange={(e) => handleRoundRobinSettingsUpdate('winPoints', parseInt(e.target.value) || 0)}
                     InputProps={{ inputProps: { min: 0 } }}
                   />
                 </Grid>
@@ -682,24 +692,8 @@ const SportEditPage: React.FC = () => {
                     label={t('roundRobin.drawPoints')}
                     type="number"
                     fullWidth
-                    value={localSport.roundRobinSettings?.drawPoints || 1}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value) || 0;
-                      setLocalSport(prev => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          roundRobinSettings: {
-                            ...prev.roundRobinSettings || {
-                              winPoints: 3,
-                              losePoints: 0,
-                              considerLosePoints: false
-                            },
-                            drawPoints: value
-                          }
-                        };
-                      });
-                    }}
+                    value={localSport.roundRobinSettings?.drawPoints ?? 1}
+                    onChange={(e) => handleRoundRobinSettingsUpdate('drawPoints', parseInt(e.target.value) || 0)}
                     InputProps={{ inputProps: { min: 0 } }}
                   />
                 </Grid>
@@ -708,24 +702,8 @@ const SportEditPage: React.FC = () => {
                     label={t('roundRobin.losePoints')}
                     type="number"
                     fullWidth
-                    value={localSport.roundRobinSettings?.losePoints || 0}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value) || 0;
-                      setLocalSport(prev => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          roundRobinSettings: {
-                            ...prev.roundRobinSettings || {
-                              winPoints: 3,
-                              drawPoints: 1,
-                              considerLosePoints: false
-                            },
-                            losePoints: value
-                          }
-                        };
-                      });
-                    }}
+                    value={localSport.roundRobinSettings?.losePoints ?? 0}
+                    onChange={(e) => handleRoundRobinSettingsUpdate('losePoints', parseInt(e.target.value) || 0)}
                     InputProps={{ inputProps: { min: 0 } }}
                   />
                 </Grid>
@@ -733,32 +711,50 @@ const SportEditPage: React.FC = () => {
                   <FormControl fullWidth>
                     <InputLabel>{t('roundRobin.considerLosePoints')}</InputLabel>
                     <Select
-                      value={localSport.roundRobinSettings?.considerLosePoints || false}
-                      onChange={(e) => {
-                        setLocalSport(prev => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            roundRobinSettings: {
-                              ...prev.roundRobinSettings || {
-                                winPoints: 3,
-                                drawPoints: 1,
-                                losePoints: 0
-                              },
-                              considerLosePoints: e.target.value === 'true'
-                            }
-                          };
-                        });
-                      }}
+                      value={localSport.roundRobinSettings?.considerLosePoints ?? false}
+                      onChange={(e) => handleRoundRobinSettingsUpdate('considerLosePoints', e.target.value === 'true')}
                     >
                       <MenuItem value="true">{t('common.yes')}</MenuItem>
                       <MenuItem value="false">{t('common.no')}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t('roundRobin.rankingMethod')}</InputLabel>
+                    <Select
+                      value={localSport.roundRobinSettings?.rankingMethod || 'points'}
+                      onChange={(e) => handleRoundRobinSettingsUpdate('rankingMethod', e.target.value as 'points' | 'goalDifference' | 'goals')}
+                    >
+                      <MenuItem value="points">{t('roundRobin.rankByPoints')}</MenuItem>
+                      <MenuItem value="goalDifference">{t('roundRobin.rankByGoalDiff')}</MenuItem>
+                      <MenuItem value="goals">{t('roundRobin.rankByGoals')}</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label={t('roundRobin.displayRankCount')}
+                    type="number"
+                    fullWidth
+                    value={localSport.roundRobinSettings?.displayRankCount || 3}
+                    onChange={(e) => {
+                      const value = Math.min(Math.max(parseInt(e.target.value) || 3, 3), 6);
+                      setLocalSport(prev => ({
+                        ...prev!,
+                        roundRobinSettings: {
+                          ...prev!.roundRobinSettings || {},
+                          displayRankCount: value
+                        }
+                      }));
+                    }}
+                    InputProps={{ inputProps: { min: 3, max: 6 } }}
+                  />
+                </Grid>
               </Grid>
             )}
-            
+
             {localSport.type === 'custom' && (
               <Typography>
                 {t('sport.customSettingsMessage')}
