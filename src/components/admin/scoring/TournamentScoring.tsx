@@ -336,12 +336,12 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
             {topParty.name}
             {topParty.status === 'waiting' && ' (待機中)'}
           </Typography>
-          <Typography variant="body2" sx={{ 
+            <Typography variant="body2" sx={{ 
             fontWeight: 'bold',
-            color: topParty.isWinner ? theme.palette.primary.light : 'inherit'
-          }}>
+            color: topParty.isWinner && topParty.name !== t('tournament.tbd') ? theme.palette.primary.light : 'inherit'
+            }}>
             {topParty.score ? topParty.score : 0}
-          </Typography>
+            </Typography>
         </Box>
         
         {/* 下側のチーム */}
@@ -383,7 +383,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
           </Typography>
           <Typography variant="body2" sx={{ 
             fontWeight: 'bold',
-            color: bottomParty.isWinner ? theme.palette.primary.main : 'inherit'
+            color: bottomParty.isWinner && bottomParty.name !== t('tournament.seed') && bottomParty.name !== t('tournament.tbd') ? theme.palette.primary.main : 'inherit'
           }}>
             {bottomParty.score ? bottomParty.score : (bottomParty.name === t('tournament.seed') ? '-' : 0)}
           </Typography>
