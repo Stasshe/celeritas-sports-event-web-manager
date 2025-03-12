@@ -45,6 +45,82 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
     setTeams(sport.teams || []);
   }, [sport]);
 
+  // rosterから全チームを自動生成
+  const generateTeamsFromRoster = () => {
+    const newTeams: Team[] = [];
+    const existingTeams = new Set(teams.map(t => t.name));
+    
+    if (sport.roster) {
+      // 各学年のクラスをチームとして追加
+      Object.entries(sport.roster).forEach(([grade, classes]) => {
+        Object.keys(classes || {}).forEach(className => {
+          const teamName = `${className}`;
+          if (!existingTeams.has(teamName)) {
+            newTeams.push({
+              id: `team_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              name: teamName,
+              members: classes[className]
+            });
+            existingTeams.add(teamName);
+          }
+        });
+      });
+    }
+
+    // 新しいチームを追加
+    const updatedTeams = [...teams, ...newTeams];
+    setTeams(updatedTeams);
+    
+    // チーム間の全試合を生成
+    const generatedMatches = generateAllMatches(updatedTeams);
+    setMatches(prev => [...prev, ...generatedMatches]);
+    
+    // スポーツデータを更新
+    onUpdate({
+      ...sport,
+      teams: updatedTeams,
+      matches: [...matches, ...generatedMatches]
+    });
+  };
+
+  // 全チーム間の試合を生成
+  const generateAllMatches = (teamList: Team[]) => {
+    const newMatches: Match[] = [];
+    const existingPairs = new Set(
+      matches.map(m => `${m.team1Id}-${m.team2Id}`)
+    );
+
+    teamList.forEach((team1, i) => {
+      teamList.slice(i + 1).forEach(team2 => {
+        // 既存の対戦がない場合のみ新しい試合を作成
+        const pairKey = `${team1.id}-${team2.id}`;
+        const reversePairKey = `${team2.id}-${team1.id}`;
+        
+        if (!existingPairs.has(pairKey) && !existingPairs.has(reversePairKey)) {
+          newMatches.push({
+            id: `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            team1Id: team1.id,
+            team2Id: team2.id,
+            team1Score: 0,
+            team2Score: 0,
+            round: 1,
+            matchNumber: matches.length + newMatches.length + 1,
+            status: 'scheduled'
+          });
+        }
+      });
+    });
+
+    return newMatches;
+  };
+
+  // コンポーネントの先頭に追加
+  useEffect(() => {
+    if (teams.length === 0 && sport.roster) {
+      generateTeamsFromRoster();
+    }
+  }, [sport.roster]);
+
   // 対戦表を作成
   const matchGrid = teams.reduce((acc, team1) => {
     acc[team1.id] = teams.reduce((innerAcc, team2) => {

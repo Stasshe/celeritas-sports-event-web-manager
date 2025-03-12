@@ -112,7 +112,18 @@ const SportPage: React.FC = () => {
             readOnly // 読み取り専用モードを追加
           />
         )}
-        {sport.type === 'roundRobin' && <RoundRobinTable sport={sport} />}
+        {sport.type === 'roundRobin' && (
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+              {t('roundRobin.pointsSystem', {
+                win: sport.roundRobinSettings?.winPoints || 3,
+                draw: sport.roundRobinSettings?.drawPoints || 1,
+                lose: sport.roundRobinSettings?.considerLosePoints ? sport.roundRobinSettings?.losePoints || 0 : 0
+              })}
+            </Typography>
+            <RoundRobinTable sport={sport} />
+          </Box>
+        )}
         {sport.type === 'custom' && <CustomLayout sport={sport} />}
       </Box>
     </Container>

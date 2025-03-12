@@ -221,7 +221,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
           <TableBody>
             {sport.teams.map(team1 => (
               <TableRow key={team1.id} hover>
-                <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                <TableCell component="th" scope="row" sx={{ fontWeight: 'bold', bgcolor: theme.palette.grey[100] }}>
                   {team1.name}
                 </TableCell>
                 {sport.teams.map(team2 => {
@@ -232,28 +232,59 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
                       key={team2.id} 
                       align="center" 
                       sx={{
-                        backgroundColor: team1.id === team2.id ? theme.palette.action.hover : 'inherit',
-                        ...(match?.status === 'completed' ? (
-                          match.team1Id === team1.id && match.team1Score > match.team2Score || 
-                          match.team2Id === team1.id && match.team2Score > match.team1Score
-                        ) ? { backgroundColor: theme.palette.success.light } : {}
-                        : {})
+                        backgroundColor: team1.id === team2.id ? theme.palette.action.hover : 
+                          match?.status === 'completed' ? (
+                            match.winnerId === team1.id ? theme.palette.success.light :
+                            match.winnerId === team2.id ? theme.palette.error.light :
+                            theme.palette.warning.light // 引き分けの場合
+                          ) : 'inherit',
+                        position: 'relative',
+                        ...(team1.id === team2.id && {
+                          '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: `linear-gradient(to top right, transparent calc(50% - 1px), ${theme.palette.divider}, transparent calc(50% + 1px))`,
+                            pointerEvents: 'none'
+                          }
+                        })
                       }}
                     >
                       {team1.id === team2.id ? (
-                        '-'
+                        ''
                       ) : match ? (
-                        <Tooltip title={match.date ? new Date(match.date).toLocaleDateString() : ''}>
+                        <Tooltip 
+                          title={match.date ? `${new Date(match.date).toLocaleDateString()} ${match.notes || ''}` : ''} 
+                          arrow
+                        >
                           <Box>
-                            {match.team1Id === team1.id ? (
-                              `${match.team1Score} - ${match.team2Score}`
-                            ) : (
-                              `${match.team2Score} - ${match.team1Score}`
+                            <Typography variant="body2">
+                              {match.team1Id === team1.id ? (
+                                `${match.team1Score} - ${match.team2Score}`
+                              ) : (
+                                `${match.team2Score} - ${match.team1Score}`
+                              )}
+                            </Typography>
+                            {match.status === 'completed' && (
+                              <Typography variant="caption" color="text.secondary">
+                                {t('roundRobin.points', {
+                                  points: match.winnerId === team1.id ? 
+                                    (sport.roundRobinSettings?.winPoints || 3) :
+                                    match.winnerId === team2.id ?
+                                    (sport.roundRobinSettings?.losePoints || 0) :
+                                    (sport.roundRobinSettings?.drawPoints || 1)
+                                })}
+                              </Typography>
                             )}
                           </Box>
                         </Tooltip>
                       ) : (
-                        'TBD'
+                        <Typography variant="caption" color="text.secondary">
+                          {t('roundRobin.notPlayed')}
+                        </Typography>
                       )}
                     </TableCell>
                   );
