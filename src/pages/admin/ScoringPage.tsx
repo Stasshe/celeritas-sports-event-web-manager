@@ -27,6 +27,8 @@ const ScoringPage: React.FC = () => {
   const { data: sport, loading, updateData } = useDatabase<Sport>(`/sports/${sportId}`);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showSnackbar, setShowSnackbar] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   
   // 変更を自動保存するためのタイマーID
   const [autoSaveTimerId, setAutoSaveTimerId] = useState<NodeJS.Timeout | null>(null);
@@ -40,19 +42,22 @@ const ScoringPage: React.FC = () => {
     }
   }, [sport, localSport]);
 
-  // スポーツデータが変更されたときに自動保存タイマーをセット
+  // スポーツデータが変更されたときの自動保存制御を改善
   useEffect(() => {
-    if (!localSport || !sport) return;
+    if (!localSport || !sport || isProcessing) return;
 
-    // データが同じでなければタイマーをセット
     if (JSON.stringify(localSport) !== JSON.stringify(sport)) {
-      // 既存のタイマーをクリア
       if (autoSaveTimerId) {
         clearTimeout(autoSaveTimerId);
       }
       
-      // 新しいタイマーをセット（3秒後に自動保存）
-      const timerId = setTimeout(handleSave, 3000);
+      const timerId = setTimeout(() => {
+        // ダイアログが開いていないことを確認してから自動保存
+        const dialogs = document.querySelectorAll('[role="dialog"]');
+        if (dialogs.length === 0) {
+          handleSave();
+        }
+      }, 3000);
       setAutoSaveTimerId(timerId);
     }
 
@@ -61,11 +66,12 @@ const ScoringPage: React.FC = () => {
         clearTimeout(autoSaveTimerId);
       }
     };
-  }, [localSport]);
+  }, [localSport, isProcessing]);
 
   const handleSave = async () => {
-    if (!localSport) return;
+    if (!localSport || isProcessing) return;
 
+    setIsProcessing(true);
     setSaveStatus('saving');
     try {
       await updateData(localSport);
@@ -75,7 +81,7 @@ const ScoringPage: React.FC = () => {
       setSaveStatus('error');
       setShowSnackbar(true);
     } finally {
-      // 5秒後にステータスをリセット
+      setIsProcessing(false);
       setTimeout(() => {
         setSaveStatus('idle');
       }, 5000);
@@ -87,9 +93,43 @@ const ScoringPage: React.FC = () => {
   };
 
   // スポーツデータの更新ハンドラ（子コンポーネントから呼ばれる）
-  const handleSportUpdate = (updatedSport: Sport) => {
+  const handleSportUpdate = async (updatedSport: Sport) => {
+    // 即時に状態を更新
     setLocalSport(updatedSport);
+
+    // 既存のタイマーをクリア
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+
+    // 新しいタイマーを設定（デバウンス処理）
+    const timer = setTimeout(async () => {
+      if (!isProcessing) {
+        setIsProcessing(true);
+        setSaveStatus('saving');
+        try {
+          await updateData(updatedSport);
+          setSaveStatus('saved');
+        } catch (error) {
+          console.error('Update failed:', error);
+          setSaveStatus('error');
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    }, 500); // 500ms後に保存を実行
+
+    setSaveTimeout(timer);
   };
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+    };
+  }, [saveTimeout]);
 
   if (loading) {
     return (

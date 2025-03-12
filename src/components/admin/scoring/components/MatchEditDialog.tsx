@@ -26,6 +26,7 @@ interface MatchEditDialogProps {
   teamRosters: Record<string, string[]>;
   onClose: () => void;
   onSave: (match: Match) => void;
+  disabled?: boolean; // disabledプロパティを追加
 }
 
 const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
@@ -34,7 +35,8 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
   sport,
   teamRosters,
   onClose,
-  onSave
+  onSave,
+  disabled = false // デフォルト値を設定
 }) => {
   const { t } = useTranslation();
   const [editedMatch, setEditedMatch] = useState<Match | null>(null);
@@ -189,10 +191,15 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>
+        <Button onClick={onClose} disabled={disabled}>
           {t('common.cancel')}
         </Button>
-        <Button variant="contained" color="primary" onClick={handleSave}>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={handleSave}
+          disabled={disabled}
+        >
           {t('common.save')}
         </Button>
       </DialogActions>

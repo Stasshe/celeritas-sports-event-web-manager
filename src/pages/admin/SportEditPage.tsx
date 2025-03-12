@@ -95,6 +95,8 @@ const SportEditPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // ダイアログの状態を追加
 
   // 初期データロード
   useEffect(() => {
@@ -111,19 +113,20 @@ const SportEditPage: React.FC = () => {
     }
   }, [sportId, sport]);
 
-  // データ変更時の自動保存設定
+  // データ変更時の自動保存設定を改善
   useEffect(() => {
-    if (!localSport || !sport) return;
+    if (!localSport || !sport || isProcessing) return;
 
-    // データが変更されている場合
     if (JSON.stringify(localSport) !== JSON.stringify(sport)) {
-      // 既存のタイマーをクリア
       if (autoSaveTimerId) {
         clearTimeout(autoSaveTimerId);
       }
       
-      // 新しいタイマーをセット（3秒後に自動保存）
-      const timerId = setTimeout(handleSave, 3000);
+      const timerId = setTimeout(() => {
+        if (!isDialogOpen) { // isDialogOpenを使用
+          handleSave();
+        }
+      }, 3000);
       setAutoSaveTimerId(timerId);
     }
 
@@ -132,7 +135,7 @@ const SportEditPage: React.FC = () => {
         clearTimeout(autoSaveTimerId);
       }
     };
-  }, [localSport]);
+  }, [localSport, isProcessing, isDialogOpen]); // isDialogOpenを依存配列に追加
 
   // スポーツIDが変更されたときにローディング状態を設定
   useEffect(() => {
@@ -150,9 +153,11 @@ const SportEditPage: React.FC = () => {
     setActiveTab(newValue);
   };
 
+  // 保存処理を改善
   const handleSave = async () => {
-    if (!localSport) return;
+    if (!localSport || isProcessing) return;
 
+    setIsProcessing(true);
     setSaveStatus('saving');
     try {
       await updateSport(localSport);
@@ -163,7 +168,7 @@ const SportEditPage: React.FC = () => {
       setSaveStatus('error');
       setShowSnackbar(true);
     } finally {
-      // 5秒後にステータスをリセット
+      setIsProcessing(false);
       setTimeout(() => {
         setSaveStatus('idle');
       }, 5000);

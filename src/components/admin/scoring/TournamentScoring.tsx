@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -47,6 +47,27 @@ interface TournamentScoringProps {
   onUpdate: (updatedSport: Sport) => void;
 }
 
+// トーナメントブラケットのmatchComponentの型定義を追加
+interface MatchComponentProps {
+  match: {
+    id: string;
+    name: string;
+    nextMatchId: string | null;
+    tournamentRoundText: string;
+    startTime: string;
+    state: 'DONE' | 'PLAYING' | 'SCHEDULED';
+    participants: Participant[];
+  };
+  onMatchClick?: () => void;
+  onPartyClick?: (party: Participant) => void;
+  topParty: Participant;
+  bottomParty: Participant;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }) => {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -57,6 +78,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [matchDialogOpen, setMatchDialogOpen] = useState(false);
   const [hasThirdPlace, setHasThirdPlace] = useState(false);
+  const [isDialogProcessing, setIsDialogProcessing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // SVG要素を大文字で定義
+  const ForeignObject = 'foreignObject';
 
   // 参加者の状態を判定する関数を修正
   const getParticipantStatus = (teamId: string | null, match: Match): 'no-team' | 'waiting' | null => {
@@ -148,7 +174,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
         participants: [
           {
             id: match.team1Id || `seed-${match.round}-${match.matchNumber}-1`,
-            name: getParticipantName(match.team1Id, match, 'team1'),
+          name: getParticipantName(match.team1Id, match, 'team1'),
             score: match.team1Score || undefined,
             isWinner: Boolean(match.winnerId === match.team1Id),
             status: getParticipantStatus(match.team1Id, match)
@@ -196,29 +222,40 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
     setMatchDialogOpen(true);
   };
 
-  // 試合の更新
-  const handleMatchUpdate = (updatedMatch: Match) => {
-    const status = TournamentStructureHelper.getMatchStatus(updatedMatch);
-    const newMatch = {
-      ...updatedMatch,
-      status,
-      winnerId: updatedMatch.team1Score > updatedMatch.team2Score ? updatedMatch.team1Id :
-                updatedMatch.team2Score > updatedMatch.team1Score ? updatedMatch.team2Id :
-                undefined
-    };
+  // 試合の更新（即時保存用）
+  const handleMatchUpdate = async (updatedMatch: Match) => {
+    setIsDialogProcessing(true);
+    try {
+      const status = TournamentStructureHelper.getMatchStatus(updatedMatch);
+      const newMatch = {
+        ...updatedMatch,
+        status,
+        winnerId: updatedMatch.team1Score > updatedMatch.team2Score ? updatedMatch.team1Id :
+                  updatedMatch.team2Score > updatedMatch.team1Score ? updatedMatch.team2Id :
+                  undefined
+      };
 
-    let newMatches = matches.map(m => 
-      m.id === newMatch.id ? newMatch : m
-    );
+      let newMatches = matches.map(m => 
+        m.id === newMatch.id ? newMatch : m
+      );
 
-    // 勝者が決定した場合、次の試合に自動進出
-    if (newMatch.winnerId) {
-      newMatches = TournamentStructureHelper.progressWinnerToNextMatch(newMatch, newMatches);
+      if (newMatch.winnerId) {
+        newMatches = TournamentStructureHelper.progressWinnerToNextMatch(newMatch, newMatches);
+      }
+
+      setMatches(newMatches);
+      
+      // データ更新中のフラグを設定
+      setIsUpdating(true);
+      try {
+        await onUpdate({ ...sport, matches: newMatches });
+      } finally {
+        setIsUpdating(false);
+      }
+      setMatchDialogOpen(false);
+    } finally {
+      setIsDialogProcessing(false);
     }
-
-    setMatches(newMatches);
-    onUpdate({ ...sport, matches: newMatches });
-    setMatchDialogOpen(false);
   };
 
   const handleMatchesCreate = (newMatches: Match[], selectedTeams: Team[]) => {
@@ -229,6 +266,131 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
       teams: selectedTeams  // 選択されたチーム情報を更新
     });
   };
+
+  // トーナメント表示のコンポーネント部分を修正
+  const renderMatchComponent = useCallback(({
+    match,
+    onMatchClick,
+    onPartyClick,
+    topParty,
+    bottomParty,
+    ...props
+  }: MatchComponentProps) => (
+    <ForeignObject
+      x={props.x - props.width / 2}
+      y={props.y - props.height / 2}
+      width={props.width}
+      height={props.height}
+    >
+      <Box
+        sx={{
+          width: '100%',
+          height: '100%',
+          border: '1px solid',
+          borderColor: theme.palette.divider,
+          borderRadius: 1,
+          overflow: 'hidden',
+          backgroundColor: (topParty.status === 'no-team' && bottomParty.status === 'no-team') 
+            ? theme.palette.grey[100] 
+            : theme.palette.background.paper,
+          boxShadow: 1
+        }}
+      >
+        <Box sx={{ p: 0.5, backgroundColor: theme.palette.grey[100], borderBottom: `1px solid ${theme.palette.divider}` }}>
+          <Typography variant="caption" noWrap>
+            {match.name}
+          </Typography>
+        </Box>
+        
+        {/* 上側のチーム */}
+        <Box
+          sx={{
+            p: 0.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            backgroundColor: topParty.name === t('tournament.seed')
+              ? theme.palette.text.disabled  // seed は灰色
+              : topParty.name === t('tournament.tbd')
+              ? 'inherit'
+              : topParty.isWinner
+              ? theme.palette.primary.light // 勝者は青
+              : 'inherit',
+            '&:hover': { backgroundColor: theme.palette.action.hover }
+          }}
+          onClick={() => onPartyClick && onPartyClick(topParty)}
+        >
+          <Typography variant="body2" noWrap sx={{ 
+            maxWidth: '70%', 
+            fontWeight: topParty.isWinner ? 'bold' : 'normal',
+            bgcolor: topParty.isWinner || topParty.name === t('tournament.seed') || topParty.name === t('tournament.tbd')
+              ? theme.palette.grey[100]  // seed と tbd のセルを灰色に
+              : 'transparent',
+            color: topParty.name === t('tournament.seed')
+              ? theme.palette.text.disabled  // seed は灰色
+              : topParty.name === t('tournament.tbd')
+              ? theme.palette.warning.main  // tbd はオレンジ
+              : topParty.isWinner
+              ? theme.palette.primary.main // 勝者は青
+              : 'inherit'
+          }}>
+            {topParty.name}
+            {topParty.status === 'waiting' && ' (待機中)'}
+          </Typography>
+          <Typography variant="body2" sx={{ 
+            fontWeight: 'bold',
+            color: topParty.isWinner ? theme.palette.primary.light : 'inherit'
+          }}>
+            {topParty.score ? topParty.score : 0}
+          </Typography>
+        </Box>
+        
+        {/* 下側のチーム */}
+        <Box
+          sx={{
+            p: 0.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            backgroundColor: bottomParty.name === t('tournament.seed')
+              ? theme.palette.text.disabled
+              : bottomParty.name === t('tournament.tbd')
+              ? 'inherit'  // seed と tbd のセルを灰色に
+              : bottomParty.isWinner 
+              ? theme.palette.primary.light 
+              : 'transparent',
+            borderTop: `1px solid ${theme.palette.divider}`,
+            '&:hover': { backgroundColor: theme.palette.action.hover }
+          }}
+          onClick={() => onPartyClick && onPartyClick(bottomParty)}
+        >
+          <Typography variant="body2" noWrap sx={{ 
+            maxWidth: '70%', 
+            fontWeight: bottomParty.isWinner ? 'bold' : 'normal',
+            bgcolor: (bottomParty.isWinner || bottomParty.name === t('tournament.tbd')) && bottomParty.name !== t('tournament.seed')
+              ? theme.palette.grey[100]  // seed と tbd の背景色を灰色に
+              : 'transparent',
+            color: bottomParty.name === t('tournament.seed')
+              ? theme.palette.text.disabled  // seed は灰色
+              : bottomParty.name === t('tournament.tbd')
+              ? theme.palette.warning.main  // tbd はオレンジ
+              : bottomParty.isWinner
+              ? theme.palette.primary.main
+              : bottomParty.status === 'waiting'
+              ? theme.palette.warning.main
+              : 'inherit'
+          }}>
+            {bottomParty.name}
+            {bottomParty.status === 'waiting' && ' (待機中)'}
+          </Typography>
+          <Typography variant="body2" sx={{ 
+            fontWeight: 'bold',
+            color: bottomParty.isWinner ? theme.palette.primary.main : 'inherit'
+          }}>
+            {bottomParty.score ? bottomParty.score : (bottomParty.name === t('tournament.seed') ? '-' : 0)}
+          </Typography>
+        </Box>
+      </Box>
+    </ForeignObject>
+  ), [theme, t]);
 
   return (
     <Box>
@@ -275,129 +437,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
               {bracketMatches.length > 0 && (
                 <SingleEliminationBracket
                   matches={bracketMatches}
-                  matchComponent={({
-                    match,
-                    onMatchClick,
-                    onPartyClick,
-                    topParty,
-                    bottomParty,
-                    ...props
-                  }) => (
-                    <foreignObject
-                      x={props.x - props.width / 2}
-                      y={props.y - props.height / 2}
-                      width={props.width}
-                      height={props.height}
-                    >
-                      <Box
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          border: '1px solid',
-                          borderColor: theme.palette.divider,
-                          borderRadius: 1,
-                          overflow: 'hidden',
-                          backgroundColor: (topParty.status === 'no-team' && bottomParty.status === 'no-team') 
-                            ? theme.palette.grey[100] 
-                            : theme.palette.background.paper,
-                          boxShadow: 1
-                        }}
-                      >
-                        <Box sx={{ p: 0.5, backgroundColor: theme.palette.grey[100], borderBottom: `1px solid ${theme.palette.divider}` }}>
-                          <Typography variant="caption" noWrap>
-                            {match.name}
-                          </Typography>
-                        </Box>
-                        
-                        {/* 上側のチーム */}
-                        <Box
-                          sx={{
-                            p: 0.5,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            backgroundColor: topParty.name === t('tournament.seed')
-                            ? theme.palette.text.disabled  // seed は灰色
-                            : topParty.name === t('tournament.tbd')
-                            ? 'inherit'
-                            : topParty.isWinner
-                            ? theme.palette.primary.light // 勝者は青
-                            : 'inherit',
-                            '&:hover': { backgroundColor: theme.palette.action.hover }
-                          }}
-                          onClick={() => onPartyClick && onPartyClick(topParty)}
-                        >
-                          <Typography variant="body2" noWrap sx={{ 
-                            maxWidth: '70%', 
-                            fontWeight: topParty.isWinner ? 'bold' : 'normal',
-                            bgcolor: topParty.isWinner || topParty.name === t('tournament.seed') || topParty.name === t('tournament.tbd')
-                              ? theme.palette.grey[100]  // seed と tbd のセルを灰色に
-                              : 'transparent',
-                            color: topParty.name === t('tournament.seed')
-                              ? theme.palette.text.disabled  // seed は灰色
-                              : topParty.name === t('tournament.tbd')
-                              ? theme.palette.warning.main  // tbd はオレンジ
-                              : topParty.isWinner
-                              ? theme.palette.primary.main // 勝者は青
-                              : 'inherit'
-                          }}>
-                            {topParty.name}
-                            {topParty.status === 'waiting' && ' (待機中)'}
-                          </Typography>
-                          <Typography variant="body2" sx={{ 
-                            fontWeight: 'bold',
-                            color: topParty.isWinner ? theme.palette.primary.light : 'inherit'
-                          }}>
-                            {topParty.score ? topParty.score : 0}
-                          </Typography>
-                        </Box>
-                        
-                        {/* 下側のチーム */}
-                        <Box
-                          sx={{
-                            p: 0.5,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            backgroundColor: bottomParty.name === t('tournament.seed')
-                              ? theme.palette.text.disabled
-                              : bottomParty.isWinner 
-                              ? theme.palette.primary.light 
-                              : bottomParty.name === t('tournament.tbd')
-                              ? theme.palette.grey[100]  // seed と tbd のセルを灰色に
-                              : 'transparent',
-                            borderTop: `1px solid ${theme.palette.divider}`,
-                            '&:hover': { backgroundColor: theme.palette.action.hover }
-                          }}
-                          onClick={() => onPartyClick && onPartyClick(bottomParty)}
-                        >
-                          <Typography variant="body2" noWrap sx={{ 
-                            maxWidth: '70%', 
-                            fontWeight: bottomParty.isWinner ? 'bold' : 'normal',
-                            bgcolor: (bottomParty.isWinner || bottomParty.name === t('tournament.tbd'))
-                              ? theme.palette.grey[100]  // seed と tbd の背景色を灰色に
-                              : 'transparent',
-                            color: bottomParty.name === t('tournament.seed')
-                              ? theme.palette.text.disabled  // seed は灰色
-                              : bottomParty.name === t('tournament.tbd')
-                              ? theme.palette.warning.main  // tbd はオレンジ
-                              : bottomParty.isWinner
-                              ? theme.palette.primary.main
-                              : bottomParty.status === 'waiting'
-                              ? theme.palette.warning.main
-                              : 'inherit'
-                          }}>
-                            {bottomParty.name}
-                            {bottomParty.status === 'waiting' && ' (待機中)'}
-                          </Typography>
-                          <Typography variant="body2" sx={{ 
-                            fontWeight: 'bold',
-                            color: bottomParty.isWinner ? theme.palette.primary.main : 'inherit'
-                          }}>
-                            {bottomParty.score ? bottomParty.score : 0}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </foreignObject>
-                  )}
+                  matchComponent={renderMatchComponent}
                   options={{
                     style: {
                       roundHeader: {
@@ -483,7 +523,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({ sport, onUpdate }
           sport={sport}
           onSave={handleMatchUpdate}
           teamRosters={sport.roster?.grade1 || {}}
-          onClose={() => setMatchDialogOpen(false)}
+          onClose={() => !isDialogProcessing && setMatchDialogOpen(false)}
+          disabled={isDialogProcessing}
         />
       )}
     </Box>
