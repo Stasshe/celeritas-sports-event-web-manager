@@ -2,15 +2,26 @@
 ├── LICENSE
 ├── README.md
 ├── build
+│   ├── 404.html
 │   ├── _redirects
+│   ├── asset-manifest.json
 │   ├── createDummyLogos.js
 │   ├── favicon.ico
+│   ├── index.html
 │   ├── logo192.png
 │   ├── logo512.png
-│   └── manifest.json
-├── debug.sh
+│   ├── manifest.json
+│   └── static
+│       ├── css
+│       │   ├── main.e6c13ad2.css
+│       │   └── main.e6c13ad2.css.map
+│       └── js
+│           ├── 453.f69cce3c.chunk.js
+│           ├── 453.f69cce3c.chunk.js.map
+│           ├── main.d3dd8f3c.js
+│           ├── main.d3dd8f3c.js.LICENSE.txt
+│           └── main.d3dd8f3c.js.map
 ├── firebaseRules.json
-├── memo.txt
 ├── package-lock.json
 ├── package.json
 ├── public
@@ -23,7 +34,6 @@
 │   └── manifest.json
 ├── re.txt
 ├── render.yaml
-├── setup-permissions.sh
 ├── src
 │   ├── App.tsx
 │   ├── components
@@ -32,10 +42,7 @@
 │   │   ├── ProtectedRoute.tsx
 │   │   ├── admin
 │   │   │   ├── AdminDashboard.tsx
-│   │   │   ├── EventManagement.tsx.txt
 │   │   │   ├── RosterEditor.tsx
-│   │   │   ├── SettingsPanel.tsx.txt
-│   │   │   ├── SportManagement.tsx.txt
 │   │   │   ├── TeamManagement.tsx
 │   │   │   ├── dialogs
 │   │   │   │   ├── CreateEventDialog.tsx
@@ -102,4 +109,4 @@
 ├── start.sh
 └── tsconfig.json
 
-20 directories, 82 files
+23 directories, 86 files
