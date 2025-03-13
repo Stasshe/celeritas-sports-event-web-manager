@@ -618,6 +618,10 @@ const SportEditPage: React.FC = () => {
     const tabName = getTabNameForField(field);
     const isDirty = tabStates[tabName].isDirty;
     
+    // もし値がobjectの場合は文字列に変換する
+    const renderValue = (value: any) =>
+      typeof value === 'object' ? JSON.stringify(value) : value;
+    
     // 保存後に差分表示を消すため、差分がなくなったらコンポーネントを表示しない
     if (JSON.stringify(differences[field].remote) === JSON.stringify(differences[field].local)) {
       return null;
@@ -637,7 +641,7 @@ const SportEditPage: React.FC = () => {
           {t('sport.remoteValue')}:
         </Typography>
         <Typography variant="body2">
-          {differences[field].remote}
+          {renderValue(differences[field].remote)}
         </Typography>
         <Button
           size="small"
