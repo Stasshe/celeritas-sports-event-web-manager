@@ -132,8 +132,28 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
   
   const handleEventClick = (eventId: string) => {
-    // イベント編集ページへのナビゲーション処理のみ行う
-    navigate(`/admin/events/${eventId}`);
+    // 現在のパスがイベント編集ページで、かつ別のイベントを選択した場合
+    if (location.pathname.includes('/admin/events/') && !location.pathname.includes(eventId)) {
+      // 未保存の変更がある場合は確認
+      if (hasUnsavedChanges) {
+        const confirmNavigation = window.confirm(t('admin.unsavedChangesWarning'));
+        if (!confirmNavigation) {
+          return; // ナビゲーションをキャンセル
+        }
+        
+        // 保存状態をリセット（これにより前のページのデータがコピーされるのを防ぐ）
+        setSavingStatus('idle');
+      }
+    }
+    
+    // URLを変更するが、同じページでのデータ更新を避けるためreplace: trueを使用
+    navigate(`/admin/events/${eventId}`, { replace: true });
+    
+    // ブラウザの履歴をクリアせずに新しいリクエストとしてページをリロード
+    // これにより、前のページの状態が新しいページに引き継がれるのを防ぐ
+    setTimeout(() => {
+      window.location.href = `/admin/events/${eventId}`;
+    }, 100);
   };
   
   const handleEventToggle = (eventId: string, e: React.MouseEvent) => {
@@ -151,9 +171,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const handleSportClick = (sportId: string) => {
     // 現在のパスと異なる場合のみナビゲーション
     if (location.pathname !== `/admin/sports/${sportId}`) {
-      // クリーンアップ関数を呼び出して未保存の状態をクリアする
+      // 未保存の変更がある場合は確認
       if (hasUnsavedChanges) {
-        // ユーザーに確認を求める
         const confirmNavigation = window.confirm(t('admin.unsavedChangesWarning'));
         if (!confirmNavigation) {
           return; // ナビゲーションをキャンセル
@@ -163,8 +182,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         setSavingStatus('idle');
       }
       
-      // 新しいページへナビゲーション
-      navigate(`/admin/sports/${sportId}`);
+      // まずURLを変更
+      navigate(`/admin/sports/${sportId}`, { replace: true });
+      
+      // ブラウザの履歴をクリアせずに新しいリクエストとしてページをリロード
+      // これにより、前のページの状態が新しいページに引き継がれるのを防ぐ
+      setTimeout(() => {
+        window.location.href = `/admin/sports/${sportId}`;
+      }, 100);
     }
   };
 
