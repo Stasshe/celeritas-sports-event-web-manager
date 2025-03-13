@@ -96,12 +96,27 @@ const EventEditPage: React.FC = () => {
     grade: 2
   });
   
+  // eventIdが変更されたときにlocalEventをリセットする
+  useEffect(() => {
+    // eventIdが変更されたらlocalEventをnullにリセット
+    setLocalEvent(null);
+    
+    // 自動保存タイマーをクリアする
+    if (autoSaveTimerId) {
+      clearTimeout(autoSaveTimerId);
+    }
+    
+    // 保存状態をリセット
+    setSaveStatusLocal('idle');
+    setSavingStatus('idle');
+  }, [eventId]);
+  
   // 初期データロード
   useEffect(() => {
     if (event && !localEvent) {
       setLocalEvent(JSON.parse(JSON.stringify(event)));
     }
-  }, [event]);
+  }, [event, localEvent]);
   
   // データ変更時の自動保存設定
   useEffect(() => {

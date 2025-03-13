@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   AppBar,
@@ -68,6 +68,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // メインコンテンツのローディング状態を管理
+  const [contentLoading, setContentLoading] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
   
   // ユーザーメニュー
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -141,19 +145,26 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           return; // ナビゲーションをキャンセル
         }
         
-        // 保存状態をリセット（これにより前のページのデータがコピーされるのを防ぐ）
+        // 保存状態をリセット
         setSavingStatus('idle');
       }
     }
     
-    // URLを変更するが、同じページでのデータ更新を避けるためreplace: trueを使用
-    navigate(`/admin/events/${eventId}`, { replace: true });
+    // コンテンツ部分のローディングを表示
+    setContentLoading(true);
     
-    // ブラウザの履歴をクリアせずに新しいリクエストとしてページをリロード
-    // これにより、前のページの状態が新しいページに引き継がれるのを防ぐ
+    // URLを変更して、React Routerの通常のナビゲーションを使用
+    navigate(`/admin/events/${eventId}`);
+    
+    // スクロール位置をトップに戻す
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+    
+    // ローディング状態を少し遅延させて解除（データ取得のための時間）
     setTimeout(() => {
-      window.location.href = `/admin/events/${eventId}`;
-    }, 100);
+      setContentLoading(false);
+    }, 500);
   };
   
   const handleEventToggle = (eventId: string, e: React.MouseEvent) => {
@@ -182,14 +193,21 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         setSavingStatus('idle');
       }
       
-      // まずURLを変更
-      navigate(`/admin/sports/${sportId}`, { replace: true });
+      // コンテンツ部分のローディングを表示
+      setContentLoading(true);
       
-      // ブラウザの履歴をクリアせずに新しいリクエストとしてページをリロード
-      // これにより、前のページの状態が新しいページに引き継がれるのを防ぐ
+      // React Routerのナビゲーションを使用
+      navigate(`/admin/sports/${sportId}`);
+      
+      // スクロール位置をトップに戻す
+      if (contentRef.current) {
+        contentRef.current.scrollTop = 0;
+      }
+      
+      // ローディング状態を少し遅延させて解除（データ取得のための時間）
       setTimeout(() => {
-        window.location.href = `/admin/sports/${sportId}`;
-      }, 100);
+        setContentLoading(false);
+      }, 500);
     }
   };
 
@@ -541,6 +559,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* メインコンテンツ */}
       <Box
         component="main"
+        ref={contentRef}
         sx={{
           flexGrow: 1,
           p: 2, // パディングを小さく
@@ -553,8 +572,28 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           pt: { xs: 6, sm: 6 }, // 上部余白を小さく
           display: 'flex',
           flexDirection: 'column',
+          position: 'relative', // ローディングオーバーレイのための相対位置設定
         }}
       >
+        {/* コンテンツローディングオーバーレイ */}
+        {contentLoading && (
+          <Box sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: alpha(theme.palette.background.paper, 0.7),
+            zIndex: 10,
+            backdropFilter: 'blur(3px)',
+          }}>
+            <CircularProgress />
+          </Box>
+        )}
+        
         {children}
       </Box>
 
