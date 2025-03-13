@@ -223,35 +223,35 @@ const SportEditPage: React.FC = () => {
   // タブの状態管理を改善
   const [tabStates, setTabStates] = useState<TabStates>({
     details: { 
-      isLoaded: false, 
+      isLoaded: true, 
       isDirty: false, 
       lastUpdated: 0,
       loading: false,
       hasChanges: false 
     },
     roster: { 
-      isLoaded: false, 
+      isLoaded: true, 
       isDirty: false, 
       lastUpdated: 0,
       loading: false,
       hasChanges: false 
     },
     rules: { 
-      isLoaded: false, 
+      isLoaded: true, 
       isDirty: false, 
       lastUpdated: 0,
       loading: false,
       hasChanges: false 
     },
     manual: { 
-      isLoaded: false, 
+      isLoaded: true, 
       isDirty: false, 
       lastUpdated: 0,
       loading: false,
       hasChanges: false 
     },
     settings: { 
-      isLoaded: false, 
+      isLoaded: true, 
       isDirty: false, 
       lastUpdated: 0,
       loading: false,
@@ -610,39 +610,30 @@ const SportEditPage: React.FC = () => {
     );
   };
 
-  // タブコンテンツのロード処理
-  const loadTabContent = useCallback(async (tabName: string) => {
+  // タブコンテンツのロード処理を修正 - 非同期処理を排除
+  const loadTabContent = useCallback((tabName: string) => {
     if (tabStates[tabName].isLoaded) return;
-
+    
+    // ローディング表示なしでタブをロード済みに設定
     setTabStates(prev => ({
       ...prev,
       [tabName]: {
         ...prev[tabName],
-        loading: true
+        isLoaded: true,
+        loading: false // 常にfalseに設定
       }
     }));
+  }, [tabStates]);
 
-    try {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      setTabStates(prev => ({
-        ...prev,
-        [tabName]: {
-          ...prev[tabName],
-          isLoaded: true,
-          loading: false
-        }
-      }));
-    } catch (error) {
-      console.error(`Error loading ${tabName}:`, error);
-      setTabStates(prev => ({
-        ...prev,
-        [tabName]: {
-          ...prev[tabName],
-          loading: false
-        }
-      }));
+  // 初回ロードのみの変更
+  useEffect(() => {
+    // 最初のロードのみtrueにして、データが取得できたらすぐfalseに
+    if (sport) {
+      setInitialLoading(false);
+    } else {
+      setInitialLoading(true);
     }
-  }, []);
+  }, [sport]);
 
   if (initialLoading) {
     return (
@@ -737,191 +728,165 @@ const SportEditPage: React.FC = () => {
 
         {/* ホームタブ */}
         <TabPanel value={activeTab} index={0}>
-          <Box sx={{ 
-            position: 'relative',
-            ...(tabStates.details.isDirty && {
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                border: '2px solid',
-                borderColor: 'warning.main',
-                borderRadius: 1,
-                opacity: 0.2,
-                pointerEvents: 'none'
-              }
-            })
-          }}>
-            <TabContent
-              active={activeTab === 0}
-              sport={localSport}
-              field="details"
-              loading={tabStates.details.loading}
-              hasChanges={tabStates.details.hasChanges}
-              onLoad={() => loadTabContent('details')}
-            >
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
-                    <Typography variant="h6" gutterBottom>
-                      {t('sport.details')}
-                    </Typography>
-                    <Divider sx={{ mb: 3 }} />
-                    
-                    <Grid container spacing={2}>
-                      <Grid item xs={12}>
-                        <TextField
-                          name="name"
-                          label={t('sport.name')}
-                          fullWidth
-                          margin="normal"
-                          value={localSport.name}
-                          onChange={handleInputChange}
-                          InputLabelProps={{ shrink: true }}
-                        />
-                        <DifferenceIndicator field="name" />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          label={t('sport.event')}
-                          fullWidth
-                          margin="normal"
-                          value={getEventName(localSport.eventId)}
-                          InputProps={{ readOnly: true }}
-                          InputLabelProps={{ shrink: true }}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          name="description"
-                          label={t('sport.description')}
-                          fullWidth
-                          multiline
-                          rows={3}
-                          margin="normal"
-                          value={localSport.description || ''}
-                          onChange={handleInputChange}
-                          InputLabelProps={{ shrink: true }}
-                        />
-                        <DifferenceIndicator field="description" />
-                      </Grid>
-                    </Grid>
-                  </Paper>
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
-                  <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
-                    <Typography variant="h6" gutterBottom>
-                      {t('sport.organizers')}
-                    </Typography>
-                    <Divider sx={{ mb: 3 }} />
-                    
-                    <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-end">
-                      <Grid item xs={12} sm={4}>
-                        <TextField
-                          name="name"
-                          label={t('sport.organizerName')}
-                          fullWidth
-                          value={newOrganizer.name}
-                          onChange={handleOrganizerChange}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={3}>
-                        <FormControl fullWidth>
-                          <InputLabel>{t('sport.role')}</InputLabel>
-                          <Select
-                            name="role"
-                            value={newOrganizer.role}
-                            onChange={handleOrganizerChange as any}
-                          >
-                            <MenuItem value="leader">{t('sport.roleLeader')}</MenuItem>
-                            <MenuItem value="member">{t('sport.roleMember')}</MenuItem>
-                            <MenuItem value="custom">{t('sport.roleTeacher')}</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={3}>
-                        <FormControl fullWidth>
-                          <InputLabel>{t('sport.grade')}</InputLabel>
-                          <Select
-                            name="grade"
-                            value={newOrganizer.grade}
-                            onChange={handleOrganizerChange as any}
-                          >
-                            <MenuItem value={1}>{t('sport.grade1')}</MenuItem>
-                            <MenuItem value={2}>{t('sport.grade2')}</MenuItem>
-                            <MenuItem value={3}>{t('sport.grade3')}</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={2}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          fullWidth
-                          startIcon={<AddIcon />}
-                          onClick={addOrganizer}
-                          disabled={!newOrganizer.name}
-                        >
-                          {t('common.add')}
-                        </Button>
-                      </Grid>
-                    </Grid>
-                    
-                    {/* 担当者リスト */}
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {(localSport.organizers || []).map(org => (
-                        <Chip
-                          key={org.id}
-                          label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${t('sport.gradeUnit')})`}
-                          onDelete={() => removeOrganizer(org.id)}
-                          color={org.role === 'leader' ? 'primary' : 'default'}
-                        />
-                      ))}
-                      {(!localSport.organizers || localSport.organizers.length === 0) && (
-                        <Typography variant="body2" color="text.secondary">
-                          {t('sport.noOrganizers')}
-                        </Typography>
-                      )}
-                    </Box>
-                    <DifferenceIndicator field="organizers" />
-                  </Paper>
+          <Box>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
+                  <Typography variant="h6" gutterBottom>
+                    {t('sport.details')}
+                  </Typography>
+                  <Divider sx={{ mb: 3 }} />
                   
-                  <Paper sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {t('sport.quickActions')}
-                    </Typography>
-                    <Divider sx={{ mb: 3 }} />
-                    
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <Button
-                          fullWidth
-                          variant="outlined"
-                          onClick={() => setActiveTab(1)}
-                          startIcon={<PeopleIcon />}
-                        >
-                          {t('sport.manageRoster')}
-                        </Button>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Button
-                          fullWidth
-                          variant="outlined"
-                          onClick={() => navigate(`/admin/scoring/${sportId}`)}
-                          startIcon={<SportIcon />}
-                        >
-                          {t('sport.manageScores')}
-                        </Button>
-                      </Grid>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        name="name"
+                        label={t('sport.name')}
+                        fullWidth
+                        margin="normal"
+                        value={localSport.name}
+                        onChange={handleInputChange}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <DifferenceIndicator field="name" />
                     </Grid>
-                  </Paper>
-                </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        label={t('sport.event')}
+                        fullWidth
+                        margin="normal"
+                        value={getEventName(localSport.eventId)}
+                        InputProps={{ readOnly: true }}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        name="description"
+                        label={t('sport.description')}
+                        fullWidth
+                        multiline
+                        rows={3}
+                        margin="normal"
+                        value={localSport.description || ''}
+                        onChange={handleInputChange}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <DifferenceIndicator field="description" />
+                    </Grid>
+                  </Grid>
+                </Paper>
               </Grid>
-            </TabContent>
+              
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
+                  <Typography variant="h6" gutterBottom>
+                    {t('sport.organizers')}
+                  </Typography>
+                  <Divider sx={{ mb: 3 }} />
+                  
+                  <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-end">
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        name="name"
+                        label={t('sport.organizerName')}
+                        fullWidth
+                        value={newOrganizer.name}
+                        onChange={handleOrganizerChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                      <FormControl fullWidth>
+                        <InputLabel>{t('sport.role')}</InputLabel>
+                        <Select
+                          name="role"
+                          value={newOrganizer.role}
+                          onChange={handleOrganizerChange as any}
+                        >
+                          <MenuItem value="leader">{t('sport.roleLeader')}</MenuItem>
+                          <MenuItem value="member">{t('sport.roleMember')}</MenuItem>
+                          <MenuItem value="custom">{t('sport.roleTeacher')}</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                      <FormControl fullWidth>
+                        <InputLabel>{t('sport.grade')}</InputLabel>
+                        <Select
+                          name="grade"
+                          value={newOrganizer.grade}
+                          onChange={handleOrganizerChange as any}
+                        >
+                          <MenuItem value={1}>{t('sport.grade1')}</MenuItem>
+                          <MenuItem value={2}>{t('sport.grade2')}</MenuItem>
+                          <MenuItem value={3}>{t('sport.grade3')}</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={2}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        startIcon={<AddIcon />}
+                        onClick={addOrganizer}
+                        disabled={!newOrganizer.name}
+                      >
+                        {t('common.add')}
+                      </Button>
+                    </Grid>
+                  </Grid>
+                  
+                  {/* 担当者リスト */}
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {(localSport.organizers || []).map(org => (
+                      <Chip
+                        key={org.id}
+                        label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${t('sport.gradeUnit')})`}
+                        onDelete={() => removeOrganizer(org.id)}
+                        color={org.role === 'leader' ? 'primary' : 'default'}
+                      />
+                    ))}
+                    {(!localSport.organizers || localSport.organizers.length === 0) && (
+                      <Typography variant="body2" color="text.secondary">
+                        {t('sport.noOrganizers')}
+                      </Typography>
+                    )}
+                  </Box>
+                  <DifferenceIndicator field="organizers" />
+                </Paper>
+                
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {t('sport.quickActions')}
+                  </Typography>
+                  <Divider sx={{ mb: 3 }} />
+                  
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={() => setActiveTab(1)}
+                        startIcon={<PeopleIcon />}
+                      >
+                        {t('sport.manageRoster')}
+                      </Button>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={() => navigate(`/admin/scoring/${sportId}`)}
+                        startIcon={<SportIcon />}
+                      >
+                        {t('sport.manageScores')}
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+            </Grid>
           </Box>
         </TabPanel>
 

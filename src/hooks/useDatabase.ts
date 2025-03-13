@@ -129,6 +129,13 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
         throw new Error('You are offline');
       }
       
+      // オプティミスティックUIのためにデータを即時更新
+      if (options.optimistic) {
+        const currentData = data || {} as T;
+        const mergedData = { ...currentData, ...newData } as T;
+        setData(mergedData);
+      }
+      
       // 現在のデータと新しいデータをマージ
       const currentData = data || {} as T;
       const mergedData = { ...currentData, ...newData } as T & { _version?: number };

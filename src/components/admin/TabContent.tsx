@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { Sport } from '../../types';
 
-interface TabContentProps {
+export const TabContent: React.FC<{
   children: React.ReactNode;
   active: boolean;
   sport: Sport;
@@ -10,43 +10,29 @@ interface TabContentProps {
   loading: boolean;
   hasChanges: boolean;
   onLoad: () => void;
-}
-
-export const TabContent: React.FC<TabContentProps> = ({
-  children,
-  active,
-  sport,
-  field,
-  loading,
-  hasChanges,
-  onLoad
-}) => {
-  const [localLoading, setLocalLoading] = useState(false);
-  const firstRenderRef = useRef(true);
+}> = ({ children, active, sport, field, loading, hasChanges, onLoad }) => {
+  const [contentReady, setContentReady] = useState(false);
   
+  // 初回表示時に一度だけonLoadを呼び出す
   useEffect(() => {
-    if (active && firstRenderRef.current) {
-      firstRenderRef.current = false;
-      // 初回表示時のみローディングを表示
-      setLocalLoading(true);
+    if (active && !contentReady) {
       onLoad();
-      // 短いタイムアウト後にローディングを消す
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-      }, 300);
-      return () => clearTimeout(timer);
+      // すぐにコンテンツを表示
+      setContentReady(true);
     }
-  }, [active, onLoad]);
+  }, [active, contentReady, onLoad]);
   
-  // データ更新時は何もしない
-  
-  if (localLoading) {
+  // この部分を削除（ローディングを表示しない）
+  /*
+  if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress size={24} />
       </Box>
     );
   }
+  */
   
+  // 常にコンテンツを表示
   return <>{children}</>;
 };
