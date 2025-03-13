@@ -89,6 +89,9 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [updateQueue, setUpdateQueue] = useState<Sport | null>(null);
 
+  // チームデータの状態管理を追加
+  const [teams, setTeams] = useState<Team[]>(sport.teams || []);
+
   // SVG要素を大文字で定義
   const ForeignObject = 'foreignObject';
 
@@ -213,18 +216,23 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     }
   };
 
+  // handleMatchesCreateを修正
   const handleMatchesCreate = (newMatches: Match[], selectedTeams: Team[]) => {
     if (readOnly) return;
+    
+    // ローカルの状態を更新
     setMatches(newMatches);
-    // 即時の状態更新
+    setTeams(selectedTeams);
+
+    // 即時にクラウドに保存
     const updatedSport = {
       ...sport,
       matches: newMatches,
       teams: selectedTeams
     };
-
-    // 更新キューに追加
-    setUpdateQueue(updatedSport);
+    
+    // 直接onUpdateを呼び出し
+    onUpdate(updatedSport);
   };
 
   // トーナメント表示のコンポーネント部分を修正
@@ -494,7 +502,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
                           <CardContent>
                             <MatchCard
                               match={match}
-                              sport={sport}
+                              sport={{ ...sport, teams: teams }}  // 最新のチームデータを渡す
                               onEdit={() => handleEditMatch(match)}
                             />
                           </CardContent>

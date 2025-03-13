@@ -27,8 +27,11 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, sport, onEdit }) => {
   const { alpha } = useThemeContext();
 
   const getTeamName = (teamId: string) => {
+    if (!teamId) return t('tournament.tbd');
+    if (!sport?.teams) return teamId;
+    
     const team = sport.teams.find(t => t.id === teamId);
-    return team ? team.name : t('tournament.tbd');
+    return team ? team.name : teamId;
   };
 
   const getStatusColor = (status: string) => {

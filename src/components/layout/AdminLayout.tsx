@@ -382,6 +382,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             duration: theme.transitions.duration.enteringScreen,
           }),
           overflowX: 'hidden',
+          left: 0,
           '& .MuiDrawer-paper': {
             position: 'relative', // 追加：absoluteからrelativeに変更
             width: drawerOpen ? drawerWidth : theme.spacing(7),
