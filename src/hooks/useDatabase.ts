@@ -248,14 +248,23 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
       // 楽観的更新オプションの設定
       const optimistic = options.optimistic !== undefined ? options.optimistic : true;
       
-      // 変更されたフィールドを追跡（楽観的UIも改善）
+      // 変更されたフィールドを追跡
       fieldsToUpdate.forEach(field => trackFieldChange(field));
       
-      // 楽観的UI更新（即時反映）
+      // 楽観的UI更新（即時反映）- ここが重要
       if (optimistic) {
-        setData(prevData => prevData ? { ...prevData, ...updates } as T : null);
+        // isUpdatingRef.currentをtrueにしないことでデータの差し替えを防止
+        const tempFlag = isUpdatingRef.current;
+        isUpdatingRef.current = false;
+        
+        // 現在のデータを更新してローカルUI状態を更新
+        setData(prevData => ({...prevData, ...updates} as T));
+        
+        // フラグを元に戻す
+        isUpdatingRef.current = tempFlag;
       }
       
+      // サーバー側の実際の更新処理
       return await updateData(updates, {
         ...options,
         partial: true,

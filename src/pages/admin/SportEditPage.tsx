@@ -168,12 +168,32 @@ const SportEditPage: React.FC = () => {
     }
   }, [sportId, sport]);
 
-  // 保存処理を改善
+  // isLoading状態の管理を改善
+  useEffect(() => {
+    // sportIdが変わった時だけローディングを表示（データ更新では表示しない）
+    if (sportId) {
+      setIsLoading(!sport);
+    }
+    
+    // 少なくとも500msはローディングを表示（初回ロード時のみ）
+    if (!sport) {
+      const timer = setTimeout(() => {
+        if (sport) {
+          setIsLoading(false);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [sportId, sport]);
+
+  // handleSave関数を改善して、ローディングを表示しないようにする
   const handleSave = useCallback(async () => {
     if (!localSport || isProcessingRef.current) return;
 
     isProcessingRef.current = true;
     setSavingStatus('saving');
+    // ローディング表示をしない（ここを削除）
+    // setIsLoading(true); 
 
     try {
       const result = await updateData(localSport);
@@ -189,6 +209,8 @@ const SportEditPage: React.FC = () => {
       setSavingStatus('error');
     } finally {
       isProcessingRef.current = false;
+      // ローディング表示を終了しない（ここを削除）
+      // setIsLoading(false);
     }
   }, [localSport, updateData, setSavingStatus]);
 
@@ -281,17 +303,22 @@ const SportEditPage: React.FC = () => {
     }
   }, [tabStates, localSport, sport, handleSave]);
 
-  // 部分更新の統合されたハンドラ
+  // 部分更新の統合されたハンドラを改善
   const handlePartialUpdate = useCallback(async (field: keyof Sport, value: any) => {
     if (!localSport || isProcessingRef.current) return;
 
     const tabName = getTabNameForField(field);
+    
+    // 楽観的UI更新（即時反映）
     const updatedSport: Sport = {
       ...localSport,
       [field]: value,
       lastEditedBy: currentUser?.email || undefined,
       lastEditedAt: new Date().toISOString()
     };
+    
+    // 即時にローカル状態を更新（UXのため）
+    setLocalSport(updatedSport);
 
     try {
       // タブの状態を更新（ローディングなしで）
@@ -304,9 +331,8 @@ const SportEditPage: React.FC = () => {
         }
       }));
 
-      // サイレント更新
+      // バックグラウンドで保存（ローディング表示なし）
       await updateData(updatedSport);
-      setLocalSport(updatedSport);
 
       // 更新成功後、タブの状態をクリア
       setTabStates(prev => ({
@@ -322,6 +348,14 @@ const SportEditPage: React.FC = () => {
       console.error(`Error updating ${field}:`, error);
       showAdminSnackbar(t('sport.fieldUpdateError'), 'error');
       
+      // エラー時にローカル状態を元に戻す
+      if (sport) {
+        setLocalSport({
+          ...localSport,
+          [field]: sport[field]
+        });
+      }
+      
       // エラー時にタブの状態を戻す
       setTabStates(prev => ({
         ...prev,
@@ -331,7 +365,7 @@ const SportEditPage: React.FC = () => {
         }
       }));
     }
-  }, [localSport, currentUser, updateData, showAdminSnackbar, t]);
+  }, [localSport, currentUser, updateData, showAdminSnackbar, t, sport]);
 
   // クリーンアップ
   useEffect(() => {
@@ -823,7 +857,7 @@ const SportEditPage: React.FC = () => {
                           >
                             <MenuItem value="leader">{t('sport.roleLeader')}</MenuItem>
                             <MenuItem value="member">{t('sport.roleMember')}</MenuItem>
-                            <MenuItem value="custom">{t('sport.roleCustom')}</MenuItem>
+                            <MenuItem value="custom">{t('sport.roleTeacher')}</MenuItem>
                           </Select>
                         </FormControl>
                       </Grid>
