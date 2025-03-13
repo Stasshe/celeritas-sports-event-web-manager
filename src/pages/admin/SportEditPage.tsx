@@ -195,26 +195,17 @@ const SportEditPage: React.FC = () => {
   
   // データ変更時の自動保存設定を改善
   useEffect(() => {
-    if (!localSport || !sport || isProcessing || isProcessingRef.current) return;
-
-    if (JSON.stringify(localSport) !== JSON.stringify(sport)) {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      
-      saveTimeoutRef.current = setTimeout(() => {
-        if (!isDialogOpen) {
-          handleSave();
-        }
-      }, 3000);
-    }
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+    const handleBeforeUnload = () => {
+      if (localSport && sport && JSON.stringify(localSport) !== JSON.stringify(sport)) {
+        handleSave();
       }
     };
-  }, [localSport, sport, isProcessing, isDialogOpen, handleSave]);
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [localSport, sport, handleSave]);
 
   // スポーツIDが変更されたときにローディング状態を設定
   useEffect(() => {
@@ -273,18 +264,22 @@ const SportEditPage: React.FC = () => {
   };
 
   // タブ切り替えの統合されたハンドラ
-  const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = useCallback(async (event: React.SyntheticEvent, newValue: number) => {
+    // 現在のタブのデータに変更があれば保存
+    if (localSport && sport && JSON.stringify(localSport) !== JSON.stringify(sport)) {
+      await handleSave();
+    }
+
     const tabName = ['details', 'roster', 'rules', 'manual', 'settings'][newValue];
     setActiveTab(newValue);
 
-    // タブがまだロードされていない場合のみ初期化
     if (!tabStates[tabName].isLoaded) {
       setTabStates(prev => ({
         ...prev,
         [tabName]: { ...prev[tabName], isLoaded: true }
       }));
     }
-  }, [tabStates]);
+  }, [tabStates, localSport, sport, handleSave]);
 
   // 部分更新の統合されたハンドラ
   const handlePartialUpdate = useCallback(async (field: keyof Sport, value: any) => {
@@ -1144,35 +1139,6 @@ const SportEditPage: React.FC = () => {
           type="sport"
         />
 
-        {/* 保存通知 */}
-        <Snackbar 
-          open={showSnackbar} 
-          autoHideDuration={6000} 
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          action={
-            <Button
-              color="inherit"
-              size="small"
-              onClick={handleSync}
-              startIcon={<SyncIcon />}
-            >
-              {t('sport.syncAll')}
-            </Button>
-          }
-        >
-          <Alert 
-            onClose={handleSnackbarClose} 
-            severity={saveStatus === 'saved' ? 'success' : 'error'}
-            sx={{ width: '100%' }}
-          >
-            {saveStatus === 'saved' ? 
-              t('sport.saveSuccess') : 
-              t('sport.saveError')
-            }
-          </Alert>
-        </Snackbar>
-        
         {/* 最後の同期情報 */}
         {lastEditor && (
           <Typography 
