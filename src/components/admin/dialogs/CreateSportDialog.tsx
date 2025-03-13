@@ -185,7 +185,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           
           if (sport && sport.id) {
             sportId = sport.id;
-            await updateData({ [sport.id]: {...sportData, id: sport.id} });
+            await updateData({ [sport.id]: { ...sportData, id: sport.id } as Sport });
           } else {
             const newSportId = await pushData(sportData as any);
             if (newSportId && events && events[eventId]) {

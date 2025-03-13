@@ -48,6 +48,9 @@ export interface Sport {
     grade3?: Record<string, string[]>; // クラス名: 名前リスト 3年生
   };
   coverImageUrl?: string; // カバー画像のURLを追加
+  [key: string]: any; // インデックスシグネチャを追加
+  lastEditedBy: string | undefined;  // nullを削除
+  lastEditedAt?: string;
 }
 
 // 総当たり戦設定の型を明確に定義

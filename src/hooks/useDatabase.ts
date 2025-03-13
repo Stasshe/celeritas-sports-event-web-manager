@@ -8,6 +8,7 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
   const [error, setError] = useState<Error | null>(null);
   const isUpdatingRef = useRef(false);
   const updateQueueRef = useRef<{ data: T, resolve: () => void, reject: () => void }[]>([]);
+  const [version, setVersion] = useState<number>(0);
 
   useEffect(() => {
     setLoading(true);
@@ -17,6 +18,9 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
       dbRef,
       (snapshot: DataSnapshot) => {
         const newData = snapshot.val();
+        if (newData?._version && newData._version !== version) {
+          setVersion(newData._version);
+        }
         setData(newData as T);
         setLoading(false);
       },
@@ -79,11 +83,12 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
   const updateData = useCallback(async (updates: T): Promise<boolean> => {
     return new Promise((resolve, reject) => {
       updateQueueRef.current.push({
-        data: updates,
+        data: { ...updates, _version: version + 1 },
         resolve: async () => {
           try {
-            await setData_(updates);
+            await setData_({ ...updates, _version: version + 1 });
             setData(updates);
+            setVersion(v => v + 1);
             resolve(true);
           } catch (error) {
             console.error('Update error:', error);
@@ -94,7 +99,7 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
       });
       processUpdateQueue();
     });
-  }, [processUpdateQueue]);
+  }, [processUpdateQueue, version]);
 
   // データの削除
   const removeData = async (subPath: string = '') => {
@@ -128,5 +133,14 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     };
   }, []);
 
-  return { data, loading, error, setData: updateData, updateData, removeData, pushData };
+  return { 
+    data, 
+    loading, 
+    error, 
+    setData: updateData, 
+    updateData, 
+    removeData, 
+    pushData,
+    version 
+  };
 }

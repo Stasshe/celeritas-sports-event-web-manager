@@ -12,6 +12,7 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  AlertTitle,
   Divider,
   Grid,
   TextField,
@@ -19,9 +20,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  List,
-  ListItem,
-  ListItemText,
   Chip,
   useTheme
 } from '@mui/material';
@@ -33,7 +31,8 @@ import {
   EmojiEvents as RulesIcon,
   MenuBook as ManualIcon,
   Settings as SettingsIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  Sync as SyncIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../../hooks/useDatabase';
@@ -46,6 +45,7 @@ import { useThemeContext } from '../../contexts/ThemeContext';
 import AdminLayout from '../../components/layout/AdminLayout';
 import DeleteConfirmationDialog from '../../components/admin/dialogs/DeleteConfirmationDialog';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -79,9 +79,10 @@ const SportEditPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { alpha } = useThemeContext();
-  const { setSavingStatus } = useAdminLayout();
+  const { setSavingStatus, showSnackbar: showAdminSnackbar } = useAdminLayout();
   const isProcessingRef = useRef(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { currentUser } = useAuth();
   
   const { data: sport, loading: sportLoading, updateData, removeData } = useDatabase<Sport>(`/sports/${sportId}`);
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
@@ -101,6 +102,29 @@ const SportEditPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false); // ダイアログの状態を追加
+
+  // 各タブのローディング状態を個別管理
+  const [tabLoadingStates, setTabLoadingStates] = useState({
+    details: false,
+    roster: false,
+    rules: false,
+    manual: false,
+    settings: false
+  });
+  
+  // 差分を管理
+  const [differences, setDifferences] = useState<{
+    [key: string]: {
+      local: any;
+      remote: any;
+    }
+  }>({});
+
+  // 最後の同期時刻
+  const [lastSynced, setLastSynced] = useState<Date>(new Date());
+
+  // 最後の更新者の情報
+  const [lastEditor, setLastEditor] = useState<string | null>(null);
 
   // 初期データロード
   useEffect(() => {
@@ -319,6 +343,137 @@ const SportEditPage: React.FC = () => {
     }
   };
 
+  // データの差分を検出する関数
+  const detectChanges = useCallback((local: Sport, remote: Sport) => {
+    const diffs: typeof differences = {};
+    
+    // 基本フィールドの比較
+    ['name', 'description', 'rules', 'manual'].forEach(field => {
+      if (local[field] !== remote[field]) {
+        diffs[field] = {
+          local: local[field],
+          remote: remote[field]
+        };
+      }
+    });
+    
+    // 主催者リストの比較
+    if (JSON.stringify(local.organizers) !== JSON.stringify(remote.organizers)) {
+      diffs.organizers = {
+        local: local.organizers,
+        remote: remote.organizers
+      };
+    }
+    
+    // 設定の比較
+    if (JSON.stringify(local.tournamentSettings) !== JSON.stringify(remote.tournamentSettings)) {
+      diffs.tournamentSettings = {
+        local: local.tournamentSettings,
+        remote: remote.tournamentSettings
+      };
+    }
+    
+    setDifferences(diffs);
+    return Object.keys(diffs).length > 0;
+  }, []);
+
+  // リモートデータの変更を監視
+  useEffect(() => {
+    if (sport && localSport && !isProcessingRef.current) {
+      const hasChanges = detectChanges(localSport, sport);
+      
+      if (hasChanges && sport.lastEditedBy !== currentUser?.email) {
+        setLastEditor(sport.lastEditedBy || 'unknown');
+        showAdminSnackbar(
+          t('sport.remoteChangesDetected'),
+          'warning'
+        );
+      }
+    }
+  }, [sport, localSport, currentUser, showAdminSnackbar, t]);
+
+  // 部分的な更新を行う関数
+  const handlePartialUpdate = async (field: string, value: any) => {
+    if (!localSport || isProcessingRef.current) return;
+    
+    setTabLoadingStates(prev => ({
+      ...prev,
+      [field]: true
+    }));
+    
+    try {
+      const updatedSport: Sport = {
+        ...localSport,
+        [field]: value,
+        lastEditedBy: currentUser?.email || undefined,
+        lastEditedAt: new Date().toISOString()
+      };
+      
+      await updateData(updatedSport);
+      setLocalSport(updatedSport);
+      delete differences[field];
+      
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
+      showAdminSnackbar(t('sport.partialUpdateError'), 'error');
+    } finally {
+      setTabLoadingStates(prev => ({
+        ...prev,
+        [field]: false
+      }));
+    }
+  };
+
+  // 全ての変更を同期する関数
+  const handleSync = async () => {
+    if (!sport || isProcessingRef.current) return;
+    
+    try {
+      setIsLoading(true);
+      const updatedSport: Sport = {
+        ...sport,
+        lastEditedBy: currentUser?.email || undefined,
+        lastEditedAt: new Date().toISOString()
+      };
+      
+      await updateData(updatedSport);
+      setLocalSport(updatedSport);
+      setDifferences({});
+      setLastSynced(new Date());
+      showAdminSnackbar(t('sport.syncSuccess'), 'success');
+      
+    } catch (error) {
+      console.error('Sync error:', error);
+      showAdminSnackbar(t('sport.syncError'), 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 差分表示コンポーネント
+  const DifferenceIndicator = ({ field }: { field: string }) => {
+    if (!differences[field]) return null;
+    
+    return (
+      <Box sx={{ mt: 1, p: 1, bgcolor: 'warning.light', borderRadius: 1 }}>
+        <Typography variant="caption" display="block">
+          {t('sport.remoteValue')}:
+        </Typography>
+        <Typography variant="body2">
+          {differences[field].remote}
+        </Typography>
+        <Button
+          size="small"
+          startIcon={<SyncIcon />}
+          onClick={() => handlePartialUpdate(field, differences[field].remote)}
+          sx={{ mt: 1 }}
+        >
+          {t('sport.useRemoteValue')}
+        </Button>
+      </Box>
+    );
+  };
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -429,6 +584,7 @@ const SportEditPage: React.FC = () => {
                       onChange={handleInputChange}
                       InputLabelProps={{ shrink: true }}
                     />
+                    <DifferenceIndicator field="name" />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
@@ -452,6 +608,7 @@ const SportEditPage: React.FC = () => {
                       onChange={handleInputChange}
                       InputLabelProps={{ shrink: true }}
                     />
+                    <DifferenceIndicator field="description" />
                   </Grid>
                 </Grid>
               </Paper>
@@ -532,6 +689,7 @@ const SportEditPage: React.FC = () => {
                     </Typography>
                   )}
                 </Box>
+                <DifferenceIndicator field="organizers" />
               </Paper>
               
               <Paper sx={{ p: 2 }}>
@@ -601,6 +759,7 @@ const SportEditPage: React.FC = () => {
               variant="outlined"
               placeholder={t('sport.rulesPlaceholder') || 'この競技のルールを入力してください...'}
             />
+            <DifferenceIndicator field="rules" />
             
             <Box sx={{ mt: 3, color: 'text.secondary' }}>
               <Typography variant="caption">
@@ -629,6 +788,7 @@ const SportEditPage: React.FC = () => {
               variant="outlined"
               placeholder={t('sport.manualPlaceholder') || 'この競技の実施マニュアルを入力してください...'}
             />
+            <DifferenceIndicator field="manual" />
             
             <Box sx={{ mt: 3, color: 'text.secondary' }}>
               <Typography variant="caption">
@@ -801,6 +961,16 @@ const SportEditPage: React.FC = () => {
           autoHideDuration={6000} 
           onClose={handleSnackbarClose}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={handleSync}
+              startIcon={<SyncIcon />}
+            >
+              {t('sport.syncAll')}
+            </Button>
+          }
         >
           <Alert 
             onClose={handleSnackbarClose} 
@@ -813,6 +983,24 @@ const SportEditPage: React.FC = () => {
             }
           </Alert>
         </Snackbar>
+        
+        {/* 最後の同期情報 */}
+        {lastEditor && (
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              position: 'fixed',
+              bottom: 16,
+              right: 16,
+              bgcolor: 'background.paper',
+              p: 1,
+              borderRadius: 1,
+              boxShadow: 1
+            }}
+          >
+            {t('sport.lastSync')}: {lastSynced.toLocaleTimeString()}
+          </Typography>
+        )}
       </Container>
     </AdminLayout>
   );
