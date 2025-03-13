@@ -46,6 +46,20 @@ import AdminLayout from '../../components/layout/AdminLayout';
 import DeleteConfirmationDialog from '../../components/admin/dialogs/DeleteConfirmationDialog';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { TabContent } from '../../components/admin/TabContent';
+
+// フィールドとタブの関連付けを定義
+const fieldToTabMap: Record<keyof Sport, string> = {
+  name: 'details',
+  description: 'details',
+  rules: 'rules',
+  manual: 'manual',
+  tournamentSettings: 'settings',
+  roundRobinSettings: 'settings',
+  organizers: 'details',
+  roster: 'roster',
+  // ...他のフィールドも必要に応じて追加
+};
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -72,6 +86,19 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
     </div>
   );
 };
+
+// タブの状態を管理するインターフェース
+interface TabState {
+  isLoaded: boolean;
+  isDirty: boolean;
+  lastUpdated: number;
+  loading: boolean;
+  hasChanges: boolean;
+}
+
+interface TabStates {
+  [key: string]: TabState;
+}
 
 const SportEditPage: React.FC = () => {
   const { sportId } = useParams<{ sportId?: string }>();
@@ -201,9 +228,115 @@ const SportEditPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [sportId, sport]);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+  // タブの状態管理を改善
+  const [tabStates, setTabStates] = useState<TabStates>({
+    details: { 
+      isLoaded: false, 
+      isDirty: false, 
+      lastUpdated: 0,
+      loading: false,
+      hasChanges: false 
+    },
+    roster: { 
+      isLoaded: false, 
+      isDirty: false, 
+      lastUpdated: 0,
+      loading: false,
+      hasChanges: false 
+    },
+    rules: { 
+      isLoaded: false, 
+      isDirty: false, 
+      lastUpdated: 0,
+      loading: false,
+      hasChanges: false 
+    },
+    manual: { 
+      isLoaded: false, 
+      isDirty: false, 
+      lastUpdated: 0,
+      loading: false,
+      hasChanges: false 
+    },
+    settings: { 
+      isLoaded: false, 
+      isDirty: false, 
+      lastUpdated: 0,
+      loading: false,
+      hasChanges: false 
+    }
+  });
+
+  // フィールドからタブ名を取得する関数
+  const getTabNameForField = (field: keyof Sport): string => {
+    return fieldToTabMap[field] || 'details';
   };
+
+  // タブ切り替えの統合されたハンドラ
+  const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
+    const tabName = ['details', 'roster', 'rules', 'manual', 'settings'][newValue];
+    setActiveTab(newValue);
+
+    // タブがまだロードされていない場合のみ初期化
+    if (!tabStates[tabName].isLoaded) {
+      setTabStates(prev => ({
+        ...prev,
+        [tabName]: { ...prev[tabName], isLoaded: true }
+      }));
+    }
+  }, [tabStates]);
+
+  // 部分更新の統合されたハンドラ
+  const handlePartialUpdate = useCallback(async (field: keyof Sport, value: any) => {
+    if (!localSport || isProcessingRef.current) return;
+
+    const tabName = getTabNameForField(field);
+    const updatedSport: Sport = {
+      ...localSport,
+      [field]: value,
+      lastEditedBy: currentUser?.email || undefined,
+      lastEditedAt: new Date().toISOString()
+    };
+
+    try {
+      // タブの状態を更新（ローディングなしで）
+      setTabStates(prev => ({
+        ...prev,
+        [tabName]: {
+          ...prev[tabName],
+          isDirty: true,
+          lastUpdated: Date.now()
+        }
+      }));
+
+      // サイレント更新
+      await updateData(updatedSport);
+      setLocalSport(updatedSport);
+
+      // 更新成功後、タブの状態をクリア
+      setTabStates(prev => ({
+        ...prev,
+        [tabName]: {
+          ...prev[tabName],
+          isDirty: false
+        }
+      }));
+
+      showAdminSnackbar(t('sport.fieldUpdateSuccess'), 'success');
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
+      showAdminSnackbar(t('sport.fieldUpdateError'), 'error');
+      
+      // エラー時にタブの状態を戻す
+      setTabStates(prev => ({
+        ...prev,
+        [tabName]: {
+          ...prev[tabName],
+          isDirty: false
+        }
+      }));
+    }
+  }, [localSport, currentUser, updateData, showAdminSnackbar, t]);
 
   // クリーンアップ
   useEffect(() => {
@@ -392,37 +525,20 @@ const SportEditPage: React.FC = () => {
     }
   }, [sport, localSport, currentUser, showAdminSnackbar, t]);
 
-  // 部分的な更新を行う関数
-  const handlePartialUpdate = async (field: string, value: any) => {
-    if (!localSport || isProcessingRef.current) return;
-    
-    setTabLoadingStates(prev => ({
-      ...prev,
-      [field]: true
-    }));
-    
-    try {
-      const updatedSport: Sport = {
-        ...localSport,
-        [field]: value,
-        lastEditedBy: currentUser?.email || undefined,
-        lastEditedAt: new Date().toISOString()
-      };
+  // リモートデータの変更を監視
+  useEffect(() => {
+    if (sport && localSport && !isProcessingRef.current) {
+      const hasChanges = detectChanges(localSport, sport);
       
-      await updateData(updatedSport);
-      setLocalSport(updatedSport);
-      delete differences[field];
-      
-    } catch (error) {
-      console.error(`Error updating ${field}:`, error);
-      showAdminSnackbar(t('sport.partialUpdateError'), 'error');
-    } finally {
-      setTabLoadingStates(prev => ({
-        ...prev,
-        [field]: false
-      }));
+      if (hasChanges && sport.lastEditedBy !== currentUser?.email) {
+        setLastEditor(sport.lastEditedBy || 'unknown');
+        showAdminSnackbar(
+          t('sport.remoteChangesDetected'),
+          'warning'
+        );
+      }
     }
-  };
+  }, [sport, localSport, currentUser, showAdminSnackbar, t]);
 
   // 全ての変更を同期する関数
   const handleSync = async () => {
@@ -450,12 +566,23 @@ const SportEditPage: React.FC = () => {
     }
   };
 
-  // 差分表示コンポーネント
-  const DifferenceIndicator = ({ field }: { field: string }) => {
+  // 差分表示コンポーネントの改善
+  const DifferenceIndicator = ({ field }: { field: keyof Sport }) => {
     if (!differences[field]) return null;
     
+    const tabName = getTabNameForField(field);
+    const isDirty = tabStates[tabName].isDirty;
+    
     return (
-      <Box sx={{ mt: 1, p: 1, bgcolor: 'warning.light', borderRadius: 1 }}>
+      <Box sx={{
+        mt: 1,
+        p: 1,
+        bgcolor: isDirty ? 'warning.light' : 'background.default',
+        borderRadius: 1,
+        border: '1px solid',
+        borderColor: isDirty ? 'warning.main' : 'divider',
+        transition: 'all 0.3s ease'
+      }}>
         <Typography variant="caption" display="block">
           {t('sport.remoteValue')}:
         </Typography>
@@ -473,6 +600,40 @@ const SportEditPage: React.FC = () => {
       </Box>
     );
   };
+
+  // タブコンテンツのロード処理
+  const loadTabContent = useCallback(async (tabName: string) => {
+    if (tabStates[tabName].isLoaded) return;
+
+    setTabStates(prev => ({
+      ...prev,
+      [tabName]: {
+        ...prev[tabName],
+        loading: true
+      }
+    }));
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      setTabStates(prev => ({
+        ...prev,
+        [tabName]: {
+          ...prev[tabName],
+          isLoaded: true,
+          loading: false
+        }
+      }));
+    } catch (error) {
+      console.error(`Error loading ${tabName}:`, error);
+      setTabStates(prev => ({
+        ...prev,
+        [tabName]: {
+          ...prev[tabName],
+          loading: false
+        }
+      }));
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -565,164 +726,192 @@ const SportEditPage: React.FC = () => {
 
         {/* ホームタブ */}
         <TabPanel value={activeTab} index={0}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
-                <Typography variant="h6" gutterBottom>
-                  {t('sport.details')}
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <TextField
-                      name="name"
-                      label={t('sport.name')}
-                      fullWidth
-                      margin="normal"
-                      value={localSport.name}
-                      onChange={handleInputChange}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                    <DifferenceIndicator field="name" />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      label={t('sport.event')}
-                      fullWidth
-                      margin="normal"
-                      value={getEventName(localSport.eventId)}
-                      InputProps={{ readOnly: true }}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      name="description"
-                      label={t('sport.description')}
-                      fullWidth
-                      multiline
-                      rows={3}
-                      margin="normal"
-                      value={localSport.description || ''}
-                      onChange={handleInputChange}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                    <DifferenceIndicator field="description" />
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
-                <Typography variant="h6" gutterBottom>
-                  {t('sport.organizers')}
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                
-                <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-end">
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      name="name"
-                      label={t('sport.organizerName')}
-                      fullWidth
-                      value={newOrganizer.name}
-                      onChange={handleOrganizerChange}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
-                    <FormControl fullWidth>
-                      <InputLabel>{t('sport.role')}</InputLabel>
-                      <Select
-                        name="role"
-                        value={newOrganizer.role}
-                        onChange={handleOrganizerChange as any}
-                      >
-                        <MenuItem value="leader">{t('sport.roleLeader')}</MenuItem>
-                        <MenuItem value="member">{t('sport.roleMember')}</MenuItem>
-                        <MenuItem value="custom">{t('sport.roleCustom')}</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={3}>
-                    <FormControl fullWidth>
-                      <InputLabel>{t('sport.grade')}</InputLabel>
-                      <Select
-                        name="grade"
-                        value={newOrganizer.grade}
-                        onChange={handleOrganizerChange as any}
-                      >
-                        <MenuItem value={1}>{t('sport.grade1')}</MenuItem>
-                        <MenuItem value={2}>{t('sport.grade2')}</MenuItem>
-                        <MenuItem value={3}>{t('sport.grade3')}</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={2}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      fullWidth
-                      startIcon={<AddIcon />}
-                      onClick={addOrganizer}
-                      disabled={!newOrganizer.name}
-                    >
-                      {t('common.add')}
-                    </Button>
-                  </Grid>
-                </Grid>
-                
-                {/* 担当者リスト */}
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {(localSport.organizers || []).map(org => (
-                    <Chip
-                      key={org.id}
-                      label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${t('sport.gradeUnit')})`}
-                      onDelete={() => removeOrganizer(org.id)}
-                      color={org.role === 'leader' ? 'primary' : 'default'}
-                    />
-                  ))}
-                  {(!localSport.organizers || localSport.organizers.length === 0) && (
-                    <Typography variant="body2" color="text.secondary">
-                      {t('sport.noOrganizers')}
+          <Box sx={{ 
+            position: 'relative',
+            ...(tabStates.details.isDirty && {
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                border: '2px solid',
+                borderColor: 'warning.main',
+                borderRadius: 1,
+                opacity: 0.2,
+                pointerEvents: 'none'
+              }
+            })
+          }}>
+            <TabContent
+              active={activeTab === 0}
+              sport={localSport}
+              field="details"
+              loading={tabStates.details.loading}
+              hasChanges={tabStates.details.hasChanges}
+              onLoad={() => loadTabContent('details')}
+            >
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
+                    <Typography variant="h6" gutterBottom>
+                      {t('sport.details')}
                     </Typography>
-                  )}
-                </Box>
-                <DifferenceIndicator field="organizers" />
-              </Paper>
-              
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  {t('sport.quickActions')}
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      onClick={() => setActiveTab(1)}
-                      startIcon={<PeopleIcon />}
-                    >
-                      {t('sport.manageRoster')}
-                    </Button>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      onClick={() => navigate(`/admin/scoring/${sportId}`)}
-                      startIcon={<SportIcon />}
-                    >
-                      {t('sport.manageScores')}
-                    </Button>
-                  </Grid>
+                    <Divider sx={{ mb: 3 }} />
+                    
+                    <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <TextField
+                          name="name"
+                          label={t('sport.name')}
+                          fullWidth
+                          margin="normal"
+                          value={localSport.name}
+                          onChange={handleInputChange}
+                          InputLabelProps={{ shrink: true }}
+                        />
+                        <DifferenceIndicator field="name" />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          label={t('sport.event')}
+                          fullWidth
+                          margin="normal"
+                          value={getEventName(localSport.eventId)}
+                          InputProps={{ readOnly: true }}
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          name="description"
+                          label={t('sport.description')}
+                          fullWidth
+                          multiline
+                          rows={3}
+                          margin="normal"
+                          value={localSport.description || ''}
+                          onChange={handleInputChange}
+                          InputLabelProps={{ shrink: true }}
+                        />
+                        <DifferenceIndicator field="description" />
+                      </Grid>
+                    </Grid>
+                  </Paper>
                 </Grid>
-              </Paper>
-            </Grid>
-          </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
+                    <Typography variant="h6" gutterBottom>
+                      {t('sport.organizers')}
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    
+                    <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-end">
+                      <Grid item xs={12} sm={4}>
+                        <TextField
+                          name="name"
+                          label={t('sport.organizerName')}
+                          fullWidth
+                          value={newOrganizer.name}
+                          onChange={handleOrganizerChange}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={3}>
+                        <FormControl fullWidth>
+                          <InputLabel>{t('sport.role')}</InputLabel>
+                          <Select
+                            name="role"
+                            value={newOrganizer.role}
+                            onChange={handleOrganizerChange as any}
+                          >
+                            <MenuItem value="leader">{t('sport.roleLeader')}</MenuItem>
+                            <MenuItem value="member">{t('sport.roleMember')}</MenuItem>
+                            <MenuItem value="custom">{t('sport.roleCustom')}</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={3}>
+                        <FormControl fullWidth>
+                          <InputLabel>{t('sport.grade')}</InputLabel>
+                          <Select
+                            name="grade"
+                            value={newOrganizer.grade}
+                            onChange={handleOrganizerChange as any}
+                          >
+                            <MenuItem value={1}>{t('sport.grade1')}</MenuItem>
+                            <MenuItem value={2}>{t('sport.grade2')}</MenuItem>
+                            <MenuItem value={3}>{t('sport.grade3')}</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={2}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          fullWidth
+                          startIcon={<AddIcon />}
+                          onClick={addOrganizer}
+                          disabled={!newOrganizer.name}
+                        >
+                          {t('common.add')}
+                        </Button>
+                      </Grid>
+                    </Grid>
+                    
+                    {/* 担当者リスト */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {(localSport.organizers || []).map(org => (
+                        <Chip
+                          key={org.id}
+                          label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${t('sport.gradeUnit')})`}
+                          onDelete={() => removeOrganizer(org.id)}
+                          color={org.role === 'leader' ? 'primary' : 'default'}
+                        />
+                      ))}
+                      {(!localSport.organizers || localSport.organizers.length === 0) && (
+                        <Typography variant="body2" color="text.secondary">
+                          {t('sport.noOrganizers')}
+                        </Typography>
+                      )}
+                    </Box>
+                    <DifferenceIndicator field="organizers" />
+                  </Paper>
+                  
+                  <Paper sx={{ p: 2 }}>
+                    <Typography variant="h6" gutterBottom>
+                      {t('sport.quickActions')}
+                    </Typography>
+                    <Divider sx={{ mb: 3 }} />
+                    
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          onClick={() => setActiveTab(1)}
+                          startIcon={<PeopleIcon />}
+                        >
+                          {t('sport.manageRoster')}
+                        </Button>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          onClick={() => navigate(`/admin/scoring/${sportId}`)}
+                          startIcon={<SportIcon />}
+                        >
+                          {t('sport.manageScores')}
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </TabContent>
+          </Box>
         </TabPanel>
 
         {/* 競技・名簿登録タブ */}

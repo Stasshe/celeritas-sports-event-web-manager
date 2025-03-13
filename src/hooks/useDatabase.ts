@@ -2,6 +2,11 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { database } from '../config/firebase';
 import { ref, onValue, set, update, remove, push, DataSnapshot } from 'firebase/database';
 
+interface UpdateOptions {
+  silent?: boolean;  // サイレント更新オプション
+  partial?: boolean; // 部分更新オプション
+}
+
 export function useDatabase<T>(path: string, initialValue: T | null = null) {
   const [data, setData] = useState<T | null>(initialValue);
   const [loading, setLoading] = useState(true);
@@ -101,6 +106,29 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     });
   }, [processUpdateQueue, version]);
 
+  // 部分更新用の関数を追加
+  const partialUpdate = useCallback(async (
+    updates: Partial<T>,
+    options: UpdateOptions = {}
+  ): Promise<boolean> => {
+    if (!data) return false;
+
+    try {
+      const updatedData = { ...data, ...updates };
+      if (options.silent) {
+        // サイレント更新：ローディング状態を変更しない
+        await set(ref(database, path), updatedData);
+        setData(updatedData);
+      } else {
+        await updateData(updatedData);
+      }
+      return true;
+    } catch (error) {
+      console.error('Partial update error:', error);
+      return false;
+    }
+  }, [data, path, updateData]);
+
   // データの削除
   const removeData = async (subPath: string = '') => {
     try {
@@ -141,6 +169,7 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     updateData, 
     removeData, 
     pushData,
+    partialUpdate,
     version 
   };
 }
