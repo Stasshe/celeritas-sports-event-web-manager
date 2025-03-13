@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { Sport } from '../../types';
 
@@ -6,10 +6,10 @@ interface TabContentProps {
   children: React.ReactNode;
   active: boolean;
   sport: Sport;
-  field: keyof Sport;
-  onLoad?: () => void;
-  loading?: boolean;
-  hasChanges?: boolean;
+  field: string;
+  loading: boolean;
+  hasChanges: boolean;
+  onLoad: () => void;
 }
 
 export const TabContent: React.FC<TabContentProps> = ({
@@ -17,49 +17,36 @@ export const TabContent: React.FC<TabContentProps> = ({
   active,
   sport,
   field,
-  onLoad,
-  loading = false,
-  hasChanges = false
+  loading,
+  hasChanges,
+  onLoad
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-
+  const [localLoading, setLocalLoading] = useState(false);
+  const firstRenderRef = useRef(true);
+  
   useEffect(() => {
-    if (active && !isLoaded) {
-      setIsLoaded(true);
-      onLoad?.();
+    if (active && firstRenderRef.current) {
+      firstRenderRef.current = false;
+      // 初回表示時のみローディングを表示
+      setLocalLoading(true);
+      onLoad();
+      // 短いタイムアウト後にローディングを消す
+      const timer = setTimeout(() => {
+        setLocalLoading(false);
+      }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [active, isLoaded, onLoad]);
-
-  if (!active) return null;
-
-  return (
-    <Box
-      sx={{
-        position: 'relative',
-        ...(hasChanges && {
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: -2,
-            right: -2,
-            bottom: -2,
-            left: -2,
-            border: '2px solid',
-            borderColor: 'warning.main',
-            borderRadius: 1,
-            opacity: 0.5,
-            pointerEvents: 'none'
-          }
-        })
-      }}
-    >
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress size={24} />
-        </Box>
-      ) : (
-        children
-      )}
-    </Box>
-  );
+  }, [active, onLoad]);
+  
+  // データ更新時は何もしない
+  
+  if (localLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
+  }
+  
+  return <>{children}</>;
 };

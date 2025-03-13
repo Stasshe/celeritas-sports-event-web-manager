@@ -125,7 +125,8 @@ const SportEditPage: React.FC = () => {
     role: 'member',
     grade: 2
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false); // ダイアログの状態を追加
@@ -168,39 +169,30 @@ const SportEditPage: React.FC = () => {
     }
   }, [sportId, sport]);
 
-  // isLoading状態の管理を改善
+  // スポーツIDが変更されたときだけinitialLoadingを使用
   useEffect(() => {
-    // sportIdが変わった時だけローディングを表示（データ更新では表示しない）
     if (sportId) {
-      setIsLoading(!sport);
+      setInitialLoading(!sport);
     }
     
-    // 少なくとも500msはローディングを表示（初回ロード時のみ）
-    if (!sport) {
-      const timer = setTimeout(() => {
-        if (sport) {
-          setIsLoading(false);
-        }
-      }, 500);
-      return () => clearTimeout(timer);
+    // 初回ロード完了後はinitialLoadingをfalseに
+    if (sport) {
+      setInitialLoading(false);
     }
   }, [sportId, sport]);
 
-  // handleSave関数を改善して、ローディングを表示しないようにする
+  // handleSave関数を完全に書き換え
   const handleSave = useCallback(async () => {
     if (!localSport || isProcessingRef.current) return;
 
     isProcessingRef.current = true;
     setSavingStatus('saving');
-    // ローディング表示をしない（ここを削除）
-    // setIsLoading(true); 
+    setUpdating(true); // ローディング画面を表示しないフラグ
 
     try {
       const result = await updateData(localSport);
       if (result) {
         setSavingStatus('saved');
-        // 成功時に最新のデータを保持
-        setLocalSport(localSport);
       } else {
         setSavingStatus('error');
       }
@@ -209,8 +201,7 @@ const SportEditPage: React.FC = () => {
       setSavingStatus('error');
     } finally {
       isProcessingRef.current = false;
-      // ローディング表示を終了しない（ここを削除）
-      // setIsLoading(false);
+      setUpdating(false);
     }
   }, [localSport, updateData, setSavingStatus]);
 
@@ -228,18 +219,6 @@ const SportEditPage: React.FC = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [localSport, sport, handleSave]);
-
-  // スポーツIDが変更されたときにローディング状態を設定
-  useEffect(() => {
-    setIsLoading(true);
-    // 少なくとも500msはローディングを表示
-    const timer = setTimeout(() => {
-      if (sport) {
-        setIsLoading(false);
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [sportId, sport]);
 
   // タブの状態管理を改善
   const [tabStates, setTabStates] = useState<TabStates>({
@@ -574,7 +553,8 @@ const SportEditPage: React.FC = () => {
     if (!sport || isProcessingRef.current) return;
     
     try {
-      setIsLoading(true);
+      // ロード画面を表示せず更新中フラグだけ設定
+      setUpdating(true);
       const updatedSport: Sport = {
         ...sport,
         lastEditedBy: currentUser?.email || undefined,
@@ -591,7 +571,7 @@ const SportEditPage: React.FC = () => {
       console.error('Sync error:', error);
       showAdminSnackbar(t('sport.syncError'), 'error');
     } finally {
-      setIsLoading(false);
+      setUpdating(false);
     }
   };
 
@@ -664,7 +644,7 @@ const SportEditPage: React.FC = () => {
     }
   }, []);
 
-  if (isLoading) {
+  if (initialLoading) {
     return (
       <AdminLayout>
         <Box sx={{ 
@@ -684,13 +664,15 @@ const SportEditPage: React.FC = () => {
   }
 
   if (sportLoading || eventsLoading) {
-    return (
-      <AdminLayout>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-          <CircularProgress />
-        </Box>
-      </AdminLayout>
-    );
+    if (!updating) {
+      return (
+        <AdminLayout>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+            <CircularProgress />
+          </Box>
+        </AdminLayout>
+      );
+    }
   }
 
   if (!sport || !localSport) {
