@@ -5,6 +5,8 @@ import { ref, onValue, set, update, remove, push, DataSnapshot } from 'firebase/
 interface UpdateOptions {
   silent?: boolean;  // サイレント更新オプション
   partial?: boolean; // 部分更新オプション
+  optimistic?: boolean; // 楽観的更新
+  fieldsToUpdate?: string[]; // 更新するフィールドの指定
 }
 
 export function useDatabase<T>(path: string, initialValue: T | null = null) {
@@ -12,8 +14,14 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const isUpdatingRef = useRef(false);
-  const updateQueueRef = useRef<{ data: T, resolve: () => void, reject: () => void }[]>([]);
+  const updateQueueRef = useRef<{ data: Partial<T>, options: UpdateOptions, resolve: (value: boolean) => void, reject: (reason?: any) => void }[]>([]);
   const [version, setVersion] = useState<number>(0);
+  const localVersionRef = useRef<number>(0);
+  const previousDataRef = useRef<T | null>(null);
+  const [conflictStatus, setConflictStatus] = useState<'none' | 'detected' | 'resolved'>('none');
+  
+  // 変更されたフィールドの追跡
+  const modifiedFieldsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     setLoading(true);
@@ -22,11 +30,38 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     const unsubscribe = onValue(
       dbRef,
       (snapshot: DataSnapshot) => {
-        const newData = snapshot.val();
-        if (newData?._version && newData._version !== version) {
+        const newData = snapshot.val() as T & { _version?: number };
+        
+        // バージョン管理
+        if (newData && newData._version !== undefined) {
+          // 外部更新を検出（他のユーザーによる更新）
+          if (localVersionRef.current > 0 && newData._version > localVersionRef.current && isUpdatingRef.current === false) {
+            // 変更を検出したフィールドを特定
+            const changedExternalFields = detectChangedFields(previousDataRef.current, newData);
+            
+            // ローカルで変更中のフィールドとの競合を検出
+            const modifiedFieldsArray = Array.from(modifiedFieldsRef.current);
+            const conflictingFields = modifiedFieldsArray.filter(field => 
+              changedExternalFields.has(field));
+            
+            if (conflictingFields.length > 0) {
+              setConflictStatus('detected');
+              console.log('変更の競合が検出されました:', conflictingFields);
+            }
+          }
+          
+          localVersionRef.current = newData._version;
           setVersion(newData._version);
         }
-        setData(newData as T);
+        
+        // 前のデータを保存（差分検出用）
+        previousDataRef.current = newData;
+        
+        // setDataを条件付きで実行（isUpdatingRef.currentがfalseの場合のみ）
+        if (!isUpdatingRef.current) {
+          setData(newData);
+        }
+        
         setLoading(false);
       },
       (error) => {
@@ -40,8 +75,53 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     };
   }, [path]);
 
+  // 変更されたフィールドを検出する関数
+  const detectChangedFields = (oldData: any, newData: any, prefix = ''): Set<string> => {
+    const changedFields = new Set<string>();
+    
+    if (!oldData || !newData) return changedFields;
+    
+    // すべてのキーを収集
+    const allKeys = new Set([
+      ...Object.keys(oldData || {}),
+      ...Object.keys(newData || {})
+    ]);
+    
+    // 特別なフィールドは無視
+    allKeys.delete('_version');
+    
+    // Setを配列に変換して反復処理
+    Array.from(allKeys).forEach(key => {
+      const fullPath = prefix ? `${prefix}.${key}` : key;
+      
+      // 値が存在しない場合
+      if (!oldData[key] && newData[key]) {
+        changedFields.add(fullPath);
+        return;
+      }
+      
+      if (oldData[key] && !newData[key]) {
+        changedFields.add(fullPath);
+        return;
+      }
+      
+      // オブジェクトの場合は再帰
+      if (typeof oldData[key] === 'object' && typeof newData[key] === 'object') {
+        const nestedChanges = detectChangedFields(oldData[key], newData[key], fullPath);
+        // Setを配列に変換して反復処理
+        Array.from(nestedChanges).forEach(field => changedFields.add(field));
+      } 
+      // プリミティブ値の比較
+      else if (oldData[key] !== newData[key]) {
+        changedFields.add(fullPath);
+      }
+    });
+    
+    return changedFields;
+  };
+
   // データの書き込み
-  const setData_ = async (newData: T) => {
+  const setData_ = async (newData: Partial<T>, options: UpdateOptions = {}) => {
     try {
       const dbRef = ref(database, path);
       // オンライン状態を確認
@@ -49,12 +129,62 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
         throw new Error('You are offline');
       }
       
-      // 保存を試みる
-      const result = await set(dbRef, newData);
-      // 保存が成功したかどうかを確認
-      if (result !== undefined) {
-        throw new Error('Failed to save data');
+      // 現在のデータと新しいデータをマージ
+      const currentData = data || {} as T;
+      const mergedData = { ...currentData, ...newData } as T & { _version?: number };
+      
+      // バージョンの更新
+      if (version !== undefined) {
+        mergedData._version = version + 1;
       }
+      
+      // 部分更新の場合
+      if (options.partial && options.fieldsToUpdate) {
+        const updates: Record<string, any> = {};
+        
+        options.fieldsToUpdate.forEach(field => {
+          // ネストされたフィールドの処理
+          if (field.includes('.')) {
+            const parts = field.split('.');
+            let current: any = mergedData;
+            let updatePath = path;
+            
+            for (let i = 0; i < parts.length - 1; i++) {
+              current = current[parts[i]];
+              updatePath += `/${parts[i]}`;
+            }
+            
+            const lastPart = parts[parts.length - 1];
+            updates[`${updatePath}/${lastPart}`] = current[lastPart];
+          } else {
+            updates[`${path}/${field}`] = (mergedData as any)[field];
+          }
+        });
+        
+        // バージョンも更新
+        updates[`${path}/_version`] = mergedData._version;
+        
+        await update(ref(database), updates);
+      } else {
+        // 完全な更新
+        await set(dbRef, mergedData);
+      }
+      
+      // 楽観的更新の場合、即座にローカル状態を更新
+      if (options.optimistic) {
+        setData(mergedData);
+      }
+      
+      // バージョンの更新
+      localVersionRef.current = mergedData._version || 0;
+      setVersion(mergedData._version || 0);
+      
+      // 競合状態をリセット
+      setConflictStatus('none');
+      
+      // 変更されたフィールドをクリア
+      modifiedFieldsRef.current.clear();
+      
       return true;
     } catch (error) {
       console.error('Save error:', error);
@@ -67,15 +197,15 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     if (isUpdatingRef.current || updateQueueRef.current.length === 0) return;
 
     isUpdatingRef.current = true;
-    const { data: updateData, resolve, reject } = updateQueueRef.current[0];
+    const { data: updateData, options, resolve, reject } = updateQueueRef.current[0];
 
     try {
-      await set(ref(database, path), updateData);
+      await setData_(updateData, options);
       updateQueueRef.current.shift();
-      resolve();
+      resolve(true);
     } catch (err) {
       console.error('Update failed:', err);
-      reject();
+      reject(err);
     } finally {
       isUpdatingRef.current = false;
       if (updateQueueRef.current.length > 0) {
@@ -85,28 +215,31 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
   }, [path]);
 
   // 安全な更新処理
-  const updateData = useCallback(async (updates: T): Promise<boolean> => {
+  const updateData = useCallback(async (updates: Partial<T>, options: UpdateOptions = {}): Promise<boolean> => {
     return new Promise((resolve, reject) => {
+      // 楽観的更新の場合、即座にUIを更新
+      if (options.optimistic && data) {
+        const optimisticData = { ...data, ...updates } as T;
+        setData(optimisticData);
+      }
+      
       updateQueueRef.current.push({
-        data: { ...updates, _version: version + 1 },
-        resolve: async () => {
-          try {
-            await setData_({ ...updates, _version: version + 1 });
-            setData(updates);
-            setVersion(v => v + 1);
-            resolve(true);
-          } catch (error) {
-            console.error('Update error:', error);
-            reject(error);
-          }
-        },
-        reject: () => reject(new Error('Update failed'))
+        data: updates,
+        options,
+        resolve,
+        reject
       });
+      
       processUpdateQueue();
     });
-  }, [processUpdateQueue, version]);
+  }, [processUpdateQueue, data]);
 
-  // 部分更新用の関数を追加
+  // フィールド変更の追跡
+  const trackFieldChange = useCallback((fieldName: string) => {
+    modifiedFieldsRef.current.add(fieldName);
+  }, []);
+
+  // 部分更新用の関数
   const partialUpdate = useCallback(async (
     updates: Partial<T>,
     options: UpdateOptions = {}
@@ -114,20 +247,26 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     if (!data) return false;
 
     try {
-      const updatedData = { ...data, ...updates };
-      if (options.silent) {
-        // サイレント更新：ローディング状態を変更しない
-        await set(ref(database, path), updatedData);
-        setData(updatedData);
-      } else {
-        await updateData(updatedData);
-      }
-      return true;
+      // 更新するフィールドを特定
+      const fieldsToUpdate = options.fieldsToUpdate || Object.keys(updates);
+      
+      // 楽観的更新オプションの設定
+      const optimistic = options.optimistic !== undefined ? options.optimistic : true;
+      
+      // 変更されたフィールドを追跡
+      fieldsToUpdate.forEach(field => trackFieldChange(field));
+      
+      return await updateData(updates, {
+        ...options,
+        partial: true,
+        optimistic,
+        fieldsToUpdate
+      });
     } catch (error) {
       console.error('Partial update error:', error);
       return false;
     }
-  }, [data, path, updateData]);
+  }, [data, updateData, trackFieldChange]);
 
   // データの削除
   const removeData = async (subPath: string = '') => {
@@ -153,11 +292,34 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     }
   };
 
+  // 競合を解決する関数
+  const resolveConflict = useCallback(async (resolution: 'local' | 'remote' | 'merge', mergeData?: Partial<T>) => {
+    if (conflictStatus !== 'detected') return;
+    
+    try {
+      if (resolution === 'local' && data) {
+        // ローカルのデータを優先
+        await updateData(data as T, { optimistic: true });
+      } else if (resolution === 'remote') {
+        // リモートのデータを受け入れる（何もしない）
+        setConflictStatus('resolved');
+      } else if (resolution === 'merge' && mergeData) {
+        // マージデータで更新
+        await updateData(mergeData, { optimistic: true });
+      }
+      
+      setConflictStatus('resolved');
+    } catch (error) {
+      console.error('Conflict resolution error:', error);
+    }
+  }, [conflictStatus, data, updateData]);
+
   // クリーンアップ
   useEffect(() => {
     return () => {
       updateQueueRef.current = [];
       isUpdatingRef.current = false;
+      modifiedFieldsRef.current.clear();
     };
   }, []);
 
@@ -170,6 +332,9 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     removeData, 
     pushData,
     partialUpdate,
-    version 
+    version,
+    trackFieldChange,
+    conflictStatus,
+    resolveConflict
   };
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -37,10 +37,10 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import AdminLayout from '../../components/layout/AdminLayout';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import CreateEventDialog from '../../components/admin/dialogs/CreateEventDialog';
 import CreateSportDialog from '../../components/admin/dialogs/CreateSportDialog';
-import { useAdminLayout } from '../../contexts/AdminLayoutContext'; // 正しいパスに修正
+import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 
 const MotionPaper = motion(Paper);
 const MotionCard = motion(Card);
@@ -49,14 +49,33 @@ const AdminPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { alpha } = useThemeContext();
-  const { showSnackbar, setSavingStatus } = useAdminLayout(); // AdminLayoutコンテキストを使用
-  const { data: events, loading: eventsLoading, updateData: updateEvents } = useDatabase<Record<string, Event>>('/events');
-  const { data: sports, loading: sportsLoading } = useDatabase<Record<string, Sport>>('/sports');
+  const { showSnackbar, registerSaveHandler, unregisterSaveHandler, save, setHasUnsavedChanges } = useAdminLayout();
+  const { 
+    data: events, 
+    loading: eventsLoading, 
+    updateData: updateEvents,
+    partialUpdate: partialUpdateEvents
+  } = useDatabase<Record<string, Event>>('/events');
+  
+  const { 
+    data: sports, 
+    loading: sportsLoading 
+  } = useDatabase<Record<string, Sport>>('/sports');
   
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [createSportDialogOpen, setCreateSportDialogOpen] = useState(false);
-  const [savingStatusLocal, setSavingStatusLocal] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [localEventState, setLocalEventState] = useState<Record<string, Event> | null>(null);
+  
+  // 変更されたイベントを追跡
+  const modifiedEventsRef = useRef<Set<string>>(new Set());
+  
+  // localEventStateの初期化
+  useEffect(() => {
+    if (events && !localEventState) {
+      setLocalEventState(events);
+    }
+  }, [events, localEventState]);
   
   // 最初にアクティブなイベントを選択
   useEffect(() => {
@@ -71,33 +90,77 @@ const AdminPage: React.FC = () => {
     }
   }, [events]);
 
-  // イベントを設定する関数
-  const handleSetActiveEvent = async (eventId: string) => {
-    if (!events) return;
+  // 保存ハンドラの登録
+  useEffect(() => {
+    const handleSave = async () => {
+      try {
+        if (modifiedEventsRef.current.size === 0) {
+          return true; // 変更がなければ成功を返す
+        }
+        
+        // 変更されたイベントのみを更新
+        if (localEventState) {
+          const updates: Record<string, Event> = {};
+          modifiedEventsRef.current.forEach(eventId => {
+            if (localEventState[eventId]) {
+              updates[eventId] = localEventState[eventId];
+            }
+          });
+          
+          if (Object.keys(updates).length > 0) {
+            await updateEvents(updates);
+            modifiedEventsRef.current.clear();
+          }
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('Error saving events:', error);
+        return false;
+      }
+    };
+    
+    registerSaveHandler(handleSave, 'adminDashboard');
+    
+    return () => {
+      unregisterSaveHandler('adminDashboard');
+    };
+  }, [registerSaveHandler, unregisterSaveHandler, localEventState, updateEvents]);
+
+  // イベントを設定する関数（最適化版）
+  const handleSetActiveEvent = useCallback(async (eventId: string) => {
+    if (!localEventState) return;
     
     try {
-      setSavingStatus('saving');
+      // 楽観的UIアップデート
+      const updatedEvents = { ...localEventState };
       
       // すべてのイベントを非アクティブに
-      const updates: Record<string, Event> = {};
-      
-      Object.entries(events).forEach(([id, event]) => {
-        updates[id] = {
-          ...event,
+      Object.keys(updatedEvents).forEach(id => {
+        updatedEvents[id] = {
+          ...updatedEvents[id],
           isActive: id === eventId // 選択したイベントのみアクティブに
         };
+        
+        // 変更されたイベントを追跡
+        modifiedEventsRef.current.add(id);
       });
       
-      await updateEvents(updates);
+      // ローカル状態を更新（即時反映）
+      setLocalEventState(updatedEvents);
       
-      setSavingStatus('saved');
+      // 変更があることを通知
+      setHasUnsavedChanges(true);
+      
+      // 保存処理を実行
+      await save();
+      
       showSnackbar(t('admin.activeEventUpdated') || 'アクティブイベントが更新されました', 'success');
     } catch (error) {
       console.error('Error setting active event:', error);
-      setSavingStatus('error');
       showSnackbar(t('admin.error') || 'エラーが発生しました', 'error');
     }
-  };
+  }, [localEventState, save, setHasUnsavedChanges, showSnackbar, t]);
 
   // イベントの作成ダイアログを開く
   const handleOpenCreateEventDialog = () => {
@@ -113,20 +176,6 @@ const AdminPage: React.FC = () => {
   // 競技の編集ページに移動
   const handleEditSport = (sportId: string) => {
     navigate(`/admin/sports/${sportId}`);
-  };
-
-  // 手動保存
-  const handleManualSave = async () => {
-    setSavingStatus('saving');
-    try {
-      // ここで実際の保存処理を行う
-      // 現在の実装では何もしない
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setSavingStatus('saved');
-    } catch (error) {
-      setSavingStatus('error');
-      console.error('Save error:', error);
-    }
   };
 
   // 設定ページに移動
@@ -147,7 +196,7 @@ const AdminPage: React.FC = () => {
   };
 
   // ローディング中の表示
-  if (eventsLoading || sportsLoading) {
+  if ((eventsLoading && !localEventState) || sportsLoading) {
     return (
       <AdminLayout>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
@@ -158,11 +207,11 @@ const AdminPage: React.FC = () => {
   }
 
   // 選択されているイベント
-  const selectedEvent = selectedEventId && events ? events[selectedEventId] : null;
+  const selectedEvent = selectedEventId && localEventState ? localEventState[selectedEventId] : null;
   // 選択されているイベントの競技一覧
   const eventSports = selectedEventId ? getSportsForEvent(selectedEventId) : [];
   // アクティブなイベント
-  const activeEvent = events ? Object.values(events).find(event => event.isActive) : null;
+  const activeEvent = localEventState ? Object.values(localEventState).find(event => event.isActive) : null;
 
   return (
     <AdminLayout>
@@ -194,10 +243,9 @@ const AdminPage: React.FC = () => {
               <Button
                 variant="contained"
                 startIcon={<SaveIcon />}
-                onClick={handleManualSave}
-                disabled={savingStatusLocal === 'saving'}
+                onClick={() => save('adminDashboard')}
               >
-                {savingStatusLocal === 'saving' ? t('admin.saving') : t('admin.save')}
+                {t('admin.save')}
               </Button>
             </Box>
           </Grid>
@@ -304,68 +352,72 @@ const AdminPage: React.FC = () => {
           <Divider sx={{ mb: 3 }} />
           
           <Grid container spacing={2}>
-            {eventSports.length > 0 ? (
-              eventSports.map((sport, index) => (
-                <Grid item xs={12} sm={6} md={4} key={sport.id}>
-                  <MotionCard
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 * (index + 1) }}
-                    elevation={2}
-                    sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-                  >
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="h6" noWrap>{sport.name}</Typography>
-                        <Chip 
-                          label={t(`sport.${sport.type}`)} 
-                          color={sport.type === 'tournament' ? 'primary' : sport.type === 'roundRobin' ? 'secondary' : 'default'}
+            <AnimatePresence mode="sync">
+              {eventSports.length > 0 ? (
+                eventSports.map((sport, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={sport.id}>
+                    <MotionCard
+                      layoutId={`sport-card-${sport.id}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.3, delay: 0.1 * (index + 1) }}
+                      elevation={2}
+                      sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                    >
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Typography variant="h6" noWrap>{sport.name}</Typography>
+                          <Chip 
+                            label={t(`sport.${sport.type}`)} 
+                            color={sport.type === 'tournament' ? 'primary' : sport.type === 'roundRobin' ? 'secondary' : 'default'}
+                            size="small" 
+                          />
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                          {sport.description || t(`sport.${sport.type}Description`) || ''}
+                        </Typography>
+                        
+                        <Grid container spacing={1}>
+                          <Grid item xs={6}>
+                            <Typography variant="caption" display="block">{t('sport.teams')}</Typography>
+                            <Typography variant="body2">{sport.teams?.length || 0}</Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="caption" display="block">{t('sport.matches')}</Typography>
+                            <Typography variant="body2">{sport.matches?.length || 0}</Typography>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                      <CardActions>
+                        <Button 
                           size="small" 
-                        />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {sport.description || t(`sport.${sport.type}Description`) || ''}
-                      </Typography>
-                      
-                      <Grid container spacing={1}>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" display="block">{t('sport.teams')}</Typography>
-                          <Typography variant="body2">{sport.teams?.length || 0}</Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="caption" display="block">{t('sport.matches')}</Typography>
-                          <Typography variant="body2">{sport.matches?.length || 0}</Typography>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                    <CardActions>
-                      <Button 
-                        size="small" 
-                        onClick={() => handleEditSport(sport.id)}
-                        fullWidth
-                      >
-                        {t('admin.manageSport')}
-                      </Button>
-                    </CardActions>
-                  </MotionCard>
+                          onClick={() => handleEditSport(sport.id)}
+                          fullWidth
+                        >
+                          {t('admin.manageSport')}
+                        </Button>
+                      </CardActions>
+                    </MotionCard>
+                  </Grid>
+                ))
+              ) : (
+                <Grid item xs={12}>
+                  <Box sx={{ textAlign: 'center', py: 4, bgcolor: alpha('#f5f5f5', 0.5) }}>
+                    <Typography color="text.secondary" paragraph>
+                      {t('admin.noSportsInEvent')}
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={() => handleOpenCreateSportDialog(selectedEvent.id)}
+                    >
+                      {t('admin.createFirstSport')}
+                    </Button>
+                  </Box>
                 </Grid>
-              ))
-            ) : (
-              <Grid item xs={12}>
-                <Box sx={{ textAlign: 'center', py: 4, bgcolor: alpha('#f5f5f5', 0.5) }}>
-                  <Typography color="text.secondary" paragraph>
-                    {t('admin.noSportsInEvent')}
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={() => handleOpenCreateSportDialog(selectedEvent.id)}
-                  >
-                    {t('admin.createFirstSport')}
-                  </Button>
-                </Box>
-              </Grid>
-            )}
+              )}
+            </AnimatePresence>
           </Grid>
           
           {!selectedEvent.isActive && (
@@ -404,8 +456,6 @@ const AdminPage: React.FC = () => {
         }}
         eventId={selectedEventId || ''}
       />
-      
-      {/* スナックバーは削除 - AdminLayoutのスナックバーを使用 */}
     </AdminLayout>
   );
 };

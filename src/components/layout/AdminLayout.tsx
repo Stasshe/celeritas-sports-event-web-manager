@@ -64,11 +64,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useAuth();
-  const { showSnackbar, savingStatus, setSavingStatus } = useAdminLayout(); // 外部コンテキストを使用
+  const { showSnackbar, savingStatus, setSavingStatus, save, hasUnsavedChanges, registerSaveHandler } = useAdminLayout(); // コンテキストから機能を取得
   
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // ユーザーメニュー
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -103,28 +102,27 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     }
   }, [location.pathname, events, sports]);
   
-  // 自動保存シミュレーションを削除
-  const simulateAutoSave = async () => {
-    try {
-      // 実際の保存処理を行う（ここではダミー）
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setSavingStatus('saved');
-      setLastSaved(new Date());
-      setHasUnsavedChanges(false);
-    } catch (error) {
-      setSavingStatus('error');
-      setHasUnsavedChanges(true);
-      console.error('Error saving:', error);
-    }
-  };
+  // レイアウト全体の保存ハンドラを登録
+  useEffect(() => {
+    // このコンポーネント固有の保存処理（必要に応じて実装）
+    const handleLayoutSave = async () => {
+      console.log('レイアウト設定の保存');
+      // 実際には何も保存しない
+      return true;
+    };
+    
+    registerSaveHandler(handleLayoutSave, 'layout');
+    
+    // クリーンアップ関数は不要（コンポーネントがアンマウントされないため）
+  }, [registerSaveHandler]);
   
   // 手動保存
   const handleManualSave = async () => {
-    setSavingStatus('saving');
+    // 新しい保存メカニズムを使用
     try {
-      await simulateAutoSave();
+      await save();
+      setLastSaved(new Date());
     } catch (error) {
-      setSavingStatus('error');
       console.error('Manual save error:', error);
     }
   };
@@ -185,22 +183,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     return Object.values(sports).filter(sport => sport.eventId === eventId);
   };
 
-  // 新しいスナックバー状態
-  const [snackbarLocal, setSnackbarLocal] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'error' | 'info' | 'warning';
-  }>({
-    open: false,
-    message: '',
-    severity: 'info'
-  });
-  
-  // スナックバーを閉じる
-  const handleCloseSnackbar = () => {
-    setSnackbarLocal(prev => ({ ...prev, open: false }));
-  };
-
   // ダイアログの状態
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [sportDialogOpen, setSportDialogOpen] = useState(false);
@@ -216,6 +198,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     setSportDialogOpen(false);
     showSnackbar(t('admin.sportCreated'), 'success');
     navigate(`/admin/sports/${sportId}`);
+  };
+
+  // 手動保存
+  const handleSave = async () => {
+    await save();
   };
 
   return (
@@ -272,7 +259,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </IconButton>
           </Tooltip>
           <Tooltip title={t('admin.saveChanges')}>
-            <IconButton color="inherit" onClick={handleManualSave}>
+            <IconButton color="inherit" onClick={handleSave}>
               <SaveIcon />
             </IconButton>
           </Tooltip>
@@ -528,26 +515,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         }}
       >
         {children}
-        
-        {/* 単一のスナックバー */}
-        <Snackbar
-          open={savingStatus === 'saved' || savingStatus === 'error'}
-          autoHideDuration={6000}
-          onClose={() => setSavingStatus('idle')}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert 
-            onClose={() => setSavingStatus('idle')}
-            severity={savingStatus === 'saved' ? 'success' : 'error'}
-            sx={{ width: '100%' }}
-          >
-            {savingStatus === 'saved' 
-              ? t('settings.savedSuccessfully') 
-              : savingStatus === 'error'
-                ? t('settings.saveError')
-                : ''}
-          </Alert>
-        </Snackbar>
       </Box>
 
       {/* ダイアログの追加 */}

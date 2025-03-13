@@ -1,31 +1,48 @@
 import React, { createContext, useContext, useRef, useCallback, useState, useEffect } from 'react';
-import { Snackbar, Alert, Box, Typography, CircularProgress } from '@mui/material';
-import { Save as SaveIcon, Warning as WarningIcon } from '@mui/icons-material';
+import { Snackbar, Alert, Box, Typography, CircularProgress, Button } from '@mui/material';
+import { Save as SaveIcon, Warning as WarningIcon, Sync as SyncIcon } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useThemeContext } from './ThemeContext';
+
+interface SaveHandler {
+  handler: () => Promise<boolean>;
+  scope: string;
+}
+
 interface AdminLayoutContextType {
-  showSnackbar: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void;
+  showSnackbar: (message: string, severity: 'success' | 'error' | 'info' | 'warning', options?: any) => void;
   setSavingStatus: (status: 'idle' | 'saving' | 'saved' | 'error') => void;
   savingStatus: 'idle' | 'saving' | 'saved' | 'error';
+  registerSaveHandler: (handler: () => Promise<boolean>, scope: string) => void;
+  unregisterSaveHandler: (scope: string) => void;
+  save: (scope?: string) => Promise<boolean>;
+  hasUnsavedChanges: boolean;
+  setHasUnsavedChanges: (value: boolean) => void;
 }
 
 const AdminLayoutContext = createContext<AdminLayoutContextType | null>(null);
 
 export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // 状態管理
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-
-  const savingStatusRef = useRef<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const snackbarTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasUnsavedChangesRef = useRef(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { alpha } = useThemeContext();
-  // スナックバーの状態管理
+  
+  // 参照
+  const savingStatusRef = useRef<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const hasUnsavedChangesRef = useRef(false);
+  const saveHandlersRef = useRef<Map<string, SaveHandler>>(new Map());
+  const lastSavedRef = useRef<Date | null>(null);
+  
+  // スナックバーの状態
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
     severity: 'success' | 'error' | 'info' | 'warning';
     icon?: React.ReactNode;
     progress?: number;
+    action?: React.ReactNode;
   }>({
     open: false,
     message: '',
@@ -33,11 +50,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     progress: 0,
   });
 
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  // オンライン状態の監視を追加
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
+  // オンライン状態の監視
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => {
@@ -55,7 +68,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
   }, []);
 
-  // 未保存の変更がある場合の警告表示
+  // 未保存変更の警告
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChangesRef.current) {
@@ -68,6 +81,76 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
+  // 保存ハンドラの登録
+  const registerSaveHandler = useCallback((handler: () => Promise<boolean>, scope: string) => {
+    saveHandlersRef.current.set(scope, { handler, scope });
+  }, []);
+
+  // 保存ハンドラの登録解除
+  const unregisterSaveHandler = useCallback((scope: string) => {
+    saveHandlersRef.current.delete(scope);
+  }, []);
+
+  // 保存実行関数
+  const save = useCallback(async (scope?: string): Promise<boolean> => {
+    // オフライン時は保存不可
+    if (!isOnline) {
+      showSnackbar('オフライン状態では保存できません', 'error', {
+        icon: <WarningIcon />
+      });
+      return false;
+    }
+
+    updateSavingStatus('saving');
+    
+    try {
+      let success = true;
+      
+      // 特定のスコープのみ保存する場合
+      if (scope) {
+        const handler = saveHandlersRef.current.get(scope);
+        if (handler) {
+          success = await handler.handler();
+        } else {
+          console.warn(`Save handler for scope "${scope}" not found`);
+          success = false;
+        }
+      } 
+      // すべてのスコープの保存
+      else {
+        const results = await Promise.all(
+          Array.from(saveHandlersRef.current.values()).map(async ({ handler }) => {
+            try {
+              return await handler();
+            } catch (error) {
+              console.error('Error in save handler:', error);
+              return false;
+            }
+          })
+        );
+        
+        success = results.every(result => result);
+      }
+      
+      // 保存結果に基づいてステータス更新
+      if (success) {
+        updateSavingStatus('saved');
+        lastSavedRef.current = new Date();
+        setHasUnsavedChanges(false);
+        hasUnsavedChangesRef.current = false;
+      } else {
+        updateSavingStatus('error');
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('Save error:', error);
+      updateSavingStatus('error');
+      return false;
+    }
+  }, [isOnline]);
+
+  // スナックバーの表示
   const showSnackbar = useCallback((
     message: string, 
     severity: 'success' | 'error' | 'info' | 'warning',
@@ -75,6 +158,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
       icon?: React.ReactNode;
       autoHideDuration?: number;
       progress?: boolean;
+      action?: React.ReactNode;
     }
   ) => {
     setSnackbar(prev => ({
@@ -83,6 +167,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
       severity,
       icon: options?.icon,
       progress: options?.progress ? 0 : undefined,
+      action: options?.action
     }));
 
     if (options?.progress) {
@@ -100,6 +185,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, []);
 
+  // 保存状態の更新
   const updateSavingStatus = useCallback((status: 'idle' | 'saving' | 'saved' | 'error') => {
     // オフライン時は保存を許可しない
     if (status === 'saving' && !isOnline) {
@@ -108,17 +194,12 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
         autoHideDuration: 4000
       });
       setSavingStatus('error');
+      savingStatusRef.current = 'error';
       return;
-    }
-
-    if (snackbarTimeoutRef.current) {
-      clearTimeout(snackbarTimeoutRef.current);
     }
 
     savingStatusRef.current = status;
     setSavingStatus(status);
-    hasUnsavedChangesRef.current = status === 'saving';
-    setHasUnsavedChanges(status === 'saving');
 
     switch (status) {
       case 'saving':
@@ -133,26 +214,47 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
           icon: <SaveIcon />,
           autoHideDuration: 2000
         });
+        lastSavedRef.current = new Date();
         hasUnsavedChangesRef.current = false;
         setHasUnsavedChanges(false);
         break;
       case 'error':
         showSnackbar('保存に失敗しました', 'error', {
           icon: <WarningIcon />,
-          autoHideDuration: 4000
+          autoHideDuration: 4000,
+          action: (
+            <Button 
+              size="small" 
+              color="inherit" 
+              onClick={() => save()}
+              startIcon={<SyncIcon />}
+            >
+              再試行
+            </Button>
+          )
         });
         break;
     }
-  }, [isOnline, showSnackbar]);
+  }, [isOnline, save, showSnackbar]);
 
+  // スナックバーを閉じる
   const handleSnackbarClose = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
-
-  const value = {
+  
+  // コンテキスト値
+  const value: AdminLayoutContextType = {
     showSnackbar,
     setSavingStatus: updateSavingStatus,
-    savingStatus: savingStatusRef.current
+    savingStatus: savingStatusRef.current,
+    registerSaveHandler,
+    unregisterSaveHandler,
+    save,
+    hasUnsavedChanges,
+    setHasUnsavedChanges: (value: boolean) => {
+      setHasUnsavedChanges(value);
+      hasUnsavedChangesRef.current = value;
+    }
   };
 
   return (
@@ -193,6 +295,16 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
               <Typography variant="body2" color="text.secondary">
                 未保存の変更があります
               </Typography>
+              <Button
+                size="small"
+                startIcon={<SaveIcon />}
+                onClick={() => save()}
+                variant="outlined"
+                color="primary"
+                sx={{ ml: 1 }}
+              >
+                保存
+              </Button>
             </Box>
           </motion.div>
         )}
@@ -216,6 +328,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
               elevation={6}
               variant="filled"
               icon={snackbar.icon}
+              action={snackbar.action}
               sx={{
                 minWidth: 300,
                 boxShadow: theme => `0 8px 32px ${alpha(theme.palette.common.black, 0.15)}`,
