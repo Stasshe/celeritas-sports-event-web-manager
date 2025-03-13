@@ -90,7 +90,7 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     // 特別なフィールドは無視
     allKeys.delete('_version');
     
-    // Setを配列に変換して反復処理
+    // Setを配列に変換して反復処理（エラー修正）
     Array.from(allKeys).forEach(key => {
       const fullPath = prefix ? `${prefix}.${key}` : key;
       
@@ -108,7 +108,7 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
       // オブジェクトの場合は再帰
       if (typeof oldData[key] === 'object' && typeof newData[key] === 'object') {
         const nestedChanges = detectChangedFields(oldData[key], newData[key], fullPath);
-        // Setを配列に変換して反復処理
+        // Setを配列に変換して反復処理（エラー修正）
         Array.from(nestedChanges).forEach(field => changedFields.add(field));
       } 
       // プリミティブ値の比較
@@ -168,11 +168,6 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
       } else {
         // 完全な更新
         await set(dbRef, mergedData);
-      }
-      
-      // 楽観的更新の場合、即座にローカル状態を更新
-      if (options.optimistic) {
-        setData(mergedData);
       }
       
       // バージョンの更新
@@ -239,7 +234,7 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     modifiedFieldsRef.current.add(fieldName);
   }, []);
 
-  // 部分更新用の関数
+  // 部分更新用の関数を改善
   const partialUpdate = useCallback(async (
     updates: Partial<T>,
     options: UpdateOptions = {}
@@ -253,13 +248,18 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
       // 楽観的更新オプションの設定
       const optimistic = options.optimistic !== undefined ? options.optimistic : true;
       
-      // 変更されたフィールドを追跡
+      // 変更されたフィールドを追跡（楽観的UIも改善）
       fieldsToUpdate.forEach(field => trackFieldChange(field));
+      
+      // 楽観的UI更新（即時反映）
+      if (optimistic) {
+        setData(prevData => prevData ? { ...prevData, ...updates } as T : null);
+      }
       
       return await updateData(updates, {
         ...options,
         partial: true,
-        optimistic,
+        optimistic: false, // 既に楽観的に更新したので二重適用を避ける
         fieldsToUpdate
       });
     } catch (error) {
@@ -292,20 +292,60 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     }
   };
 
-  // 競合を解決する関数
+  // 競合解決機能を強化
   const resolveConflict = useCallback(async (resolution: 'local' | 'remote' | 'merge', mergeData?: Partial<T>) => {
     if (conflictStatus !== 'detected') return;
     
     try {
       if (resolution === 'local' && data) {
-        // ローカルのデータを優先
-        await updateData(data as T, { optimistic: true });
+        // ローカルのデータを優先（フィールド競合情報を活用）
+        const localUpdates: Partial<T> = {};
+        const modifiedFieldsArray = Array.from(modifiedFieldsRef.current);
+        
+        // 変更されたフィールドだけを更新対象に
+        modifiedFieldsArray.forEach(field => {
+          let value = data;
+          const parts = field.split('.');
+          
+          for (let i = 0; i < parts.length; i++) {
+            value = (value as any)[parts[i]];
+            if (value === undefined) break;
+          }
+          
+          if (value !== undefined) {
+            // ネストされたフィールドの処理
+            if (field.includes('.')) {
+              if (!localUpdates) return;
+              const parts = field.split('.');
+              let current = localUpdates as any;
+              
+              for (let i = 0; i < parts.length - 1; i++) {
+                if (!current[parts[i]]) current[parts[i]] = {};
+                current = current[parts[i]];
+              }
+              
+              current[parts[parts.length - 1]] = value;
+            } else {
+              (localUpdates as any)[field] = value;
+            }
+          }
+        });
+        
+        await updateData(localUpdates as Partial<T>, { 
+          fieldsToUpdate: modifiedFieldsArray,
+          partial: true,
+          optimistic: true 
+        });
       } else if (resolution === 'remote') {
-        // リモートのデータを受け入れる（何もしない）
+        // リモートのデータを受け入れる（単純にデータの再取得）
         setConflictStatus('resolved');
+        modifiedFieldsRef.current.clear();
       } else if (resolution === 'merge' && mergeData) {
-        // マージデータで更新
-        await updateData(mergeData, { optimistic: true });
+        // マージデータを使用して更新
+        await updateData(mergeData, { 
+          optimistic: true,
+          fieldsToUpdate: Object.keys(mergeData)
+        });
       }
       
       setConflictStatus('resolved');
