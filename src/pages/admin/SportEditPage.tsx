@@ -56,7 +56,7 @@ const fieldToTabMap: Record<keyof Sport, string> = {
   manual: 'manual',
   tournamentSettings: 'settings',
   roundRobinSettings: 'settings',
-  organizers: 'details',
+  organizers: 'roster',
   roster: 'roster',
   // ...他のフィールドも必要に応じて追加
 };
@@ -380,35 +380,71 @@ const SportEditPage: React.FC = () => {
   };
 
   const addOrganizer = () => {
-    if (newOrganizer.name && localSport) {
-      setLocalSport(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          organizers: [...(prev.organizers || []), { ...newOrganizer, id: `org_${Date.now()}` }]
-        };
-      });
-      
-      // リセット
-      setNewOrganizer({
-        id: `org_${Date.now()}`,
-        name: '',
-        role: 'member',
-        grade: 2
-      });
-    }
+    if (!newOrganizer.name || !sport) return;
+    
+    // 有効なIDを持つ新しいオーガナイザーを作成
+    const newOrganizerWithId = {
+      ...newOrganizer,
+      id: `org_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    };
+    
+    // スポーツのオーガナイザーリストを更新
+    const updatedOrganizers = [...(sport.organizers || []), newOrganizerWithId];
+    
+    // スポーツオブジェクトを更新
+    const updatedSport = {
+      ...sport,
+      organizers: updatedOrganizers
+    };
+    
+    // 親コンポーネントに通知
+    handleSportUpdate(updatedSport);
+    
+    // 該当タブの状態を更新
+    const tabName = getTabNameForField('organizers');
+    setTabStates(prev => ({
+      ...prev,
+      [tabName]: {
+        ...prev[tabName],
+        isDirty: true,
+        hasChanges: true
+      }
+    }));
+    
+    // 新規オーガナイザー入力をリセット
+    setNewOrganizer({
+      id: `org_${Date.now()}`,
+      name: '',
+      role: 'member',
+      grade: 2
+    });
   };
 
   const removeOrganizer = (id: string) => {
-    if (localSport) {
-      setLocalSport(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          organizers: (prev.organizers || []).filter(org => org.id !== id)
-        };
-      });
-    }
+    if (!sport) return;
+    
+    // 指定されたIDを持つオーガナイザーを除外
+    const updatedOrganizers = (sport.organizers || []).filter(org => org.id !== id);
+    
+    // スポーツオブジェクトを更新
+    const updatedSport = {
+      ...sport,
+      organizers: updatedOrganizers
+    };
+    
+    // 親コンポーネントに通知
+    handleSportUpdate(updatedSport);
+    
+    // 該当タブの状態を更新
+    const tabName = getTabNameForField('organizers');
+    setTabStates(prev => ({
+      ...prev,
+      [tabName]: {
+        ...prev[tabName],
+        isDirty: true,
+        hasChanges: true
+      }
+    }));
   };
 
   // イベント名を取得する関数
@@ -581,6 +617,11 @@ const SportEditPage: React.FC = () => {
     
     const tabName = getTabNameForField(field);
     const isDirty = tabStates[tabName].isDirty;
+    
+    // 保存後に差分表示を消すため、差分がなくなったらコンポーネントを表示しない
+    if (JSON.stringify(differences[field].remote) === JSON.stringify(differences[field].local)) {
+      return null;
+    }
     
     return (
       <Box sx={{

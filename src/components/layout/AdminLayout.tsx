@@ -132,21 +132,39 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
   
   const handleEventClick = (eventId: string) => {
-    // イベントID展開のトグル処理
+    // イベント編集ページへのナビゲーション処理のみ行う
+    navigate(`/admin/events/${eventId}`);
+  };
+  
+  const handleEventToggle = (eventId: string, e: React.MouseEvent) => {
+    // クリックイベントが親要素に伝播しないようにする
+    e.stopPropagation();
+    
+    // イベントID展開のトグル処理のみ行う
     setExpandedEventIds(prev => 
       prev.includes(eventId) 
         ? prev.filter(id => id !== eventId) 
         : [...prev, eventId]
     );
-    
-    // イベント編集ページへのナビゲーション処理
-    navigate(`/admin/events/${eventId}`);
   };
   
   const handleSportClick = (sportId: string) => {
     // 現在のパスと異なる場合のみナビゲーション
     if (location.pathname !== `/admin/sports/${sportId}`) {
-      navigate(`/admin/sports/${sportId}`, { replace: true });
+      // クリーンアップ関数を呼び出して未保存の状態をクリアする
+      if (hasUnsavedChanges) {
+        // ユーザーに確認を求める
+        const confirmNavigation = window.confirm(t('admin.unsavedChangesWarning'));
+        if (!confirmNavigation) {
+          return; // ナビゲーションをキャンセル
+        }
+        
+        // 保存状態をリセット
+        setSavingStatus('idle');
+      }
+      
+      // 新しいページへナビゲーション
+      navigate(`/admin/sports/${sportId}`);
     }
   };
 
@@ -200,20 +218,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     navigate(`/admin/sports/${sportId}`);
   };
 
-  // サイドバーの保存ボタンをクリックしたときのハンドラを改善
-  const handleSaveClick = async () => {
-    try {
-      const result = await save();
-      if (result) {
-        showSnackbar(t('admin.saveSuccess'), 'success');
-      } else {
-        showSnackbar(t('admin.saveError'), 'error');
-      }
-    } catch (error) {
-      console.error('Save error:', error);
-      showSnackbar(t('admin.saveError'), 'error');
-    }
-  };
+  
 
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
@@ -266,11 +271,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <Tooltip title={t('admin.home')}>
             <IconButton color="inherit" onClick={() => navigate('/')}>
               <HomeIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t('admin.saveChanges')}>
-            <IconButton color="inherit" onClick={handleSaveClick}>
-              <SaveIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title={t('admin.settings')}>
@@ -447,7 +447,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                       primary={event.name} 
                       secondary={new Date(event.date).toLocaleDateString()}
                     />
-                    {expandedEventIds.includes(event.id) ? <ExpandLess /> : <ExpandMore />}
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleEventToggle(event.id, e)}
+                      sx={{ ml: 'auto' }}
+                    >
+                      {expandedEventIds.includes(event.id) ? <ExpandLess /> : <ExpandMore />}
+                    </IconButton>
                   </ListItemButton>
                 </ListItem>
                 
