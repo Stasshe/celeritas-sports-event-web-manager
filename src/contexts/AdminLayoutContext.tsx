@@ -91,66 +91,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     saveHandlersRef.current.delete(scope);
   }, []);
 
-  // 保存実行関数
-  const save = useCallback(async (scope?: string): Promise<boolean> => {
-    // オフライン時は保存不可
-    if (!isOnline) {
-      showSnackbar('オフライン状態では保存できません', 'error', {
-        icon: <WarningIcon />
-      });
-      return false;
-    }
-
-    updateSavingStatus('saving');
-    
-    try {
-      let success = true;
-      
-      // 特定のスコープのみ保存する場合
-      if (scope) {
-        const handler = saveHandlersRef.current.get(scope);
-        if (handler) {
-          success = await handler.handler();
-        } else {
-          console.warn(`Save handler for scope "${scope}" not found`);
-          success = false;
-        }
-      } 
-      // すべてのスコープの保存
-      else {
-        const results = await Promise.all(
-          Array.from(saveHandlersRef.current.values()).map(async ({ handler }) => {
-            try {
-              return await handler();
-            } catch (error) {
-              console.error('Error in save handler:', error);
-              return false;
-            }
-          })
-        );
-        
-        success = results.every(result => result);
-      }
-      
-      // 保存結果に基づいてステータス更新
-      if (success) {
-        updateSavingStatus('saved');
-        lastSavedRef.current = new Date();
-        setHasUnsavedChanges(false);
-        hasUnsavedChangesRef.current = false;
-      } else {
-        updateSavingStatus('error');
-      }
-      
-      return success;
-    } catch (error) {
-      console.error('Save error:', error);
-      updateSavingStatus('error');
-      return false;
-    }
-  }, [isOnline]);
-
-  // スナックバーの表示
+  // スナックバーの表示関数を先に定義
   const showSnackbar = useCallback((
     message: string, 
     severity: 'success' | 'error' | 'info' | 'warning',
@@ -185,7 +126,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, []);
 
-  // 保存状態の更新
+  // 保存状態更新関数を先に定義
   const updateSavingStatus = useCallback((status: 'idle' | 'saving' | 'saved' | 'error') => {
     // オフライン時は保存を許可しない
     if (status === 'saving' && !isOnline) {
@@ -235,7 +176,93 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
         });
         break;
     }
-  }, [isOnline, save, showSnackbar]);
+  }, [isOnline]);
+
+  // save関数の型注釈を追加
+  const save = useCallback(async (scope?: string): Promise<boolean> => {
+    // オフライン時は保存不可
+    if (!isOnline) {
+      showSnackbar('オフライン状態では保存できません', 'error', {
+        icon: <WarningIcon />
+      });
+      return false;
+    }
+
+    updateSavingStatus('saving');
+    
+    try {
+      let success = true;
+      
+      // 特定のスコープのみ保存する場合
+      if (scope) {
+        const handler = saveHandlersRef.current.get(scope);
+        if (handler) {
+          console.log(`Executing save handler for scope "${scope}"`);
+          success = await handler.handler();
+        } else {
+          // スコープが見つからない場合は、すべてのハンドラを試す
+          console.warn(`Save handler for scope "${scope}" not found, trying all handlers`);
+          const handlers = Array.from(saveHandlersRef.current.values());
+          if (handlers.length > 0) {
+            const results = await Promise.all(
+              handlers.map(async ({ handler }) => {
+                try {
+                  return await handler();
+                } catch (error) {
+                  console.error('Error in save handler:', error);
+                  return false;
+                }
+              })
+            );
+            success = results.every(result => result);
+          } else {
+            console.warn('No save handlers registered');
+            success = false;
+          }
+        }
+      } 
+      // すべてのスコープの保存
+      else {
+        const handlers = Array.from(saveHandlersRef.current.values());
+        console.log(`Executing all save handlers (${handlers.length})`);
+        
+        if (handlers.length === 0) {
+          console.warn('No save handlers registered');
+          success = false;
+        } else {
+          const results = await Promise.all(
+            handlers.map(async ({ handler, scope }) => {
+              try {
+                console.log(`Executing handler for scope "${scope}"`);
+                return await handler();
+              } catch (error) {
+                console.error(`Error in save handler for scope "${scope}":`, error);
+                return false;
+              }
+            })
+          );
+          
+          success = results.every(result => result);
+        }
+      }
+      
+      // 保存結果に基づいてステータス更新
+      if (success) {
+        updateSavingStatus('saved');
+        lastSavedRef.current = new Date();
+        setHasUnsavedChanges(false);
+        hasUnsavedChangesRef.current = false;
+      } else {
+        updateSavingStatus('error');
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('Save error:', error);
+      updateSavingStatus('error');
+      return false;
+    }
+  }, [isOnline, showSnackbar, updateSavingStatus]);
 
   // スナックバーを閉じる
   const handleSnackbarClose = () => {

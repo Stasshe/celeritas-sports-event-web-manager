@@ -200,9 +200,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     navigate(`/admin/sports/${sportId}`);
   };
 
-  // 手動保存
-  const handleSave = async () => {
-    await save();
+  // サイドバーの保存ボタンをクリックしたときのハンドラを改善
+  const handleSaveClick = async () => {
+    try {
+      const result = await save();
+      if (result) {
+        showSnackbar(t('admin.saveSuccess'), 'success');
+      } else {
+        showSnackbar(t('admin.saveError'), 'error');
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      showSnackbar(t('admin.saveError'), 'error');
+    }
   };
 
   return (
@@ -259,7 +269,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </IconButton>
           </Tooltip>
           <Tooltip title={t('admin.saveChanges')}>
-            <IconButton color="inherit" onClick={handleSave}>
+            <IconButton color="inherit" onClick={handleSaveClick}>
               <SaveIcon />
             </IconButton>
           </Tooltip>

@@ -47,6 +47,35 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
             if (conflictingFields.length > 0) {
               setConflictStatus('detected');
               console.log('変更の競合が検出されました:', conflictingFields);
+              
+              // 重要: 競合フィールド以外のみ更新
+              const nonConflictingData = { ...newData };
+              conflictingFields.forEach(field => {
+                // ネストされたフィールドの処理
+                if (field.includes('.')) {
+                  const parts = field.split('.');
+                  let current = data as any;
+                  let target = nonConflictingData as any;
+                  
+                  for (let i = 0; i < parts.length - 1; i++) {
+                    current = current[parts[i]];
+                    target = target[parts[i]];
+                  }
+                  
+                  const lastPart = parts[parts.length - 1];
+                  if (current && target) {
+                    target[lastPart] = current[lastPart];
+                  }
+                } else {
+                  // 単純なフィールドの場合
+                  if (data) {
+                    nonConflictingData[field as keyof typeof nonConflictingData] = (data as any)[field];
+                  }
+                }
+              });
+              // 競合を除いたデータで更新
+              setData(nonConflictingData as T);
+              return; // 競合があれば処理を終了
             }
           }
           
@@ -57,7 +86,7 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
         // 前のデータを保存（差分検出用）
         previousDataRef.current = newData;
         
-        // setDataを条件付きで実行（isUpdatingRef.currentがfalseの場合のみ）
+        // 更新中でなければ標準の更新
         if (!isUpdatingRef.current) {
           setData(newData);
         }

@@ -19,6 +19,7 @@ import { Sport } from '../../types';
 import TournamentScoring from '../../components/admin/scoring/TournamentScoring';
 import RoundRobinScoring from '../../components/admin/scoring/RoundRobinScoring';
 import CustomScoring from '../../components/admin/scoring/CustomScoring';
+import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 
 
 const ScoringPage: React.FC = () => {
@@ -41,8 +42,13 @@ const ScoringPage: React.FC = () => {
   const pendingUpdateRef = useRef<Sport | null>(null);
   const isProcessingRef = useRef(false);
 
+  const { registerSaveHandler, unregisterSaveHandler, save, setHasUnsavedChanges } = useAdminLayout();
+
   const handleSportUpdate = useCallback(async (updatedSport: Sport) => {
     if (isProcessingRef.current) return;
+    
+    // 変更があることを通知
+    setHasUnsavedChanges(true);
 
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
@@ -53,29 +59,11 @@ const ScoringPage: React.FC = () => {
 
     updateTimeoutRef.current = setTimeout(async () => {
       if (!pendingUpdateRef.current) return;
-
-      isProcessingRef.current = true;
-      setSaveStatus('saving');
-
-      try {
-        const result = await updateData(pendingUpdateRef.current);
-        if (result) {
-          setSaveStatus('saved');
-          setLocalSport(pendingUpdateRef.current);
-          pendingUpdateRef.current = null;
-        } else {
-          setSaveStatus('error');
-        }
-        setShowSnackbar(true);
-      } catch (error) {
-        console.error('Update failed:', error);
-        setSaveStatus('error');
-        setShowSnackbar(true);
-      } finally {
-        isProcessingRef.current = false;
-      }
-    }, 1000);
-  }, [updateData]);
+      
+      // 自動保存を修正
+      await save(`scoring_${sportId}`);
+    }, 2000);
+  }, [updateData, save, sportId, setHasUnsavedChanges]);
 
   useEffect(() => {
     if (sport && !localSport) {
@@ -110,22 +98,31 @@ const ScoringPage: React.FC = () => {
   }, [localSport, isProcessing]);
 
   const handleSave = async () => {
-    if (!localSport || isProcessing) return;
+    if (!localSport || isProcessingRef.current) return false;
 
-    setIsProcessing(true);
-    setSaveStatus('saving');
     try {
-      await updateData(localSport);
-      setSaveStatus('saved');
-      setShowSnackbar(true);
+      isProcessingRef.current = true;
+      setSaveStatus('saving');
+      
+      // ローカルの変更を保存
+      const result = await updateData(localSport);
+      
+      if (result) {
+        setSaveStatus('saved');
+        setShowSnackbar(true);
+        return true;
+      } else {
+        setSaveStatus('error');
+        setShowSnackbar(true);
+        return false;
+      }
     } catch (error) {
+      console.error('Save error:', error);
       setSaveStatus('error');
       setShowSnackbar(true);
+      return false;
     } finally {
-      setIsProcessing(false);
-      setTimeout(() => {
-        setSaveStatus('idle');
-      }, 5000);
+      isProcessingRef.current = false;
     }
   };
 
@@ -148,6 +145,47 @@ const ScoringPage: React.FC = () => {
       pendingUpdateRef.current = null;
     };
   }, [saveTimeout]);
+
+  // 初期マウント時にSaveHandlerを登録
+  useEffect(() => {
+    // このページの保存ハンドラを登録
+    const handleSave = async () => {
+      if (!localSport || isProcessingRef.current) return false;
+      
+      try {
+        isProcessingRef.current = true;
+        setSaveStatus('saving');
+        
+        // ローカルの変更を保存
+        const result = await updateData(localSport);
+        
+        if (result) {
+          setSaveStatus('saved');
+          setShowSnackbar(true);
+          return true;
+        } else {
+          setSaveStatus('error');
+          setShowSnackbar(true);
+          return false;
+        }
+      } catch (error) {
+        console.error('Save error:', error);
+        setSaveStatus('error');
+        setShowSnackbar(true);
+        return false;
+      } finally {
+        isProcessingRef.current = false;
+      }
+    };
+    
+    // スコープ名を一意にして登録
+    registerSaveHandler(handleSave, `scoring_${sportId}`);
+    
+    return () => {
+      // アンマウント時に登録解除
+      unregisterSaveHandler(`scoring_${sportId}`);
+    };
+  }, [registerSaveHandler, unregisterSaveHandler, localSport, updateData, sportId]);
 
   if (loading) {
     return (

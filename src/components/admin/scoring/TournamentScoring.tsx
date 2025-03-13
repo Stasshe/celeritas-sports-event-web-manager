@@ -173,13 +173,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     setMatchDialogOpen(true);
   };
 
-  // 試合の更新関数を改善
+  // 試合の更新（即時保存用）
   const handleMatchUpdate = async (updatedMatch: Match) => {
     if (readOnly) return;
-    
+    setIsDialogProcessing(true);
     try {
-      setIsDialogProcessing(true);
-      
       const status = TournamentStructureHelper.getMatchStatus(updatedMatch);
       const newMatch = {
         ...updatedMatch,
@@ -189,7 +187,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
                   undefined
       };
 
-      // 即時にローカル状態を更新（ユーザーに変更を即座に見せる）
+      // 即時にローカル状態を更新（UXのため）
       let newMatches = matches.map(m => 
         m.id === newMatch.id ? newMatch : m
       );
@@ -198,21 +196,18 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
         newMatches = TournamentStructureHelper.progressWinnerToNextMatch(newMatch, newMatches);
       }
 
-      // 即時に状態を更新してUIに反映（ダイアログを閉じる前）
+      // ローカルのUI更新を先に行い、ダイアログを閉じる
       setMatches(newMatches);
+      setMatchDialogOpen(false);
       
-      // 非同期でデータベースに保存（先にUIを更新）
+      // その後にデータ更新を行う
       const updatedSport = {
         ...sport,
         matches: newMatches
       };
       
-      // 更新キューに追加（ダイアログを先に閉じる）
-      setMatchDialogOpen(false);
-      
-      // ダイアログを閉じた後で更新処理
-      setUpdateQueue(updatedSport);
-      
+      // 親コンポーネントに変更を通知
+      onUpdate(updatedSport);
     } finally {
       setIsDialogProcessing(false);
     }
