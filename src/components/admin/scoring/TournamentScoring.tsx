@@ -382,7 +382,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
         setIsSaving(false);
         setUpdateQueue(null);
       }
-    }, 1000);
+    }, 100);
 
     return () => {
       if (savingTimeoutRef.current) {
