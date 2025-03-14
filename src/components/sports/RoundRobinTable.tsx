@@ -319,17 +319,6 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
                                 `${match.team2Score} - ${match.team1Score}`
                               )}
                             </Typography>
-                            {match.status === 'completed' && (
-                              <Typography variant="caption" color="text.secondary">
-                                {t('roundRobin.points', {
-                                  points: match.winnerId === team1.id ? 
-                                    (sport.roundRobinSettings?.winPoints || 3) :
-                                    match.winnerId === team2.id ?
-                                    (sport.roundRobinSettings?.losePoints || 0) :
-                                    (sport.roundRobinSettings?.drawPoints || 1)
-                                })}
-                              </Typography>
-                            )}
                           </Box>
                         </Tooltip>
                       ) : (

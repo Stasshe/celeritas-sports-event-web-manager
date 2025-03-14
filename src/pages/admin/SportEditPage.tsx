@@ -938,10 +938,6 @@ const SportEditPage: React.FC = () => {
         {/* 競技・名簿登録タブ */}
         <TabPanel value={activeTab} index={1}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              {t('sport.roster')}
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
             
             <RosterEditor 
               sport={localSport} 

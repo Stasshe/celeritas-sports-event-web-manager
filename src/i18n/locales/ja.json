@@ -1,5 +1,6 @@
 {
   "common": {
+    "add": "追加",
     "appName": "スポーツイベント管理",
     "save": "保存",
     "cancel": "キャンセル",
@@ -21,6 +22,7 @@
     "logout" : "ログアウト"
   },
   "event": {
+    "alternativeDate": "予備日",
     "currentEvents": "現在のイベント",
     "noEvents": "イベントがありません",
     "selectEvent": "イベントを選択",
@@ -276,7 +278,8 @@
     "rankByGoalDiff": "得失点差方式",
     "rankByGoals": "得点方式",
     "displayRankCount": "表示順位数",
-    "topTeams": "上位チーム",
+    "topTeams": "順位",
+    "matchups": "総当たり表",
     "record": "成績",
     "goalRecord": "得失点",
     "currentStandings": "現在の順位表",
@@ -285,12 +288,14 @@
     "resetScores": "スコアをリセット",
     "keepScores": "スコアを保持",
     "resetScoresConfirm": "既存の試合スコアがあります。チームを更新する際にスコアをリセットしますか？",
-    "standings": "順位表",
+    "standings": "一覧",
     "points": "勝ち点",
     "played": "試合数",
     "won": "勝",
     "drawn": "分",
     "lost": "敗",
+    "rank": "順位",
+    "goalDiff": "得失点差",
     "goalsFor": "得点",
     "goalsAgainst": "失点",
     "goalDifference": "得失点差",
@@ -349,6 +354,15 @@
     "viewEdit": "表示・編集"
   },
   "sport": {
+    "loading": "競技の編集ページを読み込み中...",
+    "tournament": "トーナメント",
+    "details":"基本情報",
+    "name": "競技名",
+    "event": "この競技の行事",
+    "description": "説明",
+    "roundRobin": "総当たり戦",
+    "custom": "カスタム形式",
+    "matches": "試合数",
     "teamName": "チーム名",
     "teamColor": "チームカラー",
     "addTeam": "チームを追加",
@@ -406,7 +420,14 @@
     "publishReady": "この競技は公開の準備が整っています",
     "publishError": "以下の項目を確認してください：",
     "loadError": "競技データの読み込みに失敗しました",
-    "lastEdited": "最終編集日時: {{time}}"
+    "lastEdited": "最終編集日時: {{time}}",
+    "tabs" : {
+      "home": "ホーム",
+      "roster": "名簿",
+      "rules":"ルール",
+      "manual":"マニュアル",
+      "settings": "設定"
+    }
   },
   "adminHelp": {
     "title": "管理者ヘルプ",
