@@ -57,7 +57,7 @@ interface AdminLayoutProps {
 
 // drawerWidthを変数として定義
 const drawerWidth = 240;
-const collapsedDrawerWidth = 56; // 収納時の幅
+const collapsedDrawerWidth = 72; // 収納時の幅を少し広げる
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { t } = useTranslation();
@@ -143,6 +143,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       setMobileOpen(!mobileOpen);
     } else {
       setDrawerOpen(!drawerOpen);
+      // アイコンのアニメーションのためにタイムアウトを設定
+      setTimeout(() => {
+        if (contentRef.current) {
+          contentRef.current.style.transition = 'all 0.2s ease-out';
+        }
+      }, 0);
     }
   };
 
@@ -287,6 +293,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       overflowX: 'hidden',
       borderRight: `1px solid ${theme.palette.divider}`,
       backgroundColor: theme.palette.background.paper,
+      '&:hover': {
+        width: !drawerOpen && !isMobile ? drawerWidth : undefined,
+        '& .MuiListItemText-root': {
+          display: !drawerOpen && !isMobile ? 'block' : undefined,
+          opacity: !drawerOpen && !isMobile ? 1 : undefined,
+        },
+        '& .MuiListItemIcon-root': {
+          minWidth: !drawerOpen && !isMobile ? 56 : undefined,
+          justifyContent: !drawerOpen && !isMobile ? 'initial' : undefined,
+        },
+        '& .MuiListItemButton-root': {
+          px: !drawerOpen && !isMobile ? 2 : undefined,
+        }
+      }
     },
     '& .MuiListItemText-root': {
       opacity: drawerOpen ? 1 : 0,
@@ -294,15 +314,38 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         duration: theme.transitions.duration.shorter,
       }),
       display: drawerOpen ? 'block' : 'none',
+      whiteSpace: 'normal',
     },
     '& .MuiListItemIcon-root': {
-      minWidth: 40,
-      justifyContent: 'center',
+      minWidth: drawerOpen ? 56 : collapsedDrawerWidth,
+      justifyContent: drawerOpen ? 'initial' : 'center',
+      transition: theme.transitions.create(['min-width', 'justify-content'], {
+        duration: theme.transitions.duration.shorter,
+      }),
     },
     '& .MuiListItemButton-root': {
       justifyContent: drawerOpen ? 'initial' : 'center',
-      px: drawerOpen ? 2 : 'auto',
-      py: 1,
+      px: drawerOpen ? 2 : 1,
+      py: 1.5,
+      mx: !drawerOpen ? 1 : 0,
+      borderRadius: !drawerOpen ? 1 : 0,
+      '&:hover': {
+        bgcolor: alpha(theme.palette.primary.main, 0.08),
+      },
+      '&.Mui-selected': {
+        bgcolor: alpha(theme.palette.primary.main, 0.12),
+        '&:hover': {
+          bgcolor: alpha(theme.palette.primary.main, 0.16),
+        }
+      }
+    },
+    '& .MuiListItem-root': {
+      display: 'block',
+    },
+    '& .MuiButtonBase-root': {
+      transition: theme.transitions.create(['margin', 'padding'], {
+        duration: theme.transitions.duration.shorter,
+      }),
     },
   };
 
@@ -452,7 +495,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             color="inherit"
             aria-label="menu"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { lg: drawerOpen ? 'none' : 'block' } }}
+            sx={{
+              mr: 2,
+              display: { lg: drawerOpen ? 'none' : 'block' },
+              transition: theme.transitions.create(['transform', 'margin'], {
+                duration: theme.transitions.duration.shorter,
+              }),
+              transform: drawerOpen ? 'rotate(180deg)' : 'none',
+            }}
           >
             {isMobile ? <MenuIcon /> : drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
