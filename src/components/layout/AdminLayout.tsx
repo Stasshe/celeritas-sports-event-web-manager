@@ -22,7 +22,8 @@ import {
   CircularProgress,
   Chip,
   Tooltip,
-  useTheme
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -54,8 +55,9 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-// drawerWidthを小さく
+// drawerWidthを変数として定義
 const drawerWidth = 240;
+const collapsedDrawerWidth = 56; // 収納時の幅
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { t } = useTranslation();
@@ -131,10 +133,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     }
   };
   
+  // モバイルビューの状態管理を追加
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // ドロワーの開閉ハンドラーを更新
   const handleDrawerToggle = () => {
-    setDrawerOpen(!drawerOpen);
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setDrawerOpen(!drawerOpen);
+    }
   };
-  
+
   const handleEventClick = (eventId: string) => {
     // 現在のパスがイベント編集ページで、かつ別のイベントを選択した場合
     if (location.pathname.includes('/admin/events/') && !location.pathname.includes(eventId)) {
@@ -261,10 +272,165 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     navigate(`/admin/sports/${sportId}`);
   };
 
-  
+  // ドロワーの共通スタイル
+  const drawerStyles = {
+    width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+    boxSizing: 'border-box',
+    '& .MuiDrawer-paper': {
+      width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
+      transition: theme.transitions.create(['width', 'margin'], {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+      overflowX: 'hidden',
+      borderRight: `1px solid ${theme.palette.divider}`,
+      backgroundColor: theme.palette.background.paper,
+    },
+    '& .MuiListItemText-root': {
+      opacity: drawerOpen ? 1 : 0,
+      transition: theme.transitions.create(['opacity', 'margin'], {
+        duration: theme.transitions.duration.shorter,
+      }),
+      display: drawerOpen ? 'block' : 'none',
+    },
+    '& .MuiListItemIcon-root': {
+      minWidth: 40,
+      justifyContent: 'center',
+    },
+    '& .MuiListItemButton-root': {
+      justifyContent: drawerOpen ? 'initial' : 'center',
+      px: drawerOpen ? 2 : 'auto',
+      py: 1,
+    },
+  };
+
+  // ドロワーの内容をコンポーネント化（関数をコンポーネント内に移動）
+  const renderDrawerContent = () => (
+    <>
+      <Toolbar variant="dense" />
+      <Divider />
+      
+      {/* ダッシュボードリンク */}
+      <List>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={location.pathname === '/admin'}
+            onClick={() => navigate('/admin')}
+          >
+            <ListItemIcon>
+              <DashboardIcon />
+            </ListItemIcon>
+            <ListItemText primary={t('admin.dashboard')} />
+          </ListItemButton>
+        </ListItem>
+      </List>
+      
+      <Divider />
+      
+      {/* イベントリスト */}
+      <List
+        subheader={
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1 }}>
+            <Typography variant="subtitle2">
+              {t('admin.events')}
+            </Typography>
+            <Button
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={handleCreateEvent}
+            >
+              {t('admin.create')}
+            </Button>
+          </Box>
+        }
+      >
+        {eventsLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : events && Object.values(events).length > 0 ? (
+          Object.values(events).map((event) => (
+            <React.Fragment key={event.id}>
+              <ListItem disablePadding>
+                <ListItemButton 
+                  onClick={() => handleEventClick(event.id)}
+                  selected={location.pathname === `/admin/events/${event.id}`}
+                >
+                  <ListItemIcon>
+                    <EventIcon color={event.isActive ? "primary" : "inherit"} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={event.name} 
+                    secondary={new Date(event.date).toLocaleDateString()}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleEventToggle(event.id, e)}
+                    sx={{ ml: 'auto' }}
+                  >
+                    {expandedEventIds.includes(event.id) ? <ExpandLess /> : <ExpandMore />}
+                  </IconButton>
+                </ListItemButton>
+              </ListItem>
+              
+              {/* 競技リスト */}
+              <Collapse in={expandedEventIds.includes(event.id)} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  <ListItem disablePadding>
+                    <ListItemButton sx={{ pl: 4 }} onClick={() => handleCreateSport(event.id)}>
+                      <ListItemIcon>
+                        <AddIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary={t('admin.createSport')}
+                        primaryTypographyProps={{ variant: 'body2' }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                  
+                  {getSportsByEventId(event.id).map((sport) => (
+                    <ListItem disablePadding key={sport.id}>
+                      <ListItemButton 
+                        sx={{ pl: 4 }}
+                        selected={location.pathname === `/admin/sports/${sport.id}`}
+                        onClick={() => handleSportClick(sport.id)}
+                      >
+                        <ListItemIcon>
+                          <SportIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={sport.name}
+                          primaryTypographyProps={{ variant: 'body2' }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                  
+                  {getSportsByEventId(event.id).length === 0 && (
+                    <ListItem sx={{ pl: 4 }}>
+                      <ListItemText 
+                        secondary={t('admin.noSportsInEvent')}
+                        secondaryTypographyProps={{ variant: 'body2' }}
+                      />
+                    </ListItem>
+                  )}
+                </List>
+              </Collapse>
+            </React.Fragment>
+          ))
+        ) : (
+          <ListItem sx={{ pl: 2 }}>
+            <ListItemText secondary={t('admin.noEvents')} />
+          </ListItem>
+        )}
+      </List>
+    </>
+  );
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       {/* トップツールバー（常時表示） */}
       <AppBar
         position="fixed"
@@ -280,6 +446,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         }}
       >
         <Toolbar variant="dense" sx={{ minHeight: 48 }}>
+          {/* ハンバーガーメニューを追加 */}
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { lg: drawerOpen ? 'none' : 'block' } }}
+          >
+            {isMobile ? <MenuIcon /> : drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
+          </IconButton>
+
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {t('admin.title')}
           </Typography>
@@ -368,195 +545,38 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </Toolbar>
       </AppBar>
 
-      {/* サイドバー（折りたたみ可能） */}
-      <Drawer
-        variant="permanent"
-        open={drawerOpen}
-        sx={{
-          width: drawerOpen ? drawerWidth : theme.spacing(7),
-          flexShrink: 0,
-          whiteSpace: 'nowrap',
-          boxSizing: 'border-box',
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          overflowX: 'hidden',
-          left: 0,
-          '& .MuiDrawer-paper': {
-            position: 'relative', // 追加：absoluteからrelativeに変更
-            width: drawerOpen ? drawerWidth : theme.spacing(7),
-            transition: theme.transitions.create('width', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-            overflowX: 'hidden',
-            borderRight: `1px solid ${theme.palette.divider}`,
-            height: '100%',
-          },
-          '& .MuiListItemText-root': {
-            opacity: drawerOpen ? 1 : 0,
-            transition: theme.transitions.create('opacity', {
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-          },
-          '& .MuiListItemIcon-root': {
-            minWidth: theme.spacing(5),
-            justifyContent: drawerOpen ? 'initial' : 'center',
-          },
-          '& .MuiListItemButton-root': {
-            py: 0.5, // リストアイテムの高さを小さく
-            minHeight: 40,
-            borderRadius: 1,
-            mx: 1,
-            my: 0.5,
-          },
-          '& .MuiListItemButton-root.Mui-selected': {
-            backgroundColor: alpha(theme.palette.primary.main, 0.1),
-            '&:hover': {
-              backgroundColor: alpha(theme.palette.primary.main, 0.2),
-            }
-          }
-        }}
-      >
-        <Toolbar variant="dense" /> {/* トップバーのスペース確保 */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: drawerOpen ? 'space-between' : 'center',
-          padding: theme.spacing(0, 1),
-          minHeight: 48,
-        }}>
-          {drawerOpen && (
-            <Typography variant="h6" sx={{ ml: 2 }}>
-              {t('app.name')}
-            </Typography>
-          )}
-          <IconButton onClick={handleDrawerToggle}>
-            {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
-          </IconButton>
-        </Box>
-        <Divider />
-        
-        {/* ダッシュボードリンク */}
-        <List>
-          <ListItem disablePadding>
-            <ListItemButton 
-              selected={location.pathname === '/admin'}
-              onClick={() => navigate('/admin')}
-            >
-              <ListItemIcon>
-                <DashboardIcon />
-              </ListItemIcon>
-              <ListItemText primary={t('admin.dashboard')} />
-            </ListItemButton>
-          </ListItem>
-        </List>
-        
-        <Divider />
-        
-        {/* イベントリスト */}
-        <List
-          subheader={
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1 }}>
-              <Typography variant="subtitle2">
-                {t('admin.events')}
-              </Typography>
-              <Button
-                size="small"
-                startIcon={<AddIcon />}
-                onClick={handleCreateEvent}
-              >
-                {t('admin.create')}
-              </Button>
-            </Box>
-          }
+      {/* モバイル用ドロワー */}
+      <Box component="nav" sx={{ display: { xs: 'block', sm: 'none' } }}>
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            ...drawerStyles,
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              overflowX: 'hidden',
+            },
+          }}
         >
-          {eventsLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : events && Object.values(events).length > 0 ? (
-            Object.values(events).map((event) => (
-              <React.Fragment key={event.id}>
-                <ListItem disablePadding>
-                  <ListItemButton 
-                    onClick={() => handleEventClick(event.id)}
-                    selected={location.pathname === `/admin/events/${event.id}`}
-                  >
-                    <ListItemIcon>
-                      <EventIcon color={event.isActive ? "primary" : "inherit"} />
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary={event.name} 
-                      secondary={new Date(event.date).toLocaleDateString()}
-                    />
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleEventToggle(event.id, e)}
-                      sx={{ ml: 'auto' }}
-                    >
-                      {expandedEventIds.includes(event.id) ? <ExpandLess /> : <ExpandMore />}
-                    </IconButton>
-                  </ListItemButton>
-                </ListItem>
-                
-                {/* 競技リスト（展開されている場合のみ表示） */}
-                <Collapse in={expandedEventIds.includes(event.id)} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {/* 競技作成ボタン */}
-                    <ListItem disablePadding>
-                      <ListItemButton sx={{ pl: 4 }} onClick={() => handleCreateSport(event.id)}>
-                        <ListItemIcon>
-                          <AddIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary={t('admin.createSport')}
-                          primaryTypographyProps={{ variant: 'body2' }}
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                    
-                    {/* 競技一覧 */}
-                    {getSportsByEventId(event.id).map((sport) => (
-                      <ListItem disablePadding key={sport.id}>
-                        <ListItemButton 
-                          sx={{ pl: 4 }}
-                          selected={location.pathname === `/admin/sports/${sport.id}`}
-                          onClick={() => handleSportClick(sport.id)}
-                          disabled={location.pathname === `/admin/sports/${sport.id}`}
-                        >
-                          <ListItemIcon>
-                            <SportIcon fontSize="small" />
-                          </ListItemIcon>
-                          <ListItemText 
-                            primary={sport.name}
-                            primaryTypographyProps={{ variant: 'body2' }}
-                          />
-                        </ListItemButton>
-                      </ListItem>
-                    ))}
-                    
-                    {getSportsByEventId(event.id).length === 0 && (
-                      <ListItem sx={{ pl: 4 }}>
-                        <ListItemText 
-                          secondary={t('admin.noSportsInEvent')}
-                          secondaryTypographyProps={{ variant: 'body2' }}
-                        />
-                      </ListItem>
-                    )}
-                  </List>
-                </Collapse>
-              </React.Fragment>
-            ))
-          ) : (
-            <ListItem sx={{ pl: 2 }}>
-              <ListItemText secondary={t('admin.noEvents')} />
-            </ListItem>
-          )}
-        </List>
-      </Drawer>
-      
+          {/* ドロワーの内容 */}
+          {renderDrawerContent()}
+        </Drawer>
+      </Box>
+
+      {/* デスクトップ用ドロワー */}
+      <Box component="nav" sx={{ display: { xs: 'none', sm: 'block' } }}>
+        <Drawer
+          variant="permanent"
+          open={drawerOpen}
+          sx={drawerStyles}
+        >
+          {/* ドロワーの内容 */}
+          {renderDrawerContent()}
+        </Drawer>
+      </Box>
+
       {/* メインコンテンツ */}
       <Box
         component="main"
