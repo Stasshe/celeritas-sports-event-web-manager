@@ -130,7 +130,7 @@ const EventEditPage: React.FC = () => {
       }
       
       // 新しいタイマーをセット（3秒後に自動保存）
-      const timerId = setTimeout(handleSave, 3000);
+      const timerId = setTimeout(handleSave, 300);
       setAutoSaveTimerId(timerId);
     }
     

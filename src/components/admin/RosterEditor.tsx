@@ -162,20 +162,19 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
         updatedRoster[gradeKey] = gradeData;
       }
       
-      // gradeKeyが存在しない場合は初期化
       if (!updatedRoster[gradeKey]) {
         updatedRoster[gradeKey] = {};
       }
       
-      // 新しいクラスデータを保存
+      // メンバーが空の場合は['none']を設定
+      const membersToSave = classMembers.length > 0 ? classMembers : ['none'];
+      
       updatedRoster[gradeKey] = {
         ...updatedRoster[gradeKey],
-        [newClassName]: classMembers
+        [newClassName]: membersToSave
       };
       
       setRoster(updatedRoster);
-      
-      // スポーツデータを更新
       onUpdate({
         ...sport,
         roster: updatedRoster
@@ -207,7 +206,18 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
 
   const getSortedClassNames = () => {
     const gradeData = getCurrentGradeData();
-    return Object.keys(gradeData).sort();
+    // 保存されているチームのみを対象にする
+    const classNames = Object.keys(gradeData).filter(key => 
+      Array.isArray(gradeData[key]) // 配列として保存されているもののみ
+    );
+    return classNames.sort((a, b) => {
+      const numA = Number(a);
+      const numB = Number(b);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numA - numB;
+      }
+      return a.localeCompare(b);
+    });
   };
 
   // クラス別の生徒数をカウント

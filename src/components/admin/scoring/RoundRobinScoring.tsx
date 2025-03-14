@@ -26,6 +26,7 @@ import {
 import { Sport, Match, Team } from '../../../types';
 import { useTranslation } from 'react-i18next';
 import RoundRobinTable from '../../sports/RoundRobinTable';
+import { Replay as AddIcon } from '@mui/icons-material';
 
 interface RoundRobinScoringProps {
   sport: Sport;
@@ -39,6 +40,8 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
   const [matches, setMatches] = useState<Match[]>(sport.matches || []);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [pendingTeams, setPendingTeams] = useState<Team[]>([]);
   const teamsRef = useRef<Team[]>(sport.teams || []);
   const matchesRef = useRef<Match[]>(sport.matches || []);
 
@@ -50,43 +53,54 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
     setMatches(sport.matches || []);
   }, [sport]);
 
-  // rosterから全チームを自動生成
-  const generateTeamsFromRoster = () => {
+  // rosterから全チームを自動生成する関数を改善
+  const generateTeamsFromRoster = useCallback(() => {
+    if (!sport.roster) return;
+
     const newTeams: Team[] = [];
     const existingTeams = new Set(teams.map(t => t.name));
     
-    if (sport.roster) {
-      // 各学年のクラスをチームとして追加
-      Object.entries(sport.roster).forEach(([grade, classes]) => {
-        Object.keys(classes || {}).forEach(className => {
-          const teamName = `${className}`;
-          if (!existingTeams.has(teamName)) {
-            newTeams.push({
-              id: `team_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              name: teamName,
-              members: classes[className]
-            });
-            existingTeams.add(teamName);
-          }
-        });
+    // 全学年のデータを処理
+    const grades = ['grade1', 'grade2', 'grade3'] as const;
+    
+    grades.forEach(grade => {
+      const gradeData = sport.roster?.[grade];
+      if (!gradeData) return;
+
+      // 各クラスをチームとして追加
+      Object.entries(gradeData).forEach(([className, members]) => {
+        if (!members || members.length === 0) return;
+
+        const teamName = `${grade}-${className}`; // 例: "grade1-A"
+        if (!existingTeams.has(teamName)) {
+          newTeams.push({
+            id: `team_${grade}_${className}_${Date.now()}`,
+            name: teamName,
+            members: members
+          });
+          existingTeams.add(teamName);
+        }
+      });
+    });
+
+    if (newTeams.length > 0) {
+      // 新しいチームと既存のチームを結合
+      const updatedTeams = [...teams, ...newTeams];
+      setTeams(updatedTeams);
+      
+      // 新しいチーム間の試合を生成
+      const generatedMatches = generateAllMatches(updatedTeams);
+      const updatedMatches = [...matches, ...generatedMatches];
+      setMatches(updatedMatches);
+      
+      // スポーツデータを更新
+      onUpdate({
+        ...sport,
+        teams: updatedTeams,
+        matches: updatedMatches
       });
     }
-
-    // 新しいチームを追加
-    const updatedTeams = [...teams, ...newTeams];
-    setTeams(updatedTeams);
-    
-    // チーム間の全試合を生成
-    const generatedMatches = generateAllMatches(updatedTeams);
-    setMatches(prev => [...prev, ...generatedMatches]);
-    
-    // スポーツデータを更新
-    onUpdate({
-      ...sport,
-      teams: updatedTeams,
-      matches: [...matches, ...generatedMatches]
-    });
-  };
+  }, [sport.roster, teams, matches, onUpdate]);
 
   // 全チーム間の試合を生成
   const generateAllMatches = (teamList: Team[]) => {
@@ -125,6 +139,81 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
       generateTeamsFromRoster();
     }
   }, [sport.roster]);
+
+  // 生成ボタンのハンドラー
+  const handleGenerateClick = () => {
+    if (!sport.roster) return;
+
+    const newTeams: Team[] = [];
+    const existingTeams = new Set(teams.map(t => t.name));
+    
+    // 全学年のデータを処理
+    const grades = ['grade1', 'grade2', 'grade3'] as const;
+    
+    grades.forEach(grade => {
+      const gradeData = sport.roster?.[grade];
+      if (!gradeData) return;
+
+      // 各クラスをチームとして追加
+      Object.entries(gradeData).forEach(([className, members]) => {
+        if (!members || members.length === 0) return;
+
+        const teamName = `${grade}-${className}`;
+        if (!existingTeams.has(teamName)) {
+          newTeams.push({
+            id: `team_${grade}_${className}_${Date.now()}`,
+            name: teamName,
+            members: members
+          });
+        }
+      });
+    });
+
+    if (newTeams.length > 0) {
+      setPendingTeams(newTeams);
+      // 既存のスコアがある場合は確認ダイアログを表示
+      if (matches.some(m => m.team1Score > 0 || m.team2Score > 0)) {
+        setShowResetConfirm(true);
+      } else {
+        handleGenerateTeams(newTeams, false);
+      }
+    }
+  };
+
+  // チーム生成の実行
+  const handleGenerateTeams = (newTeams: Team[], resetScores: boolean) => {
+    const updatedTeams = [...teams, ...newTeams];
+    let updatedMatches = [...matches];
+
+    if (resetScores) {
+      // 全試合のスコアをリセット
+      updatedMatches = updatedMatches.map(match => ({
+        ...match,
+        team1Score: 0,
+        team2Score: 0,
+        status: 'scheduled',
+        winnerId: undefined
+      }));
+    }
+
+    // 新しいチーム間の試合を生成
+    const generatedMatches = generateAllMatches(updatedTeams);
+    updatedMatches = [...updatedMatches, ...generatedMatches];
+
+    setTeams(updatedTeams);
+    setMatches(updatedMatches);
+    
+    // スポーツデータを更新
+    onUpdate({
+      ...sport,
+      teams: updatedTeams,
+      matches: updatedMatches
+    });
+
+    // 状態をリセット
+    setPendingTeams([]);
+    setShowResetConfirm(false);
+  };
 
   // 対戦表を作成
   const matchGrid = teams.reduce((acc, team1) => {
@@ -220,6 +309,18 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
 
   return (
     <Box>
+      {/* 生成ボタンを追加 */}
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={handleGenerateClick}
+        >
+          {t('roundRobin.generateTeams')}
+        </Button>
+      </Box>
+
       <Typography variant="h6" gutterBottom>
         {t('roundRobin.matchTable') || '対戦表'}
       </Typography>
@@ -412,6 +513,39 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
             color="primary"
           >
             {t('common.save') || '保存'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 確認ダイアログ */}
+      <Dialog
+        open={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+      >
+        <DialogTitle>
+          {t('roundRobin.confirmReset')}
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            {t('roundRobin.resetScoresConfirm')}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowResetConfirm(false)}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={() => handleGenerateTeams(pendingTeams, false)}
+            color="primary"
+          >
+            {t('roundRobin.keepScores')}
+          </Button>
+          <Button
+            onClick={() => handleGenerateTeams(pendingTeams, true)}
+            color="error"
+            variant="contained"
+          >
+            {t('roundRobin.resetScores')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -382,7 +382,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
         setIsSaving(false);
         setUpdateQueue(null);
       }
-    }, 1000);
+    }, 100);
 
     return () => {
       if (savingTimeoutRef.current) {
@@ -440,7 +440,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
             <Box 
               sx={{ 
                 width: '100%',
-                height: Math.max(500, matches.length * 100),
+                height: 'auto',
                 overflow: 'auto',
                 '& svg': {
                   width: '100% !important',
