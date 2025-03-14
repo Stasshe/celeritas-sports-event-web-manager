@@ -61,6 +61,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
       }}>
         <Container maxWidth="sm">
           {/* overflow hiddenにしたらフッターが消えた。でも見やすくなったから結果オーライ */}
+          {/* うそ。スマホで見にくいわ。改善せないかん。*/}
           <Typography variant="body2" color="text.secondary" align="center">
             {`© ${new Date().getFullYear()} ${t('common.appName')}`}
           </Typography>
