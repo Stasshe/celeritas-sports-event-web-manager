@@ -16,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
   const { mode, toggleColorMode } = useThemeContext();
   
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', height: '100dvh',overflow: 'hidden' }}>
       {!hideHeader && (
         <AppBar position="static">
           <Toolbar>
@@ -60,6 +60,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
         backgroundColor: theme.palette.background.paper
       }}>
         <Container maxWidth="sm">
+          {/* overflow hiddenにしたらフッターが消えた。でも見やすくなったから結果オーライ */}
           <Typography variant="body2" color="text.secondary" align="center">
             {`© ${new Date().getFullYear()} ${t('common.appName')}`}
           </Typography>
