@@ -21,6 +21,14 @@
   "auth" : {
     "logout" : "ログアウト"
   },
+  "match" : {
+    "match": "試合",
+    "team": "チーム",
+    "number": "番号 {{matchNumber}}",
+    "completed":"完了",
+    "inProgress":"進行中",
+    "scheduled":"予定"
+  },
   "event": {
     "alternativeDate": "予備日",
     "currentEvents": "現在のイベント",
@@ -203,6 +211,8 @@
     "resetMessage": "スコアと結果がリセットされます。"
   },
   "tournament" : {
+    "members": "参加者数",
+    "generate": "トーナメント表生成",
     "title": "タイトル",
     "round": "ラウンド",
     "match": "マッチ",
