@@ -152,22 +152,22 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
     return grid;
   }, [sport.teams, sport.matches]);
 
-  const matchesByGroup: Record<string, Record<string, Match | null>> = sport.matches.reduce((acc, match) => {
-    const group = match.group || 'default';
-    if (!acc[group]) {
-      acc[group] = {};
-    }
-    acc[group][match.id] = match;
-    return acc;
-  }, {} as Record<string, Record<string, Match | null>>);
+  // matchesByGroupの生成を安全に行う
+  const matchesByGroup = useMemo(() => {
+    if (!sport.matches) return {};
 
-  const groupKeys = Object.keys(matchesByGroup);
-  groupKeys.forEach(groupKey => {
-    const groupMatches = matchesByGroup[groupKey];
-    // ...existing code...
-  });
+    return sport.matches.reduce((acc, match) => {
+      const group = match.group || 'default';
+      if (!acc[group]) {
+        acc[group] = {};
+      }
+      acc[group][match.id] = match;
+      return acc;
+    }, {} as Record<string, Record<string, Match | null>>);
+  }, [sport.matches]);
 
-  if (!sport.teams || sport.teams.length === 0) {
+  // 初期チェックを強化
+  if (!sport || !sport.teams || sport.teams.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', my: 4 }}>
         <Typography variant="h6" color="text.secondary">
@@ -176,6 +176,12 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
       </Box>
     );
   }
+
+  const groupKeys = Object.keys(matchesByGroup);
+  groupKeys.forEach(groupKey => {
+    const groupMatches = matchesByGroup[groupKey];
+    // ...existing code...
+  });
 
   return (
     <Box>

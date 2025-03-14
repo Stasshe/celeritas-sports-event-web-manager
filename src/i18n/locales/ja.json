@@ -165,7 +165,12 @@
     "topTeams": "上位チーム",
     "record": "成績",
     "goalRecord": "得失点",
-    "currentStandings": "現在の順位表"
+    "currentStandings": "現在の順位表",
+    "generateTeams": "チームを生成",
+    "confirmReset": "スコアリセット確認",
+    "resetScores": "スコアをリセット",
+    "keepScores": "スコアを保持",
+    "resetScoresConfirm": "既存の試合スコアがあります。チームを更新する際にスコアをリセットしますか？"
   },
   "custom" : {
     "round": "ラウンド",
