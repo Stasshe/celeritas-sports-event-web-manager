@@ -93,7 +93,31 @@
     "viewHelp": "View Help",
     "eventList": "Event List",
     "home": "Back to Home",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "welcome": "Welcome to Admin Panel",
+    "manageContent": "Manage Content",
+    "stats": {
+      "title": "Statistics",
+      "events": "Events",
+      "sports": "Sports",
+      "teams": "Teams",
+      "matches": "Matches"
+    },
+    "recentUpdates": "Recent Updates",
+    "upcomingMatches": "Upcoming Matches",
+    "discardChanges": "Discard Changes",
+    "saveAndContinue": "Save & Continue",
+    "confirmNavigation": "Discard changes and navigate away?",
+    "unsavedWarning": "You have unsaved changes",
+    "confirmSave": "Save changes?",
+    "loadError": "Failed to load data",
+    "configureSettings": "Configure Settings",
+    "eventsToday": "Today's Events",
+    "viewAll": "View All",
+    "actionsRequired": "Actions Required",
+    "createEventTip": "Start by creating a new event",
+    "createSportTip": "Add sports to make your event complete",
+    "draftSaved": "Draft saved"
   },
   "roster": {
     "grade1": "First Grade",
@@ -178,7 +202,31 @@
     "teamUpdated": "Team updated",
     "teamDeleted": "Team deleted",
     "confirmGenerateMatches": "Generate Matches?",
-    "generateMatchesWarning": "This will delete all existing match data"
+    "generateMatchesWarning": "This will delete all existing match data",
+    "types": {
+      "tournament": "Tournament",
+      "roundRobin": "Round Robin",
+      "custom": "Custom Format"
+    },
+    "configuration": {
+      "title": "Sport Configuration",
+      "basic": "Basic Settings",
+      "scoring": "Scoring Settings",
+      "display": "Display Settings",
+      "rules": "Rules Settings"
+    },
+    "deleteConfirm": "Are you sure you want to delete this sport?",
+    "deleteWarning": "This action cannot be undone. All related data will be deleted.",
+    "status": {
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "editTip": "Configure sport details here",
+    "publishReady": "This sport is ready to be published",
+    "publishError": "Please check the following items:",
+    "loadError": "Failed to load sport data",
+    "lastEdited": "Last edited: {{time}}"
   },
   "adminHelp": {
     "title": "Admin Help",
@@ -257,7 +305,15 @@
     "updateSuccess": "Team updated successfully",
     "deleteSuccess": "Team deleted successfully",
     "updateError": "Failed to update team",
-    "deleteError": "Failed to delete team"
+    "deleteError": "Failed to delete team",
+    "settings": {
+      "title": "Team Settings",
+      "maxPlayers": "Maximum Players",
+      "minPlayers": "Minimum Players",
+      "allowSubstitutes": "Allow Substitutes"
+    },
+    "rosterHelp": "Manage team members here",
+    "noTeamsYet": "No teams registered yet"
   },
   "matchEdit": {
     "title": "Edit Match",
@@ -290,5 +346,22 @@
     "previousRound": "Previous Round",
     "round": "Round {{number}}",
     "matchday": "Matchday {{number}}"
+  },
+  "matchManagement": {
+    "title": "Match Management",
+    "schedule": "Match Schedule",
+    "venue": "Venue",
+    "referee": "Referee",
+    "status": {
+      "scheduled": "Scheduled",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "matchDay": "Match Day {{number}}",
+    "timeSlot": "Time Slot",
+    "duration": "Duration",
+    "setupTime": "Setup Time",
+    "courtNumber": "Court Number"
   }
 }

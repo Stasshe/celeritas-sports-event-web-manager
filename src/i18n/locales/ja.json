@@ -134,7 +134,31 @@
     "viewHelp": "ヘルプを表示",
     "eventList": "イベント一覧",
     "home": "ホームに戻る",
-    "error": "エラーが発生しました"
+    "error": "エラーが発生しました",
+    "welcome": "ようこそ管理パネルへ",
+    "manageContent": "コンテンツを管理",
+    "stats": {
+      "title": "統計情報",
+      "events": "イベント数",
+      "sports": "競技数",
+      "teams": "チーム数",
+      "matches": "試合数"
+    },
+    "recentUpdates": "最近の更新",
+    "upcomingMatches": "予定されている試合",
+    "discardChanges": "変更を破棄",
+    "saveAndContinue": "保存して続ける",
+    "confirmNavigation": "変更を破棄して移動しますか？",
+    "unsavedWarning": "保存されていない変更があります",
+    "confirmSave": "変更を保存しますか？",
+    "loadError": "データの読み込みに失敗しました",
+    "configureSettings": "設定を構成",
+    "eventsToday": "本日のイベント",
+    "viewAll": "すべて表示",
+    "actionsRequired": "必要なアクション",
+    "createEventTip": "新しいイベントを作成して始めましょう",
+    "createSportTip": "競技を追加してイベントを充実させましょう",
+    "draftSaved": "下書きを保存しました"
   },
   "settings": {
     "appearance": "外観",
@@ -229,7 +253,6 @@
     "matchComplete": "試合完了"
   },
   "roundRobin" : {
-    "round": "ラウンド",
     "match": "マッチ",
     "team": "チーム",
     "score": "スコア",
@@ -274,7 +297,7 @@
     "position": "順位",
     "nextRound": "次のラウンド",
     "previousRound": "前のラウンド",
-    "round": "第{{number}}節",
+    "round": "ラウンド{{number}}",
     "matchday": "第{{number}}試合日"
   },
   "custom" : {
@@ -359,7 +382,31 @@
     "teamUpdated": "チームを更新しました",
     "teamDeleted": "チームを削除しました",
     "confirmGenerateMatches": "試合を生成しますか？",
-    "generateMatchesWarning": "既存の試合データは削除されます"
+    "generateMatchesWarning": "既存の試合データは削除されます",
+    "types": {
+      "tournament": "トーナメント",
+      "roundRobin": "総当たり戦",
+      "custom": "カスタム形式"
+    },
+    "configuration": {
+      "title": "競技の設定",
+      "basic": "基本設定",
+      "scoring": "スコアリング設定",
+      "display": "表示設定",
+      "rules": "ルール設定"
+    },
+    "deleteConfirm": "この競技を削除してもよろしいですか？",
+    "deleteWarning": "この操作は取り消せません。関連する全てのデータが削除されます。",
+    "status": {
+      "draft": "下書き",
+      "published": "公開中",
+      "archived": "アーカイブ済み"
+    },
+    "editTip": "ここで競技の詳細設定を行えます",
+    "publishReady": "この競技は公開の準備が整っています",
+    "publishError": "以下の項目を確認してください：",
+    "loadError": "競技データの読み込みに失敗しました",
+    "lastEdited": "最終編集日時: {{time}}"
   },
   "adminHelp": {
     "title": "管理者ヘルプ",
@@ -388,7 +435,15 @@
     "updateSuccess": "チームを更新しました",
     "deleteSuccess": "チームを削除しました",
     "updateError": "チームの更新に失敗しました",
-    "deleteError": "チームの削除に失敗しました"
+    "deleteError": "チームの削除に失敗しました",
+    "settings": {
+      "title": "チーム設定",
+      "maxPlayers": "最大プレイヤー数",
+      "minPlayers": "最小プレイヤー数",
+      "allowSubstitutes": "交代要員を許可"
+    },
+    "rosterHelp": "チームのメンバー一覧を管理します",
+    "noTeamsYet": "チームがまだ登録されていません"
   },
   "matchEdit": {
     "title": "試合の編集",
@@ -405,5 +460,22 @@
     "completeWarning": "スコアと勝者を確認してください",
     "updateSuccess": "試合を更新しました",
     "updateError": "試合の更新に失敗しました"
+  },
+  "matchManagement": {
+    "title": "試合管理",
+    "schedule": "試合スケジュール",
+    "venue": "会場",
+    "referee": "審判",
+    "status": {
+      "scheduled": "予定済み",
+      "inProgress": "進行中",
+      "completed": "完了",
+      "cancelled": "中止"
+    },
+    "matchDay": "第{{number}}試合日",
+    "timeSlot": "時間枠",
+    "duration": "試合時間",
+    "setupTime": "準備時間",
+    "courtNumber": "コート番号"
   }
 }
