@@ -170,7 +170,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           considerLosePoints: false
         },
         customLayout: newSport.customLayout || [],
-        // 明示的に非nullのrosterオブジェクトを指定
         roster: newSport.roster || {
           grade1: {},
           grade2: {},
@@ -191,18 +190,15 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
             if (newSportId && events && events[eventId]) {
               sportId = newSportId;
               const event = events[eventId];
-              const updatedSports = [...(event.sports || [])];
-              if (!updatedSports.includes(newSportId)) {
-                updatedSports.push(newSportId);
-                
-                // イベントを更新
-                await updateEvent({ 
-                  [eventId]: {
-                    ...event,
-                    sports: updatedSports
-                  }
-                });
-              }
+              const updatedEvent = {
+                ...event,
+                sports: [...(event.sports || []), newSportId]
+              };
+              
+              // イベントの更新を個別に実行
+              await updateEvent({
+                [eventId]: updatedEvent
+              });
             }
           }
           

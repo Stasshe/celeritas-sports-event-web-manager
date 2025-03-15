@@ -129,49 +129,52 @@ const AdminPage: React.FC = () => {
 
   // イベントを設定する関数（最適化版）
   const handleSetActiveEvent = useCallback(async (eventId: string) => {
-    if (!localEventState) return;
+    if (!events) return;
     
     try {
-      // 楽観的UIアップデート
-      const updatedEvents = { ...localEventState };
-      
-      // すべてのイベントを非アクティブに
-      Object.keys(updatedEvents).forEach(id => {
-        updatedEvents[id] = {
-          ...updatedEvents[id],
-          isActive: id === eventId // 選択したイベントのみアクティブに
+      // 型安全な更新オブジェクトを作成
+      const updates: Record<string, Event> = Object.entries(events).reduce((acc, [id, event]) => {
+        acc[id] = {
+          ...event,
+          isActive: id === eventId
         };
-        
-        // 変更されたイベントを追跡
-        modifiedEventsRef.current.add(id);
-      });
+        return acc;
+      }, {} as Record<string, Event>);
       
-      // ローカル状態を更新（即時反映）
-      setLocalEventState(updatedEvents);
+      // 楽観的UI更新
+      setLocalEventState(prev => prev ? {
+        ...prev,
+        ...updates
+      } : null);
       
-      // 変更があることを通知
-      setHasUnsavedChanges(true);
+      // バックエンド更新
+      await updateEvents(updates);
+      showSnackbar(t('admin.activeEventUpdated'), 'success');
       
-      // 保存処理を実行
-      await save();
-      
-      showSnackbar(t('admin.activeEventUpdated') || 'アクティブイベントが更新されました', 'success');
     } catch (error) {
+      // エラー時にローカル状態を元に戻す
+      if (events) {
+        setLocalEventState(events);
+      }
       console.error('Error setting active event:', error);
-      showSnackbar(t('admin.error') || 'エラーが発生しました', 'error');
+      showSnackbar(t('admin.error'), 'error');
     }
-  }, [localEventState, save, setHasUnsavedChanges, showSnackbar, t]);
+  }, [events, updateEvents, showSnackbar, t]);
 
-  // イベントの作成ダイアログを開く
-  const handleOpenCreateEventDialog = () => {
-    setCreateEventDialogOpen(true);
+  const handleCreateDialog = {
+    event: () => {
+      setCreateEventDialogOpen(true);
+    },
+    sport: (eventId: string) => {
+      if (!events || !events[eventId]) return;
+      setSelectedEventId(eventId);
+      setCreateSportDialogOpen(true);
+    }
   };
 
-  // 競技の作成ダイアログを開く
-  const handleOpenCreateSportDialog = (eventId: string) => {
-    setSelectedEventId(eventId);
-    setCreateSportDialogOpen(true);
-  };
+  // 元の重複した宣言を削除し、新しい関数を使用
+  const handleOpenCreateEventDialog = handleCreateDialog.event;
+  const handleOpenCreateSportDialog = handleCreateDialog.sport;
 
   // 競技の編集ページに移動
   const handleEditSport = (sportId: string) => {
