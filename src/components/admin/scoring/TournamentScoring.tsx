@@ -141,7 +141,15 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   };
 
   // トーナメント表示用のデータ
-  const bracketMatches = useMemo(() => generateBracketMatches(sport, t), [sport, t]);
+  const bracketMatches = useMemo(() => {
+    const formattedMatches = generateBracketMatches(sport, t);
+    return formattedMatches.map(match => ({
+      ...match,
+      name: typeof match.name === 'object' ? 
+        t('tournament.round', { round: match.tournamentRoundText }) :
+        match.name
+    }));
+  }, [sport, t]);
 
   // ラウンドごとの試合データを構築（修正）
   const roundMatches = useMemo(() => {
@@ -243,7 +251,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     topParty,
     bottomParty,
     ...props
-  }: MatchComponentProps) => (
+  }: MatchComponentProps) => {
+    // 現在の試合データを取得
+    const currentMatch = matches.find(m => m.id === match.id);
+
+    return (
     <ForeignObject
       x={props.x - props.width / 2}
       y={props.y - props.height / 2}
@@ -261,15 +273,24 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
           backgroundColor: (topParty.status === 'no-team' && bottomParty.status === 'no-team') 
             ? theme.palette.grey[100] 
             : theme.palette.background.paper,
-          boxShadow: 1
+          boxShadow: 1,
+          cursor: readOnly ? 'default' : 'pointer',
+          '&:hover': !readOnly ? {
+            boxShadow: 3,
+            borderColor: theme.palette.primary.main,
+          } : {}
+        }}
+        onClick={() => {
+          if (!readOnly && currentMatch) {
+            handleEditMatch(currentMatch);
+          }
         }}
       >
         <Box sx={{ p: 0.5, backgroundColor: theme.palette.grey[100], borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Typography variant="caption" noWrap>
             {match.name}
           </Typography>
-        </Box>
-        
+        </Box> 
         {/* 上側のチーム */}
         <Box
           sx={{
@@ -306,7 +327,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
           </Typography>
             <Typography variant="body2" sx={{ 
             fontWeight: 'bold',
-            color: topParty.isWinner && topParty.name !== t('tournament.tbd') ? theme.palette.primary.light : 'inherit'
+            color: 'inherit'
             }}>
             {topParty.score ? topParty.score : 0}
             </Typography>
@@ -351,14 +372,15 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
           </Typography>
           <Typography variant="body2" sx={{ 
             fontWeight: 'bold',
-            color: bottomParty.isWinner && bottomParty.name !== t('tournament.seed') && bottomParty.name !== t('tournament.tbd') ? theme.palette.primary.main : 'inherit'
+            color: 'inherit'
           }}>
             {bottomParty.score ? bottomParty.score : (bottomParty.name === t('tournament.seed') ? '-' : 0)}
           </Typography>
         </Box>
       </Box>
     </ForeignObject>
-  ), [theme, t]);
+    );
+  }, [theme, t, readOnly, matches, handleEditMatch]);
 
   const savingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingUpdateRef = useRef<Sport | null>(null);
@@ -460,69 +482,13 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
                         fontWeight: 'bold'
                       },
                       connectorColor: theme.palette.divider,
-                      connectorColorHighlight: theme.palette.primary.main,
-                      matchBackground: {
-                        wonColor: theme.palette.success.light,
-                        lostColor: theme.palette.grey[100]
-                      }
+                      connectorColorHighlight: theme.palette.primary.main
                     }
                   }}
                 />
               )}
             </Box>
           </Paper>
-
-          {/* ラウンドごとの試合リスト */}
-          {/* readOnlyモードの場合は試合カードを非表示 */}
-          {readOnly ? null : (
-          <Grid container spacing={2}>
-            {roundMatches.length > 0 ? (
-              roundMatches.map((matches, roundIndex) => (
-                <Grid item xs={12} md={6} lg={4} key={roundIndex}>
-                  <Paper sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {matches[0]?.matchNumber === 0
-                        ? t('tournament.thirdPlace')
-                        : roundIndex === roundMatches.length - 2
-                        ? t('tournament.final')
-                        : `${t('tournament.round')} ${roundIndex + 1}`}
-                    </Typography>
-                    <Stack spacing={1}>
-                      {matches.map(match => (
-                        <Card 
-                          key={match.id}
-                          sx={{ 
-                            bgcolor: (!match.team1Id || !match.team2Id || 
-                                    match.team1Id === t('tournament.tbd') || 
-                                    match.team2Id === t('tournament.tbd'))
-                              ? theme.palette.grey[100]  // tbd を含む試合カードも灰色に
-                              : 'inherit'
-                          }}
-                        >
-                          <CardContent>
-                            <MatchCard
-                              match={match}
-                              sport={{ ...sport, teams: teams }}  // 最新のチームデータを渡す
-                              onEdit={() => handleEditMatch(match)}
-                            />
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </Stack>
-                  </Paper>
-                </Grid>
-              ))
-            ) : (
-              <Grid item xs={12}>
-                <Paper sx={{ p: 3, textAlign: 'center' }}>
-                  <Typography color="text.secondary">
-                    {t('tournament.noMatches')}
-                  </Typography>
-                </Paper>
-              </Grid>
-            )}
-          </Grid>
-          )}
         </>
       ) : (
         <Paper sx={{ p: 3, textAlign: 'center' }}>

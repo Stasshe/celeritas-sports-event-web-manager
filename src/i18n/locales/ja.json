@@ -214,7 +214,7 @@
     "members": "参加者数",
     "generate": "トーナメント表生成",
     "title": "タイトル",
-    "round": "ラウンド",
+    "round": "ラウンド{{round}}",
     "match": "マッチ",
     "team": "チーム",
     "score": "スコア",
