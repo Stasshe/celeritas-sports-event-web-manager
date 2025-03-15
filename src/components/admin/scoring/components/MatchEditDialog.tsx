@@ -115,12 +115,21 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
     }
   };
 
+  const maxRound = Math.max(...sport.matches.map(m => m.round));
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        {match && (
+          match.round === maxRound && match.matchNumber === 1 
+            ? t('tournament.final')
+            : match.matchNumber === 0 
+            ? t('tournament.thirdPlace')
+            : t('tournament.round', { round: `${match.round}-${match.matchNumber}` })
+        )}
+      </DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={3}>
-          
-
           <Grid item xs={12}>
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle2" gutterBottom>

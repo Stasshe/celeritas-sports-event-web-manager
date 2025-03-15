@@ -141,7 +141,15 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   };
 
   // トーナメント表示用のデータ
-  const bracketMatches = useMemo(() => generateBracketMatches(sport, t), [sport, t]);
+  const bracketMatches = useMemo(() => {
+    const formattedMatches = generateBracketMatches(sport, t);
+    return formattedMatches.map(match => ({
+      ...match,
+      name: typeof match.name === 'object' ? 
+        t('tournament.round', { round: match.tournamentRoundText }) :
+        match.name
+    }));
+  }, [sport, t]);
 
   // ラウンドごとの試合データを構築（修正）
   const roundMatches = useMemo(() => {
@@ -282,8 +290,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
           <Typography variant="caption" noWrap>
             {match.name}
           </Typography>
-        </Box>
-        
+        </Box> 
         {/* 上側のチーム */}
         <Box
           sx={{
@@ -320,7 +327,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
           </Typography>
             <Typography variant="body2" sx={{ 
             fontWeight: 'bold',
-            color: topParty.isWinner && topParty.name !== t('tournament.tbd') ? theme.palette.primary.light : 'inherit'
+            color: 'inherit'
             }}>
             {topParty.score ? topParty.score : 0}
             </Typography>
@@ -365,7 +372,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
           </Typography>
           <Typography variant="body2" sx={{ 
             fontWeight: 'bold',
-            color: bottomParty.isWinner && bottomParty.name !== t('tournament.seed') && bottomParty.name !== t('tournament.tbd') ? theme.palette.primary.main : 'inherit'
+            color: 'inherit'
           }}>
             {bottomParty.score ? bottomParty.score : (bottomParty.name === t('tournament.seed') ? '-' : 0)}
           </Typography>

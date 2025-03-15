@@ -1,8 +1,10 @@
 import { Sport, Match } from '../types/index';
 import { Participant } from '@g-loot/react-tournament-brackets';
 import { TournamentStructureHelper } from '../components/admin/scoring/components/TournamentStructureHelper';
+import { TFunction } from 'i18next'; // i18nextの型定義を追加
 
-export const generateBracketMatches = (sport: Sport, t: (key: string) => string) => {
+// t関数の型を正しく定義
+export const generateBracketMatches = (sport: Sport, t: TFunction) => {
   if (!sport.teams || !sport.matches.length) return [];
 
   const maxRound = Math.max(...sport.matches.map(m => m.round));
@@ -43,7 +45,9 @@ export const generateBracketMatches = (sport: Sport, t: (key: string) => string)
         ? t('tournament.thirdPlace')
         : match.round === maxRound && match.matchNumber === 1
         ? t('tournament.final')
-        : `${t('tournament.round')}${match.round} - ${t('match.number'), { number: match.matchNumber }}`,
+        : t('tournament.round', { 
+            round: `${match.round}-${match.matchNumber}` 
+          }),
       nextMatchId: match.matchNumber === 0 ? null :
         sport.matches.find(m =>
           m.round === match.round + 1 &&
