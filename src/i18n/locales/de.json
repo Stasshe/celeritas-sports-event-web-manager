@@ -62,5 +62,30 @@
     "editEvent": "Veranstaltung bearbeiten",
     "editSport": "Sport bearbeiten",
     "help": "Hilfe"
+  },
+  "tournament": {
+    "members": "Teilnehmer",
+    "generate": "Turnier generieren",
+    "title": "Titel",
+    "round": "Runde {{round}}",
+    "match": "Spiel",
+    "team": "Team",
+    "score": "Punktzahl",
+    "winner": "Gewinner",
+    "loser": "Verlierer",
+    "draw": "Unentschieden",
+    "noWinner": "Kein Gewinner",
+    "noLoser": "Kein Verlierer",
+    "noDraw": "Kein Unentschieden",
+    "noMatches": "Keine Spiele",
+    "noTeams": "Keine Teams",
+    "noScores": "Keine Punktzahlen",
+    "noRounds": "Keine Runden",
+    "noBracket": "Kein Turnier",
+    "noRoundRobin": "Kein Jeder-gegen-Jeden",
+    "noCustom": "Kein benutzerdefiniertes Format",
+    "noParticipants": "Keine Teilnehmer",
+    "noParticipantsInSport": "Keine Teilnehmer in dieser Sportart",
+    "manageTeams": "Teams verwalten"
   }
 }
