@@ -17,6 +17,7 @@ import AdminHelpPage from './pages/admin/AdminHelpPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ScoringBoardPage from './pages/admin/ScoringBoardPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -51,6 +52,7 @@ function App() {
                         <Route path="scoring/:sportId" element={<ScoringPage />} />
                         <Route path="settings" element={<AdminSettingsPage />} />
                         <Route path="help" element={<AdminHelpPage />} />
+                        <Route path="scoring-board" element={<ScoringBoardPage />} />
                       </Routes>
                     </React.Suspense>
                   </Layout>

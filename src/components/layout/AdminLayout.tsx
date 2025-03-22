@@ -38,7 +38,8 @@ import {
   Save as SaveIcon,
   Help as HelpIcon,
   Home as HomeIcon,
-  AccountCircle
+  AccountCircle,
+  Scoreboard as ScoreboardIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useThemeContext } from '../../contexts/ThemeContext';
@@ -367,6 +368,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </ListItemIcon>
             <ListItemText primary={t('admin.dashboard')} />
           </ListItemButton>
+        {/*
+          <ListItem disablePadding>
+            <ListItemButton 
+              selected={location.pathname === '/admin/scoring-board'}
+              onClick={() => navigate('/admin/scoring-board')}
+            >
+              <ListItemIcon>
+                <ScoreboardIcon />
+              </ListItemIcon>
+              <ListItemText primary={t('admin.scoringBoard')} />
+            </ListItemButton>
+          </ListItem>*/}
         </ListItem>
       </List>
       
