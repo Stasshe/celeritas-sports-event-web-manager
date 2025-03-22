@@ -612,13 +612,58 @@ const generatePlayoffTournament = () => {
     });
   };
 
-  // 設定ダイアログの保存
+  // 数値入力のハンドラーを改善
+  const handleBlockCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 空文字列の場合は一時的に許可（入力途中として扱う）
+    if (value === '') {
+      setBlockCount(0);
+      return;
+    }
+    // 数値に変換して設定
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue)) {
+      setBlockCount(Math.max(1, numValue));
+    }
+  };
+
+  const handleAdvancingTeamsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 空文字列の場合は一時的に許可
+    if (value === '') {
+      setAdvancingTeams(0);
+      return;
+    }
+    // 数値に変換して設定
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue)) {
+      setAdvancingTeams(Math.max(1, numValue));
+    }
+  };
+
+  // 設定ダイアログの保存を修正
   const handleSaveSettings = () => {
+    // 最終的な値のバリデーション
+    const finalBlockCount = Math.max(1, blockCount);
+    const finalAdvancingTeams = Math.max(1, advancingTeams);
+
+    // 新しいブロック数で更新
+    const newBlocks = Array.from({ length: finalBlockCount }, (_, i) => ({
+      id: `block_${i + 1}`,
+      name: `ブロック ${i + 1}`,
+      teamIds: [],
+      matches: []
+    }));
+
+    setBlocks(newBlocks);
+    setBlockCount(finalBlockCount);
+    setAdvancingTeams(finalAdvancingTeams);
+
     onUpdate({
       ...sport,
       leagueSettings: {
-        blockCount: blockCount, // 必ず number 型
-        advancingTeams: advancingTeams,
+        blockCount: finalBlockCount,
+        advancingTeams: finalAdvancingTeams,
         hasPlayoff: true,
         hasThirdPlaceMatch: hasThirdPlaceMatch
       }
@@ -988,8 +1033,8 @@ const generatePlayoffTournament = () => {
                 fullWidth
                 label={t('league.blockCount')}
                 type="number"
-                value={blockCount}
-                onChange={(e) => setBlockCount(Math.max(1, parseInt(e.target.value) || 1))}
+                value={blockCount || ''} // 0の場合は空文字列を表示
+                onChange={handleBlockCountChange}
                 helperText={t('league.blockCountHelp')}
                 inputProps={{ min: 1 }}
               />
@@ -999,8 +1044,8 @@ const generatePlayoffTournament = () => {
                 fullWidth
                 label={t('league.advancingTeams')}
                 type="number"
-                value={advancingTeams}
-                onChange={(e) => setAdvancingTeams(Math.max(1, parseInt(e.target.value) || 1))}
+                value={advancingTeams || ''} // 0の場合は空文字列を表示
+                onChange={handleAdvancingTeamsChange}
                 helperText={t('league.advancingTeamsHelp')}
                 inputProps={{ min: 1 }}
               />
@@ -1029,6 +1074,8 @@ const generatePlayoffTournament = () => {
             variant="contained" 
             color="primary"
             onClick={handleSaveSettings}
+            // 両方の値が0より大きい場合のみ保存を許可
+            disabled={blockCount <= 0 || advancingTeams <= 0}
           >
             {t('common.save')}
           </Button>
