@@ -1,0 +1,128 @@
+* 7483794 翻訳データ追加5
+* 8642713 scoring board 追加したかった
+* b30aa8f 0
+* 1cb6d1e dnd
+* 92b6ed1 all
+* ba6b843 ranking team select fix
+* bae7346 3team waiver
+* 4ffda71 finally, done
+* f886a1e id
+*   36f60e4 Merge branch 'pr/FreedomStudentCouncil/9'
+|\  
+| * f7cf080 綺麗にした
+| * a729ed0 行事が消えるバグ修正安全なデータ更新処理の実装とイベント管理の最適化
+| * cf19fef favicon
+| | * 55ba231 Next.jsに移行した・・SSG,SPA,MPA使いわけ使いわけ
+| |/  
+|/|   
+* | bb7df27 0
+* | 06442f2 3位決定戦
+* | 4fed4a9 リーグ戦など追加1
+* | 55d3d15 Merge pull request #8 from FreedomStudentCouncil/main
+|\| 
+| * dc59ecf 翻訳データ追加4
+| * 16e7894 トーナメントスコアリングコンポーネントの表示改善と国際化対応
+| * aa88ea1 レイアウトの改善とトーナメントスコアリングコンポーネントの機能追加
+| * 7c80a8c スマホ表示の改善に関するコメントを追加
+* | 1288f31 Merge pull request #7 from FreedomStudentCouncil/main
+|\| 
+| * 4fcbd29 レイアウト調整1
+| * 1d3b20f サイドバー改善2
+| * 9b5aaa4 サイドバー改善1
+| * 9b688b7 timer audit --temp->
+| * 84000a1 トーナメントが生きている状態に戻した。ja.jsonは採用。'auto'
+| * f7299ba roster edit page bug /fix
+| * e931dd7 翻訳データ追加3
+| * 71e5ade 翻訳データ追加2
+| * b25b55c 翻訳データ追加1
+| * 186d374 ラウンドロビンスコアリングコンポーネントにチーム生成機能を追加し、スコアリセット確認ダイアログを実装。スポーツデータの更新処理を改善し、i18nローカライズを強化。
+* | 02a7150 r
+|/  
+* 418f6cf トーナメントスコアリングコンポーネントにチームデータの状態管理を追加し、マッチ作成時にチーム情報を更新する処理を修正。MatchCardコンポーネントでチーム名の取得ロジックを改善。AdminLayoutのスタイルを調整。
+* ec578b2 もう２度と-fは使いたくない。ばり腹たつ。消えたし。あーあぁ。ガチクソやろう。２度と使わんわ。怒り心頭。クソが。shit
+* 9e36fef AdminLayoutコンポーネントにコンテンツローディング状態を追加し、ナビゲーション時にローディングオーバーレイを表示するように改善。EventEditPageでeventId変更時にlocalEventをリセットし、自動保存タイマーをクリアする処理を追加。
+* 3d8b383 何らかの行事を選択した状態で別の行事を選択したら、その行事editpageにも移動しないし、またevent aがbにコピーされる現象もおきる。選択行事を変える時も、未保存のものがあるなら、保存処理を行ってから移動するように---fix?
+* f72abb1 AdminLayoutコンポーネントのイベントナビゲーション処理を改善し、イベントトグル機能を追加。スポーツ編集ページでのオーガナイザー追加・削除処理を強化し、タブ状態管理を改善。未保存の変更がある場合のナビゲーション確認機能を追加。不要なトーナメントヘルパーファイルを削除。
+* d3071e1 README.mdを更新し、プロジェクトの概要、主な機能、技術スタック、インストール方法、使用方法、貢献方法、ロードマップ、お問い合わせ情報を追加。ユーザーインターフェースの改善点やデプロイ手順を詳述し、全体的なドキュメントの充実を図った。
+* 4cde62c トーナメントスコアリングコンポーネントの試合更新関数を改善し、即時保存用のロジックを追加。UIの反映をスムーズにするため、ローカル状態の更新を強化。AdminLayoutコンポーネントの保存ボタンのハンドラを改善し、スナックバーの表示を整理。useDatabaseフックでの競合解決機能を強化し、データ更新時のエラーハンドリングを改善。
+* f3b7da2 タブコンテンツコンポーネントのローディング処理を削除し、初回表示時にコンテンツを即時に表示するように変更。スポーツ編集ページでのタブ状態管理を改善し、ローディング表示を排除してUIの反応を向上させた。
+* 76a891e タブコンテンツコンポーネントのローディング処理を改善し、初回表示時のみローディングを表示するように変更。スポーツ編集ページでのローディング状態管理を改善し、更新中フラグを追加。データ更新時のローディング表示を削除し、UIの反応をスムーズにした。
+* 45f4abe トーナメントスコアリングコンポーネントの試合更新関数を改善し、即時にローカル状態を更新するロジックを追加。データベースへの保存処理を非同期で行うように変更し、UIの反映をスムーズにした。useDatabaseフックの楽観的UI更新を強化し、エラーハンドリングを改善。
+* 2f34f1b useDatabaseフックのエラー修正と部分更新機能の改善。楽観的UI更新を強化し、競合解決機能を強化。変更されたフィールドの追跡を改善。
+* a749fff AdminLayoutコンポーネントの保存機能を改善し、スナックバーの表示を整理。データの変更を追跡するための新しいフックを追加し、部分更新機能を強化。useDatabaseフックに楽観的更新オプションを追加。
+* 1ef7957 自動保存設定の改善とタブ切り替え時のデータ保存機能を追加。不要なスナックバーコンポーネントを削除。
+* 2aea95b タブコンテンツコンポーネントを追加し、アクティブ状態に応じたデータの読み込み機能を実装。部分更新機能を追加し、サイレント更新オプションを提供。
+* 17d0159 スポーツ編集ページにデータの差分検出機能を追加し、リモートデータの変更を監視。部分的な更新と全体の同期機能を実装。データモデルに最終編集者情報を追加。
+* 7bbf3dc 自動保存機能の改善とオンライン状態の監視を追加。マッチ保存処理のエラーハンドリングを強化し、スナックバーの表示を整理。
+* 51e8a15 総当たり戦の順位決定方式を追加し、表示順位数や上位チームの情報を表示する機能を実装。関連する型定義を整理し、スコアリングコンポーネントに閲覧用テーブルを追加。
+* 387efc8 総当たり戦。トーナメントとの実装難易度の差に驚きを隠せない。
+* 0103868 おそらくsuccess
+* 5a7e143 TournamentScoringコンポーネントのデバウンス処理を改善し、useDatabaseフックでのデータ更新後にステートを更新するロジックを追加。tournamentHelperを新規作成し、トーナメントのマッチ生成ロジックを実装。
+* 3b83506 tournamentHelper.tsを削除し、トーナメントのマッチ生成ロジックを新たに実装
+* 2898470 ProtectedRouteコンポーネントの管理者判定ロジックを削除し、tournamentViewHelperを新規作成してトーナメントのマッチ生成ロジックを実装
+* ba81c00 ProtectedRouteコンポーネントの管理者判定ロジックをコメントアウトし、TournamentScoringコンポーネントでの試合カード表示をreadOnlyモードに対応。tournamentHelperにブランケットマッチ生成ロジックを追加し、tournamentViewHelperを削除。
+* cebaca0 TournamentScoringコンポーネントをSportPageに統合し、スポーツデータの更新処理を改善。新しいヘルパー関数を追加し、トーナメントのマッチ生成ロジックを実装。
+* 55544b0 TournamentViewコンポーネントのトーナメントデータ変換ロジックを更新し、SVG要素の定義を修正。マッチ状態の変換関数を追加し、表示コンポーネントを改善。
+* a3c9bdd 不要なファイル削除
+* b4cc969 use ref create*dialog
+* b280533 useDatabaseフックの更新処理をキュー管理に変更し、TournamentScoringおよびCreateEventDialog、CreateSportDialogコンポーネントでのデータ更新を改善
+* 298f9f9 TournamentScoringコンポーネントの勝者表示ロジックを改善し、tbdおよびシードの状態に応じた色付けを追加
+* f10b0af TournamentBuilderコンポーネントに不戦勝チームを自動的に次のラウンドに進出させる機能を追加
+* cd650ef 背景色ロジックを改善し、勝者、シード、tbdの状態に応じた表示を強化。スコア表示をnullの場合は0に変更。
+* 933f267 TournamentScoringコンポーネントの試合カードと参加者の表示ロジックを改善し、シードおよびtbdの状態に応じた背景色を追加。スコア表示を0に変更し、勝者の色を調整。
+* 404ed19 TournamentScoringコンポーネントの参加者状態判定ロジックを改善し、試合の状態に応じた表示を強化。シード試合の判定を追加し、待機状態の判定を明確化。
+* 2ca2f8b success----TournamentScoringコンポーネントに試合の状態を判定する関数を追加し、参加者の名前とステータスを取得するロジックを改善。シード試合の処理を強化。
+* d09c29e TournamentBuilderコンポーネントに不戦勝チームを自動的に次のラウンドに進出させる機能を追加し、TournamentStructureHelperのチーム待機状態判定を改善。
+* b092fe3 トーナメントアルゴリズム多分できた
+* cd5f6f2 success-------TournamentScoringコンポーネントで試合の状態を自動判定する機能を追加し、TournamentStructureHelperのメソッドを改善。参加者のステータス判定を強化し、勝者を次の試合に自動進出させるロジックを実装。
+* 7087a4d TournamentBuilderコンポーネントの得点確認機能を追加し、TournamentStructureHelperに試合の状態を自動判定するメソッドを追加。Participantインターフェースのstatus型を具体化。TournamentMatchPlacerコンポーネントを削除。
+* cedb8ff やっとできたわ。シードむず
+* 3279652 Revert "TournamentBuilderコンポーネントのコードを整理し、不要なインポートを削除。ドラッグ＆ドロップ機能の処理を簡素化し、スタイルを改善。"
+* b41d330 Revert "T惜しいところまできたournamentViewコンポーネントで試合名の表示ロジックを改善し、TournamentStructureHelperを追加してトーナメント構造の生成を簡素化。ドラッグ＆ドロップ機能の改善とチーム自動生成の条件を修正。"
+* 01ea4a5 T惜しいところまできたournamentViewコンポーネントで試合名の表示ロジックを改善し、TournamentStructureHelperを追加してトーナメント構造の生成を簡素化。ドラッグ＆ドロップ機能の改善とチーム自動生成の条件を修正。
+* 9b89fee TournamentBuilderコンポーネントのコードを整理し、不要なインポートを削除。ドラッグ＆ドロップ機能の処理を簡素化し、スタイルを改善。
+* 1b9ebe0 Tsuccess--- ournamentScoringコンポーネントに3位決定戦のオプションを追加し、試合作成処理をリファクタリング。ダイアログのパフォーマンスを最適化。
+* 7380563 戻した
+* d725d34 TournamentScoringコンポーネントの試合データ構築を改善し、試合の状態管理を追加。SVGViewerのサイズとスタイルを調整。
+* e7bd2f8 TournamentScoringコンポーネントでSingleEliminationBracketにカスタムスタイルを追加し、SVGViewerの背景色を設定する条件を追加
+* e357d42 TournamentMatchPlacerコンポーネントの自動配置機能をシャッフル機能に変更し、TournamentScoringコンポーネントで選択されたチーム情報を更新する処理を追加
+* 3954db2 TypeError: undefined is not an object (evaluating 'C[0].length')
+* 1a7e0bc TournamentStructureHelperとTournamentMatchPlacerコンポーネントを新規作成し、トーナメントのマッチ生成機能を実装
+* 554f7f2 MatchEditDialogコンポーネントの状態更新処理を改善し、editedMatchが未定義の場合の処理を追加
+* bbb2e65 TournamentBracketコンポーネントでMatchをCustomMatchに名称変更し、TeamSelectorとMatchCardコンポーネントを新規作成
+* 45f5e9c w
+* 0fa6d39 TournamentScoringコンポーネントのリファクタリングとプレイヤー処理の改善。@types/react-beautiful-dndをdevDependenciesに追加。
+* 403f213 .gitignoreにmemo.txtを追加し、CustomLayoutView.tsxのエクスポートを整理。package.jsonにreact-beautiful-dndを追加し、tournament-brackets.d.tsに新しいプロパティを追加。不要なreact-bracket.d.tsを削除。
+*   783f77f Merge pull request #3 from FreedomStudentCouncil/main
+|\  
+| * 8b3b6f3 AdminLayoutとSportEditPageのスタイルを調整し、余白やパディングを小さくしました。drawerWidthを変更し、リストアイテムの高さを調整しました。
+| * b107d77 i18nの日本語ローカライズを更新し、ログアウト機能を追加。AdminLayoutでのナビゲーションを改善し、404ページのリダイレクト処理を実装。useDatabaseフックのキャッシュ機能を削除し、DeleteConfirmationDialogコンポーネントを追加。
+| * 03fa24e Merge pull request #1 from FreedomStudentCouncil/main
+|/| 
+| * 52284f3 言語セレクターにフランス語とドイツ語を追加し、i18nのローカライズを更新。AdminLayoutにイベントおよび競技作成ダイアログを追加し、成功時のハンドラーを実装。useDatabaseフックにキャッシュ機能を追加。
+| * 197b278 i18nの日本語ローカライズを更新し、イベントおよび競技管理の文言を追加。index.tsxでreportWebVitalsのコメントを解除。
+| * 8e1dbdc ja
+| * 5e69b8f AdminLayoutにホームボタンを追加し、ナビゲーション機能を強化
+| * 23b5e24 index.tsxのパス修正、reportWebVitalsのコメントアウト。firebase.tsからgetStorageのインポートを削除。package.jsonにpreviewスクリプトを追加し、devDependenciesにserveを追加。index.htmlの言語設定を英語に変更し、メタタグを更新。AdminLayoutコンポーネントのスタイルを調整し、ツールバーやサイドバーの表示を改善。
+|/  
+* 50989a0 success--Adminページにイベントおよびスポーツ編集ページを追加し、設定ページを実装。AdminLayoutでのイベントおよびスポーツの展開ロジックを改善し、型定義を修正。
+* 1e45268 一旦なんとか。AdminLayoutコンテキストを追加し、Layoutコンポーネントにヘッダー表示のオプションを追加。CreateEventDialogでの作成日時を追加し、イベントの初期値設定を改善。Event型にオプショナルなcreatedAt属性を追加。
+* e06bda0 RosterEditorコンポーネントでのnullチェックを強化し、LanguageSelectorコンポーネントの言語選択機能を改善。言語設定をローカルストレージに保存する機能を追加し、UIを調整。
+* 311aabd カバー画像プロパティをcoverImageUrlに変更し、AdminLayoutコンポーネントに型定義を追加。レイアウトのスタイルを調整し、子要素を適切に表示するように修正。
+* 0b1a3d6 イベントおよびスポーツ管理コンポーネントでのカバー画像プロパティをcoverImageUrlに変更し、安全なデータアクセスを実装。新規イベントおよびスポーツ作成ダイアログでの型定義を修正し、organizersプロパティを追加。
+* b1ea37e 名簿エディタのクラス名変更時の安全なデータ削除を実装し、イベント作成ダイアログでの型宣言を修正。競技作成ダイアログでの初期設定を整理し、react-colorの型定義を更新。
+* 0ef8b8d react-colorパッケージを追加し、イベントおよびスポーツの型定義を拡張。カスタムレイアウト表示コンポーネントを新規作成し、テーマコンテキストを更新。
+*   4dbcb46 Merge pull request #2 from FreedomStudentCouncil/main
+|\  
+| * fdf559f AdminPageコンポーネントのナビゲーション機能を修正し、アイコンボタンをラップするためのspan要素を追加
+| * 5e6a0ec env
+| * a7eef3d readme
+| * b21db12 success-----Appコンポーネントとindex.tsxを削除し、HomePageコンポーネントを新規作成。イベントとスポーツのデータを取得し、アクティブなイベントに基づいて表示を更新。
+| * c0efa24 initial worker
+| * 5975a16 .gitignoreとpackage.jsonの更新、型定義の修正、イベントおよびスポーツ管理機能の改善、Firebase設定の追加
+|/  
+* 0e29a2a READMEとスクリプトの更新、NotFoundページの国際化対応、ダミーロゴファイルの作成
+* eabb645 イベント管理とスポーツ管理の型定義を修正し、カバー画像の扱いを改善
+* 8c6ee91 イベント管理機能の改善とデータベース操作の修正
+* 893c1eb 初期設定と国際化対応、Firebase設定、ルーティング、環境変数の追加
+* 9f3f443 Initial commit

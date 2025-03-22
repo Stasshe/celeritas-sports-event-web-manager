@@ -1,6 +1,8 @@
 .
 ├── LICENSE
 ├── README.md
+├── build_result.txt
+├── e.txt
 ├── firebaseRules.json
 ├── package-lock.json
 ├── package.json
@@ -76,15 +78,19 @@
 │   │   │   │   ├── CreateSportDialog.tsx
 │   │   │   │   └── DeleteConfirmationDialog.tsx
 │   │   │   └── scoring
-│   │   │       ├── CustomScoring.tsx
+│   │   │       ├── LeagueScoring.tsx
+│   │   │       ├── RankingScoring.tsx
 │   │   │       ├── RoundRobinScoring.tsx
 │   │   │       ├── TournamentScoring.tsx
-│   │   │       └── components
-│   │   │           ├── MatchCard.tsx
-│   │   │           ├── MatchEditDialog.tsx
-│   │   │           ├── TeamSelector.tsx
-│   │   │           ├── TournamentBuilder.tsx
-│   │   │           └── TournamentStructureHelper.ts
+│   │   │       ├── components
+│   │   │       │   ├── MatchCard.tsx
+│   │   │       │   ├── MatchEditDialog.tsx
+│   │   │       │   ├── TeamSelector.tsx
+│   │   │       │   ├── TournamentBuilder.tsx
+│   │   │       │   └── TournamentStructureHelper.ts
+│   │   │       └── helpers
+│   │   │           ├── LeagueMatchHelper.ts
+│   │   │           └── LeaguePlayoffHelper.ts
 │   │   ├── layout
 │   │   │   └── AdminLayout.tsx
 │   │   └── sports
@@ -107,6 +113,7 @@
 │   │       └── ja.json
 │   ├── index.css
 │   ├── index.tsx
+│   ├── locales
 │   ├── pages
 │   │   ├── HomePage.tsx
 │   │   ├── LoginPage.tsx
@@ -117,6 +124,7 @@
 │   │       ├── AdminPage.tsx
 │   │       ├── AdminSettingsPage.tsx
 │   │       ├── EventEditPage.tsx
+│   │       ├── ScoringBoardPage.tsx
 │   │       ├── ScoringPage.tsx
 │   │       └── SportEditPage.tsx
 │   ├── reportWebVitals.ts
@@ -130,4 +138,4 @@
 ├── tree.txt
 └── tsconfig.json
 
-18 directories, 112 files
+20 directories, 118 files

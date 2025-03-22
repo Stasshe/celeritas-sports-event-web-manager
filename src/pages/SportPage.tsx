@@ -18,8 +18,8 @@ import { useDatabase } from '../hooks/useDatabase';
 import { Sport, Team, Match } from '../types';
 import TournamentScoring from '../components/admin/scoring/TournamentScoring';
 import RoundRobinTable from '../components/sports/RoundRobinTable';
-import CustomLayout from '../components/sports/CustomLayout';
-
+import RankingScoring from '../components/admin/scoring/RankingScoring';
+import LeagueScoring from '../components/admin/scoring/LeagueScoring';
 
 const SportPage: React.FC = () => {
   const { sportId } = useParams<{ sportId: string }>();
@@ -117,7 +117,24 @@ const SportPage: React.FC = () => {
             <RoundRobinTable sport={sport} />
           </Box>
         )}
-        {sport.type === 'league' && <CustomLayout sport={sport} />}
+        {sport.type === 'ranking' && (
+          <Box>
+            <RankingScoring 
+              sport={sport} 
+              onUpdate={handleSportUpdate}
+              readOnly // 読み取り専用モードを追加
+            />
+          </Box>
+        )}
+        {sport.type === 'league' && (
+          <Box>
+            <LeagueScoring 
+              sport={sport} 
+              onUpdate={handleSportUpdate}
+              readOnly // 読み取り専用モードを追加
+            />
+          </Box>
+        )}
       </Box>
     </Container>
   );
