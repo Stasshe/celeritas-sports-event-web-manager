@@ -189,6 +189,9 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
       
       // 各クラスをチームとして追加
       Object.entries(gradeData).forEach(([className, members]) => {
+        // クラス名が数字の「0」の場合はスキップ（不要なクラス）
+        if (className === '0') return;
+        
         // グレード名を取得（例: grade1 → 1年）
         const gradeNumber = gradeKey.replace('grade', '');
         const gradeName = t(`roster.grade${gradeNumber}`);
