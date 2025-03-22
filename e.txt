@@ -19,3 +19,5 @@ Rosterに登録されたチームを全て自動選択し、ユーザーから�
 あと、react-scriptsは遅いから、nextに移行しようと思う。できるのであれば。
 eslintrc.config.mjsや.eslintrc.jsonとか、next.config.jsを生成してね。
 全部SSGです。（output:exportね）
+
+
