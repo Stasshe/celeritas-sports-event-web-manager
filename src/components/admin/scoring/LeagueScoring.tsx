@@ -1052,12 +1052,14 @@ const generatePlayoffTournament = () => {
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>{t('league.hasThirdPlace')}</InputLabel>
+                <InputLabel id="third-place-match-label">{t('league.hasThirdPlace')}</InputLabel>
                 <Select
+                  labelId="third-place-match-label"
                   value={hasThirdPlaceMatch ? "true" : "false"}
                   onChange={(e) => {
                     setHasThirdPlaceMatch(e.target.value === "true" ? true : false);
                   }}
+                  label={t('league.hasThirdPlace')}
                 >
                   <MenuItem value="true">{t('common.yes')}</MenuItem>
                   <MenuItem value="false">{t('common.no')}</MenuItem>
@@ -1067,7 +1069,10 @@ const generatePlayoffTournament = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSettingsDialogOpen(false)}>
+          <Button 
+            onClick={() => setSettingsDialogOpen(false)}
+            color="inherit"
+          >
             {t('common.cancel')}
           </Button>
           <Button 
