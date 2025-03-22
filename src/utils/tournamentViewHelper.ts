@@ -41,21 +41,23 @@ export const generateBracketMatches = (sport: Sport, t: TFunction) => {
 
   return matchesToUse
     .sort((a, b) => {
-      if (a.round !== b.round) return a.round - b.round;
+      // 3位決定戦は最後にソート（matchNumber === 0）
       if (a.matchNumber === 0) return 1;
       if (b.matchNumber === 0) return -1;
+      // それ以外は通常のソート
+      if (a.round !== b.round) return a.round - b.round;
       return a.matchNumber - b.matchNumber;
     })
     .map(match => ({
       id: match.id,
-      name: match.matchNumber === 0
+      name: match.matchNumber === 0 || match.id.includes('third_place')
         ? t('tournament.thirdPlace')
         : match.round === maxRound && match.matchNumber === 1
         ? t('tournament.final')
         : t('tournament.round', { 
             round: `${match.round}-${match.matchNumber}` 
           }),
-      nextMatchId: match.matchNumber === 0 ? null :
+      nextMatchId: match.matchNumber === 0 || match.id.includes('third_place') ? null :
         matchesToUse.find(m =>
           m.round === match.round + 1 &&
           Math.ceil(match.matchNumber / 2) === m.matchNumber

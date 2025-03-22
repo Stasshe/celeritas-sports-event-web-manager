@@ -143,16 +143,83 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     return 'SCHEDULED';
   };
 
-  // トーナメント表示用のデータ
-  const bracketMatches = useMemo(() => {
+  // トーナメント表示用のデータ - メインブラケットと3位決定戦ブラケットを分離
+  const { mainBracketMatches, thirdPlaceMatch } = useMemo(() => {
     const formattedMatches = generateBracketMatches(sport, t);
-    return formattedMatches.map(match => ({
+    console.log("All formatted matches:", formattedMatches);
+    
+    // 3位決定戦の試合を抽出（matchNumber === 0 または名前が3位決定戦）
+    const thirdPlaceMatches = formattedMatches.filter(match => {
+      // matchの名前が "tournament.thirdPlace" に対応する翻訳文字列と一致するか
+      const isThirdPlaceByName = typeof match.name === 'string' && 
+                                match.name === t('tournament.thirdPlace');
+      
+      // IDが"third_place"を含むか
+      const isThirdPlaceById = match.id.includes('third_place');
+      
+      return isThirdPlaceByName || isThirdPlaceById;
+    });
+    
+    console.log("Third place matches found:", thirdPlaceMatches);
+    
+    // メインブラケットの試合（3位決定戦以外）
+    const mainMatches = formattedMatches.filter(match => {
+      const isThirdPlaceByName = typeof match.name === 'string' && 
+                                match.name === t('tournament.thirdPlace');
+      const isThirdPlaceById = match.id.includes('third_place');
+      
+      return !(isThirdPlaceByName || isThirdPlaceById);
+    }).map(match => ({
       ...match,
       name: typeof match.name === 'object' ? 
         t('tournament.round', { round: match.tournamentRoundText }) :
         match.name
     }));
-  }, [sport, t]);
+    
+    // 実際の試合データから3位決定戦を探す（バックアップとして）
+    let thirdPlaceMatchData = thirdPlaceMatches.length > 0 
+      ? thirdPlaceMatches[0] 
+      : null;
+    
+    // 3位決定戦が見つからなければ、matchNumber === 0 の試合を探す
+    if (!thirdPlaceMatchData) {
+      const matchNumberZero = matches.find(m => m.matchNumber === 0);
+      if (matchNumberZero) {
+        // 3位決定戦の試合データを手動で作成
+        const team1 = sport.teams.find(t => t.id === matchNumberZero.team1Id);
+        const team2 = sport.teams.find(t => t.id === matchNumberZero.team2Id);
+        
+        thirdPlaceMatchData = {
+          id: matchNumberZero.id,
+          name: t('tournament.thirdPlace'),
+          nextMatchId: null,
+          tournamentRoundText: "Final",
+          startTime: matchNumberZero.date || new Date().toISOString(),
+          state: matchNumberZero.status === 'completed' ? 'DONE' : 
+                 matchNumberZero.status === 'inProgress' ? 'PLAYING' : 'SCHEDULED',
+          participants: [
+            {
+              id: matchNumberZero.team1Id || 'team1',
+              name: team1?.name || t('tournament.tbd'),
+              score: matchNumberZero.team1Score,
+              isWinner: matchNumberZero.winnerId === matchNumberZero.team1Id
+            },
+            {
+              id: matchNumberZero.team2Id || 'team2',
+              name: team2?.name || t('tournament.tbd'),
+              score: matchNumberZero.team2Score,
+              isWinner: matchNumberZero.winnerId === matchNumberZero.team2Id
+            }
+          ]
+        };
+      }
+    }
+    
+    return { 
+      mainBracketMatches: mainMatches,
+      thirdPlaceMatch: thirdPlaceMatchData
+    };
+  }, [sport, t, matches]);
 
   // ラウンドごとの試合データを構築（修正）
   const roundMatches = useMemo(() => {
@@ -187,7 +254,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     setMatchDialogOpen(true);
   };
 
-  // 試合の更新（即時保存用）
+  // 試合の更新（即時保存用）- 3位決定戦対応版
   const handleMatchUpdate = async (updatedMatch: Match) => {
     if (readOnly) return;
     setIsDialogProcessing(true);
@@ -206,8 +273,43 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
         m.id === newMatch.id ? newMatch : m
       );
 
+      // 準決勝の試合でスコアが入ったときの特別処理
       if (newMatch.winnerId) {
+        // 通常の勝者進出処理
         newMatches = TournamentStructureHelper.progressWinnerToNextMatch(newMatch, newMatches);
+        
+        // 準決勝の場合は敗者を3位決定戦に進出させる
+        const maxRound = Math.max(...newMatches.map(m => m.round));
+        const isSemiFinal = newMatch.round === maxRound - 1;
+        
+        if (isSemiFinal) {
+          // 敗者を特定
+          const loserId = newMatch.team1Id === newMatch.winnerId 
+            ? newMatch.team2Id 
+            : newMatch.team1Id;
+          
+          // 3位決定戦の試合を探す
+          const thirdPlaceMatch = newMatches.find(m => 
+            m.matchNumber === 0 || m.id.includes('third_place')
+          );
+          
+          // 3位決定戦が存在する場合、敗者を配置
+          if (thirdPlaceMatch) {
+            const updatedThirdPlaceMatch = { ...thirdPlaceMatch };
+            
+            // 最初の敗者をteam1に、2番目の敗者をteam2に配置
+            if (!updatedThirdPlaceMatch.team1Id) {
+              updatedThirdPlaceMatch.team1Id = loserId;
+            } else if (!updatedThirdPlaceMatch.team2Id) {
+              updatedThirdPlaceMatch.team2Id = loserId;
+            }
+            
+            // 3位決定戦を更新
+            newMatches = newMatches.map(m => 
+              m.id === updatedThirdPlaceMatch.id ? updatedThirdPlaceMatch : m
+            );
+          }
+        }
       }
 
       // ローカルのUI更新を先に行い、ダイアログを閉じる
@@ -425,6 +527,98 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     };
   }, []);
 
+  // 3位決定戦の表示をより堅牢に
+  const ThirdPlaceMatchCard = () => {
+    // 3位決定戦の試合データを直接取得
+    const thirdPlaceMatchData = matches.find(m => 
+      m.matchNumber === 0 || m.id.includes('third_place')
+    );
+
+    if (!thirdPlaceMatchData) {
+      return null;
+    }
+
+    // チーム情報を取得
+    const team1 = sport.teams.find(t => t.id === thirdPlaceMatchData.team1Id);
+    const team2 = sport.teams.find(t => t.id === thirdPlaceMatchData.team2Id);
+
+    return (
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          {t('tournament.thirdPlaceMatch')}
+        </Typography>
+        <Box 
+          sx={{ 
+            width: '100%',
+            bgcolor: theme.palette.background.paper,
+            borderRadius: 1,
+            overflow: 'hidden',
+            boxShadow: 1,
+            border: `1px solid ${theme.palette.divider}`,
+            cursor: readOnly ? 'default' : 'pointer',
+            '&:hover': !readOnly ? {
+              boxShadow: 3,
+              borderColor: theme.palette.primary.main,
+            } : {},
+            p: 2
+          }}
+          onClick={() => {
+            if (!readOnly) {
+              handleEditMatch(thirdPlaceMatchData);
+            }
+          }}
+        >
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" align="center" gutterBottom>
+                {t('tournament.thirdPlace')}
+              </Typography>
+            </Grid>
+            
+            {/* 対戦カード */}
+            <Grid item xs={5} sx={{ textAlign: 'center' }}>
+              <Typography 
+                variant="body1" 
+                fontWeight={thirdPlaceMatchData.winnerId === thirdPlaceMatchData.team1Id ? 'bold' : 'normal'}
+                color={thirdPlaceMatchData.winnerId === thirdPlaceMatchData.team1Id ? 'primary' : 'text.primary'}
+              >
+                {team1?.name || t('tournament.tbd')}
+              </Typography>
+              <Typography variant="h6">
+                {thirdPlaceMatchData.team1Score || 0}
+              </Typography>
+            </Grid>
+            
+            <Grid item xs={2} sx={{ textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography variant="body1">VS</Typography>
+            </Grid>
+            
+            <Grid item xs={5} sx={{ textAlign: 'center' }}>
+              <Typography 
+                variant="body1"
+                fontWeight={thirdPlaceMatchData.winnerId === thirdPlaceMatchData.team2Id ? 'bold' : 'normal'}
+                color={thirdPlaceMatchData.winnerId === thirdPlaceMatchData.team2Id ? 'primary' : 'text.primary'}
+              >
+                {team2?.name || t('tournament.tbd')}
+              </Typography>
+              <Typography variant="h6">
+                {thirdPlaceMatchData.team2Score || 0}
+              </Typography>
+            </Grid>
+            
+            <Grid item xs={12} sx={{ textAlign: 'center', mt: 1 }}>
+              <Chip 
+                size="small" 
+                color={thirdPlaceMatchData.status === 'completed' ? 'success' : 'default'}
+                label={t(`match.${thirdPlaceMatchData.status}`)}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      </Paper>
+    );
+  };
+
   return (
     <Box>
       {/* readOnlyモードまたはhideBuilderがtrueの場合は設定パネルを非表示 */}
@@ -460,8 +654,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       
       {matches.length > 0 ? (
         <>
-          {/* トーナメント図の表示 */}
+          {/* メイントーナメント図の表示 */}
           <Paper sx={{ p: 2, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              {t('tournament.mainBracket')}
+            </Typography>
             <Box 
               sx={{ 
                 width: '100%',
@@ -473,9 +670,9 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
                 }
               }}
             >
-              {bracketMatches.length > 0 && (
+              {mainBracketMatches.length > 0 && (
                 <SingleEliminationBracket
-                  matches={bracketMatches}
+                  matches={mainBracketMatches}
                   matchComponent={renderMatchComponent}
                   options={{
                     style: {
@@ -492,6 +689,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               )}
             </Box>
           </Paper>
+          
+          {/* 3位決定戦の表示 - より堅牢なコンポーネント使用 */}
+          {matches.some(m => m.matchNumber === 0 || m.id.includes('third_place')) && (
+            <ThirdPlaceMatchCard />
+          )}
         </>
       ) : (
         <Paper sx={{ p: 3, textAlign: 'center' }}>

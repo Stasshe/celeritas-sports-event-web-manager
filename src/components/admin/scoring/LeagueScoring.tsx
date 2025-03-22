@@ -505,6 +505,35 @@ const generatePlayoffTournament = () => {
     
     console.log("Generated playoff matches:", newPlayoffMatches);
     
+    // 3位決定戦を追加
+    if (hasThirdPlaceMatch && newPlayoffMatches.length > 0) {
+      // 最終ラウンド（決勝戦）を特定
+      const maxRound = Math.max(...newPlayoffMatches.map(m => m.round));
+      
+      // 準決勝戦を特定（最終ラウンドの1つ前）
+      const semifinalMatches = newPlayoffMatches.filter(m => m.round === maxRound - 1);
+      
+      if (semifinalMatches.length >= 2) {
+        // 3位決定戦の試合を生成 - IDを明確に識別できる形式に
+        const thirdPlaceMatch: Match = {
+          id: `playoff_third_place_match`,
+          team1Id: '', // 準決勝敗者が入る
+          team2Id: '', // 準決勝敗者が入る
+          team1Score: 0,
+          team2Score: 0,
+          round: maxRound, // 決勝と同じラウンド
+          matchNumber: 0, // 特別な番号として0を使用
+          status: 'scheduled',
+          date: new Date().toISOString().split('T')[0],
+        };
+        
+        // 3位決定戦を追加
+        newPlayoffMatches.push(thirdPlaceMatch);
+        
+        console.log("Added third place match:", thirdPlaceMatch);
+      }
+    }
+    
     // 状態更新
     setPlayoffMatches(newPlayoffMatches);
     setShowPlayoff(true);
@@ -520,7 +549,8 @@ const generatePlayoffTournament = () => {
       matches: allMatches,
       leagueSettings: {
         ...sport.leagueSettings,
-        hasPlayoff: true
+        hasPlayoff: true,
+        hasThirdPlaceMatch: hasThirdPlaceMatch // ここで設定を保存
       }
     });
     
@@ -533,15 +563,47 @@ const generatePlayoffTournament = () => {
   }
 };
 
-  // プレーオフの試合更新
+  // プレーオフの試合更新を強化
   const handlePlayoffUpdate = (updatedPlayoff: Sport) => {
-    // プレーオフの試合だけを更新
-    setPlayoffMatches(updatedPlayoff.matches);
+    // プレーオフの試合データを取得
+    const newPlayoffMatches = [...updatedPlayoff.matches];
+    
+    // 準決勝試合を検出して、敗者を3位決定戦に移動するロジックを追加
+    const maxRound = Math.max(...newPlayoffMatches.map(m => m.round));
+    const semifinalMatches = newPlayoffMatches.filter(m => 
+      m.round === maxRound - 1 && m.winnerId // 勝者が確定している準決勝
+    );
+    
+    // 3位決定戦を探す
+    const thirdPlaceMatch = newPlayoffMatches.find(m => 
+      m.matchNumber === 0 || m.id.includes('third_place')
+    );
+    
+    // 準決勝と3位決定戦が存在する場合
+    if (semifinalMatches.length > 0 && thirdPlaceMatch) {
+      // 敗者を取得
+      const losers = semifinalMatches.map(match => 
+        match.team1Id === match.winnerId ? match.team2Id : match.team1Id
+      ).filter(Boolean);
+      
+      // チーム1が空なら1つ目の敗者を設定
+      if (!thirdPlaceMatch.team1Id && losers.length > 0) {
+        thirdPlaceMatch.team1Id = losers[0];
+      }
+      
+      // チーム2が空なら2つ目の敗者を設定
+      if (!thirdPlaceMatch.team2Id && losers.length > 1) {
+        thirdPlaceMatch.team2Id = losers[1];
+      }
+    }
+    
+    // 更新された試合データを状態に反映
+    setPlayoffMatches(newPlayoffMatches);
     
     // スポーツデータ全体を更新
     const allMatches = [
       ...blocks.flatMap(block => block.matches),
-      ...updatedPlayoff.matches
+      ...newPlayoffMatches
     ];
     
     onUpdate({
