@@ -31,7 +31,7 @@ import {
   Save as SaveIcon,
   Shuffle as ShuffleIcon,
 } from '@mui/icons-material';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+
 import { Sport, Match, Team } from '../../../types';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '../../../contexts/ThemeContext';

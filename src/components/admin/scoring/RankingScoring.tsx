@@ -23,27 +23,124 @@ import {
   Grid,
   Chip,
   Alert,
-  Card,
-  CardContent,
   useTheme,
   Tooltip,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  useMediaQuery
 } from '@mui/material';
 import {
-  Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   ArrowUpward as ArrowUpIcon,
   ArrowDownward as ArrowDownIcon,
-  Warning as WarningIcon,
   Refresh as RefreshIcon,
-  Save as SaveIcon
+  DragIndicator as DragIndicatorIcon,
 } from '@mui/icons-material';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Sport, Team, RankingEntry } from '../../../types';
 import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
+
+// ソート可能な行コンポーネント
+interface SortableItemProps {
+  id: string;
+  entry: RankingEntry;
+  getTeamName: (teamId: string) => string;
+  handleEditEntry: (entry: RankingEntry) => void;
+  handleDeleteEntry: (id: string) => void;
+  readOnly: boolean;
+  criteriaName: string;
+}
+
+const SortableTableRow: React.FC<SortableItemProps> = ({ 
+  id, 
+  entry, 
+  getTeamName,
+  handleEditEntry, 
+  handleDeleteEntry,
+  readOnly,
+  criteriaName
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery('(max-width:600px)');
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    backgroundColor: isDragging ? theme.palette.action.hover : 'inherit',
+    zIndex: isDragging ? 999 : 'auto',
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      {!readOnly && (
+        <TableCell 
+          sx={{ 
+            cursor: 'grab',
+            padding: isMobile ? '12px 8px' : 'inherit',
+            touchAction: 'none',
+            '&:active': { cursor: 'grabbing' }
+          }}
+          {...attributes} 
+          {...listeners}
+        >
+          <DragIndicatorIcon 
+            color="action"
+            fontSize={isMobile ? "medium" : "small"}
+          />
+        </TableCell>
+      )}
+      <TableCell>
+        <Chip 
+          label={entry.rank} 
+          color={entry.rank <= 3 ? 'primary' : 'default'} 
+          size="small" 
+        />
+      </TableCell>
+      <TableCell>{getTeamName(entry.teamId)}</TableCell>
+      <TableCell align="right">
+        {entry.score !== undefined ? entry.score : '-'}
+      </TableCell>
+      <TableCell>
+        {entry.notes || ''}
+      </TableCell>
+      {!readOnly && (
+        <TableCell align="right">
+          <IconButton
+            size={isMobile ? "medium" : "small"}
+            color="primary"
+            onClick={() => handleEditEntry(entry)}
+            sx={{ padding: isMobile ? '8px' : '4px' }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size={isMobile ? "medium" : "small"}
+            color="error"
+            onClick={() => handleDeleteEntry(id)}
+            sx={{ padding: isMobile ? '8px' : '4px' }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </TableCell>
+      )}
+    </TableRow>
+  );
+};
 
 interface RankingScoringProps {
   sport: Sport;
@@ -54,6 +151,7 @@ interface RankingScoringProps {
 const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOnly = false }) => {
   const { t } = useTranslation();
   const theme = useTheme();
+  const isMobile = useMediaQuery('(max-width:600px)');
   
   const [teams, setTeams] = useState<Team[]>([]);
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
@@ -63,6 +161,21 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
   const [selectedEntry, setSelectedEntry] = useState<RankingEntry | null>(null);
   const [criteriaName, setCriteriaName] = useState(sport.rankingSettings?.criteriaName || 'スコア');
   const [isAscending, setIsAscending] = useState(sport.rankingSettings?.isAscending || false);
+  const [showMobileHelp, setShowMobileHelp] = useState(true);
+
+  // DnD センサーの設定
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        // タッチデバイスでの長押しを有効化
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // 名簿データからクラスをチームとして生成する
   const generateTeamsFromRoster = useCallback(() => {
@@ -224,12 +337,18 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
   };
 
   // ドラッグ&ドロップでランキングを並べ替え
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
     
-    const items = Array.from(rankings);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    if (!over || active.id === over.id) return;
+    
+    // 並べ替え処理
+    const oldIndex = rankings.findIndex(item => item.id === active.id);
+    const newIndex = rankings.findIndex(item => item.id === over.id);
+    
+    const items = [...rankings];
+    const [movedItem] = items.splice(oldIndex, 1);
+    items.splice(newIndex, 0, movedItem);
     
     // ランク番号を更新
     const updatedItems = items.map((item, index) => ({
@@ -273,6 +392,18 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
       ...sport,
       rankings: sanitizeRankingsForFirebase(updatedRankings)
     });
+  };
+  
+  // エントリを編集
+  const handleEditEntry = (entry: RankingEntry) => {
+    setEditMode('edit');
+    setSelectedEntry(entry);
+    setDialogOpen(true);
+  };
+  
+  // モバイルヘルプを閉じる
+  const handleDismissMobileHelp = () => {
+    setShowMobileHelp(false);
   };
 
   return (
@@ -321,6 +452,17 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
         </Paper>
       )}
       
+      {/* モバイル端末のためのヘルプメッセージ */}
+      {isMobile && !readOnly && showMobileHelp && rankings.length > 0 && (
+        <Alert 
+          severity="info" 
+          sx={{ mb: 2 }}
+          onClose={handleDismissMobileHelp}
+        >
+          {t('ranking.mobileHelp', 'ドラッグアイコンを長押ししてから上下に動かすことでランキングの順位を変更できます')}
+        </Alert>
+      )}
+      
       {/* ランキング一覧 */}
       <Paper sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
@@ -328,106 +470,62 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
         </Typography>
         
         {rankings.length > 0 ? (
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="rankings">
-              {(provided) => (
-                <TableContainer ref={provided.innerRef} {...provided.droppableProps}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        {!readOnly && (
-                          <TableCell width="5%"></TableCell>
-                        )}
-                        <TableCell width="10%">{t('ranking.rank')}</TableCell>
-                        <TableCell width="40%">{t('ranking.team')}</TableCell>
-                        <TableCell width="20%" align="right">
-                          {criteriaName}
-                          <Tooltip title={
-                            isAscending 
-                              ? t('ranking.ascendingTooltip')
-                              : t('ranking.descendingTooltip')
-                          }>
-                            <IconButton size="small">
-                              {isAscending ? <ArrowUpIcon fontSize="small" /> : <ArrowDownIcon fontSize="small" />}
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell width="15%">{t('ranking.notes')}</TableCell>
-                        {!readOnly && (
-                          <TableCell width="10%" align="right">{t('ranking.actions')}</TableCell>
-                        )}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {rankings.map((entry, index) => (
-                        <Draggable
-                          key={entry.id}
-                          draggableId={entry.id}
-                          index={index}
-                          isDragDisabled={readOnly}
-                        >
-                          {(provided) => (
-                            <TableRow
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              hover
-                            >
-                              {!readOnly && (
-                                <TableCell {...provided.dragHandleProps}>
-                                  <IconButton size="small" disabled>
-                                    <svg width="18" fill="currentColor" viewBox="0 0 24 24">
-                                      <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path>
-                                    </svg>
-                                  </IconButton>
-                                </TableCell>
-                              )}
-                              <TableCell>
-                                <Chip 
-                                  label={entry.rank} 
-                                  color={entry.rank <= 3 ? 'primary' : 'default'} 
-                                  size="small"
-                                />
-                              </TableCell>
-                              <TableCell>{getTeamName(entry.teamId)}</TableCell>
-                              <TableCell align="right">
-                                {entry.score !== undefined ? entry.score : '-'}
-                              </TableCell>
-                              <TableCell>
-                                {entry.notes || ''}
-                              </TableCell>
-                              {!readOnly && (
-                                <TableCell align="right">
-                                  <IconButton
-                                    size="small"
-                                    color="primary"
-                                    onClick={() => {
-                                      setEditMode('edit');
-                                      setSelectedEntry(entry);
-                                      setDialogOpen(true);
-                                    }}
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    color="error"
-                                    onClick={() => handleDeleteEntry(entry.id)}
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </TableCell>
-                              )}
-                            </TableRow>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-            </Droppable>
-          </DragDropContext>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  {!readOnly && (
+                    <TableCell width={isMobile ? "10%" : "5%"}></TableCell>
+                  )}
+                  <TableCell width="10%">{t('ranking.rank')}</TableCell>
+                  <TableCell width={isMobile ? "30%" : "40%"}>{t('ranking.team')}</TableCell>
+                  <TableCell width="20%" align="right">
+                    {criteriaName}
+                    <Tooltip title={
+                      isAscending 
+                        ? t('ranking.ascendingTooltip')
+                        : t('ranking.descendingTooltip')
+                    }>
+                      <IconButton size="small">
+                        {isAscending ? <ArrowUpIcon fontSize="small" /> : <ArrowDownIcon fontSize="small" />}
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell width="15%">{t('ranking.notes')}</TableCell>
+                  {!readOnly && (
+                    <TableCell width={isMobile ? "15%" : "10%"} align="right">{t('ranking.actions')}</TableCell>
+                  )}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {/* ドラッグ＆ドロップコンテキスト */}
+                <DndContext 
+                  sensors={sensors} 
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                  modifiers={[restrictToVerticalAxis]}
+                >
+                  <SortableContext 
+                    items={rankings.map(entry => entry.id)} 
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {rankings.map((entry) => (
+                      <SortableTableRow
+                        key={entry.id}
+                        id={entry.id}
+                        entry={entry}
+                        getTeamName={getTeamName}
+                        handleEditEntry={handleEditEntry}
+                        handleDeleteEntry={handleDeleteEntry}
+                        readOnly={readOnly}
+                        criteriaName={criteriaName}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              </TableBody>
+            </Table>
+          </TableContainer>
         ) : (
           <Alert severity="info" sx={{ mt: 2 }}>
             {t('ranking.noEntries')}
