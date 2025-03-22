@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+// react-router-domのインポートを削除
+// import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import {
   Container,
   Box,
@@ -100,10 +102,13 @@ interface TabStates {
   [key: string]: TabState;
 }
 
-const SportEditPage: React.FC = () => {
-  const { sportId } = useParams<{ sportId?: string }>();
+interface SportEditPageProps {
+  sportId: string;
+}
+
+const SportEditPage: React.FC<SportEditPageProps> = ({ sportId }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter(); // useNavigateの代わりにuseRouterを使用
   const theme = useTheme();
   const { alpha } = useThemeContext();
   const { setSavingStatus, showSnackbar: showAdminSnackbar } = useAdminLayout();
@@ -514,7 +519,7 @@ const SportEditPage: React.FC = () => {
     try {
       await removeData();
       setShowSnackbar(true);
-      navigate('/admin');
+      router.push('/admin'); // navigateからrouter.pushに変更
     } catch (error) {
       setShowSnackbar(true);
     }
@@ -718,7 +723,7 @@ const SportEditPage: React.FC = () => {
           <Typography variant="h5">
             {t('sport.notFound')}
           </Typography>
-          <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/admin')}>
+          <Button sx={{ mt: 2 }} variant="contained" onClick={() => router.push('/admin')}>
             {t('common.backToAdmin')}
           </Button>
         </Box>
@@ -726,12 +731,16 @@ const SportEditPage: React.FC = () => {
     );
   }
 
+  // navigateをrouter.pushに変更
+  const navigateToAdmin = () => router.push('/admin');
+  const navigateToScoring = (id: string) => router.push(`/admin/scoring/${id}`);
+
   return (
     <AdminLayout>
       <Container maxWidth="lg">
         <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
+            <IconButton onClick={navigateToAdmin} aria-label="back" sx={{ mr: 1 }}>
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h5" component="h1">
@@ -922,7 +931,7 @@ const SportEditPage: React.FC = () => {
                       <Button
                         fullWidth
                         variant="outlined"
-                        onClick={() => navigate(`/admin/scoring/${sportId}`)}
+                        onClick={() => navigateToScoring(sportId)}
                         startIcon={<SportIcon />}
                       >
                         {t('sport.manageScores')}

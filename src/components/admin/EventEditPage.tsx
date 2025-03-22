@@ -39,7 +39,7 @@ import {
   School as GradeIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Organizer } from '../../types';
 import { motion } from 'framer-motion';
@@ -73,10 +73,13 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
   );
 };
 
-const EventEditPage: React.FC = () => {
-  const { eventId } = useParams<{ eventId?: string }>();
+interface EventEditPageProps {
+  eventId: string;
+}
+
+const EventEditPage: React.FC<EventEditPageProps> = ({ eventId }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter(); // useNavigateの代わりにuseRouterを使用
   const { alpha } = useThemeContext();
   const { showSnackbar, setSavingStatus } = useAdminLayout(); // AdminLayoutコンテキストを使用
   
@@ -231,7 +234,7 @@ const EventEditPage: React.FC = () => {
     try {
       await removeData();
       showSnackbar(t('event.deleteSuccess'), 'success');
-      navigate('/admin');
+      router.push('/admin'); // navigateからrouter.pushに変更
     } catch (error) {
       showSnackbar(t('event.deleteError'), 'error');
     }
@@ -254,7 +257,7 @@ const EventEditPage: React.FC = () => {
           <Typography variant="h5">
             {t('event.notFound')}
           </Typography>
-          <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/admin')}>
+          <Button sx={{ mt: 2 }} variant="contained" onClick={() => router.push('/admin')}>
             {t('common.backToAdmin')}
           </Button>
         </Box>
@@ -262,12 +265,14 @@ const EventEditPage: React.FC = () => {
     );
   }
 
+  const navigateToAdmin = () => router.push('/admin');
+
   return (
     <AdminLayout>
       <Container maxWidth="lg">
         <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
+            <IconButton onClick={navigateToAdmin} aria-label="back" sx={{ mr: 1 }}>
               <ArrowBackIcon />
             </IconButton>
             <Typography variant="h5" component="h1">
@@ -429,7 +434,7 @@ const EventEditPage: React.FC = () => {
                     <Button
                       variant="outlined"
                       fullWidth
-                      onClick={() => navigate('/admin')}
+                      onClick={() => router.push('/admin')}
                       startIcon={<ArrowBackIcon />}
                     >
                       {t('event.backToSportsManagement')}

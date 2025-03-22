@@ -16,6 +16,14 @@ Rosterに登録されたチームを全て自動選択し、ユーザーから�
 
 
 今SPAなんだけど、一般公開用のルート・SportPage、と、admin/*の、二つのMPAにして、それぞれでSPAみたいにしようと思うんだ。こっちの方が無駄なロードが一般の人に発生しなさそう？わからないけど。だけど、これって結構面倒？
+
+今SPAなんだけど、一般公開用のルート・SportPage、と、admin/*の、二つのMPAにして、それぞれでSPAみたいにしたい、その移行中です。
+
 あと、react-scriptsは遅いから、nextに移行しようと思う。できるのであれば。
 eslintrc.config.mjsや.eslintrc.jsonとか、next.config.jsを生成してね。
 全部SSGです。（output:exportね）
+もしフォルダ全体の移動とかがあればコマンドでやるから教えてね。
+
+
+多分それだと、adminページの中ではSPAになってないよね？わからないけど。
+admin/では、adminを軸としてSPAにしたいの。わかる？

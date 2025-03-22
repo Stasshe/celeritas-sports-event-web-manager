@@ -1,165 +1,75 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { createTheme, ThemeProvider, alpha } from '@mui/material/styles';
-import { PaletteMode } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { PaletteMode, alpha as muiAlpha } from '@mui/material';
 
-type ThemeContextType = {
+interface ThemeContextType {
   mode: PaletteMode;
   toggleColorMode: () => void;
   alpha: (color: string, opacity: number) => string;
-};
+}
 
-const ThemeContext = createContext<ThemeContextType | null>(null);
+const ThemeContext = createContext<ThemeContextType>({
+  mode: 'light',
+  toggleColorMode: () => {},
+  alpha: () => '', // デフォルト値として空文字列を返す関数を提供
+});
 
-export const useThemeContext = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useThemeContext must be used within a ThemeProvider');
-  }
-  return context;
-};
-
-type CustomThemeProviderProps = {
+interface CustomThemeProviderProps {
   children: ReactNode;
-};
+}
 
-export const CustomThemeProvider = ({ children }: CustomThemeProviderProps) => {
-  // ローカルストレージから初期モードを取得、または'light'をデフォルトとして設定
-  const [mode, setMode] = useState<PaletteMode>(() => {
-    const savedMode = localStorage.getItem('themeMode');
-    return (savedMode as PaletteMode) || 'light';
-  });
+export const CustomThemeProvider: React.FC<CustomThemeProviderProps> = ({ children }) => {
+  // デフォルトでlightモードを使用し、クライアントサイドでのみlocalStorageをチェック
+  const [mode, setMode] = useState<PaletteMode>('light');
 
-  // モードが変更されたらローカルストレージに保存
+  // サーバーサイドレンダリング中はlocalStorageにアクセスしない
   useEffect(() => {
-    localStorage.setItem('themeMode', mode);
-  }, [mode]);
+    // クライアント側での初期化のみ
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('themeMode') as PaletteMode | null;
+      if (savedMode) {
+        setMode(savedMode);
+      }
+    }
+  }, []);
 
-  // alpha関数のラッパー
-  const alphaWrapper = (color: string, opacity: number): string => {
-    return alpha(color, opacity);
+  const theme = React.useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
+        },
+      }),
+    [mode],
+  );
+
+  // alpha関数をコンテキストで提供
+  const alpha = (color: string, opacity: number) => {
+    return muiAlpha(color, opacity);
   };
 
-  const colorMode = {
+  const toggleColorMode = () => {
+    setMode((prevMode) => {
+      const newMode = prevMode === 'light' ? 'dark' : 'light';
+      // localStorageはクライアントでのみ利用可能
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('themeMode', newMode);
+      }
+      return newMode;
+    });
+  };
+
+  const contextValue = {
     mode,
-    toggleColorMode: () => {
-      setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
-    },
-    alpha: alphaWrapper
+    toggleColorMode,
+    alpha, // alpha関数をコンテキスト値に追加
   };
-
-  // モダンで近未来的なテーマ
-  const theme = createTheme({
-    palette: {
-      mode,
-      primary: {
-        main: '#3a7bd5', // より鮮やかなブルー
-        light: '#6fa8dc',
-        dark: '#0d47a1',
-      },
-      secondary: {
-        main: '#00bcd4', // ティール/シアン
-        light: '#4dd0e1',
-        dark: '#0097a7',
-      },
-      background: {
-        default: mode === 'light' ? '#f5f7fa' : '#121212',
-        paper: mode === 'light' ? '#ffffff' : '#1e1e1e',
-      },
-      error: {
-        main: '#f44336',
-      },
-      warning: {
-        main: '#ff9800',
-      },
-      info: {
-        main: '#03a9f4',
-      },
-      success: {
-        main: '#4caf50',
-      },
-      text: {
-        primary: mode === 'light' ? 'rgba(0, 0, 0, 0.87)' : 'rgba(255, 255, 255, 0.87)',
-        secondary: mode === 'light' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.6)',
-      },
-    },
-    typography: {
-      fontFamily: '"Roboto", "Noto Sans JP", sans-serif',
-      h1: { fontWeight: 500 },
-      h2: { fontWeight: 500 },
-      h3: { fontWeight: 500 },
-      h4: { fontWeight: 500 },
-      h5: { fontWeight: 500 },
-      h6: { fontWeight: 500 },
-    },
-    shape: {
-      borderRadius: 8, // 少し丸みを持たせる
-    },
-    components: {
-      MuiCssBaseline: {
-        styleOverrides: `
-          :root {
-            --app-height: 100%;
-          }
-          html, body {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-          }
-          body {
-            background-color: ${mode === 'light' ? '#f5f7fa' : '#121212'};
-            color: ${mode === 'light' ? 'rgba(0, 0, 0, 0.87)' : 'rgba(255, 255, 255, 0.87)'};
-          }
-        `,
-      },
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            textTransform: 'none', // ボタンのテキストを大文字にしない
-            borderRadius: '8px',
-          },
-        },
-      },
-      MuiCard: {
-        styleOverrides: {
-          root: {
-            borderRadius: '12px',
-            boxShadow: mode === 'light' 
-              ? '0 4px 12px 0 rgba(0,0,0,0.05)'
-              : '0 4px 12px 0 rgba(0,0,0,0.2)',
-          },
-        },
-      },
-      MuiPaper: {
-        styleOverrides: {
-          root: {
-            borderRadius: '12px',
-          },
-        },
-      },
-      MuiAppBar: {
-        styleOverrides: {
-          root: {
-            backgroundImage: mode === 'light' 
-              ? 'linear-gradient(45deg, #3a7bd5, #6fa8dc)'
-              : 'linear-gradient(45deg, #1a237e, #283593)',
-          },
-        },
-      },
-      MuiDrawer: {
-        styleOverrides: {
-          paper: {
-            borderRight: 'none',
-          },
-        },
-      },
-    },
-  });
 
   return (
-    <ThemeContext.Provider value={colorMode}>
-      <ThemeProvider theme={theme}>
-        {children}
-      </ThemeProvider>
+    <ThemeContext.Provider value={contextValue}>
+      <ThemeProvider theme={theme}>{children}</ThemeProvider>
     </ThemeContext.Provider>
   );
 };
+
+export const useThemeContext = () => useContext(ThemeContext);

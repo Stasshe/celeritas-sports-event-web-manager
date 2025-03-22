@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { 
   Container, 
   Typography, 
@@ -22,12 +22,14 @@ import LeagueScoring from '../../components/admin/scoring/LeagueScoring';
 import RankingScoring from '../../components/admin/scoring/RankingScoring';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 
-
-const ScoringPage: React.FC = () => {
-  const { sportId } = useParams<{ sportId: string }>();
+const ScoringPage = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { data: sport, loading, updateData } = useDatabase<Sport>(`/sports/${sportId}`);
+  const router = useRouter();
+  const { sportId } = router.query;
+  // クライアントサイドでのみデータを取得するようにする
+  const { data: sport, loading, updateData } = useDatabase<Sport>(
+    sportId ? `/sports/${sportId}` : '/sports'
+  );
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -45,8 +47,12 @@ const ScoringPage: React.FC = () => {
 
   const { registerSaveHandler, unregisterSaveHandler, save, setHasUnsavedChanges } = useAdminLayout();
 
+  // navigateをrouter.pushに変更 - 先に宣言
+  const navigateToAdmin = () => router.push('/admin');
+
+  // クライアントサイドでのみ実行されるようにする
   const handleSportUpdate = useCallback(async (updatedSport: Sport) => {
-    if (isProcessingRef.current) return;
+    if (isProcessingRef.current || !sportId) return;
     
     // 変更があることを通知
     setHasUnsavedChanges(true);
@@ -64,8 +70,9 @@ const ScoringPage: React.FC = () => {
       // 自動保存を修正
       await save(`scoring_${sportId}`);
     }, 2000);
-  }, [updateData, save, sportId, setHasUnsavedChanges]);
+  }, [save, sportId, setHasUnsavedChanges]);
 
+  // クライアントサイドでのみ実行されるようにする
   useEffect(() => {
     if (sport && !localSport) {
       setLocalSport(JSON.parse(JSON.stringify(sport)));
@@ -74,7 +81,7 @@ const ScoringPage: React.FC = () => {
 
   // スポーツデータが変更されたときの自動保存制御を改善
   useEffect(() => {
-    if (!localSport || !sport || isProcessing) return;
+    if (!localSport || !sport || isProcessing || !sportId) return;
 
     if (JSON.stringify(localSport) !== JSON.stringify(sport)) {
       if (autoSaveTimerId) {
@@ -82,7 +89,7 @@ const ScoringPage: React.FC = () => {
       }
       
       const timerId = setTimeout(() => {
-        // ダイアログが開いていないことを確認してから自動保存
+        // ダイアログチェックは完全にクライアントサイドで行う
         const dialogs = document.querySelectorAll('[role="dialog"]');
         if (dialogs.length === 0) {
           handleSave();
@@ -96,7 +103,7 @@ const ScoringPage: React.FC = () => {
         clearTimeout(autoSaveTimerId);
       }
     };
-  }, [localSport, isProcessing]);
+  }, [localSport, isProcessing, sport, sportId]);
 
   const handleSave = async () => {
     if (!localSport || isProcessingRef.current) return false;
@@ -131,8 +138,6 @@ const ScoringPage: React.FC = () => {
     setShowSnackbar(false);
   };
 
-  
-
   // クリーンアップ
   useEffect(() => {
     return () => {
@@ -149,8 +154,10 @@ const ScoringPage: React.FC = () => {
 
   // 初期マウント時にSaveHandlerを登録
   useEffect(() => {
+    if (!sportId) return;
+    
     // このページの保存ハンドラを登録
-    const handleSave = async () => {
+    const handlePageSave = async () => {
       if (!localSport || isProcessingRef.current) return false;
       
       try {
@@ -180,7 +187,7 @@ const ScoringPage: React.FC = () => {
     };
     
     // スコープ名を一意にして登録
-    registerSaveHandler(handleSave, `scoring_${sportId}`);
+    registerSaveHandler(handlePageSave, `scoring_${sportId}`);
     
     return () => {
       // アンマウント時に登録解除
@@ -202,7 +209,7 @@ const ScoringPage: React.FC = () => {
         <Typography variant="h5">
           {t('sports.notFound')}
         </Typography>
-        <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/admin')}>
+        <Button sx={{ mt: 2 }} variant="contained" onClick={navigateToAdmin}>
           {t('common.backToAdmin')}
         </Button>
       </Box>
@@ -213,7 +220,7 @@ const ScoringPage: React.FC = () => {
     <Container maxWidth="lg">
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
+          <IconButton onClick={navigateToAdmin} aria-label="back" sx={{ mr: 1 }}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h4" component="h1">

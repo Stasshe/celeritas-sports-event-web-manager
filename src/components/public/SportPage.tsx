@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+// react-router-domのインポートを削除
+// import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { 
   Container, 
   Typography, 
@@ -14,17 +16,19 @@ import {
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { useDatabase } from '../hooks/useDatabase';
-import { Sport, Team, Match } from '../types';
-import TournamentScoring from '../components/admin/scoring/TournamentScoring';
-import RoundRobinTable from '../components/sports/RoundRobinTable';
-import CustomLayout from '../components/sports/CustomLayout';
+import { useDatabase } from '../../hooks/useDatabase';
+import { Sport, Team, Match } from '../../types';
+import TournamentScoring from '../admin/scoring/TournamentScoring';
+import RoundRobinTable from '../sports/RoundRobinTable';
 
 
-const SportPage: React.FC = () => {
-  const { sportId } = useParams<{ sportId: string }>();
+interface SportPageProps {
+  sportId: string;
+}
+
+const SportPage: React.FC<SportPageProps> = ({ sportId }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter(); // useNavigateの代わりにuseRouterを使用
   const { data: sport, loading, updateData } = useDatabase<Sport>(`/sports/${sportId}`);
 
   const handleSportUpdate = async (updatedSport: Sport) => {
@@ -36,6 +40,9 @@ const SportPage: React.FC = () => {
       return false;
     }
   };
+
+  // navigateをrouter.pushに変更
+  const navigateToHome = () => router.push('/');
 
   if (loading) {
     return (
@@ -51,7 +58,7 @@ const SportPage: React.FC = () => {
         <Typography variant="h5">
           {t('sports.notFound')}
         </Typography>
-        <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/')}>
+        <Button sx={{ mt: 2 }} variant="contained" onClick={navigateToHome}>
           {t('common.backToHome')}
         </Button>
       </Box>
@@ -61,7 +68,7 @@ const SportPage: React.FC = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ mb: 4 }}>
-        <IconButton onClick={() => navigate('/')} aria-label="back" sx={{ mb: 1 }}>
+        <IconButton onClick={navigateToHome} aria-label="back" sx={{ mb: 1 }}>
           <ArrowBackIcon />
         </IconButton>
         
@@ -117,7 +124,7 @@ const SportPage: React.FC = () => {
             <RoundRobinTable sport={sport} />
           </Box>
         )}
-        {sport.type === 'league' && <CustomLayout sport={sport} />}
+        
       </Box>
     </Container>
   );

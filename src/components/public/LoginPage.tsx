@@ -11,7 +11,7 @@ import {
   Avatar
 } from '@mui/material';
 import { LockOutlined } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 

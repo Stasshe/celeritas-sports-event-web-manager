@@ -18,10 +18,10 @@ import {
   Login as LoginIcon 
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { useDatabase } from '../hooks/useDatabase';
-import { Event, Sport } from '../types';
+import { useDatabase } from '../../hooks/useDatabase';
+import { Event, Sport } from '../../types';
 import { motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const MotionCard = motion(Card);
 const MotionFab = motion(Fab);
