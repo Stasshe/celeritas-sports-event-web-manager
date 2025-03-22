@@ -307,28 +307,10 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
           </Grid>
           
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                setEditMode('add');
-                setSelectedEntry({
-                  id: uuidv4(),
-                  teamId: '',
-                  rank: rankings.length + 1,
-                  score: undefined,
-                  notes: ''
-                });
-                setDialogOpen(true);
-              }}
-            >
-              {t('ranking.addEntry')}
-            </Button>
-            
+                       
             <Button
               variant="outlined"
-              color="secondary"
+              color="primary"
               startIcon={<RefreshIcon />}
               onClick={handleAddAllTeams}
               disabled={teams.length === 0}
