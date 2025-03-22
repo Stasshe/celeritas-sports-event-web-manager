@@ -245,25 +245,35 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     }
   }, [path]);
 
-  // 安全な更新処理
   const updateData = useCallback(async (updates: Partial<T>, options: UpdateOptions = {}): Promise<boolean> => {
-    return new Promise((resolve, reject) => {
-      // 楽観的更新の場合、即座にUIを更新
-      if (options.optimistic && data) {
-        const optimisticData = { ...data, ...updates } as T;
-        setData(optimisticData);
-      }
-      
-      updateQueueRef.current.push({
-        data: updates,
-        options,
-        resolve,
-        reject
+    if (!navigator.onLine) {
+      throw new Error('You are offline');
+    }
+
+    try {
+      // 更新対象のパスのデータを個別に更新
+      const updatePromises = Object.entries(updates).map(([key, value]) => {
+        const updatePath = `${path}/${key}`;
+        return update(ref(database), { [updatePath]: value });
       });
-      
-      processUpdateQueue();
-    });
-  }, [processUpdateQueue, data]);
+
+      // すべての更新を並行して実行
+      await Promise.all(updatePromises);
+
+      // 楽観的UI更新
+      if (options.optimistic) {
+        setData(prev => ({
+          ...prev,
+          ...updates
+        } as T));
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Update error:', error);
+      return false;
+    }
+  }, [database, path]);
 
   // フィールド変更の追跡
   const trackFieldChange = useCallback((fieldName: string) => {

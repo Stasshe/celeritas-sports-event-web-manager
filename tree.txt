@@ -1,0 +1,133 @@
+.
+├── LICENSE
+├── README.md
+├── firebaseRules.json
+├── package-lock.json
+├── package.json
+├── public
+│   ├── _redirects
+│   ├── android-chrome-128x128.png
+│   ├── android-chrome-144x144.png
+│   ├── android-chrome-152x152.png
+│   ├── android-chrome-192x192.png
+│   ├── android-chrome-256x256.png
+│   ├── android-chrome-36x36.png
+│   ├── android-chrome-384x384.png
+│   ├── android-chrome-48x48.png
+│   ├── android-chrome-512x512.png
+│   ├── android-chrome-72x72.png
+│   ├── android-chrome-96x96.png
+│   ├── apple-touch-icon-114x114-precomposed.png
+│   ├── apple-touch-icon-114x114.png
+│   ├── apple-touch-icon-120x120-precomposed.png
+│   ├── apple-touch-icon-120x120.png
+│   ├── apple-touch-icon-144x144-precomposed.png
+│   ├── apple-touch-icon-144x144.png
+│   ├── apple-touch-icon-152x152-precomposed.png
+│   ├── apple-touch-icon-152x152.png
+│   ├── apple-touch-icon-180x180-precomposed.png
+│   ├── apple-touch-icon-180x180.png
+│   ├── apple-touch-icon-57x57-precomposed.png
+│   ├── apple-touch-icon-57x57.png
+│   ├── apple-touch-icon-60x60-precomposed.png
+│   ├── apple-touch-icon-60x60.png
+│   ├── apple-touch-icon-72x72-precomposed.png
+│   ├── apple-touch-icon-72x72.png
+│   ├── apple-touch-icon-76x76-precomposed.png
+│   ├── apple-touch-icon-76x76.png
+│   ├── apple-touch-icon-precomposed.png
+│   ├── apple-touch-icon.png
+│   ├── icon-128x128.png
+│   ├── icon-144x144.png
+│   ├── icon-152x152.png
+│   ├── icon-160x160.png
+│   ├── icon-16x16.png
+│   ├── icon-192x192.png
+│   ├── icon-196x196.png
+│   ├── icon-24x24.png
+│   ├── icon-256x256.png
+│   ├── icon-32x32.png
+│   ├── icon-36x36.png
+│   ├── icon-384x384.png
+│   ├── icon-48x48.png
+│   ├── icon-512x512.png
+│   ├── icon-72x72.png
+│   ├── icon-96x96.png
+│   ├── index.html
+│   ├── manifest.json
+│   ├── site-tile-150x150.png
+│   ├── site-tile-310x150.png
+│   ├── site-tile-310x310.png
+│   └── site-tile-70x70.png
+├── render.yaml
+├── src
+│   ├── App.tsx
+│   ├── components
+│   │   ├── LanguageSelector.tsx
+│   │   ├── Layout.tsx
+│   │   ├── ProtectedRoute.tsx
+│   │   ├── admin
+│   │   │   ├── AdminDashboard.tsx
+│   │   │   ├── RosterEditor.tsx
+│   │   │   ├── TabContent.tsx
+│   │   │   ├── TeamManagement.tsx
+│   │   │   ├── dialogs
+│   │   │   │   ├── CreateEventDialog.tsx
+│   │   │   │   ├── CreateSportDialog.tsx
+│   │   │   │   └── DeleteConfirmationDialog.tsx
+│   │   │   └── scoring
+│   │   │       ├── CustomScoring.tsx
+│   │   │       ├── RoundRobinScoring.tsx
+│   │   │       ├── TournamentScoring.tsx
+│   │   │       └── components
+│   │   │           ├── MatchCard.tsx
+│   │   │           ├── MatchEditDialog.tsx
+│   │   │           ├── TeamSelector.tsx
+│   │   │           ├── TournamentBuilder.tsx
+│   │   │           └── TournamentStructureHelper.ts
+│   │   ├── layout
+│   │   │   └── AdminLayout.tsx
+│   │   └── sports
+│   │       ├── CustomLayout.tsx
+│   │       └── RoundRobinTable.tsx
+│   ├── config
+│   │   └── firebase.ts
+│   ├── contexts
+│   │   ├── AdminLayoutContext.tsx
+│   │   ├── AuthContext.tsx
+│   │   └── ThemeContext.tsx
+│   ├── hooks
+│   │   └── useDatabase.ts
+│   ├── i18n
+│   │   ├── i18n.ts
+│   │   └── locales
+│   │       ├── de.json
+│   │       ├── en.json
+│   │       ├── fr.json
+│   │       └── ja.json
+│   ├── index.css
+│   ├── index.tsx
+│   ├── pages
+│   │   ├── HomePage.tsx
+│   │   ├── LoginPage.tsx
+│   │   ├── NotFoundPage.tsx
+│   │   ├── SportPage.tsx
+│   │   └── admin
+│   │       ├── AdminHelpPage.tsx
+│   │       ├── AdminPage.tsx
+│   │       ├── AdminSettingsPage.tsx
+│   │       ├── EventEditPage.tsx
+│   │       ├── ScoringPage.tsx
+│   │       └── SportEditPage.tsx
+│   ├── reportWebVitals.ts
+│   ├── types
+│   │   ├── index.ts
+│   │   ├── react-color.d.ts
+│   │   └── tournament-brackets.d.ts
+│   └── utils
+│       └── tournamentViewHelper.ts
+├── start.sh
+├── tree.txt
+└── tsconfig.json
+
+18 directories, 112 files
