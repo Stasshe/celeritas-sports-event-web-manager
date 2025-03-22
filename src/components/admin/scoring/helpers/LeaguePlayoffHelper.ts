@@ -114,7 +114,8 @@ export class LeaguePlayoffHelper {
       });
       
       // 3位決定戦を追加
-      if (hasThirdPlaceMatch && newPlayoffMatches.length > 0) {
+      // 参加チーム数が4未満の場合は3位決定戦は不要
+      if (hasThirdPlaceMatch && newPlayoffMatches.length > 0 && playoffTeamObjects.length >= 4) {
         // 最終ラウンド（決勝戦）を特定
         const maxRound = Math.max(...newPlayoffMatches.map(m => m.round));
         
