@@ -394,44 +394,6 @@
       "requiredField": "この項目は必須です",
       "invalidScore": "有効なスコアを入力してください"
     },
-    "dashboard": {
-      "welcome": "ようこそ、管理パネルへ",
-      "activeSport": "アクティブな競技: {{name}}",
-      "noActiveSport": "アクティブな競技がありません",
-      "quickStats": "クイック統計",
-      "eventsCount": "イベント数",
-      "sportsCount": "競技数",
-      "teamsCount": "チーム数",
-      "matchesCount": "試合数",
-      "recentEvents": "最近のイベント",
-      "upcomingMatches": "今後の試合",
-      "recentActivities": "最近のアクティビティ",
-      "viewAllEvents": "すべてのイベントを表示",
-      "viewAllMatches": "すべての試合を表示",
-      "viewAllActivities": "すべてのアクティビティを表示",
-      "noEvents": "イベントはありません",
-      "noMatches": "試合はありません",
-      "noActivities": "アクティビティはありません",
-      "createEventButton": "新規イベント作成",
-      "manageSportsButton": "競技を管理",
-      "eventStatus": {
-        "upcoming": "今後",
-        "ongoing": "進行中",
-        "completed": "完了"
-      },
-      "matchStatus": {
-        "scheduled": "予定",
-        "inProgress": "進行中",
-        "completed": "完了"
-      },
-      "activityTypes": {
-        "eventCreated": "イベント作成",
-        "sportCreated": "競技作成",
-        "teamCreated": "チーム作成",
-        "matchUpdated": "試合更新",
-        "scoreUpdated": "スコア更新"
-      }
-    },
     "eventManagement": {
       "title": "イベント管理",
       "createButton": "新規イベント作成",
