@@ -43,10 +43,12 @@ import TournamentBuilder from './components/TournamentBuilder';
 import { TournamentStructureHelper } from './components/TournamentStructureHelper';
 import { generateBracketMatches } from '../../../utils/tournamentViewHelper';
 
+// インターフェース部分を修正
 interface TournamentScoringProps {
   sport: Sport;
   onUpdate: (updatedSport: Sport) => void;
-  readOnly?: boolean; // 読み取り専用モードを追加
+  readOnly?: boolean; // 読み取り専用モード
+  hideBuilder?: boolean; // ビルダーを非表示にするオプション
 }
 
 // トーナメントブラケットのmatchComponentの型定義を追加
@@ -73,7 +75,8 @@ interface MatchComponentProps {
 const TournamentScoring: React.FC<TournamentScoringProps> = ({ 
   sport, 
   onUpdate,
-  readOnly = false // デフォルトは編集可能
+  readOnly = false, // デフォルトは編集可能
+  hideBuilder = false // デフォルトはビルダーを表示
 }) => {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -424,8 +427,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
 
   return (
     <Box>
-      {/* readOnlyモードの場合は設定パネルを非表示 */}
-      {!readOnly && (
+      {/* readOnlyモードまたはhideBuilderがtrueの場合は設定パネルを非表示 */}
+      {!readOnly && !hideBuilder && (
         <Paper sx={{ p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6">
@@ -447,8 +450,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
         </Paper>
       )}
 
-      {/* readOnlyモードの場合はビルダーを非表示 */}
-      {!readOnly && (
+      {/* readOnlyモードまたはhideBuilderがtrueの場合はビルダーを非表示 */}
+      {!readOnly && !hideBuilder && (
         <TournamentBuilder
           sport={sport}
           onMatchesCreate={handleMatchesCreate}

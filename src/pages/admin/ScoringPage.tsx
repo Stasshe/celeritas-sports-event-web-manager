@@ -18,7 +18,8 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { Sport } from '../../types';
 import TournamentScoring from '../../components/admin/scoring/TournamentScoring';
 import RoundRobinScoring from '../../components/admin/scoring/RoundRobinScoring';
-import CustomScoring from '../../components/admin/scoring/CustomScoring';
+import LeagueScoring from '../../components/admin/scoring/LeagueScoring';
+import RankingScoring from '../../components/admin/scoring/RankingScoring';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 
 
@@ -243,8 +244,11 @@ const ScoringPage: React.FC = () => {
         {localSport.type === 'roundRobin' && (
           <RoundRobinScoring sport={localSport} onUpdate={handleSportUpdate} />
         )}
-        {localSport.type === 'custom' && (
-          <CustomScoring sport={localSport} onUpdate={handleSportUpdate} />
+        {localSport.type === 'league' && (
+          <LeagueScoring sport={localSport} onUpdate={handleSportUpdate} />
+        )}
+        {localSport.type === 'ranking' && (
+          <RankingScoring sport={localSport} onUpdate={handleSportUpdate} />
         )}
       </Paper>
 

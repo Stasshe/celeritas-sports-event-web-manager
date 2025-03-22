@@ -1,18 +1,15 @@
-Missing or invalid credentials.
-Error: connect ECONNREFUSED /run/user/1000/vscode-git-4ec048d0af.sock
-    at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
-  errno: -111,
-  code: 'ECONNREFUSED',
-  syscall: 'connect',
-  address: '/run/user/1000/vscode-git-4ec048d0af.sock'
-}
-Missing or invalid credentials.
-Error: connect ECONNREFUSED /run/user/1000/vscode-git-4ec048d0af.sock
-    at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1611:16) {
-  errno: -111,
-  code: 'ECONNREFUSED',
-  syscall: 'connect',
-  address: '/run/user/1000/vscode-git-4ec048d0af.sock'
-}
-remote: No anonymous write access.
-fatal: Authentication failed for 'https://github.com/Stasshe/sports-event-web-manager.git/'
+今、スコアリングの形式として、総当たり戦とトーナメント戦があります。
+（カスタム形式もありましたが、使う予定がないのですでに消しました。）
+リーグ戦形式と、単純な順位づけ方式（リレーなど全チームが一斉にやる）の2つを追加したいです。
+
+リーグ戦について詳細です。
+Rosterに登録されたチームを全て自動選択し、ユーザーから与えられたブロック数に応じて、チームを適切に割り振ります。
+
+それぞれのブロックでの順位づけは、勝ち点方式＞得失点＞得点　の優先順位となります。
+
+そして、ブロックからでたそれぞれの1位通過チームがトーナメントを行います。
+また、このトーナメントについて、3位決定戦もあります（つまり別のトーナメントをもう一つ作る必要がある）。
+
+ブロックについては総当たり線、そのあとはトーナメン戦と、どちらも既存の形式と似ている部分があるので、有効活用できると良いですね。
+
+単純な順位づけ方式は、全チームがあって、それを得点など無しに、ただ順位を保存するだけです。

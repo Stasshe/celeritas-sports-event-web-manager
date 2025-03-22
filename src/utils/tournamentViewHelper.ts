@@ -1,4 +1,4 @@
-import { Sport, Match } from '../types/index';
+import { Sport, Match, LeagueBlock } from '../types/index';
 import { Participant } from '@g-loot/react-tournament-brackets';
 import { TournamentStructureHelper } from '../components/admin/scoring/components/TournamentStructureHelper';
 import { TFunction } from 'i18next'; // i18nextの型定義を追加
@@ -7,12 +7,19 @@ import { TFunction } from 'i18next'; // i18nextの型定義を追加
 export const generateBracketMatches = (sport: Sport, t: TFunction) => {
   if (!sport.teams || !sport.matches.length) return [];
 
-  const maxRound = Math.max(...sport.matches.map(m => m.round));
+  // リーグ戦の場合はプレーオフ用の試合だけを抽出
+  const matchesToUse = sport.type === 'league'
+    ? sport.matches.filter(m => !m.blockId) // プレーオフ試合はblockIdがない
+    : sport.matches;
+  
+  if (matchesToUse.length === 0) return [];
+
+  const maxRound = Math.max(...matchesToUse.map(m => m.round));
   
   const getParticipantName = (teamId: string | null, match: Match, position: 'team1' | 'team2'): string => {
     if (!teamId) {
       const otherTeamId = position === 'team1' ? match.team2Id : match.team1Id;
-      if (otherTeamId && TournamentStructureHelper.isNoTeam(otherTeamId, match, sport.matches)) {
+      if (otherTeamId && TournamentStructureHelper.isNoTeam(otherTeamId, match, matchesToUse)) {
         return t('tournament.seed');
       }
       return t('tournament.tbd');
@@ -32,7 +39,7 @@ export const generateBracketMatches = (sport: Sport, t: TFunction) => {
     }
   };
 
-  return sport.matches
+  return matchesToUse
     .sort((a, b) => {
       if (a.round !== b.round) return a.round - b.round;
       if (a.matchNumber === 0) return 1;
@@ -49,7 +56,7 @@ export const generateBracketMatches = (sport: Sport, t: TFunction) => {
             round: `${match.round}-${match.matchNumber}` 
           }),
       nextMatchId: match.matchNumber === 0 ? null :
-        sport.matches.find(m =>
+        matchesToUse.find(m =>
           m.round === match.round + 1 &&
           Math.ceil(match.matchNumber / 2) === m.matchNumber
         )?.id || null,
@@ -62,16 +69,16 @@ export const generateBracketMatches = (sport: Sport, t: TFunction) => {
           name: getParticipantName(match.team1Id, match, 'team1'),
           score: match.team1Score || undefined,
           isWinner: Boolean(match.winnerId === match.team1Id),
-          status: TournamentStructureHelper.isNoTeam(match.team1Id, match, sport.matches) ? 'no-team' :
-                 TournamentStructureHelper.isWaiting(match.team1Id, match, sport.matches) ? 'waiting' : null
+          status: TournamentStructureHelper.isNoTeam(match.team1Id, match, matchesToUse) ? 'no-team' :
+                 TournamentStructureHelper.isWaiting(match.team1Id, match, matchesToUse) ? 'waiting' : null
         } as Participant,
         {
           id: match.team2Id || `seed-${match.round}-${match.matchNumber}-2`,
           name: getParticipantName(match.team2Id, match, 'team2'),
           score: match.team2Score || undefined,
           isWinner: Boolean(match.winnerId === match.team2Id),
-          status: TournamentStructureHelper.isNoTeam(match.team2Id, match, sport.matches) ? 'no-team' :
-                 TournamentStructureHelper.isWaiting(match.team2Id, match, sport.matches) ? 'waiting' : null
+          status: TournamentStructureHelper.isNoTeam(match.team2Id, match, matchesToUse) ? 'no-team' :
+                 TournamentStructureHelper.isWaiting(match.team2Id, match, matchesToUse) ? 'waiting' : null
         } as Participant
       ]
     }));

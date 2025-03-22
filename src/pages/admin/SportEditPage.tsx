@@ -39,7 +39,7 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { Sport, Team, Event, Organizer } from '../../types';
 import TournamentScoring from '../../components/admin/scoring/TournamentScoring';
 import RoundRobinScoring from '../../components/admin/scoring/RoundRobinScoring';
-import CustomScoring from '../../components/admin/scoring/CustomScoring';
+//import CustomScoring from '../../components/admin/scoring/CustomScoring';
 import RosterEditor from '../../components/admin/RosterEditor';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import AdminLayout from '../../components/layout/AdminLayout';
@@ -1121,11 +1121,6 @@ const SportEditPage: React.FC = () => {
               </Grid>
             )}
 
-            {localSport.type === 'custom' && (
-              <Typography>
-                {t('sport.customSettingsMessage')}
-              </Typography>
-            )}
 
             <Box sx={{ mt: 4 }}>
               <Typography variant="h6" color="error" gutterBottom>

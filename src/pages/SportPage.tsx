@@ -117,7 +117,7 @@ const SportPage: React.FC = () => {
             <RoundRobinTable sport={sport} />
           </Box>
         )}
-        {sport.type === 'custom' && <CustomLayout sport={sport} />}
+        {sport.type === 'league' && <CustomLayout sport={sport} />}
       </Box>
     </Container>
   );

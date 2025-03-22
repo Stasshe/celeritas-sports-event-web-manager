@@ -251,8 +251,10 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         return t('sport.tournamentDescription');
       case 'roundRobin':
         return t('sport.roundRobinDescription');
-      case 'custom':
-        return t('sport.customDescription');
+      case 'league':
+        return t('sport.leagueDescription');
+      case 'ranking':
+        return t('sport.rankingDescription');
       default:
         return '';
     }
@@ -310,7 +312,8 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
               >
                 <MenuItem value="tournament">{t('sport.tournament')}</MenuItem>
                 <MenuItem value="roundRobin">{t('sport.roundRobin')}</MenuItem>
-                <MenuItem value="custom">{t('sport.custom')}</MenuItem>
+                <MenuItem value="league">{t('sport.league')}</MenuItem>
+                <MenuItem value="ranking">{t('sport.ranking')}</MenuItem>
               </Select>
               <FormHelperText>
                 {getTypeDescription(newSport.type || 'tournament')}
@@ -386,7 +389,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
                 >
                   <MenuItem value="leader">{t('sport.roleLeader')}</MenuItem>
                   <MenuItem value="member">{t('sport.roleMember')}</MenuItem>
-                  <MenuItem value="custom">{t('sport.roleCustom')}</MenuItem>
+                  
                 </Select>
               </FormControl>
             </Grid>

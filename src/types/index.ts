@@ -25,7 +25,7 @@ export interface Sport {
   id: string;
   name: string;
   eventId: string;
-  type: "tournament" | "roundRobin" | "custom"; // 競技形式
+  type: "tournament" | "roundRobin" | "league" | "ranking"; // 競技形式
   description?: string;
   rules?: string;
   manual?: string; // マニュアル情報
@@ -39,6 +39,18 @@ export interface Sport {
   };
   // 総当たり戦設定
   roundRobinSettings?: Partial<RoundRobinSettings>;
+  // リーグ戦設定
+  leagueSettings: {
+    blockCount: number; // ブロック数を必須に
+    advancingTeams: number; // 各ブロックから何チーム進出するか
+    hasPlayoff: boolean; // プレーオフの有無
+    hasThirdPlaceMatch: boolean; // 3位決定戦の有無
+  };
+  // ランキング設定
+  rankingSettings?: {
+    criteriaName: string; // 順位付けの基準名 (例: タイム、得点)
+    isAscending: boolean; // 小さい方が上位か (タイム等)
+  };
   // カスタム形式の場合のデータ
   customLayout?: CustomCell[][];
   // 名簿データ
@@ -51,6 +63,14 @@ export interface Sport {
   [key: string]: any; // インデックスシグネチャを追加
   lastEditedBy: string | undefined;  // nullを削除
   lastEditedAt?: string;
+}
+
+// リーグのブロック情報
+export interface LeagueBlock {
+  id: string;
+  name: string;
+  teamIds: string[];
+  matches: Match[];
 }
 
 // 総当たり戦設定の型を明確に定義
@@ -94,9 +114,10 @@ export interface Match {
   matchNumber: number; // 試合番号
   date?: string;
   location?: string;
-  status: "scheduled" | "inProgress" | "completed";
+  status: "scheduled" | "inProgress" | "completed"; // リテラル型を使用
   notes?: string;
-  group?: string; // 追加
+  group?: string; 
+  blockId?: string; // リーグ戦のブロックID
 }
 
 // カスタム形式のセル
@@ -122,4 +143,13 @@ export interface Player {
   name: string;
   grade: 1 | 2 | 3;
   teamId: string;
+}
+
+// ランキング用のエントリ
+export interface RankingEntry {
+  id: string;
+  teamId: string;
+  rank: number;
+  score?: number; // スコアやタイム
+  notes?: string;
 }
