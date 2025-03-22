@@ -150,6 +150,6 @@ export interface RankingEntry {
   id: string;
   teamId: string;
   rank: number;
-  score?: number; // スコアやタイム
+  score?: number | null; // スコアやタイム（null許可を追加）
   notes?: string;
 }

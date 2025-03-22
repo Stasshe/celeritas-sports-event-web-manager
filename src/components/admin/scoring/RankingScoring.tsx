@@ -55,7 +55,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
   const { t } = useTranslation();
   const theme = useTheme();
   
-  const [teams, setTeams] = useState<Team[]>(sport.teams || []);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
@@ -64,7 +64,38 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
   const [criteriaName, setCriteriaName] = useState(sport.rankingSettings?.criteriaName || 'スコア');
   const [isAscending, setIsAscending] = useState(sport.rankingSettings?.isAscending || false);
 
-  // 初期ランキングデータをロード
+  // 名簿データからクラスをチームとして生成する
+  const generateTeamsFromRoster = useCallback(() => {
+    if (!sport.roster) return [];
+
+    const generatedTeams: Team[] = [];
+    
+    // 各学年のクラスを処理
+    Object.entries(sport.roster).forEach(([gradeKey, gradeData]) => {
+      if (!gradeData) return;
+      
+      // 各クラスをチームとして追加
+      Object.entries(gradeData).forEach(([className, members]) => {
+        // グレード名を取得（例: grade1 → 1年）
+        const gradeNumber = gradeKey.replace('grade', '');
+        const gradeName = t(`roster.grade${gradeNumber}`);
+        
+        // チームIDをクラス名と学年から生成
+        const teamId = `${gradeKey}_${className}`;
+        const teamName = `${gradeName}${className}`;
+        
+        generatedTeams.push({
+          id: teamId,
+          name: teamName,
+          members: Array.isArray(members) ? members : []
+        });
+      });
+    });
+    
+    return generatedTeams;
+  }, [sport.roster, t]);
+
+  // 初期ランキングデータとチームデータをロード
   useEffect(() => {
     if (sport && sport.type === 'ranking') {
       // スポーツデータからランキングを取得
@@ -76,8 +107,12 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
         setCriteriaName(sport.rankingSettings.criteriaName || 'スコア');
         setIsAscending(sport.rankingSettings.isAscending || false);
       }
+      
+      // 名簿からチームを生成
+      const generatedTeams = generateTeamsFromRoster();
+      setTeams(generatedTeams);
     }
-  }, [sport]);
+  }, [sport, generateTeamsFromRoster]);
 
   // ランキングのソート関数
   const sortRankings = useCallback((entries: RankingEntry[]) => {
@@ -88,7 +123,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
       }
       
       // ランクが同じ場合はスコアでソート
-      if (a.score !== undefined && b.score !== undefined) {
+      if ((a.score !== undefined && b.score !== undefined) && (a.score && b.score)) {
         return isAscending 
           ? a.score - b.score  // 小さい方が上位（タイムなど）
           : b.score - a.score; // 大きい方が上位（得点など）
@@ -104,19 +139,34 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
     return team ? team.name : t('ranking.unknownTeam');
   };
 
+  // Firebase用に undefined を null に変換する関数
+  const sanitizeRankingsForFirebase = useCallback((rankings: RankingEntry[]): RankingEntry[] => {
+    return rankings.map(entry => ({
+      ...entry,
+      // undefined は Firebase で許可されていないため null に変換
+      score: entry.score === undefined ? null : entry.score
+    }));
+  }, []);
+
   // ランキングエントリを追加/編集する
   const handleSaveEntry = () => {
     if (!selectedEntry) return;
     
+    // Firebase向けに値を調整（selectedEntryのscoreがundefinedならnullに）
+    const sanitizedEntry: RankingEntry = {
+      ...selectedEntry,
+      score: selectedEntry.score === undefined ? null : selectedEntry.score
+    };
+    
     if (editMode === 'add') {
       // 新規追加
-      const newRankings = [...rankings, selectedEntry];
+      const newRankings = [...rankings, sanitizedEntry];
       setRankings(sortRankings(newRankings));
       
       // スポーツデータを更新
       onUpdate({
         ...sport,
-        rankings: newRankings,
+        rankings: sanitizeRankingsForFirebase(newRankings),
         rankingSettings: {
           ...sport.rankingSettings,
           criteriaName,
@@ -126,14 +176,14 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
     } else {
       // 既存エントリの更新
       const newRankings = rankings.map(entry => 
-        entry.id === selectedEntry.id ? selectedEntry : entry
+        entry.id === sanitizedEntry.id ? sanitizedEntry : entry
       );
       setRankings(sortRankings(newRankings));
       
       // スポーツデータを更新
       onUpdate({
         ...sport,
-        rankings: newRankings,
+        rankings: sanitizeRankingsForFirebase(newRankings),
         rankingSettings: {
           ...sport.rankingSettings,
           criteriaName,
@@ -154,7 +204,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
     // スポーツデータを更新
     onUpdate({
       ...sport,
-      rankings: newRankings
+      rankings: sanitizeRankingsForFirebase(newRankings)
     });
   };
 
@@ -163,6 +213,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
     // 設定を更新し、必要に応じてランキングを再ソート
     onUpdate({
       ...sport,
+      rankings: sanitizeRankingsForFirebase(rankings),
       rankingSettings: {
         criteriaName,
         isAscending
@@ -191,7 +242,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
     // スポーツデータを更新
     onUpdate({
       ...sport,
-      rankings: updatedItems
+      rankings: sanitizeRankingsForFirebase(updatedItems)
     });
   };
 
@@ -206,11 +257,11 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
     if (newTeams.length === 0) return;
     
     // 新しいエントリを作成
-    const newEntries = newTeams.map((team, index) => ({
+    const newEntries: RankingEntry[] = newTeams.map((team, index) => ({
       id: uuidv4(),
       teamId: team.id,
       rank: rankings.length + index + 1,
-      score: undefined,
+      score: null, // undefinedではなくnullを使用
       notes: ''
     }));
     
@@ -220,7 +271,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
     // スポーツデータを更新
     onUpdate({
       ...sport,
-      rankings: updatedRankings
+      rankings: sanitizeRankingsForFirebase(updatedRankings)
     });
   };
 
