@@ -105,6 +105,7 @@
   },
   "admin": {
     "title": "管理パネル",
+    "dashboard": "ダッシュボード",
     "noSportsInActiveEvent": "アクティブなイベントに競技がありません",
     "pleaseAddSports": "最初にいくつかの競技を追加してください",
     "goToEventManagement": "イベント管理へ移動",
