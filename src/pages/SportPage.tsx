@@ -10,9 +10,11 @@ import {
   Chip,
   Divider,
   IconButton,
-  Grid
+  Grid,
+  Tabs,
+  Tab
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Schedule as ScheduleIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../hooks/useDatabase';
 import { Sport, Team, Match } from '../types';
@@ -20,12 +22,18 @@ import TournamentScoring from '../components/admin/scoring/TournamentScoring';
 import RoundRobinTable from '../components/sports/RoundRobinTable';
 import RankingScoring from '../components/admin/scoring/RankingScoring';
 import LeagueScoring from '../components/admin/scoring/LeagueScoring';
+import ScheduleTimeline from '../components/sports/ScheduleTimeline';
 
 const SportPage: React.FC = () => {
   const { sportId } = useParams<{ sportId: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: sport, loading, updateData } = useDatabase<Sport>(`/sports/${sportId}`);
+  const [tabValue, setTabValue] = useState(0);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
   const handleSportUpdate = async (updatedSport: Sport) => {
     try {
@@ -101,15 +109,31 @@ const SportPage: React.FC = () => {
         )}
         
         <Divider sx={{ my: 3 }} />
+        
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          indicatorColor="primary"
+          textColor="primary"
+          variant="fullWidth"
+          aria-label="sport tabs"
+        >
+          <Tab label={t('sport.tabs.matches')} />
+          <Tab 
+            label={t('sport.tabs.schedule')} 
+            icon={<ScheduleIcon />} 
+            iconPosition="start"
+            disabled={!sport.scheduleSettings?.timeSlots?.length}
+          />
+        </Tabs>
       </Box>
       
-      <Box sx={{ mt: 4 }}>
-        {/* 競技形式によってコンポーネントを切り替え */}
+      <Box sx={{ mt: 4, display: tabValue === 0 ? 'block' : 'none' }}>
         {sport.type === 'tournament' && (
           <TournamentScoring 
             sport={sport} 
             onUpdate={handleSportUpdate}
-            readOnly // 読み取り専用モードを追加
+            readOnly
           />
         )}
         {sport.type === 'roundRobin' && (
@@ -122,7 +146,7 @@ const SportPage: React.FC = () => {
             <RankingScoring 
               sport={sport} 
               onUpdate={handleSportUpdate}
-              readOnly // 読み取り専用モードを追加
+              readOnly
             />
           </Box>
         )}
@@ -131,10 +155,16 @@ const SportPage: React.FC = () => {
             <LeagueScoring 
               sport={sport} 
               onUpdate={handleSportUpdate}
-              readOnly // 読み取り専用モードを追加
+              readOnly
             />
           </Box>
         )}
+      </Box>
+      
+      <Box sx={{ mt: 4, display: tabValue === 1 ? 'block' : 'none' }}>
+        <Paper sx={{ p: 3 }}>
+          <ScheduleTimeline sport={sport} />
+        </Paper>
       </Box>
     </Container>
   );

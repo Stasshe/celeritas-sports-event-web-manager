@@ -63,6 +63,7 @@ export interface Sport {
   [key: string]: any; // インデックスシグネチャを追加
   lastEditedBy: string | undefined;  // nullを削除
   lastEditedAt?: string;
+  scheduleSettings?: ScheduleSettings | LeagueScheduleSettings;
 }
 
 // リーグのブロック情報
@@ -102,14 +103,14 @@ export interface Team {
   logo?: string;
 }
 
-// 試合タイプ
+// 試合タイプ - winnerId を string | undefined に統一
 export interface Match {
   id: string;
   team1Id: string;
   team2Id: string;
   team1Score: number;
   team2Score: number;
-  winnerId?: string;
+  winnerId?: string; // null ではなく undefined を使用
   round: number; // トーナメントの場合のラウンド
   matchNumber: number; // 試合番号
   date?: string;
@@ -152,4 +153,35 @@ export interface RankingEntry {
   rank: number;
   score?: number | null; // スコアやタイム（null許可を追加）
   notes?: string;
+}
+
+// スケジュール情報の型を追加
+export interface TimeSlot {
+  startTime: string; // "09:00"の形式
+  endTime: string; // "10:30"の形式
+  title?: string; // オプショナルなタイトル（「休憩」など）
+  type: "match" | "break" | "lunch" | "preparation" | "cleanup"; // 時間枠の種類
+  matchId?: string; // 試合ID（type: "match"の場合）
+  description?: string; // オプショナルな説明
+}
+
+// スケジュール設定インターフェース - 一貫性のために null 型も許可
+export interface ScheduleSettings {
+  startTime: string; // 開始時間 "09:00"
+  endTime: string; // 終了時間 "17:00"
+  matchDuration: number; // 一試合あたりの時間（分）
+  breakDuration: number; // 休憩時間（分）
+  lunchBreak?: { // ランチ休憩（オプショナル）
+    startTime: string;
+    endTime: string;
+  } | null; // nullを許容するように変更
+  breakTimes?: TimeSlot[] | null; // nullを許容
+  timeSlots?: TimeSlot[] | null; // nullを許容
+}
+
+// リーグ戦特有のスケジュール設定
+export interface LeagueScheduleSettings extends ScheduleSettings {
+  groupStageDuration: number; // グループステージの試合時間（分）
+  playoffDuration: number; // プレーオフの試合時間（分）
+  breakBetweenStages: number; // ステージ間の休憩時間（分）
 }

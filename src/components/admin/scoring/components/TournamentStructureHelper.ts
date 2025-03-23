@@ -126,60 +126,77 @@ export class TournamentStructureHelper {
     }
   }
 
-  // シードまたは不在チームを判定する
+  // シードまたは不在チームを判定する - 修正版
   static isNoTeam(teamId: string | null, match: any, matches: any[]): boolean {
-    if (!teamId) return true;
+    // チームIDがない場合は空
+    if (!teamId || teamId === '') return true;
+    
+    // 'seed'、'tbd'、'unknownTeam'などの特殊値を判定
+    if (teamId === 'seed' || teamId === 'tbd' || teamId.includes('unknown')) return true;
 
     // 1回戦の場合
     if (match.round === 1) {
       // シードポジションのチーム（対戦相手が空）は不戦勝として扱う
       const currentMatch = matches.find(m => m.id === match.id);
-      return currentMatch && 
-        ((currentMatch.team1Id === teamId && !currentMatch.team2Id) || 
-         (currentMatch.team2Id === teamId && !currentMatch.team1Id));
+      if (currentMatch) {
+        const isUpperSideEmpty = currentMatch.team1Id === teamId && (!currentMatch.team2Id || currentMatch.team2Id === '');
+        const isLowerSideEmpty = currentMatch.team2Id === teamId && (!currentMatch.team1Id || currentMatch.team1Id === '');
+        return isUpperSideEmpty || isLowerSideEmpty;
+      }
     }
 
     // 2回戦以降の場合
     // 前のラウンドからの進出待ちではない（シード）場合のみtrue
-    const previousMatch = matches.find(m => 
+    const previousMatches = matches.filter(m => 
       m.round === match.round - 1 && 
       (m.team1Id === teamId || m.team2Id === teamId)
     );
 
-    return Boolean(teamId && !previousMatch);
+    // 前の試合が見つからない場合はシードまたは不在チーム
+    return previousMatches.length === 0;
   }
 
-  // 待機中の状態を判定する
+  // 待機中の状態を判定する - 修正版
   static isWaiting(teamId: string | null, match: any, matches: any[]): boolean {
-    if (!teamId || match.round === 1) return false;
+    // チームIDがない、または特殊な値の場合は待機していない
+    if (!teamId || teamId === '' || teamId === 'seed' || teamId === 'tbd' || 
+        teamId.includes('unknown')) return false;
+    
+    // 1回戦は待機状態ではない
+    if (match.round === 1) return false;
 
     // シードチームは待機状態にならない
     if (this.isNoTeam(teamId, match, matches)) return false;
 
-    // 両チームが揃っている場合の特別処理
+    // 両チームが揃っているかチェック
     if (match.team1Id && match.team2Id) {
-      const team1IsWaiting = this.checkTeamIsWaiting(match.team1Id, match.round, matches);
-      const team2IsWaiting = this.checkTeamIsWaiting(match.team2Id, match.round, matches);
+      // team1とteam2の待機状態を確認
+      const team1Waiting = teamId === match.team1Id ? 
+                          this.checkTeamIsWaiting(match.team1Id, match.round, matches) : false;
+      const team2Waiting = teamId === match.team2Id ? 
+                          this.checkTeamIsWaiting(match.team2Id, match.round, matches) : false;
       
-      // 両チームとも前の試合からの勝者待ちの場合は通常の試合として扱う
-      if (team1IsWaiting && team2IsWaiting) return false;
-      
-      // 片方のチームだけが待機中の場合は待機状態
-      return teamId === match.team1Id ? team1IsWaiting : team2IsWaiting;
+      // 指定されたチームが待機中なら真
+      return team1Waiting || team2Waiting;
     }
 
-    // 個別チームの待機状態をチェック
+    // 指定チームの待機状態をチェック（前の試合の勝者が未定の場合）
     return this.checkTeamIsWaiting(teamId, match.round, matches);
   }
 
-  // チームが待機中かどうかをチェックするヘルパーメソッド
+  // チームが待機中かどうかをチェックするヘルパーメソッド - 改善版
   private static checkTeamIsWaiting(teamId: string, round: number, matches: any[]): boolean {
-    const previousMatch = matches.find(m => 
+    // 前のラウンドでのこのチームの試合を探す
+    const previousMatches = matches.filter(m => 
       m.round === round - 1 && 
       (m.team1Id === teamId || m.team2Id === teamId)
     );
 
-    return Boolean(previousMatch && !previousMatch.winnerId);
+    // 前の試合がないなら待機状態ではない（シードの可能性）
+    if (previousMatches.length === 0) return false;
+
+    // 前の試合で勝者が決まっていない場合は待機中
+    return previousMatches.some(match => !match.winnerId);
   }
 
   // 勝者を次の試合に自動的に進出させる
@@ -221,5 +238,98 @@ export class TournamentStructureHelper {
     return matches.some(match => 
       match.team1Score > 0 || match.team2Score > 0 || match.winnerId
     );
+  }
+
+  // 休憩時間をスケジュールに統合するメソッド
+  static integrateBreaksToSchedule(matches: any[], breaks: any[]): any[] {
+    if (!breaks || breaks.length === 0) return matches;
+
+    // 休憩を含む新しい配列
+    const updatedMatches = [...matches];
+
+    // 各休憩を特殊な「試合」として追加
+    breaks.forEach(breakItem => {
+      // 休憩用の特殊IDを作成
+      const breakId = `break_${breakItem.id || Date.now()}`;
+      
+      // 休憩を特殊な試合オブジェクトとして追加
+      updatedMatches.push({
+        id: breakId,
+        type: 'break',  // 休憩の種類を識別するプロパティ
+        title: breakItem.title || 'Break',  // 休憩の題名
+        description: breakItem.description || '',  // 休憩の説明
+        startTime: breakItem.startTime,  // 開始時間
+        endTime: breakItem.endTime,  // 終了時間
+        round: 0,  // 休憩はラウンドに属さない
+        matchNumber: -1,  // 休憩は試合番号を持たない
+        // 他のプロパティを追加
+      });
+    });
+
+    return updatedMatches;
+  }
+
+  // スケジュールの時間重複をチェックするメソッド
+  static checkScheduleOverlaps(schedule: any[]): { hasOverlap: boolean, overlappingItems: any[] } {
+    const sortedSchedule = [...schedule].sort((a, b) => {
+      const aStart = new Date(a.startTime).getTime();
+      const bStart = new Date(b.startTime).getTime();
+      return aStart - bStart;
+    });
+
+    const overlaps: any[] = [];
+
+    for (let i = 0; i < sortedSchedule.length - 1; i++) {
+      const current = sortedSchedule[i];
+      const next = sortedSchedule[i + 1];
+      
+      const currentEnd = new Date(current.endTime || current.startTime).getTime();
+      const nextStart = new Date(next.startTime).getTime();
+      
+      if (currentEnd > nextStart) {
+        overlaps.push({ item1: current, item2: next });
+      }
+    }
+
+    return {
+      hasOverlap: overlaps.length > 0,
+      overlappingItems: overlaps
+    };
+  }
+
+  // 昼休憩をスケジュールに自動挿入するメソッド
+  static insertLunchBreak(schedule: any[], lunchStartTime: string = '12:00', durationMinutes: number = 60): any[] {
+    // 昼休憩が既にあるかチェック
+    const hasLunchBreak = schedule.some(item => 
+      item.type === 'break' && 
+      (item.title?.includes('昼休憩') || item.title?.includes('lunch'))
+    );
+
+    // 既に昼休憩があれば何もしない
+    if (hasLunchBreak) return schedule;
+
+    // 昼休憩の開始時間を解析
+    const [hours, minutes] = lunchStartTime.split(':').map(Number);
+    const lunchStart = new Date();
+    lunchStart.setHours(hours, minutes, 0, 0);
+    
+    // 終了時間を計算
+    const lunchEnd = new Date(lunchStart);
+    lunchEnd.setMinutes(lunchStart.getMinutes() + durationMinutes);
+    
+    // 昼休憩オブジェクトを作成
+    const lunchBreak = {
+      id: `lunch_break_${Date.now()}`,
+      type: 'break',
+      title: '昼休憩',
+      description: 'Lunch Break',
+      startTime: lunchStart.toISOString(),
+      endTime: lunchEnd.toISOString(),
+      round: 0,
+      matchNumber: -1
+    };
+    
+    // 昼休憩を追加したスケジュールを返す
+    return [...schedule, lunchBreak];
   }
 }

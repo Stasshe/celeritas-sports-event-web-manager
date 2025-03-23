@@ -31,6 +31,7 @@ import {
   EmojiEvents as RulesIcon,
   MenuBook as ManualIcon,
   Settings as SettingsIcon,
+  Schedule as ScheduleIcon,  // 追加
   Add as AddIcon,
   Sync as SyncIcon
 } from '@mui/icons-material';
@@ -47,6 +48,7 @@ import DeleteConfirmationDialog from '../../components/admin/dialogs/DeleteConfi
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { TabContent } from '../../components/admin/TabContent';
+import ScheduleTab from '../../components/admin/scheduling/ScheduleTab';  // 追加
 
 // フィールドとタブの関連付けを定義
 const fieldToTabMap: Record<keyof Sport, string> = {
@@ -58,6 +60,7 @@ const fieldToTabMap: Record<keyof Sport, string> = {
   roundRobinSettings: 'settings',
   organizers: 'roster',
   roster: 'roster',
+  scheduleSettings: 'schedule',  // 追加
   // ...他のフィールドも必要に応じて追加
 };
 
@@ -256,6 +259,13 @@ const SportEditPage: React.FC = () => {
       lastUpdated: 0,
       loading: false,
       hasChanges: false 
+    },
+    schedule: {  // 追加
+      isLoaded: true, 
+      isDirty: false, 
+      lastUpdated: 0,
+      loading: false,
+      hasChanges: false 
     }
   });
 
@@ -271,7 +281,7 @@ const SportEditPage: React.FC = () => {
       await handleSave();
     }
 
-    const tabName = ['details', 'roster', 'rules', 'manual', 'settings'][newValue];
+    const tabName = ['details', 'roster', 'rules', 'manual', 'settings', 'schedule'][newValue];
     setActiveTab(newValue);
 
     if (!tabStates[tabName].isLoaded) {
@@ -768,6 +778,7 @@ const SportEditPage: React.FC = () => {
             <Tab icon={<RulesIcon />} label={t('sport.tabs.rules')} />
             <Tab icon={<ManualIcon />} label={t('sport.tabs.manual')} />
             <Tab icon={<SettingsIcon />} label={t('sport.tabs.settings')} />
+            <Tab icon={<ScheduleIcon />} label={t('sport.tabs.schedule')} />  {/* 追加 */}
           </Tabs>
         </Paper>
 
@@ -1131,6 +1142,13 @@ const SportEditPage: React.FC = () => {
                 </Button>
               </Box>
             </Box>
+          </Paper>
+        </TabPanel>
+
+        {/* スケジュールタブ (新しく追加) */}
+        <TabPanel value={activeTab} index={5}>
+          <Paper sx={{ p: 3 }}>
+            <ScheduleTab sport={localSport} onUpdate={handleSportUpdate} />
           </Paper>
         </TabPanel>
 

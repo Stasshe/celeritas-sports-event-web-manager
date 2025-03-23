@@ -12,16 +12,23 @@ import {
   Box, 
   CircularProgress,
   Stack,
+  Paper,
+  Tab,
+  Tabs,
+  Divider
 } from '@mui/material';
 import { 
   AdminPanelSettings as AdminIcon,
-  Login as LoginIcon 
+  Login as LoginIcon,
+  Schedule as ScheduleIcon,
+  GridView as GridViewIcon 
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../hooks/useDatabase';
 import { Event, Sport } from '../types';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import EventTimelineOverview from '../components/sports/EventTimelineOverview';
 
 const MotionCard = motion(Card);
 const MotionFab = motion(Fab);
@@ -34,6 +41,7 @@ const HomePage: React.FC = () => {
   const { data: sports, loading: sportsLoading } = useDatabase<Record<string, Sport>>('/sports');
   const [activeEvent, setActiveEvent] = useState<Event | null>(null);
   const [activeSports, setActiveSports] = useState<Sport[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid');
 
   useEffect(() => {
     if (events && sports) {
@@ -50,6 +58,11 @@ const HomePage: React.FC = () => {
       }
     }
   }, [events, sports]);
+
+  // 表示モードの切り替え
+  const handleViewChange = (event: React.SyntheticEvent, newValue: 'grid' | 'timeline') => {
+    setViewMode(newValue);
+  };
 
   // ログインボタンを別コンポーネントとして切り出し
   const FloatingButtons = () => (
@@ -106,40 +119,71 @@ const HomePage: React.FC = () => {
         )}
       </Box>
 
-      {activeSports.length > 0 ? (
-        <Grid container spacing={3}>
-          {activeSports.map((sport, index) => (
-            <Grid item xs={12} sm={6} md={4} key={sport.id}>
-              <MotionCard 
-                whileHover={{ 
-                  scale: 1.05,
-                  
-                }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >{/*boxShadow: "0px 10px 30px -5px rgba(0, 0, 0, 0.3)"*/}
-                <CardActionArea component={RouterLink} to={`/sport/${sport.id}`}>
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={sport.coverImageUrl || "https://source.unsplash.com/random?sports"}
-                    alt={sport.name}
-                  />
-                  <CardContent>
-                    <Typography gutterBottom variant="h5" component="div">
-                      {sport.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {sport.description || t(`sports.${sport.type}`)}
-                    </Typography>
-                  </CardContent>
-                </CardActionArea>
-              </MotionCard>
+      {activeSports.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Paper sx={{ mb: 3 }}>
+            <Tabs
+              value={viewMode}
+              onChange={handleViewChange}
+              variant="fullWidth"
+              indicatorColor="primary"
+              textColor="primary"
+              aria-label="view mode tabs"
+            >
+              <Tab 
+                icon={<GridViewIcon />} 
+                label={t('home.gridView')} 
+                value="grid"
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<ScheduleIcon />} 
+                label={t('home.timelineView')} 
+                value="timeline"
+                iconPosition="start"
+              />
+            </Tabs>
+          </Paper>
+
+          {viewMode === 'grid' ? (
+            <Grid container spacing={3}>
+              {activeSports.map((sport, index) => (
+                <Grid item xs={12} sm={6} md={4} key={sport.id}>
+                  <MotionCard 
+                    whileHover={{ scale: 1.05 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <CardActionArea component={RouterLink} to={`/sport/${sport.id}`}>
+                      <CardMedia
+                        component="img"
+                        height="140"
+                        image={sport.coverImageUrl || "https://source.unsplash.com/random?sports"}
+                        alt={sport.name}
+                      />
+                      <CardContent>
+                        <Typography gutterBottom variant="h5" component="div">
+                          {sport.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {sport.description || t(`sports.${sport.type}`)}
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </MotionCard>
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
-      ) : (
+          ) : (
+            <Box>
+              <EventTimelineOverview sports={activeSports} activeEvent={activeEvent} />
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {activeSports.length === 0 && (
         <Box sx={{ textAlign: 'center', my: 8 }}>
           <Typography variant="h5" color="text.secondary">
             {t('sports.noSports')}

@@ -254,18 +254,31 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     setMatchDialogOpen(true);
   };
 
-  // 試合の更新（即時保存用）- 3位決定戦対応版
+  // 試合の更新（即時保存用）- エラーハンドリング強化と型の修正
   const handleMatchUpdate = async (updatedMatch: Match) => {
     if (readOnly) return;
     setIsDialogProcessing(true);
     try {
+      // チームIDの検証
+      const team1Exists = sport.teams.some(t => t.id === updatedMatch.team1Id);
+      const team2Exists = sport.teams.some(t => t.id === updatedMatch.team2Id);
+      
+      // 存在しないチームIDがあればエラー（3位決定戦で準決勝の敗者が未定の場合を除く）
+      const isThirdPlaceMatch = updatedMatch.matchNumber === 0 || updatedMatch.id.includes('third_place');
+      
+      if (!isThirdPlaceMatch && (!team1Exists || !team2Exists)) {
+        throw new Error('Invalid team IDs in match');
+      }
+      
       const status = TournamentStructureHelper.getMatchStatus(updatedMatch);
-      const newMatch = {
+      
+      // winnerId を型に合わせて設定（undefined を使用）
+      const newMatch: Match = {
         ...updatedMatch,
         status,
         winnerId: updatedMatch.team1Score > updatedMatch.team2Score ? updatedMatch.team1Id :
                   updatedMatch.team2Score > updatedMatch.team1Score ? updatedMatch.team2Id :
-                  undefined
+                  undefined  // null ではなく undefined を使用
       };
 
       // 即時にローカル状態を更新（UXのため）
@@ -274,7 +287,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       );
 
       // 準決勝の試合でスコアが入ったときの特別処理
-      if (newMatch.winnerId) {
+      if (newMatch.winnerId && team1Exists && team2Exists) {
         // 通常の勝者進出処理
         newMatches = TournamentStructureHelper.progressWinnerToNextMatch(newMatch, newMatches);
         
@@ -317,13 +330,16 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       setMatchDialogOpen(false);
       
       // その後にデータ更新を行う
-      const updatedSport = {
+      const updatedSport: Sport = {
         ...sport,
         matches: newMatches
       };
       
       // 親コンポーネントに変更を通知
       onUpdate(updatedSport);
+    } catch (error) {
+      console.error('Match update error:', error);
+      // エラーをユーザーに通知
     } finally {
       setIsDialogProcessing(false);
     }
@@ -486,6 +502,16 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     </ForeignObject>
     );
   }, [theme, t, readOnly, matches, handleEditMatch]);
+  const nodeWidth = 200;
+  const nodeHeight = 100;
+  // SVG要素の位置計算関数を修正
+  const calculateNodePosition = (roundIndex: number, matchIndex: number, totalRounds: number) => {
+    // NaNをチェックして安全な値にする
+    const x = roundIndex !== undefined && !isNaN(roundIndex) ? roundIndex * nodeWidth * 1.5 : 0;
+    const y = matchIndex !== undefined && !isNaN(matchIndex) ? matchIndex * nodeHeight * 2 : 0;
+    
+    return { x: String(x), y: String(y) }; // 文字列に変換して返す
+  };
 
   const savingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingUpdateRef = useRef<Sport | null>(null);
