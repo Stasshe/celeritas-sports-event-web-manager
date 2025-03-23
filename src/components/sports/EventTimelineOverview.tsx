@@ -1,210 +1,163 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   Typography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Divider,
-  Chip,
   Paper,
+  Chip,
   Grid,
-  useTheme,
-  useMediaQuery,
-  Alert,
-  CircularProgress
+  Divider,
+  useTheme
 } from '@mui/material';
-import {
-  ExpandMore as ExpandMoreIcon,
-  Schedule as ScheduleIcon,
-  SportsSoccer as SportIcon,
-  Event as EventIcon,
-  Restaurant as LunchIcon,
-  Coffee as BreakIcon
-} from '@mui/icons-material';
+import { Schedule as ScheduleIcon, Place as PlaceIcon } from '@mui/icons-material';
+import { Sport, Event, TimeSlot } from '../../types';
 import { useTranslation } from 'react-i18next';
-import { Sport, TimeSlot, Event } from '../../types';
-import { useNavigate } from 'react-router-dom';
-import { timeToMinutes } from '../../utils/scheduleGenerator';
-import ScheduleTimeline from './ScheduleTimeline';
 
 interface EventTimelineOverviewProps {
   sports: Sport[];
-  activeEvent?: Event | null;
+  activeEvent: Event | null;
+}
+
+// 全競技の統合タイムスロット
+interface CombinedTimeSlot extends TimeSlot {
+  sportId: string;
+  sportName: string;
 }
 
 const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, activeEvent }) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const navigate = useNavigate();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [expanded, setExpanded] = useState<string | false>(false);
-  const [activeSports, setActiveSports] = useState<Sport[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  // スポーツ一覧データを処理
-  useEffect(() => {
-    setLoading(true);
+  // 全競技のタイムスロットを結合して時間順にソート
+  const combinedTimeSlots = useMemo(() => {
+    const allSlots: CombinedTimeSlot[] = [];
     
-    const sportsWithSchedule = sports.filter(
-      sport => sport.scheduleSettings?.timeSlots && sport.scheduleSettings.timeSlots.length > 0
-    );
-    
-    // 開始時間順にソート
-    const sortedSports = [...sportsWithSchedule].sort((a, b) => {
-      const aStart = a.scheduleSettings?.startTime || '00:00';
-      const bStart = b.scheduleSettings?.startTime || '00:00';
-      return timeToMinutes(aStart) - timeToMinutes(bStart);
+    sports.forEach(sport => {
+      if (sport.scheduleSettings?.timeSlots) {
+        sport.scheduleSettings.timeSlots.forEach(slot => {
+          allSlots.push({
+            ...slot,
+            sportId: sport.id,
+            sportName: sport.name
+          });
+        });
+      }
     });
     
-    setActiveSports(sortedSports);
-    setLoading(false);
+    // 開始時間でソート
+    return allSlots.sort((a, b) => {
+      // 日付部分を無視して時間だけで比較
+      const timeA = a.startTime;
+      const timeB = b.startTime;
+      return timeA.localeCompare(timeB);
+    });
   }, [sports]);
 
-  // アコーディオンの開閉を管理
-  const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpanded(isExpanded ? panel : false);
+  // 会場に応じた色を取得
+  const getVenueColor = (venueId: 'main' | 'secondary' | undefined) => {
+    if (!venueId || venueId === 'main') {
+      return theme.palette.primary.main;
+    }
+    return theme.palette.secondary.main;
   };
 
-  // スポーツのタイムスロット分布を簡略表示するための関数
-  const renderTimeDistribution = (sport: Sport) => {
-    if (!sport.scheduleSettings?.timeSlots) return null;
-    
-    const timeSlots = sport.scheduleSettings.timeSlots;
-    const startTime = sport.scheduleSettings.startTime;
-    const endTime = sport.scheduleSettings.endTime;
-    
-    const totalDurationMinutes = timeToMinutes(endTime) - timeToMinutes(startTime);
-    
-    // 時間枠タイプごとのカウント
-    const counts = {
-      match: timeSlots.filter(slot => slot.type === 'match').length,
-      break: timeSlots.filter(slot => slot.type === 'break').length,
-      lunch: timeSlots.filter(slot => slot.type === 'lunch').length,
-      other: timeSlots.filter(slot => !['match', 'break', 'lunch'].includes(slot.type)).length
-    };
-
+  if (combinedTimeSlots.length === 0) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-        {counts.match > 0 && (
-          <Chip 
-            icon={<SportIcon fontSize="small" />} 
-            label={`${counts.match}${t('schedule.matchCount')}`} 
-            size="small" 
-            color="primary"
-            variant="outlined"
-          />
-        )}
-        {counts.break > 0 && (
-          <Chip 
-            icon={<BreakIcon fontSize="small" />} 
-            label={`${counts.break}${t('schedule.breakCount')}`} 
-            size="small" 
-            color="secondary"
-            variant="outlined"
-          />
-        )}
-        {counts.lunch > 0 && (
-          <Chip 
-            icon={<LunchIcon fontSize="small" />} 
-            label={t('schedule.lunch')} 
-            size="small" 
-            color="warning"
-            variant="outlined"
-          />
-        )}
-      </Box>
-    );
-  };
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
-      </Box>
+      <Paper sx={{ p: 2, textAlign: 'center' }}>
+        <Typography variant="body1" color="text.secondary">
+          {t('schedule.noScheduleAvailable')}
+        </Typography>
+      </Paper>
     );
   }
 
-  if (activeSports.length === 0) {
-    return (
-      <Alert severity="info" sx={{ mt: 2 }}>
-        {t('schedule.noSportsWithSchedule')}
-      </Alert>
-    );
-  }
+  // 時間枠ごとに同時開催イベントをグループ化
+  const groupedByTime: Record<string, CombinedTimeSlot[]> = {};
+  
+  combinedTimeSlots.forEach(slot => {
+    const timeKey = `${slot.startTime}-${slot.endTime}`;
+    if (!groupedByTime[timeKey]) {
+      groupedByTime[timeKey] = [];
+    }
+    groupedByTime[timeKey].push(slot);
+  });
 
   return (
-    <Box sx={{ mt: 3 }}>
-      <Typography variant="h5" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-        <EventIcon sx={{ mr: 1 }} />
-        {activeEvent?.name ? `${activeEvent.name} ${t('schedule.overview')}` : t('schedule.eventSchedule')}
+    <Box>
+      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+        <ScheduleIcon sx={{ mr: 1 }} />
+        {t('schedule.eventTimeline')}
       </Typography>
       
-      <Typography variant="body2" color="text.secondary" paragraph>
-        {t('schedule.clickToExpand')}
-      </Typography>
+      <Divider sx={{ my: 2 }} />
       
-      <Divider sx={{ mb: 3 }} />
-      
-      {/* スポーツ一覧とタイムライン */}
-      <Box>
-        {activeSports.map((sport) => (
-          <Accordion
-            key={sport.id}
-            expanded={expanded === `sport-${sport.id}`}
-            onChange={handleChange(`sport-${sport.id}`)}
+      {Object.entries(groupedByTime).map(([timeKey, slots], groupIndex) => {
+        const [startTime, endTime] = timeKey.split('-');
+        const isConcurrent = slots.length > 1;
+        
+        return (
+          <Paper 
+            key={timeKey} 
             sx={{ 
-              mb: 1,
-              transition: 'all 0.2s ease',
-              ':hover': {
-                bgcolor: theme.palette.action.hover
-              }
+              p: 2, 
+              mb: 2, 
+              borderLeft: isConcurrent 
+                ? `4px solid ${theme.palette.warning.main}` 
+                : `4px solid ${getVenueColor(slots[0].venueId)}`
             }}
           >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls={`sport-${sport.id}-content`}
-              id={`sport-${sport.id}-header`}
-            >
-              <Grid container alignItems="center" spacing={1}>
-                <Grid item xs={12} sm={4}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <SportIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-                      {sport.name}
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle1" fontWeight="medium">
+                    {startTime} - {endTime}
+                  </Typography>
+                  
+                  {isConcurrent && (
+                    <Chip 
+                      size="small" 
+                      label={t('schedule.concurrent', { count: slots.length })} 
+                      color="warning"
+                      variant="outlined"
+                    />
+                  )}
+                </Box>
+              </Grid>
+              
+              {slots.map((slot, index) => (
+                <Grid item xs={12} key={`${slot.sportId}-${index}`}>
+                  <Box 
+                    sx={{ 
+                      p: 1.5, 
+                      borderLeft: `4px solid ${theme.palette.info.main}`,
+                      bgcolor: theme.palette.action.hover,
+                      borderRadius: 1
+                    }}
+                  >
+                    <Typography variant="body1" fontWeight="medium" gutterBottom>
+                      {slot.sportName} - {slot.type === 'match' ? t('schedule.match') : slot.title || t(`schedule.${slot.type}`)}
                     </Typography>
+                    
+                    {slot.description && (
+                      <Typography variant="body2" color="text.secondary">
+                        {slot.description}
+                      </Typography>
+                    )}
+                    
+                    {slot.venueId && (
+                      <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                        <PlaceIcon sx={{ fontSize: 16, mr: 0.5, color: getVenueColor(slot.venueId) }} />
+                        <Typography variant="caption" color="text.secondary">
+                          {slot.venueName || (slot.venueId === 'main' ? t('schedule.mainVenue') : t('schedule.secondaryVenue'))}
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
                 </Grid>
-                
-                <Grid item xs={12} sm={3}>
-                  <Typography variant="body2" color="text.secondary">
-                    {sport.scheduleSettings?.startTime} - {sport.scheduleSettings?.endTime}
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={5}>
-                  {renderTimeDistribution(sport)}
-                </Grid>
-              </Grid>
-            </AccordionSummary>
-            
-            <AccordionDetails sx={{ p: isMobile ? 1 : 2 }}>
-              <Paper variant="outlined" sx={{ p: 2 }}>
-                <ScheduleTimeline sport={sport} />
-                
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Chip
-                    label={t('schedule.viewDetails')}
-                    color="primary" 
-                    onClick={() => navigate(`/sport/${sport.id}`)}
-                    clickable
-                  />
-                </Box>
-              </Paper>
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </Box>
+              ))}
+            </Grid>
+          </Paper>
+        );
+      })}
     </Box>
   );
 };

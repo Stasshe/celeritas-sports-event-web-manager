@@ -163,9 +163,11 @@ export interface TimeSlot {
   type: "match" | "break" | "lunch" | "preparation" | "cleanup"; // 時間枠の種類
   matchId?: string; // 試合ID（type: "match"の場合）
   description?: string; // オプショナルな説明
+  venueId?: 'main' | 'secondary'; // 会場ID - リテラル型に限定
+  venueName?: string; // 会場名
 }
 
-// スケジュール設定インターフェース - 一貫性のために null 型も許可
+// スケジュール設定インターフェース
 export interface ScheduleSettings {
   startTime: string; // 開始時間 "09:00"
   endTime: string; // 終了時間 "17:00"
@@ -177,6 +179,12 @@ export interface ScheduleSettings {
   } | null; // nullを許容するように変更
   breakTimes?: TimeSlot[] | null; // nullを許容
   timeSlots?: TimeSlot[] | null; // nullを許容
+  useMultiVenue?: boolean; // 複数会場を使用するかどうか
+  venues?: Array<{
+    id: 'main' | 'secondary'; // リテラル型に限定
+    name: string;
+  }>;
+  teamClasses?: Record<string, string>;
 }
 
 // リーグ戦特有のスケジュール設定
