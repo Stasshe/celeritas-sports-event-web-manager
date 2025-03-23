@@ -1,0 +1,120 @@
+admin.changesSaved
+admin.create
+admin.deleteConfirmation, { name: itemName }
+admin.deleteConfirmationDetails
+admin.lastSaved, { time: lastSaved.toLocaleTimeString(
+admin.noEvents
+admin.sportCount, { count: getSportCountByEvent(activeEvent.id
+admin.sportsCount, { count: eventSports.length }
+common.back
+common.savedError
+common.savedSuccess
+custom.noData
+event.backToSportsManagement
+event.create
+event.date
+event.description
+event.details
+event.edit
+event.name
+event.noOrganizers
+event.notFound
+event.organizers
+event.setAsActive
+home.gridView
+home.timelineView
+league.maxBlocks, { max: Math.max(1, Math.floor(teams.length / 2
+league.usingRosterTeams, { count: teams.length }
+login.email
+login.fillAllFields
+login.invalidCredentials
+login.password
+login.unknownError
+login.userNotFound
+login.wrongPassword
+match.date
+match.edit
+match.notes
+match.number, { number: match.matchNumber }
+match.score
+match.team1
+match.team2
+ranking.ascendingDescription
+ranking.descendingDescription
+ranking.mobileHelp, ドラッグアイコンを長押ししてから上下に動かすことでランキングの順位を変更できます
+roster.editClass
+roster.memberCount, { count: getMembersCount(className
+roundRobin.addScore
+roundRobin.considerLosePoints
+roundRobin.drawPoints
+roundRobin.losePoints
+roundRobin.matchDetails
+roundRobin.matchTable
+roundRobin.notPlayed
+roundRobin.notes
+roundRobin.status
+roundRobin.winPoints
+schedule.activities
+schedule.break
+schedule.breakCount
+schedule.cleanup
+schedule.clickToExpand
+schedule.court
+schedule.court1
+schedule.court1Name
+schedule.court2
+schedule.court2Name
+schedule.courtCount
+schedule.courtInfo
+schedule.courtSettings
+schedule.courts
+schedule.eventSchedule
+schedule.firstMatch
+schedule.hasSimultaneousMatches
+schedule.lastMatch
+schedule.location
+schedule.lunch
+schedule.match
+schedule.matchCount
+schedule.matchTimeRange
+schedule.noMatchesWarning
+schedule.noSportsWithSchedule
+schedule.noTimeSlots
+schedule.overview
+schedule.preparation
+schedule.rankingInfo
+schedule.rankingScheduleInfo
+schedule.time
+schedule.unknownTeam
+schedule.viewDetails
+scoring.title, { name: localSport.name }
+settings.enableAutoSave
+sport.addMember
+sport.create
+sport.deleteTeamWarning, { name: selectedTeam?.name }
+sport.edit
+sport.league
+sport.leagueDescription
+sport.memberCount, { count: team.members.length }
+sport.noMembers
+sport.noTeams
+sport.ranking
+sport.rankingDescription
+sport.roleTeacher
+sport.tabs.matches
+sport.tabs.schedule
+sport.teamMembers
+sport.type
+sports.notFound
+tournament.final
+tournament.hasRepechage
+tournament.hasThirdPlaceMatch
+tournament.noRoster
+tournament.round, { 
+tournament.round, { round: `${match.round}-${match.matchNumber}` }
+tournament.round, { round: match.tournamentRoundText }
+web-vitals
+2, 0
+isAutoSaveEnabled ? settings.enabled : settings.disabled
+mode === dark ? settings.enabled : settings.disabled
+t(tournament.errorGenerating

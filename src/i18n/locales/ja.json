@@ -15,12 +15,17 @@
     "loading": "読み込み中...",
     "saving": "保存中...",
     "backToAdmin": "管理画面に戻る",
-    "backToHome": "ホームに戻る"
+    "backToHome": "ホームに戻る",
+    "back": "戻る",
+    "savedSuccess": "保存しました",
+    "savedError": "保存に失敗しました"
   },
   "home": {
     "title": "スポーツイベント",
     "viewEvent": "イベントを見る",
-    "adminPanel": "管理パネル"
+    "adminPanel": "管理パネル",
+    "gridView": "グリッド表示",
+    "timelineView": "タイムライン表示"
   },
   "auth" : {
     "logout" : "ログアウト"
@@ -28,10 +33,16 @@
   "match" : {
     "match": "試合",
     "team": "チーム",
-    "number": "番号 {{matchNumber}}",
     "completed":"完了",
     "inProgress":"進行中",
-    "scheduled":"予定"
+    "scheduled":"予定",
+    "date": "日付",
+    "edit": "試合編集",
+    "notes": "メモ",
+    "number": "試合{{number}}",
+    "score": "スコア",
+    "team1": "チーム1",
+    "team2": "チーム2"
   },
   "event": {
     "alternativeDate": "予備日",
@@ -77,7 +88,18 @@
       "organizers": "担当者"
     },
     "manageOrganizers": "担当者管理",
-    "organizersHelp": "担当者はイベントの管理・運営を行うメンバーです"
+    "organizersHelp": "担当者はイベントの管理・運営を行うメンバーです",
+    "create": "イベント作成",
+    "date": "日付",
+    "description": "説明",
+    "details": "詳細",
+    "edit": "編集",
+    "name": "イベント名",
+    "noOrganizers": "担当者がいません",
+    "notFound": "イベントが見つかりません",
+    "organizers": "担当者",
+    "setAsActive": "アクティブに設定",
+    "backToSportsManagement": "競技管理に戻る"
   },
   "sports": {
     "tournament": "トーナメント",
@@ -91,7 +113,8 @@
     "sportParticipants": "参加者",
     "sportBracket": "トーナメント",
     "sportRoundRobin": "総当たり戦",
-    "sportCustom": "カスタム形式"
+    "sportCustom": "カスタム形式",
+    "notFound": "競技が見つかりません"
   },
   "admin": {
     "title": "管理パネル",
@@ -140,7 +163,6 @@
     "noActiveEvent": "アクティブなイベントがありません",
     "manageSport": "競技を管理",
     "backToAdmin": "管理画面に戻る",
-    "sportsCount": "競技数: {{count}}",
     "noSports": "競技がありません",
     "noSportsInEvent": "このイベントには競技がありません",
     "dashboardDescription": "このダッシュボードからスポーツイベントを管理できます",
@@ -181,7 +203,14 @@
     "actionsRequired": "必要なアクション",
     "createEventTip": "新しいイベントを作成して始めましょう",
     "createSportTip": "競技を追加してイベントを充実させましょう",
-    "draftSaved": "下書きを保存しました"
+    "draftSaved": "下書きを保存しました",
+    "create": "作成",
+    "changesSaved": "変更を保存しました",
+    "deleteConfirmation": "{{name}}を削除しますか？",
+    "deleteConfirmationDetails": "この操作は取り消せません",
+    "noEvents": "イベントがありません",
+    "sportCount": "競技数: {{count}}",
+    "sportsCount": "競技数: {{count}}"
   },
   "settings": {
     "appearance": "外観",
@@ -195,7 +224,8 @@
     "seconds": "秒",
     "savedSuccessfully": "設定を保存しました",
     "applicationLanguage": "アプリケーション言語",
-    "selectLanguage": "言語を選択"
+    "selectLanguage": "言語を選択",
+    "enableAutoSave": "自動保存を有効にする"
   },
   "scoring": {
     "score": "スコア",
@@ -229,7 +259,6 @@
     "members": "参加者数",
     "generate": "トーナメント表生成",
     "title": "タイトル",
-    "round": "ラウンド{{round}}",
     "match": "マッチ",
     "team": "チーム",
     "score": "スコア",
@@ -281,9 +310,14 @@
     "builder": "トーナメント作成",
     "mainBracket": "メインブラケット",
     "needAtLeastTwoTeams": "最低2チーム必要です",
-    "errorGenerating": "トーナメント生成エラー",
     "selectTeam": "チームを選択",
-    "thirdPlace": "3位決定戦"
+    "thirdPlace": "3位決定戦",
+    "final": "決勝",
+    "hasRepechage": "敗者復活戦あり",
+    "hasThirdPlaceMatch": "3位決定戦あり",
+    "noRoster": "名簿がありません",
+    "round": "ラウンド{{round}}",
+    "errorGenerating": "トーナメント生成エラー"
   },
   "roundRobin" : {
     "match": "マッチ",
@@ -334,7 +368,17 @@
     "nextRound": "次のラウンド",
     "previousRound": "前のラウンド",
     "round": "ラウンド{{number}}",
-    "matchday": "第{{number}}試合日"
+    "matchday": "第{{number}}試合日",
+    "addScore": "スコア追加",
+    "considerLosePoints": "敗戦ポイントを考慮",
+    "drawPoints": "引き分けポイント",
+    "losePoints": "敗戦ポイント",
+    "matchDetails": "試合詳細",
+    "matchTable": "対戦表",
+    "notPlayed": "未実施",
+    "notes": "メモ",
+    "status": "状態",
+    "winPoints": "勝利ポイント"
   },
   "custom" : {
     "round": "ラウンド",
@@ -355,7 +399,8 @@
     "noRoundRobin": "総当たり戦がありません",
     "noCustom": "カスタム形式がありません",
     "noParticipants": "参加者がいません",
-    "noParticipantsInSport": "この競技には参加者がいません"
+    "noParticipantsInSport": "この競技には参加者がいません",
+    "noData": "データがありません"
   },
   "users": {
     "title": "ユーザー管理",
@@ -376,13 +421,14 @@
     "edit": "編集",
     "delete": "削除",
     "className": "クラス名",
-    "memberCount": "メンバー数: {{count}}人",
     "memberList": "メンバー一覧",
     "noClasses": "クラスがありません",
     "noMembers": "メンバーがいません",
     "addMember": "メンバーを追加",
     "newMember": "新規メンバー",
-    "viewEdit": "表示・編集"
+    "viewEdit": "表示・編集",
+    "editClass": "クラスを編集",
+    "memberCount": "メンバー数: {{count}}"
   },
   "sport": {
     "loading": "競技の編集ページを読み込み中...",
@@ -457,7 +503,9 @@
       "roster": "名簿",
       "rules":"ルール",
       "manual":"マニュアル",
-      "settings": "設定"
+      "settings": "設定",
+      "matches": "試合",
+      "schedule": "スケジュール"
     },
     "fieldUpdateSuccess": "フィールドを更新しました",
     "fieldUpdateError": "フィールド更新エラー",
@@ -480,7 +528,18 @@
     "deleteSportWarning": "この操作は取り消せません",
     "deleteSportButton": "競技を完全に削除",
     "deleteConfirmTitle": "競技の削除確認",
-    "lastSync": "最終同期"
+    "lastSync": "最終同期",
+    "addMember": "メンバー追加",
+    "create": "競技作成",
+    "edit": "競技編集",
+    "league": "リーグ",
+    "leagueDescription": "リーグ戦形式で試合を行います",
+    "memberCount": "メンバー数: {{count}}",
+    "noMembers": "メンバーがいません",
+    "noTeams": "チームがありません",
+    "ranking": "ランキング",
+    "rankingDescription": "ランキング形式で順位を決定します",
+    "roleTeacher": "教員"
   },
   "adminHelp": {
     "title": "管理者ヘルプ",
@@ -560,7 +619,6 @@
     "blocks": "ブロック",
     "advancingTeams": "進出チーム数",
     "hasThirdPlace": "3位決定戦を実施",
-    "usingRosterTeams": "登録チーム数: {{count}}",
     "noTeamsFound": "チームが見つかりません",
     "distributeTeams": "チームを振り分け",
     "generatePlayoff": "プレーオフを生成",
@@ -585,8 +643,9 @@
     "leagueSettings": "リーグ設定",
     "blockCount": "ブロック数",
     "blockCountHelp": "チームを分けるブロックの数",
+    "advancingTeamsHelp": "各ブロックから進出するチーム数",
     "maxBlocks": "最大{{max}}ブロック",
-    "advancingTeamsHelp": "各ブロックから進出するチーム数"
+    "usingRosterTeams": "登録チーム数: {{count}}"
   },
   "ranking": {
     "unknownTeam": "不明なチーム",
@@ -597,7 +656,6 @@
     "ascending": "昇順",
     "descending": "降順",
     "addAllTeams": "全チームを追加",
-    "mobileHelp": "ドラッグアイコンを長押ししてから上下に動かすことでランキングの順位を変更できます",
     "title": "ランキング",
     "rank": "順位",
     "team": "チーム",
@@ -613,7 +671,10 @@
     "descendingHelp": "高い値から低い値の順",
     "notesPlaceholder": "メモを入力",
     "rankingSettings": "ランキング設定",
-    "criteriaNameHelp": "ランキングの基準となる項目名"
+    "criteriaNameHelp": "ランキングの基準となる項目名",
+    "ascendingDescription": "昇順の説明",
+    "descendingDescription": "降順の説明",
+    "mobileHelp": "ドラッグアイコンを長押ししてから上下に動かすことでランキングの順位を変更できます"
   },
   "schedule": {
     "title": "スケジュール",
@@ -646,6 +707,48 @@
     "scheduleGeneration": "スケジュール生成",
     "scheduleGenerationHelp": "スケジュールを生成してイベントの日程を管理します",
     "scheduleGenerationError": "スケジュール生成エラー",
-    "scheduleGenerationErrorHelp": "スケジュール生成中にエラーが発生しました"
+    "scheduleGenerationErrorHelp": "スケジュール生成中にエラーが発生しました",
+    "activities": "アクティビティ",
+    "break": "休憩",
+    "breakCount": "休憩回数",
+    "cleanup": "片付け",
+    "clickToExpand": "クリックで展開",
+    "court": "コート",
+    "court1": "コート1",
+    "court1Name": "コート1名",
+    "court2": "コート2",
+    "court2Name": "コート2名",
+    "courtCount": "コート数",
+    "courtInfo": "コート情報",
+    "courtSettings": "コート設定",
+    "courts": "コート",
+    "eventSchedule": "イベントスケジュール",
+    "firstMatch": "第1試合",
+    "hasSimultaneousMatches": "同時進行の試合あり",
+    "lastMatch": "最終試合",
+    "location": "場所",
+    "lunch": "昼休み",
+    "match": "試合",
+    "matchCount": "試合数",
+    "matchTimeRange": "試合時間帯",
+    "noMatchesWarning": "試合がありません",
+    "noSportsWithSchedule": "スケジュールのある競技がありません",
+    "noTimeSlots": "時間枠がありません",
+    "overview": "概要",
+    "preparation": "準備",
+    "rankingInfo": "ランキング情報",
+    "rankingScheduleInfo": "ランキングスケジュール情報",
+    "time": "時間",
+    "unknownTeam": "不明なチーム",
+    "viewDetails": "詳細を表示"
+  },
+  "login": {
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "fillAllFields": "すべての項目を入力してください",
+    "invalidCredentials": "認証情報が無効です",
+    "unknownError": "不明なエラーが発生しました",
+    "userNotFound": "ユーザーが見つかりません",
+    "wrongPassword": "パスワードが間違っています"
   }
 }
