@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -12,7 +12,11 @@ import {
   useTheme,
   useMediaQuery,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Card,
+  CardContent,
+  Badge,
+  Tooltip
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -20,7 +24,8 @@ import {
   SportsSoccer as SportIcon,
   Event as EventIcon,
   Restaurant as LunchIcon,
-  Coffee as BreakIcon
+  Coffee as BreakIcon,
+  Place as PlaceIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { Sport, TimeSlot, Event } from '../../types';
@@ -39,26 +44,29 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [expanded, setExpanded] = useState<string | false>(false);
-  const [activeSports, setActiveSports] = useState<Sport[]>([]);
   const [loading, setLoading] = useState(true);
 
   // スポーツ一覧データを処理
-  useEffect(() => {
-    setLoading(true);
-    
+  const activeSports = useMemo(() => {
+    // スケジュールがあるスポーツのみをフィルタリング
     const sportsWithSchedule = sports.filter(
       sport => sport.scheduleSettings?.timeSlots && sport.scheduleSettings.timeSlots.length > 0
     );
     
     // 開始時間順にソート
-    const sortedSports = [...sportsWithSchedule].sort((a, b) => {
+    return [...sportsWithSchedule].sort((a, b) => {
       const aStart = a.scheduleSettings?.startTime || '00:00';
       const bStart = b.scheduleSettings?.startTime || '00:00';
       return timeToMinutes(aStart) - timeToMinutes(bStart);
     });
-    
-    setActiveSports(sortedSports);
-    setLoading(false);
+  }, [sports]);
+
+  // ローディング状態を管理
+  useEffect(() => {
+    setLoading(true);
+    if (sports.length > 0) {
+      setLoading(false);
+    }
   }, [sports]);
 
   // アコーディオンの開閉を管理
@@ -66,15 +74,35 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
     setExpanded(isExpanded ? panel : false);
   };
 
+  // 各競技の同時進行試合の数をカウント
+  const getSimultaneousMatchCount = (sport: Sport): number => {
+    if (!sport.scheduleSettings?.timeSlots) return 0;
+    
+    // タイムスロットを開始時間でグループ化
+    const timeGroups: Record<string, TimeSlot[]> = {};
+    sport.scheduleSettings.timeSlots.forEach(slot => {
+      if (slot.type !== 'match') return;
+      
+      if (!timeGroups[slot.startTime]) {
+        timeGroups[slot.startTime] = [];
+      }
+      timeGroups[slot.startTime].push(slot);
+    });
+    
+    // 同時進行の最大数を計算
+    let maxSimultaneous = 0;
+    Object.values(timeGroups).forEach(slots => {
+      maxSimultaneous = Math.max(maxSimultaneous, slots.length);
+    });
+    
+    return maxSimultaneous;
+  };
+
   // スポーツのタイムスロット分布を簡略表示するための関数
   const renderTimeDistribution = (sport: Sport) => {
     if (!sport.scheduleSettings?.timeSlots) return null;
     
     const timeSlots = sport.scheduleSettings.timeSlots;
-    const startTime = sport.scheduleSettings.startTime;
-    const endTime = sport.scheduleSettings.endTime;
-    
-    const totalDurationMinutes = timeToMinutes(endTime) - timeToMinutes(startTime);
     
     // 時間枠タイプごとのカウント
     const counts = {
@@ -83,17 +111,30 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
       lunch: timeSlots.filter(slot => slot.type === 'lunch').length,
       other: timeSlots.filter(slot => !['match', 'break', 'lunch'].includes(slot.type)).length
     };
+    
+    // 同時進行数
+    const simultaneousCount = getSimultaneousMatchCount(sport);
+    const hasMultipleCourts = simultaneousCount > 1;
 
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         {counts.match > 0 && (
-          <Chip 
-            icon={<SportIcon fontSize="small" />} 
-            label={`${counts.match}${t('schedule.matchCount')}`} 
-            size="small" 
-            color="primary"
-            variant="outlined"
-          />
+          <Tooltip title={hasMultipleCourts ? t('schedule.hasSimultaneousMatches') : ''}>
+            <Badge 
+              badgeContent={hasMultipleCourts ? simultaneousCount : 0} 
+              color="primary"
+              overlap="circular"
+              invisible={!hasMultipleCourts}
+            >
+              <Chip 
+                icon={<SportIcon fontSize="small" />} 
+                label={`${counts.match}${t('schedule.matchCount')}`} 
+                size="small" 
+                color="primary"
+                variant="outlined"
+              />
+            </Badge>
+          </Tooltip>
         )}
         {counts.break > 0 && (
           <Chip 
@@ -113,7 +154,85 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
             variant="outlined"
           />
         )}
+        {sport.scheduleSettings?.courtCount > 1 && (
+          <Chip 
+            icon={<PlaceIcon fontSize="small" />} 
+            label={`${sport.scheduleSettings.courtCount}${t('schedule.courts')}`} 
+            size="small" 
+            color="info"
+            variant="outlined"
+          />
+        )}
       </Box>
+    );
+  };
+
+  // スポーツごとのスケジュールサマリーカード
+  const renderSportScheduleSummary = (sport: Sport) => {
+    if (!sport.scheduleSettings?.timeSlots || sport.scheduleSettings.timeSlots.length === 0) {
+      return null;
+    }
+
+    // 試合時間枠を取得
+    const matchSlots = sport.scheduleSettings.timeSlots.filter(slot => slot.type === 'match');
+    if (matchSlots.length === 0) return null;
+
+    // 最初と最後の試合時間を取得
+    const firstMatch = matchSlots.reduce((earliest, slot) => 
+      timeToMinutes(slot.startTime) < timeToMinutes(earliest.startTime) ? slot : earliest, matchSlots[0]);
+    
+    const lastMatch = matchSlots.reduce((latest, slot) => 
+      timeToMinutes(slot.startTime) > timeToMinutes(latest.startTime) ? slot : latest, matchSlots[0]);
+
+    return (
+      <Card variant="outlined" sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
+            {t('schedule.matchTimeRange')}
+          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center', 
+            mb: 1
+          }}>
+            <Chip 
+              label={`${t('schedule.firstMatch')}: ${firstMatch.startTime}`}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+            <Box sx={{ mx: 1, flexGrow: 1, textAlign: 'center' }}>→</Box>
+            <Chip 
+              label={`${t('schedule.lastMatch')}: ${lastMatch.startTime}`}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+          </Box>
+          
+          {/* コート情報 */}
+          {sport.scheduleSettings.courtCount > 1 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                {t('schedule.courtInfo')}:
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                <Chip 
+                  label={sport.scheduleSettings.courtNames?.court1 || t('schedule.court1')}
+                  size="small"
+                  variant="outlined"
+                />
+                <Chip 
+                  label={sport.scheduleSettings.courtNames?.court2 || t('schedule.court2')}
+                  size="small"
+                  variant="outlined"
+                />
+              </Box>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
     );
   };
 
@@ -190,6 +309,10 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
             
             <AccordionDetails sx={{ p: isMobile ? 1 : 2 }}>
               <Paper variant="outlined" sx={{ p: 2 }}>
+                {/* スケジュールサマリー */}
+                {renderSportScheduleSummary(sport)}
+                
+                {/* 詳細スケジュール */}
                 <ScheduleTimeline sport={sport} />
                 
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
