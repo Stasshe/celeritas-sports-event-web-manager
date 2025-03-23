@@ -17,12 +17,16 @@ import {
   Tab,
   Alert,
   IconButton,
-  Chip
+  Chip,
+  ToggleButtonGroup,
+  ToggleButton
 } from '@mui/material';
 import { 
   Add as AddIcon, 
   Delete as DeleteIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
+  SportsCricket as Court1Icon,
+  SportsVolleyball as Court2Icon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { Sport, ScheduleSettings, TimeSlot, Match, LeagueScheduleSettings } from '../../../types';
@@ -46,6 +50,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     endTime: '17:00',
     matchDuration: 20,
     breakDuration: 5,
+    courtCount: 1, // デフォルトは1コート
+    courtNames: {
+      court1: '第1コート',
+      court2: '第2コート'
+    },
     lunchBreak: hasLunchBreak ? { startTime: '12:00', endTime: '13:00' } : undefined,
     breakTimes: [],
     timeSlots: []
@@ -91,6 +100,38 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         ? parseInt(value) || 0
         : value
     }));
+  };
+
+  // コート数変更のハンドラ
+  const handleCourtCountChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newCourtCount: 1 | 2 | null
+  ) => {
+    if (newCourtCount !== null) {
+      setScheduleSettings(prev => ({
+        ...prev,
+        courtCount: newCourtCount
+      }));
+    }
+  };
+
+  // コート名変更のハンドラ
+  const handleCourtNameChange = (court: 'court1' | 'court2', value: string) => {
+    setScheduleSettings(prev => {
+      // Ensure courtNames exists with defaults before updating
+      const currentCourtNames = prev.courtNames || { 
+        court1: '第1コート', 
+        court2: prev.courtCount > 1 ? '第2コート' : undefined 
+      };
+      
+      return {
+        ...prev,
+        courtNames: {
+          ...currentCourtNames,
+          [court]: value
+        }
+      };
+    });
   };
 
   // ランチ休憩の切り替え
@@ -361,6 +402,56 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                     />
                   </Grid>
                 </>
+              )}
+              
+              {/* コート設定の追加 */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
+                  {t('schedule.courtSettings')}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="body2" sx={{ mr: 2 }}>
+                    {t('schedule.courtCount')}:
+                  </Typography>
+                  <ToggleButtonGroup
+                    value={scheduleSettings.courtCount}
+                    exclusive
+                    onChange={handleCourtCountChange}
+                    aria-label="court count"
+                    size="small"
+                  >
+                    <ToggleButton value={1} aria-label="1 court">
+                      <Court1Icon sx={{ mr: 1 }} />
+                      1 {t('schedule.court')}
+                    </ToggleButton>
+                    <ToggleButton value={2} aria-label="2 courts">
+                      <Court2Icon sx={{ mr: 1 }} />
+                      2 {t('schedule.courts')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={t('schedule.court1Name')}
+                  value={scheduleSettings.courtNames?.court1 || '第1コート'}
+                  onChange={(e) => handleCourtNameChange('court1', e.target.value)}
+                  margin="normal"
+                />
+              </Grid>
+              
+              {scheduleSettings.courtCount === 2 && (
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={t('schedule.court2Name')}
+                    value={scheduleSettings.courtNames?.court2 || '第2コート'}
+                    onChange={(e) => handleCourtNameChange('court2', e.target.value)}
+                    margin="normal"
+                  />
+                </Grid>
               )}
               
               {/* スポーツタイプ特有の入力 */}

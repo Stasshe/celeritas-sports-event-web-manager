@@ -10,7 +10,9 @@ import {
   Typography,
   Chip,
   Box,
-  useTheme
+  useTheme,
+  Divider,
+  Grid
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { TimeSlot, Sport, Match, Team } from '../../../types/index';
@@ -71,69 +73,108 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
     }
   };
 
+  // コート名を取得
+  const getCourtName = (courtId?: 'court1' | 'court2'): string => {
+    if (!courtId) return '';
+    return sport.scheduleSettings?.courtNames?.[courtId] || 
+           (courtId === 'court1' ? '第1コート' : '第2コート');
+  };
+
+  // 時間でグループ化して表示する
+  const timeSlotsByTime: { [key: string]: TimeSlot[] } = {};
+  timeSlots.forEach(slot => {
+    if (!timeSlotsByTime[slot.startTime]) {
+      timeSlotsByTime[slot.startTime] = [];
+    }
+    timeSlotsByTime[slot.startTime].push(slot);
+  });
+
   return (
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
             <TableCell width="15%">{t('schedule.time')}</TableCell>
-            <TableCell width="15%">{t('schedule.type')}</TableCell>
-            <TableCell>{t('schedule.details')}</TableCell>
+            <TableCell>{t('schedule.activities')}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {timeSlots.map((slot, index) => {
-            const match = slot.matchId ? getMatchInfo(slot.matchId) : undefined;
-            
-            return (
-              <TableRow key={index} sx={{ 
-                bgcolor: slot.type === 'break' || slot.type === 'lunch' 
-                  ? `${getTypeColor(slot.type)}10` 
-                  : 'inherit'
-              }}>
+          {Object.entries(timeSlotsByTime)
+            .sort(([timeA], [timeB]) => timeA.localeCompare(timeB))
+            .map(([time, slots]) => (
+              <TableRow key={time}>
                 <TableCell>
-                  <Typography variant="body2">
-                    {slot.startTime} - {slot.endTime}
+                  <Typography variant="body2" fontWeight="bold">
+                    {slots[0].startTime} - {slots[0].endTime}
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Chip
-                    label={getTypeLabel(slot.type)}
-                    size="small"
-                    sx={{ 
-                      bgcolor: `${getTypeColor(slot.type)}30`,
-                      color: getTypeColor(slot.type),
-                      borderColor: getTypeColor(slot.type)
-                    }}
-                    variant="outlined"
-                  />
-                </TableCell>
-                <TableCell>
-                  {slot.type === 'match' && match ? (
-                    <Box>
-                      <Typography variant="body2">
-                        {getTeamName(match.team1Id)} vs {getTeamName(match.team2Id)}
-                      </Typography>
-                      {match.location && (
-                        <Typography variant="caption" color="text.secondary">
-                          {t('schedule.location')}: {match.location}
-                        </Typography>
-                      )}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2">
-                      {slot.title || getTypeLabel(slot.type)}
-                      {slot.description && ` - ${slot.description}`}
-                    </Typography>
-                  )}
+                  <Grid container spacing={2}>
+                    {slots.map((slot, idx) => (
+                      <Grid item xs={12} md={slot.type === 'match' ? 6 : 12} key={idx}>
+                        <Box 
+                          sx={{ 
+                            p: 1, 
+                            borderLeft: `4px solid ${getTypeColor(slot.type)}`,
+                            bgcolor: `${getTypeColor(slot.type)}10`,
+                            borderRadius: 1,
+                            mb: 1
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                            <Chip
+                              label={getTypeLabel(slot.type)}
+                              size="small"
+                              sx={{ 
+                                mr: 1,
+                                bgcolor: `${getTypeColor(slot.type)}20`,
+                                color: getTypeColor(slot.type),
+                                borderColor: getTypeColor(slot.type)
+                              }}
+                              variant="outlined"
+                            />
+                            {slot.courtId && (
+                              <Chip
+                                label={getCourtName(slot.courtId)}
+                                size="small"
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                          
+                          {slot.type === 'match' && slot.matchId ? (
+                            (() => {
+                              const match = getMatchInfo(slot.matchId);
+                              return match ? (
+                                <Box>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    {getTeamName(match.team1Id)} vs {getTeamName(match.team2Id)}
+                                  </Typography>
+                                  {slot.description && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {slot.description}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              ) : null;
+                            })()
+                          ) : (
+                            <Typography variant="body2">
+                              {slot.title || getTypeLabel(slot.type)}
+                              {slot.description && ` - ${slot.description}`}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
                 </TableCell>
               </TableRow>
-            );
-          })}
+            ))}
           
-          {timeSlots.length === 0 && (
+          {Object.keys(timeSlotsByTime).length === 0 && (
             <TableRow>
-              <TableCell colSpan={3} align="center">
+              <TableCell colSpan={2} align="center">
                 {t('schedule.noTimeSlots')}
               </TableCell>
             </TableRow>

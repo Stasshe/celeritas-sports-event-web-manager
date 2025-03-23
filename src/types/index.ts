@@ -162,6 +162,7 @@ export interface TimeSlot {
   title?: string; // オプショナルなタイトル（「休憩」など）
   type: "match" | "break" | "lunch" | "preparation" | "cleanup"; // 時間枠の種類
   matchId?: string; // 試合ID（type: "match"の場合）
+  courtId?: 'court1' | 'court2'; // どのコートで行うか
   description?: string; // オプショナルな説明
 }
 
@@ -171,6 +172,11 @@ export interface ScheduleSettings {
   endTime: string; // 終了時間 "17:00"
   matchDuration: number; // 一試合あたりの時間（分）
   breakDuration: number; // 休憩時間（分）
+  courtCount: 1 | 2; // コート数（1または2）
+  courtNames?: {  // 各コートの名前
+    court1: string;
+    court2?: string;
+  };
   lunchBreak?: { // ランチ休憩（オプショナル）
     startTime: string;
     endTime: string;
