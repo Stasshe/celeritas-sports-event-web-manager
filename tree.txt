@@ -3,7 +3,11 @@
 ├── README.md
 ├── build_result.txt
 ├── e.txt
+├── extract_i18n.sh
+├── find_missing.sh
 ├── firebaseRules.json
+├── git_log.txt
+├── missing_translations.txt
 ├── package-lock.json
 ├── package.json
 ├── public
@@ -77,6 +81,9 @@
 │   │   │   │   ├── CreateEventDialog.tsx
 │   │   │   │   ├── CreateSportDialog.tsx
 │   │   │   │   └── DeleteConfirmationDialog.tsx
+│   │   │   ├── scheduling
+│   │   │   │   ├── ScheduleTab.tsx
+│   │   │   │   └── TimeSlotTable.tsx
 │   │   │   └── scoring
 │   │   │       ├── LeagueScoring.tsx
 │   │   │       ├── RankingScoring.tsx
@@ -95,7 +102,9 @@
 │   │   │   └── AdminLayout.tsx
 │   │   └── sports
 │   │       ├── CustomLayout.tsx
-│   │       └── RoundRobinTable.tsx
+│   │       ├── EventTimelineOverview.tsx
+│   │       ├── RoundRobinTable.tsx
+│   │       └── ScheduleTimeline.tsx
 │   ├── config
 │   │   └── firebase.ts
 │   ├── contexts
@@ -113,7 +122,6 @@
 │   │       └── ja.json
 │   ├── index.css
 │   ├── index.tsx
-│   ├── locales
 │   ├── pages
 │   │   ├── HomePage.tsx
 │   │   ├── LoginPage.tsx
@@ -133,9 +141,11 @@
 │   │   ├── react-color.d.ts
 │   │   └── tournament-brackets.d.ts
 │   └── utils
+│       ├── scheduleGenerator.ts
 │       └── tournamentViewHelper.ts
 ├── start.sh
+├── translation.txt
 ├── tree.txt
 └── tsconfig.json
 
-20 directories, 118 files
+20 directories, 128 files
