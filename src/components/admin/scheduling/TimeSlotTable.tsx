@@ -26,13 +26,13 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
 
   // チーム名を取得する関数
   const getTeamName = (teamId: string): string => {
-    const team = sport.teams.find(t => t.id === teamId);
+    const team = sport.teams?.find(t => t.id === teamId);
     return team ? team.name : t('schedule.unknownTeam');
   };
 
   // 試合情報を取得する関数
   const getMatchInfo = (matchId: string): Match | undefined => {
-    return sport.matches.find(m => m.id === matchId);
+    return sport.matches?.find(m => m.id === matchId);
   };
 
   // 時間枠の種類に応じた色を取得

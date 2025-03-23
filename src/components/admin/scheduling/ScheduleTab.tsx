@@ -170,6 +170,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         timeSlots: scheduleSettings.timeSlots || []
       };
       
+      // ランキング形式の場合は試合がなくてもスケジュールを生成可能
       const generatedTimeSlots = generateSchedule(sport, safeSettings);
       setTimeSlots(generatedTimeSlots);
       
@@ -254,6 +255,22 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       );
     }
     
+    // ランキング形式の場合は開始・終了時間のみ表示
+    if (sport.type === 'ranking') {
+      return (
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+              {t('schedule.rankingInfo')}
+            </Typography>
+            <Alert severity="info">
+              {t('schedule.rankingScheduleInfo')}
+            </Alert>
+          </Grid>
+        </Grid>
+      );
+    }
+    
     // トーナメントと総当たり戦の場合
     if (sport.type === 'tournament' || sport.type === 'roundRobin') {
       return (
@@ -262,6 +279,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             <Typography variant="subtitle1" gutterBottom>
               {t('schedule.matchCount')}: {sport.matches?.length || 0}
             </Typography>
+            {(!sport.matches || sport.matches.length === 0) && (
+              <Alert severity="warning">
+                {t('schedule.noMatchesWarning')}
+              </Alert>
+            )}
           </Grid>
         </Grid>
       );

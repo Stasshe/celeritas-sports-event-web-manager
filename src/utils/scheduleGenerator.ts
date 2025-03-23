@@ -104,8 +104,16 @@ export const generateSchedule = (sport: Sport, settings: ScheduleSettings): Time
   
   // スケジュールの生成ロジックを競技タイプごとに実装
   if (sport.type === 'ranking') {
-    // ランキング形式は単純に開始時間と終了時間のみ
-    return timeSlots;
+    // ランキング形式は開始時間と終了時間の情報のみ
+    // 必要に応じて全体時間のタイムスロットを追加
+    timeSlots.push({
+      startTime: settings.startTime,
+      endTime: settings.endTime,
+      title: '競技時間',
+      type: 'preparation',
+      description: 'ランキング競技の時間枠'
+    });
+    return timeSlots.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
   }
   
   if (sport.type === 'league') {
