@@ -882,6 +882,19 @@ const SportEditPage: React.FC = () => {
                     </Grid>
                   </Grid>
                   
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={() => navigate(`/admin/scoring/${sportId}`)}
+                        startIcon={<SportIcon />}
+                      >
+                        {t('sport.manageScores')}
+                      </Button>
+                    </Grid>
+                  </Grid>
+
                   {/* 担当者リスト */}
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {(localSport.organizers || []).map(org => (
@@ -902,33 +915,7 @@ const SportEditPage: React.FC = () => {
                 </Paper>
                 
                 <Paper sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    {t('sport.quickActions')}
-                  </Typography>
-                  <Divider sx={{ mb: 3 }} />
                   
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={() => setActiveTab(1)}
-                        startIcon={<PeopleIcon />}
-                      >
-                        {t('sport.manageRoster')}
-                      </Button>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={() => navigate(`/admin/scoring/${sportId}`)}
-                        startIcon={<SportIcon />}
-                      >
-                        {t('sport.manageScores')}
-                      </Button>
-                    </Grid>
-                  </Grid>
                 </Paper>
               </Grid>
             </Grid>
