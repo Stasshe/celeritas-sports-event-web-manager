@@ -376,18 +376,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </ListItemIcon>
             <ListItemText primary={t('admin.dashboard')} />
           </ListItemButton>
-        {/*
-          <ListItem disablePadding>
-            <ListItemButton 
-              selected={location.pathname === '/admin/scoring-board'}
-              onClick={() => navigate('/admin/scoring-board')}
-            >
-              <ListItemIcon>
-                <ScoreboardIcon />
-              </ListItemIcon>
-              <ListItemText primary={t('admin.scoringBoard')} />
-            </ListItemButton>
-          </ListItem>*/}
         </ListItem>
       </List>
       
