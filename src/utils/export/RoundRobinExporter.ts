@@ -3,21 +3,21 @@ import { Sport, Match, Team } from '../../types';
 import { defaultRoundRobinSettings } from '../../types';
 
 /**
- * Exports round-robin data to an Excel worksheet
+ * 総当たり戦データをExcelワークシートにエクスポート
  */
 export const exportRoundRobin = async (
   sheet: ExcelJS.Worksheet,
   sport: Sport
 ): Promise<void> => {
   try {
-    // Set up title and basic information
+    // タイトルと基本情報の設定
     sheet.mergeCells('A1:G1');
     const titleCell = sheet.getCell('A1');
-    titleCell.value = `${sport.name} - Round Robin Competition`;
+    titleCell.value = `${sport.name} - 総当たり戦`;
     titleCell.font = { size: 16, bold: true };
     titleCell.alignment = { horizontal: 'center' };
     
-    // Add description if available
+    // 説明があれば追加
     if (sport.description) {
       sheet.mergeCells('A2:G2');
       const descCell = sheet.getCell('A2');
@@ -25,36 +25,36 @@ export const exportRoundRobin = async (
       descCell.alignment = { horizontal: 'center' };
     }
     
-    // Add settings information
+    // 設定情報の追加
     const settings = { ...defaultRoundRobinSettings, ...sport.roundRobinSettings };
     sheet.mergeCells('A3:G3');
     const settingsCell = sheet.getCell('A3');
-    settingsCell.value = `Win: ${settings.winPoints} pts, Draw: ${settings.drawPoints} pts, Loss: ${settings.losePoints} pts`;
+    settingsCell.value = `勝ち: ${settings.winPoints}点, 引き分け: ${settings.drawPoints}点, 負け: ${settings.losePoints}点`;
     settingsCell.alignment = { horizontal: 'center' };
     settingsCell.font = { italic: true };
     
-    // Space before the tables
+    // 表の前にスペースを追加
     sheet.addRow(['']);
     let currentRow = 5;
     
-    // 1. Create standings table
+    // 1. 順位表の作成
     currentRow = addStandingsTable(sheet, sport, currentRow, settings);
     
-    // Add spacing
+    // スペースを追加
     sheet.addRow(['']);
     currentRow += 2;
     
-    // 2. Create match results table
+    // 2. 試合結果表の作成
     currentRow = addMatchResultsTable(sheet, sport, currentRow);
     
-    // Add spacing
+    // スペースを追加
     sheet.addRow(['']);
     currentRow += 2;
     
-    // 3. Create cross-table (matrix of head-to-head results)
+    // 3. 対戦表（相互対戦成績表）の作成
     currentRow = addCrossTable(sheet, sport, currentRow);
     
-    // Set column widths
+    // 列幅の設定
     sheet.getColumn(1).width = 25;
     sheet.getColumn(2).width = 10;
     sheet.getColumn(3).width = 10;
@@ -66,13 +66,13 @@ export const exportRoundRobin = async (
     
     return;
   } catch (error) {
-    console.error('Error exporting round robin data:', error);
+    console.error('総当たり戦データのエクスポートエラー:', error);
     throw error;
   }
 };
 
 /**
- * Adds a standings table to the worksheet
+ * 順位表をワークシートに追加
  */
 const addStandingsTable = (
   sheet: ExcelJS.Worksheet,
@@ -80,17 +80,17 @@ const addStandingsTable = (
   startRow: number,
   settings: any
 ): number => {
-  // Add header
+  // ヘッダーを追加
   sheet.mergeCells(`A${startRow}:H${startRow}`);
   const headerCell = sheet.getCell(`A${startRow}`);
-  headerCell.value = 'Standings';
+  headerCell.value = '順位表';
   headerCell.font = { bold: true, size: 14 };
   headerCell.alignment = { horizontal: 'center' };
   startRow++;
   
-  // Add column headers
+  // 列ヘッダーを追加
   const standingsHeader = sheet.addRow([
-    'Team', 'P', 'W', 'D', 'L', 'GF', 'GA', 'Pts'
+    'チーム', '試', '勝', '分', '負', '得点', '失点', '勝点'
   ]);
   standingsHeader.font = { bold: true };
   standingsHeader.eachCell((cell) => {
@@ -102,11 +102,11 @@ const addStandingsTable = (
     };
     cell.alignment = { horizontal: 'center' };
   });
-  // Allow team names to align left
+  // チーム名は左寄せ
   standingsHeader.getCell(1).alignment = { horizontal: 'left' };
   startRow++;
   
-  // Calculate statistics for each team
+  // 各チームの統計を計算
   const teamStats: Record<string, {
     played: number;
     won: number;
@@ -117,7 +117,7 @@ const addStandingsTable = (
     points: number;
   }> = {};
   
-  // Initialize stats for each team
+  // 各チームの統計を初期化
   sport.teams.forEach(team => {
     teamStats[team.id] = {
       played: 0,
@@ -130,68 +130,76 @@ const addStandingsTable = (
     };
   });
   
-  // Process completed matches
-  sport.matches.forEach(match => {
-    if (match.status === 'completed') {
-      // Update team 1 stats
-      teamStats[match.team1Id].played++;
-      teamStats[match.team1Id].goalsFor += match.team1Score;
-      teamStats[match.team1Id].goalsAgainst += match.team2Score;
-      
-      // Update team 2 stats
-      teamStats[match.team2Id].played++;
-      teamStats[match.team2Id].goalsFor += match.team2Score;
-      teamStats[match.team2Id].goalsAgainst += match.team1Score;
-      
-      // Update win/draw/loss stats
-      if (match.team1Score > match.team2Score) {
-        teamStats[match.team1Id].won++;
-        teamStats[match.team1Id].points += settings.winPoints;
-        
-        teamStats[match.team2Id].lost++;
-        if (settings.considerLosePoints) {
-          teamStats[match.team2Id].points += settings.losePoints;
+  // 完了した試合を処理して統計を更新
+  if (sport.matches && Array.isArray(sport.matches)) {
+    sport.matches.forEach(match => {
+      if (match.status === 'completed') {
+        // チーム1の統計更新
+        if (teamStats[match.team1Id]) {
+          teamStats[match.team1Id].played++;
+          teamStats[match.team1Id].goalsFor += match.team1Score;
+          teamStats[match.team1Id].goalsAgainst += match.team2Score;
+          
+          if (match.team1Score > match.team2Score) {
+            teamStats[match.team1Id].won++;
+            teamStats[match.team1Id].points += settings.winPoints;
+          } else if (match.team1Score < match.team2Score) {
+            teamStats[match.team1Id].lost++;
+            if (settings.considerLosePoints) {
+              teamStats[match.team1Id].points += settings.losePoints;
+            }
+          } else {
+            // 引き分け
+            teamStats[match.team1Id].drawn++;
+            teamStats[match.team1Id].points += settings.drawPoints;
+          }
         }
-      } else if (match.team2Score > match.team1Score) {
-        teamStats[match.team2Id].won++;
-        teamStats[match.team2Id].points += settings.winPoints;
         
-        teamStats[match.team1Id].lost++;
-        if (settings.considerLosePoints) {
-          teamStats[match.team1Id].points += settings.losePoints;
+        // チーム2の統計更新
+        if (teamStats[match.team2Id]) {
+          teamStats[match.team2Id].played++;
+          teamStats[match.team2Id].goalsFor += match.team2Score;
+          teamStats[match.team2Id].goalsAgainst += match.team1Score;
+          
+          if (match.team2Score > match.team1Score) {
+            teamStats[match.team2Id].won++;
+            teamStats[match.team2Id].points += settings.winPoints;
+          } else if (match.team2Score < match.team1Score) {
+            teamStats[match.team2Id].lost++;
+            if (settings.considerLosePoints) {
+              teamStats[match.team2Id].points += settings.losePoints;
+            }
+          } else {
+            // 引き分け
+            teamStats[match.team2Id].drawn++;
+            teamStats[match.team2Id].points += settings.drawPoints;
+          }
         }
-      } else {
-        // Draw
-        teamStats[match.team1Id].drawn++;
-        teamStats[match.team1Id].points += settings.drawPoints;
-        
-        teamStats[match.team2Id].drawn++;
-        teamStats[match.team2Id].points += settings.drawPoints;
       }
-    }
-  });
+    });
+  }
   
-  // Sort teams by points, goal difference, etc.
+  // チームを勝点、ゴール差などでソート
   const sortedTeams = [...sport.teams].sort((a, b) => {
-    // Compare points
+    // 勝点を比較
     const pointsDiff = teamStats[b.id].points - teamStats[a.id].points;
     if (pointsDiff !== 0) return pointsDiff;
     
-    // If points are equal, compare goal difference
+    // 勝点が同じ場合、ゴール差を比較
     const aGoalDiff = teamStats[a.id].goalsFor - teamStats[a.id].goalsAgainst;
     const bGoalDiff = teamStats[b.id].goalsFor - teamStats[b.id].goalsAgainst;
     const goalDiff = bGoalDiff - aGoalDiff;
     if (goalDiff !== 0) return goalDiff;
     
-    // If goal difference is equal, compare goals scored
+    // ゴール差が同じ場合、得点数を比較
     const goalsScoredDiff = teamStats[b.id].goalsFor - teamStats[a.id].goalsFor;
     if (goalsScoredDiff !== 0) return goalsScoredDiff;
     
-    // If everything is equal, sort alphabetically
+    // すべて同じ場合、アルファベット順でソート
     return a.name.localeCompare(b.name);
   });
   
-  // Add team rows
+  // チーム行を追加
   sortedTeams.forEach((team, index) => {
     const stats = teamStats[team.id];
     const row = sheet.addRow([
@@ -205,7 +213,7 @@ const addStandingsTable = (
       stats.points.toString()
     ]);
     
-    // Style the row
+    // 行のスタイル設定
     row.eachCell((cell) => {
       cell.border = {
         top: { style: 'thin' },
@@ -215,10 +223,10 @@ const addStandingsTable = (
       };
       cell.alignment = { horizontal: 'center' };
     });
-    // Allow team names to align left
+    // チーム名は左寄せ
     row.getCell(1).alignment = { horizontal: 'left' };
     
-    // Highlight top teams
+    // 上位チームをハイライト
     if (index < 3) {
       row.eachCell((cell) => {
         cell.fill = {
@@ -236,24 +244,24 @@ const addStandingsTable = (
 };
 
 /**
- * Adds a match results table to the worksheet
+ * 試合結果表をワークシートに追加
  */
 const addMatchResultsTable = (
   sheet: ExcelJS.Worksheet,
   sport: Sport,
   startRow: number
 ): number => {
-  // Add header
+  // ヘッダーを追加
   sheet.mergeCells(`A${startRow}:F${startRow}`);
   const headerCell = sheet.getCell(`A${startRow}`);
-  headerCell.value = 'Match Results';
+  headerCell.value = '試合結果';
   headerCell.font = { bold: true, size: 14 };
   headerCell.alignment = { horizontal: 'center' };
   startRow++;
   
-  // Add column headers
+  // 列ヘッダーを追加
   const matchesHeader = sheet.addRow([
-    'Match #', 'Team 1', 'Score', 'Team 2', 'Date', 'Status'
+    '試合番号', 'チーム1', 'スコア', 'チーム2', '日付', '状態'
   ]);
   matchesHeader.font = { bold: true };
   matchesHeader.eachCell((cell) => {
@@ -267,21 +275,21 @@ const addMatchResultsTable = (
   });
   startRow++;
   
-  // Group matches by round/matchday if possible
+  // ラウンド/節ごとに試合をグループ化
   const matches = sport.matches && Array.isArray(sport.matches) 
     ? [...sport.matches].sort((a, b) => a.matchNumber - b.matchNumber)
     : [];
   let currentMatchday = -1;
   
   matches.forEach(match => {
-    // Check if this is a new matchday
+    // 新しい節かどうかをチェック
     if (match.round !== currentMatchday) {
       currentMatchday = match.round;
       
-      // Add matchday header
+      // 節ヘッダーを追加
       sheet.mergeCells(`A${startRow}:F${startRow}`);
       const matchdayCell = sheet.getCell(`A${startRow}`);
-      matchdayCell.value = `Matchday ${currentMatchday}`;
+      matchdayCell.value = `第${currentMatchday}節`;
       matchdayCell.font = { italic: true };
       matchdayCell.alignment = { horizontal: 'center' };
       matchdayCell.fill = {
@@ -292,24 +300,24 @@ const addMatchResultsTable = (
       startRow++;
     }
     
-    // Get team names
-    const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || 'Unknown';
-    const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || 'Unknown';
+    // チーム名を取得
+    const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || '不明';
+    const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || '不明';
     
-    // Format date if available
+    // 日付をフォーマット
     const matchDate = match.date ? new Date(match.date).toLocaleDateString() : '-';
     
-    // Add match row
+    // 試合行を追加
     const row = sheet.addRow([
       match.matchNumber.toString(),
       team1,
       match.status === 'completed' ? `${match.team1Score} - ${match.team2Score}` : 'vs',
       team2,
       matchDate,
-      match.status
+      match.status === 'completed' ? '完了' : match.status === 'inProgress' ? '進行中' : '予定'
     ]);
     
-    // Style the row
+    // 行のスタイル設定
     row.eachCell((cell) => {
       cell.border = {
         top: { style: 'thin' },
@@ -320,9 +328,38 @@ const addMatchResultsTable = (
       cell.alignment = { horizontal: 'center' };
     });
     
-    // Allow team names to align left
+    // チーム名は左寄せ
     row.getCell(2).alignment = { horizontal: 'left' };
     row.getCell(4).alignment = { horizontal: 'left' };
+    
+    // 完了した試合は勝者をハイライト
+    if (match.status === 'completed') {
+      const team1Cell = row.getCell(2);
+      const team2Cell = row.getCell(4);
+      
+      if (match.team1Score > match.team2Score) {
+        team1Cell.font = { bold: true };
+        team1Cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFDDFFDD' }
+        };
+      } else if (match.team2Score > match.team1Score) {
+        team2Cell.font = { bold: true };
+        team2Cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFDDFFDD' }
+        };
+      } else if (match.team1Score === match.team2Score) {
+        // 引き分けの場合は両方薄い色でハイライト
+        team1Cell.fill = team2Cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEEEEFF' }
+        };
+      }
+    }
     
     startRow++;
   });
@@ -331,7 +368,7 @@ const addMatchResultsTable = (
 };
 
 /**
- * Adds a cross-table (head-to-head matrix) to the worksheet
+ * 対戦表（相互対戦成績表）をワークシートに追加
  */
 const addCrossTable = (
   sheet: ExcelJS.Worksheet,
@@ -340,15 +377,15 @@ const addCrossTable = (
 ): number => {
   const teams = sport.teams;
   
-  // Add header
+  // ヘッダーを追加
   sheet.mergeCells(`A${startRow}:${getColumnLetter(teams.length + 1)}${startRow}`);
   const headerCell = sheet.getCell(`A${startRow}`);
-  headerCell.value = 'Head-to-Head Results';
+  headerCell.value = '対戦成績表';
   headerCell.font = { bold: true, size: 14 };
   headerCell.alignment = { horizontal: 'center' };
   startRow++;
   
-  // Add empty cell in top-left corner
+  // 左上の空セル
   const headerRow = sheet.getRow(startRow);
   headerRow.getCell(1).value = '';
   headerRow.getCell(1).border = {
@@ -358,7 +395,7 @@ const addCrossTable = (
     right: { style: 'thin' }
   };
   
-  // Add team names in the top row
+  // 上部行にチーム名を追加
   teams.forEach((team, index) => {
     const cell = headerRow.getCell(index + 2);
     cell.value = team.name;
@@ -371,7 +408,7 @@ const addCrossTable = (
       right: { style: 'thin' }
     };
     
-    // Make the header row taller and rotate text for better readability
+    // ヘッダー行を高くして、テキストを回転（見やすくするため）
     headerRow.height = 100;
     cell.alignment = { 
       horizontal: 'center', 
@@ -381,25 +418,30 @@ const addCrossTable = (
   });
   startRow++;
   
-  // Prepare the head-to-head results matrix
+  // 相互対戦結果表のマトリックスを準備
   const matrix: Record<string, Record<string, string>> = {};
   
   teams.forEach(team => {
     matrix[team.id] = {};
     teams.forEach(opponent => {
+      // 同じチームとの対戦は「-」
       matrix[team.id][opponent.id] = team.id === opponent.id ? '-' : '';
     });
   });
   
-  // Fill the matrix with match results
-  sport.matches.forEach(match => {
-    if (match.status === 'completed') {
-      matrix[match.team1Id][match.team2Id] = `${match.team1Score}-${match.team2Score}`;
-      matrix[match.team2Id][match.team1Id] = `${match.team2Score}-${match.team1Score}`;
-    }
-  });
+  // 試合結果をマトリックスに記入
+  if (sport.matches && Array.isArray(sport.matches)) {
+    sport.matches.forEach(match => {
+      if (match.status === 'completed') {
+        // チーム1から見た結果：「自分のスコア-相手のスコア」
+        matrix[match.team1Id][match.team2Id] = `${match.team1Score}-${match.team2Score}`;
+        // チーム2から見た結果：「自分のスコア-相手のスコア」
+        matrix[match.team2Id][match.team1Id] = `${match.team2Score}-${match.team1Score}`;
+      }
+    });
+  }
   
-  // Add rows for each team
+  // 各チームの行を追加
   teams.forEach((team, rowIndex) => {
     const row = sheet.addRow([team.name]);
     row.getCell(1).font = { bold: true };
@@ -411,7 +453,7 @@ const addCrossTable = (
       right: { style: 'thin' }
     };
     
-    // Add results against each opponent
+    // 各対戦相手との結果を追加
     teams.forEach((opponent, colIndex) => {
       const cell = row.getCell(colIndex + 2);
       cell.value = matrix[team.id][opponent.id];
@@ -423,22 +465,28 @@ const addCrossTable = (
         right: { style: 'thin' }
       };
       
-      // Highlight winning results
+      // 勝敗に応じたハイライト
       if (matrix[team.id][opponent.id] !== '-' && matrix[team.id][opponent.id] !== '') {
+        // スコアを「自チーム得点-相手チーム得点」から数値に分解
         const [teamScore, opponentScore] = matrix[team.id][opponent.id].split('-').map(Number);
+        
         if (teamScore > opponentScore) {
+          // 勝利：緑色
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
             fgColor: { argb: 'FFDDFFDD' }
           };
+          cell.font = { bold: true };
         } else if (teamScore < opponentScore) {
+          // 敗北：薄赤色
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
             fgColor: { argb: 'FFFFDDDD' }
           };
         } else if (teamScore === opponentScore) {
+          // 引き分け：薄青色
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
@@ -454,7 +502,7 @@ const addCrossTable = (
   return startRow;
 };
 
-// Helper function to convert column number to letter
+// 列番号をアルファベットに変換するヘルパー関数
 const getColumnLetter = (column: number): string => {
   let letter = '';
   while (column > 0) {
