@@ -192,34 +192,63 @@ const generateMatchBasedScheduleWithCourts = (
     const availableCourts = courtCount === 1 ? ['court1'] : ['court1', 'court2'];
     
     // 休憩とランチが被らないように調整
+    let safetyCounter = 0; // 無限ループ防止用のカウンター
+    let adjustedTime = false;
+    
     while (
-      overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
-      overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)
+      (overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
+      overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)) &&
+      safetyCounter < 100 // 安全策として最大100回のループ制限
     ) {
-      // 休憩が終わるまで時間をスキップ
+      safetyCounter++;
+      adjustedTime = false;
+      
+      // ランチ休憩との重複をチェック
       if (settings.lunchBreak && 
-          currentMinutes >= timeToMinutes(settings.lunchBreak.startTime) && 
-          currentMinutes < timeToMinutes(settings.lunchBreak.endTime)) {
+          currentMinutes < timeToMinutes(settings.lunchBreak.endTime) && 
+          currentMinutes + settings.matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
+        // ランチ休憩の終了時間にスキップ
         currentMinutes = timeToMinutes(settings.lunchBreak.endTime);
-      } else if (settings.breakTimes) {
+        adjustedTime = true;
+        continue; // 時間が調整されたので、他の休憩も再チェック
+      }
+      
+      // 他の休憩時間との重複をチェック
+      if (settings.breakTimes) {
         for (const breakTime of settings.breakTimes) {
-          if (
-            currentMinutes >= timeToMinutes(breakTime.startTime) && 
-            currentMinutes < timeToMinutes(breakTime.endTime)
-          ) {
-            currentMinutes = timeToMinutes(breakTime.endTime);
-            break;
+          const breakStartMinutes = timeToMinutes(breakTime.startTime);
+          const breakEndMinutes = timeToMinutes(breakTime.endTime);
+          
+          if (currentMinutes < breakEndMinutes && 
+              currentMinutes + settings.matchDuration > breakStartMinutes) {
+            // この休憩の終了時間にスキップ
+            currentMinutes = breakEndMinutes;
+            adjustedTime = true;
+            break; // 調整されたので、ループの先頭から再チェック
           }
         }
-      } else {
-        // 安全措置
+        
+        if (adjustedTime) {
+          continue; // 時間が調整されたので、再チェック
+        }
+      }
+      
+      // どの休憩時間にも該当しないが、まだ重複が解消されていない場合
+      // 念のため少し時間を進める（5分）
+      if (!adjustedTime) {
         currentMinutes += 5;
+        adjustedTime = true;
       }
       
       // 終了時間チェック
       if (currentMinutes >= endMinutes) {
-        throw new Error('休憩時間が多すぎてすべての試合をスケジュールできません');
+        throw new Error('休憩時間が多すぎるか、休憩時間設定に問題があります。スケジュールを生成できません。');
       }
+    }
+    
+    // 無限ループに陥った場合
+    if (safetyCounter >= 100) {
+      throw new Error('休憩時間の調整中に問題が発生しました。休憩時間の設定を見直してください。');
     }
     
     // この時間枠でスケジュールされた試合数
@@ -387,34 +416,63 @@ const generateLeagueScheduleWithCourts = (
     const availableCourts = courtCount === 1 ? ['court1'] : ['court1', 'court2'];
     
     // 休憩とランチが被らないように調整
+    let safetyCounter = 0; // 無限ループ防止用のカウンター
+    let adjustedTime = false;
+    
     while (
-      overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
-      overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)
+      (overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
+      overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)) &&
+      safetyCounter < 100 // 安全策として最大100回のループ制限
     ) {
-      // 休憩が終わるまで時間をスキップ
+      safetyCounter++;
+      adjustedTime = false;
+      
+      // ランチ休憩との重複をチェック
       if (settings.lunchBreak && 
-          currentMinutes >= timeToMinutes(settings.lunchBreak.startTime) && 
-          currentMinutes < timeToMinutes(settings.lunchBreak.endTime)) {
+          currentMinutes < timeToMinutes(settings.lunchBreak.endTime) && 
+          currentMinutes + settings.matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
+        // ランチ休憩の終了時間にスキップ
         currentMinutes = timeToMinutes(settings.lunchBreak.endTime);
-      } else if (settings.breakTimes) {
+        adjustedTime = true;
+        continue; // 時間が調整されたので、他の休憩も再チェック
+      }
+      
+      // 他の休憩時間との重複をチェック
+      if (settings.breakTimes) {
         for (const breakTime of settings.breakTimes) {
-          if (
-            currentMinutes >= timeToMinutes(breakTime.startTime) && 
-            currentMinutes < timeToMinutes(breakTime.endTime)
-          ) {
-            currentMinutes = timeToMinutes(breakTime.endTime);
-            break;
+          const breakStartMinutes = timeToMinutes(breakTime.startTime);
+          const breakEndMinutes = timeToMinutes(breakTime.endTime);
+          
+          if (currentMinutes < breakEndMinutes && 
+              currentMinutes + settings.matchDuration > breakStartMinutes) {
+            // この休憩の終了時間にスキップ
+            currentMinutes = breakEndMinutes;
+            adjustedTime = true;
+            break; // 調整されたので、ループの先頭から再チェック
           }
         }
-      } else {
-        // 安全措置
+        
+        if (adjustedTime) {
+          continue; // 時間が調整されたので、再チェック
+        }
+      }
+      
+      // どの休憩時間にも該当しないが、まだ重複が解消されていない場合
+      // 念のため少し時間を進める（5分）
+      if (!adjustedTime) {
         currentMinutes += 5;
+        adjustedTime = true;
       }
       
       // 終了時間チェック
       if (currentMinutes >= endMinutes) {
-        throw new Error('休憩時間が多すぎてすべての試合をスケジュールできません');
+        throw new Error('休憩時間が多すぎるか、休憩時間設定に問題があります。スケジュールを生成できません。');
       }
+    }
+    
+    // 無限ループに陥った場合
+    if (safetyCounter >= 100) {
+      throw new Error('休憩時間の調整中に問題が発生しました。休憩時間の設定を見直してください。');
     }
     
     // この時間枠でスケジュールされた試合数
@@ -516,34 +574,63 @@ const generateLeagueScheduleWithCourts = (
       const availableCourts = courtCount === 1 ? ['court1'] : ['court1', 'court2'];
       
       // 休憩とランチが被らないように調整
+      let safetyCounter = 0; // 無限ループ防止用のカウンター
+      let adjustedTime = false;
+      
       while (
-        overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
-        overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)
+        (overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
+        overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)) &&
+        safetyCounter < 100 // 安全策として最大100回のループ制限
       ) {
-        // 休憩が終わるまで時間をスキップ
+        safetyCounter++;
+        adjustedTime = false;
+        
+        // ランチ休憩との重複をチェック
         if (settings.lunchBreak && 
-            currentMinutes >= timeToMinutes(settings.lunchBreak.startTime) && 
-            currentMinutes < timeToMinutes(settings.lunchBreak.endTime)) {
+            currentMinutes < timeToMinutes(settings.lunchBreak.endTime) && 
+            currentMinutes + settings.matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
+          // ランチ休憩の終了時間にスキップ
           currentMinutes = timeToMinutes(settings.lunchBreak.endTime);
-        } else if (settings.breakTimes) {
+          adjustedTime = true;
+          continue; // 時間が調整されたので、他の休憩も再チェック
+        }
+        
+        // 他の休憩時間との重複をチェック
+        if (settings.breakTimes) {
           for (const breakTime of settings.breakTimes) {
-            if (
-              currentMinutes >= timeToMinutes(breakTime.startTime) && 
-              currentMinutes < timeToMinutes(breakTime.endTime)
-            ) {
-              currentMinutes = timeToMinutes(breakTime.endTime);
-              break;
+            const breakStartMinutes = timeToMinutes(breakTime.startTime);
+            const breakEndMinutes = timeToMinutes(breakTime.endTime);
+            
+            if (currentMinutes < breakEndMinutes && 
+                currentMinutes + settings.matchDuration > breakStartMinutes) {
+              // この休憩の終了時間にスキップ
+              currentMinutes = breakEndMinutes;
+              adjustedTime = true;
+              break; // 調整されたので、ループの先頭から再チェック
             }
           }
-        } else {
-          // 安全措置
+          
+          if (adjustedTime) {
+            continue; // 時間が調整されたので、再チェック
+          }
+        }
+        
+        // どの休憩時間にも該当しないが、まだ重複が解消されていない場合
+        // 念のため少し時間を進める（5分）
+        if (!adjustedTime) {
           currentMinutes += 5;
+          adjustedTime = true;
         }
         
         // 終了時間チェック
         if (currentMinutes >= endMinutes) {
-          throw new Error('休憩時間が多すぎてすべての試合をスケジュールできません');
+          throw new Error('休憩時間が多すぎるか、休憩時間設定に問題があります。スケジュールを生成できません。');
         }
+      }
+      
+      // 無限ループに陥った場合
+      if (safetyCounter >= 100) {
+        throw new Error('休憩時間の調整中に問題が発生しました。休憩時間の設定を見直してください。');
       }
       
       // この時間枠でスケジュールされた試合数
