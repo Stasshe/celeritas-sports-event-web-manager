@@ -92,6 +92,18 @@ const getMatchDescription = (match: Match, sport: Sport): string => {
   const team1 = sport.teams.find(t => t.id === match.team1Id);
   const team2 = sport.teams.find(t => t.id === match.team2Id);
   
+  // シード試合（不戦勝）の場合は特別な表示
+  if (isSeededMatch(match)) {
+    // Team1がいない場合はTeam2が不戦勝
+    if (!match.team1Id || match.team1Id === '') {
+      return `${team2?.name || '不明なチーム'} (不戦勝)`;
+    }
+    // Team2がいない場合はTeam1が不戦勝
+    if (!match.team2Id || match.team2Id === '') {
+      return `${team1?.name || '不明なチーム'} (不戦勝)`;
+    }
+  }
+  
   // プレーオフの試合で、チームがまだ決まっていない場合
   if (!match.blockId && (!team1 || !team2)) {
     const team1Display = team1?.name || (match.team1Id ? '不明なチーム' : '勝者未定');
@@ -101,6 +113,13 @@ const getMatchDescription = (match: Match, sport: Sport): string => {
   
   return `${team1?.name || '不明なチーム'} vs ${team2?.name || '不明なチーム'}`;
 };
+
+// 試合がシード（不戦勝）かどうかをチェックする関数を追加
+const isSeededMatch = (match: Match): boolean => {
+  // どちらかのチームIDが空の場合はシード試合
+  return (!match.team1Id || match.team1Id === '') || 
+         (!match.team2Id || match.team2Id === '');
+}
 
 // 同時進行に対応した新しいスケジュール生成関数
 export const generateSchedule = (sport: Sport, settings: ScheduleSettings): TimeSlot[] => {
@@ -172,7 +191,10 @@ const generateMatchBasedScheduleWithCourts = (
   // トーナメントの場合はラウンド数の低い順にソート
   let schedulableMatches: Match[] = [];
   if (sport.type === 'tournament') {
-    schedulableMatches = [...matches].sort((a, b) => a.round - b.round);
+    // シード試合（不戦勝）を除外してソート
+    schedulableMatches = [...matches]
+      .filter(match => !isSeededMatch(match))
+      .sort((a, b) => a.round - b.round);
   } else {
     schedulableMatches = [...matches];
   }
@@ -361,6 +383,9 @@ const generateLeagueScheduleWithCourts = (
   // グループステージとプレーオフの試合を分ける
   const groupMatches = matches.filter(m => m.blockId !== undefined);
   const playoffMatches = matches.filter(m => m.blockId === undefined && m.round > 0);
+  
+  // シード試合（不戦勝）をプレーオフから除外
+  const schedulablePlayoffMatches = playoffMatches.filter(match => !isSeededMatch(match));
   
   // 試合を各ブロックに分類
   const blockMatchesMap: { [blockId: string]: Match[] } = {};
@@ -565,8 +590,8 @@ const generateLeagueScheduleWithCourts = (
     
     currentMinutes += stageBreakDuration;
     
-    // ラウンド順にソート（決勝、準決勝など）
-    const sortedPlayoffMatches = [...playoffMatches].sort((a, b) => a.round - b.round);
+    // ラウンド順にソート（決勝、準決勝など）- シード試合を除外
+    const sortedPlayoffMatches = [...schedulablePlayoffMatches].sort((a, b) => a.round - b.round);
     
     // プレーオフの試合をスケジュール
     while (sortedPlayoffMatches.length > 0) {
@@ -645,7 +670,9 @@ const generateLeagueScheduleWithCourts = (
         if (sortedPlayoffMatches.length === 0) break;
         
         // 同じラウンドの試合のみスケジュール
-        const sameRoundMatches = sortedPlayoffMatches.filter(m => m.round === currentRound);
+        const sameRoundMatches = sortedPlayoffMatches.filter(m => 
+          m.round === currentRound && !isSeededMatch(m)
+        );
         if (sameRoundMatches.length === 0) break;
         
         // この時間枠でスケジュール可能な試合を探す

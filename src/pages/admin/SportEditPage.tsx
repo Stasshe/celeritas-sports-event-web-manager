@@ -239,6 +239,13 @@ const SportEditPage: React.FC = () => {
       loading: false,
       hasChanges: false 
     },
+    schedule: {  // 追加
+      isLoaded: true, 
+      isDirty: false, 
+      lastUpdated: 0,
+      loading: false,
+      hasChanges: false 
+    },
     rules: { 
       isLoaded: true, 
       isDirty: false, 
@@ -259,13 +266,6 @@ const SportEditPage: React.FC = () => {
       lastUpdated: 0,
       loading: false,
       hasChanges: false 
-    },
-    schedule: {  // 追加
-      isLoaded: true, 
-      isDirty: false, 
-      lastUpdated: 0,
-      loading: false,
-      hasChanges: false 
     }
   });
 
@@ -281,7 +281,7 @@ const SportEditPage: React.FC = () => {
       await handleSave();
     }
 
-    const tabName = ['details', 'roster', 'rules', 'manual', 'settings', 'schedule'][newValue];
+    const tabName = ['details','schedule', 'roster', 'rules', 'manual', 'settings'][newValue];
     setActiveTab(newValue);
 
     if (!tabStates[tabName].isLoaded) {
@@ -934,14 +934,14 @@ const SportEditPage: React.FC = () => {
         </TabPanel>
 
         {/* スケジュールタブ (新しく追加) */}
-        <TabPanel value={activeTab} index={5}>
+        <TabPanel value={activeTab} index={1}>
           <Paper sx={{ p: 3 }}>
             <ScheduleTab sport={localSport} onUpdate={handleSportUpdate} />
           </Paper>
         </TabPanel>
 
         {/* 競技・名簿登録タブ */}
-        <TabPanel value={activeTab} index={1}>
+        <TabPanel value={activeTab} index={2}>
           <Paper sx={{ p: 3 }}>
             
             <RosterEditor 
@@ -952,7 +952,7 @@ const SportEditPage: React.FC = () => {
         </TabPanel>
 
         {/* ルールタブ */}
-        <TabPanel value={activeTab} index={2}>
+        <TabPanel value={activeTab} index={3}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               {t('sport.tabs.rules')}
@@ -981,7 +981,7 @@ const SportEditPage: React.FC = () => {
         </TabPanel>
 
         {/* マニュアルタブ */}
-        <TabPanel value={activeTab} index={3}>
+        <TabPanel value={activeTab} index={4}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               {t('sport.tabs.manual')}
@@ -1010,7 +1010,7 @@ const SportEditPage: React.FC = () => {
         </TabPanel>
 
         {/* 設定タブ */}
-        <TabPanel value={activeTab} index={4}>
+        <TabPanel value={activeTab} index={5}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               {t('sport.tabs.settings')}
