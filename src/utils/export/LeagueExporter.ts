@@ -704,6 +704,17 @@ const addPlayoffBracket = (
   // デバッグログ - プレーオフのマッチ情報を出力
   console.log('Playoff matches:', playoffMatches);
   
+  // すべてのチーム情報をIDで索引付けして高速アクセスできるようにする
+  const teamMap: Record<string, Team> = {};
+  if (sport.teams && Array.isArray(sport.teams)) {
+    sport.teams.forEach(team => {
+      teamMap[team.id] = team;
+    });
+  }
+  
+  // デバッグ: チームIDリストを出力
+  console.log('Available team IDs:', Object.keys(teamMap));
+  
   // ラウンドヘッダーを追加
   const headerRow = sheet.getRow(startRow++);
   rounds.forEach((round, index) => {
@@ -787,16 +798,28 @@ const addPlayoffBracket = (
       const match = matches[i];
       const matchCenterRow = matchPositions[round][i];
       
-      // チーム名を取得 - 修正: チームIDが存在する場合のみチーム名を取得、それ以外は進出枠情報を表示
-      const team1 = match.team1Id 
-        ? (sport.teams.find(t => t.id === match.team1Id)?.name || `ID: ${match.team1Id}`) 
-        : 'TBD';
-      const team2 = match.team2Id 
-        ? (sport.teams.find(t => t.id === match.team2Id)?.name || `ID: ${match.team2Id}`) 
-        : 'TBD';
+      // チーム名を取得 - 修正: チームマップを使用して直接アクセス
+      let team1 = 'TBD';
+      let team2 = 'TBD';
       
-      // デバッグログ - 各マッチのチーム情報を出力
-      console.log(`Match ${match.id}: Team1=${match.team1Id} (${team1}), Team2=${match.team2Id} (${team2})`);
+      if (match.team1Id && teamMap[match.team1Id]) {
+        team1 = teamMap[match.team1Id].name;
+      } else if (match.team1Id) {
+        team1 = `ID: ${match.team1Id}`;
+        console.log(`Team with ID ${match.team1Id} not found in teams list`);
+      }
+      
+      if (match.team2Id && teamMap[match.team2Id]) {
+        team2 = teamMap[match.team2Id].name;
+      } else if (match.team2Id) {
+        team2 = `ID: ${match.team2Id}`;
+        console.log(`Team with ID ${match.team2Id} not found in teams list`);
+      }
+      
+      // デバッグログ - 各マッチのチーム情報を詳細表示
+      console.log(`Match ${match.id}:`);
+      console.log(`- Team1: ID=${match.team1Id}, Name=${team1}`);
+      console.log(`- Team2: ID=${match.team2Id}, Name=${team2}`);
       
       // チーム1のセル
       const team1Cell = sheet.getCell(matchCenterRow - 1, col);
@@ -910,16 +933,26 @@ const addPlayoffBracket = (
     );
     
     if (thirdPlaceMatch) {
-      // チーム名を取得 - 修正: チームIDが存在する場合のみチーム名を取得
-      const team1 = thirdPlaceMatch.team1Id 
-        ? (sport.teams.find(t => t.id === thirdPlaceMatch.team1Id)?.name || `ID: ${thirdPlaceMatch.team1Id}`) 
-        : 'TBD';
-      const team2 = thirdPlaceMatch.team2Id 
-        ? (sport.teams.find(t => t.id === thirdPlaceMatch.team2Id)?.name || `ID: ${thirdPlaceMatch.team2Id}`) 
-        : 'TBD';
+      // チーム名を取得 - 同様にチームマップを使用
+      let team1 = 'TBD';
+      let team2 = 'TBD';
       
-      // デバッグログ - 3位決定戦の情報
-      console.log(`Third place match: Team1=${thirdPlaceMatch.team1Id} (${team1}), Team2=${thirdPlaceMatch.team2Id} (${team2})`);
+      if (thirdPlaceMatch.team1Id && teamMap[thirdPlaceMatch.team1Id]) {
+        team1 = teamMap[thirdPlaceMatch.team1Id].name;
+      } else if (thirdPlaceMatch.team1Id) {
+        team1 = `ID: ${thirdPlaceMatch.team1Id}`;
+      }
+      
+      if (thirdPlaceMatch.team2Id && teamMap[thirdPlaceMatch.team2Id]) {
+        team2 = teamMap[thirdPlaceMatch.team2Id].name;
+      } else if (thirdPlaceMatch.team2Id) {
+        team2 = `ID: ${thirdPlaceMatch.team2Id}`;
+      }
+      
+      // デバッグログ - 3位決定戦のチーム情報
+      console.log(`Third place match:`);
+      console.log(`- Team1: ID=${thirdPlaceMatch.team1Id}, Name=${team1}`);
+      console.log(`- Team2: ID=${thirdPlaceMatch.team2Id}, Name=${team2}`);
       
       // チーム1情報
       const team1Cell = sheet.getCell(thirdPlaceRow + 1, 1);
@@ -992,6 +1025,17 @@ const addFinalStandings = (
   });
   startRow++;
   
+  // 最終順位の初期化
+  const standings: { position: number; teamId: string; note: string }[] = [];
+  
+  // チームマップを作成
+  const teamMap: Record<string, Team> = {};
+  if (sport.teams && Array.isArray(sport.teams)) {
+    sport.teams.forEach(team => {
+      teamMap[team.id] = team;
+    });
+  }
+  
   // 最終ラウンドを特定
   const maxRound = Math.max(...playoffMatches.map(m => m.round));
   
@@ -1000,9 +1044,6 @@ const addFinalStandings = (
     m.round === maxRound && 
     m.status === 'completed'
   );
-  
-  // 最終順位の初期化
-  const standings: { position: number; teamId: string; note: string }[] = [];
   
   // 決勝戦と3位決定戦の処理
   if (finalMatches.length > 0) {
@@ -1069,13 +1110,14 @@ const addFinalStandings = (
   
   // 各順位の行を追加
   standings.forEach((standing) => {
-    const team = sport.teams.find(t => t.id === standing.teamId);
+    // チームマップから直接チームを取得
+    const team = teamMap[standing.teamId];
     
     // デバッグ情報を追加
     console.log(`Standing position ${standing.position}: Team ID ${standing.teamId}, Found: ${team ? 'Yes' : 'No'}`);
     
     if (!team) {
-      console.log(`Team with ID ${standing.teamId} not found in sport.teams`);
+      console.log(`Team with ID ${standing.teamId} not found in team map, keys: ${Object.keys(teamMap).join(', ')}`);
       return;
     }
     
