@@ -85,12 +85,25 @@ const createImprovedVisualBracket = async (
   // ラウンドヘッダーを追加
   const headerRow = sheet.getRow(startRow++);
   rounds.forEach((round, index) => {
-    const col = index * 3 + 1;
+    // 各ラウンドヘッダーの位置を調整（中央に配置）
+    const col = index * 4 + 1;
     const headerCell = headerRow.getCell(col);
-    headerCell.value = `ラウンド ${round}`;
+    
+    // ラウンド名を決定（決勝、準決勝など）
+    let roundName = `ラウンド ${round}`;
+    if (round === maxRound) {
+      roundName = '決勝';
+    } else if (round === maxRound - 1) {
+      roundName = '準決勝';
+    } else if (round === maxRound - 2) {
+      roundName = '準々決勝';
+    }
+    
+    headerCell.value = roundName;
     headerCell.font = { bold: true };
     headerCell.alignment = { horizontal: 'center' };
-    sheet.mergeCells(startRow - 1, col, startRow - 1, col + 1);
+    // ヘッダーセルを結合
+    sheet.mergeCells(startRow - 1, col, startRow - 1, col + 2);
   });
   
   // ラウンド間にスペースを追加
@@ -100,9 +113,8 @@ const createImprovedVisualBracket = async (
   const firstRoundMatches = matchesByRound[rounds[0]] || [];
   const totalTeams = firstRoundMatches.length * 2;
   
-  // マッチ間に必要な行数を計算
-  const rowsPerTeam = 2; // 各チームに2行割り当て
-  const rowsNeeded = totalTeams * rowsPerTeam;
+  // 各チームの行間隔の初期値を設定
+  const initialRowsPerTeam = 3; // 各チームに割り当てる行数（余裕を持たせる）
   
   // 基本的なセルスタイル
   const matchStyle = {
@@ -123,96 +135,128 @@ const createImprovedVisualBracket = async (
     fgColor: { argb: 'FFDDFFDD' }
   };
   
+  // 各ラウンドごとのマッチ間隔を計算
+  const spacingMultipliers: number[] = [];
+  for (let i = 0; i < rounds.length; i++) {
+    spacingMultipliers.push(Math.pow(2, i));
+  }
+  
+  // すべてのラウンドにおけるマッチの位置を事前計算
+  const matchPositions: Record<number, number[]> = {};
+  
+  rounds.forEach((round, roundIndex) => {
+    const matches = matchesByRound[round] || [];
+    matchPositions[round] = [];
+    
+    const spacing = spacingMultipliers[roundIndex] * initialRowsPerTeam * 2;
+    
+    for (let i = 0; i < matches.length; i++) {
+      // 各マッチの中央行を計算
+      const matchCenterRow = startRow + i * spacing + Math.floor(spacing / 2);
+      matchPositions[round].push(matchCenterRow);
+    }
+  });
+  
   // 各ラウンドを処理
   for (let roundIndex = 0; roundIndex < rounds.length; roundIndex++) {
     const round = rounds[roundIndex];
     const matches = matchesByRound[round] || [];
-    const col = roundIndex * 3 + 1;
+    const col = roundIndex * 4 + 1; // 列間隔を広げる
     
-    // このラウンドでのマッチ間の行間隔を計算
-    const spacing = Math.pow(2, roundIndex) * rowsPerTeam * 2;
-    
-    // 前のラウンドのマッチ数からこのラウンドのマッチ数を計算
-    let expectedMatches = totalTeams / Math.pow(2, roundIndex + 1);
-    
-    // マッチがないラウンドがあれば、行数を計算
-    for (let i = 0; i < Math.max(matches.length, expectedMatches); i++) {
-      // 各マッチの開始行を計算
-      const matchStartRow = startRow + i * spacing;
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i];
+      const matchCenterRow = matchPositions[round][i];
       
-      // 実際のマッチがある場合
-      if (i < matches.length) {
-        const match = matches[i];
-        
-        // チーム名を取得
-        const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || 'TBD';
-        const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || 'TBD';
-        
-        // チーム1のセル
-        const team1Cell = sheet.getCell(matchStartRow, col);
-        team1Cell.value = `${team1} ${match.status === 'completed' ? `(${match.team1Score})` : ''}`;
-        team1Cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-        team1Cell.alignment = { vertical: 'middle' };
-        
+      // チーム名を取得
+      const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || 'TBD';
+      const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || 'TBD';
+      
+      // チーム1のセル
+      const team1Cell = sheet.getCell(matchCenterRow - 1, col);
+      team1Cell.value = team1;
+      team1Cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      team1Cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      
+      // チーム2のセル
+      const team2Cell = sheet.getCell(matchCenterRow + 1, col);
+      team2Cell.value = team2;
+      team2Cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      team2Cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      
+      // スコアセル（チーム間）
+      const scoreCell = sheet.getCell(matchCenterRow, col);
+      if (match.status === 'completed') {
+        scoreCell.value = `${match.team1Score} - ${match.team2Score}`;
         // 勝者ハイライト
-        if (match.status === 'completed' && match.team1Score > match.team2Score) {
+        if (match.team1Score > match.team2Score) {
           team1Cell.fill = winnerStyle;
           team1Cell.font = { bold: true };
-        } else {
-          team1Cell.fill = matchStyle;
-        }
-        
-        // チーム2のセル
-        const team2Cell = sheet.getCell(matchStartRow + rowsPerTeam, col);
-        team2Cell.value = `${team2} ${match.status === 'completed' ? `(${match.team2Score})` : ''}`;
-        team2Cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-        team2Cell.alignment = { vertical: 'middle' };
-        
-        // 勝者ハイライト
-        if (match.status === 'completed' && match.team2Score > match.team1Score) {
+        } else if (match.team2Score > match.team1Score) {
           team2Cell.fill = winnerStyle;
           team2Cell.font = { bold: true };
-        } else {
-          team2Cell.fill = matchStyle;
         }
+      } else {
+        scoreCell.value = 'vs';
+      }
+      scoreCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      scoreCell.border = {
+        left: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      
+      // コネクション線を描画（次のラウンドへ）
+      if (roundIndex < rounds.length - 1) {
+        // 横線（次のラウンドへの接続）
+        const hLineCell = sheet.getCell(matchCenterRow, col + 1);
+        hLineCell.fill = connectingLineStyle;
         
-        // マッチステータス情報（中央のセル）
-        const statusCell = sheet.getCell(matchStartRow + rowsPerTeam / 2, col + 1);
-        statusCell.value = match.status === 'completed' 
-          ? `${match.team1Score}-${match.team2Score}` 
-          : 'vs';
-        statusCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        // このマッチが次のラウンドのどのマッチに接続するか計算
+        const nextRoundMatchIndex = Math.floor(i / 2);
         
-        // 次のラウンドにつなぐ水平線
-        if (roundIndex < rounds.length - 1) {
-          // 横線（次のラウンドへの）
-          const hLineRow = matchStartRow + rowsPerTeam / 2;
-          const hLineCell = sheet.getCell(hLineRow, col + 2);
-          hLineCell.fill = connectingLineStyle;
+        if (nextRoundMatchIndex < matchPositions[rounds[roundIndex + 1]].length) {
+          const nextMatchCenterRow = matchPositions[rounds[roundIndex + 1]][nextRoundMatchIndex];
           
-          // 縦線（チーム間の）
-          for (let r = matchStartRow + 1; r < matchStartRow + rowsPerTeam; r++) {
-            const vLineCell = sheet.getCell(r, col + 2);
-            vLineCell.fill = connectingLineStyle;
+          // 縦線の描画（上または下に伸ばす）
+          const verticalDirection = i % 2 === 0 ? 1 : -1; // 偶数インデックスは下へ、奇数は上へ
+          const vStart = matchCenterRow;
+          const vEnd = nextMatchCenterRow;
+          
+          // 縦線のための列（連結ポイント）
+          const vCol = col + 2;
+          
+          // 縦線を描画
+          if (vStart !== vEnd) {
+            const minRow = Math.min(vStart, vEnd);
+            const maxRow = Math.max(vStart, vEnd);
+            
+            // 縦線のセルを塗りつぶし
+            for (let vRow = minRow; vRow <= maxRow; vRow++) {
+              const vLineCell = sheet.getCell(vRow, vCol);
+              vLineCell.fill = connectingLineStyle;
+            }
           }
+          
+          // 水平接続（縦線から次のマッチへ）
+          const finalConnectCell = sheet.getCell(nextMatchCenterRow, vCol + 1);
+          finalConnectCell.fill = connectingLineStyle;
         }
       }
     }
   }
   
   // 列幅の設定
-  for (let i = 1; i <= maxRound * 3; i++) {
-    if (i % 3 === 0) {
+  for (let i = 1; i <= maxRound * 4; i++) {
+    if (i % 4 === 2 || i % 4 === 3) {
       // 接続線用の列は細く
       sheet.getColumn(i).width = 3;
     } else {
@@ -223,7 +267,7 @@ const createImprovedVisualBracket = async (
   
   // 3位決定戦があれば追加
   if (sport.tournamentSettings?.hasThirdPlaceMatch) {
-    const lastRow = sheet.rowCount + 3;
+    const lastRow = sheet.rowCount + 5; // 十分なスペースを確保
     sheet.mergeCells(`A${lastRow}:C${lastRow}`);
     const headerCell = sheet.getCell(`A${lastRow}`);
     headerCell.value = '3位決定戦';
@@ -241,21 +285,24 @@ const createImprovedVisualBracket = async (
       const team1 = sport.teams.find(t => t.id === thirdPlaceMatch.team1Id)?.name || 'TBD';
       const team2 = sport.teams.find(t => t.id === thirdPlaceMatch.team2Id)?.name || 'TBD';
       
-      // チーム情報を追加
+      // チーム1情報
       const team1Cell = sheet.getCell(lastRow + 1, 1);
       team1Cell.value = team1;
       team1Cell.border = { left: { style: 'thin' }, top: { style: 'thin' }, bottom: { style: 'thin' } };
+      team1Cell.alignment = { horizontal: 'center' };
       
-      const scoreCell = sheet.getCell(lastRow + 1, 2);
+      // スコア情報
+      const scoreCell = sheet.getCell(lastRow + 2, 2);
       scoreCell.value = thirdPlaceMatch.status === 'completed' 
         ? `${thirdPlaceMatch.team1Score} - ${thirdPlaceMatch.team2Score}`
         : 'vs';
       scoreCell.alignment = { horizontal: 'center' };
-      scoreCell.border = { top: { style: 'thin' }, bottom: { style: 'thin' } };
       
-      const team2Cell = sheet.getCell(lastRow + 1, 3);
+      // チーム2情報
+      const team2Cell = sheet.getCell(lastRow + 3, 1);
       team2Cell.value = team2;
-      team2Cell.border = { right: { style: 'thin' }, top: { style: 'thin' }, bottom: { style: 'thin' } };
+      team2Cell.border = { left: { style: 'thin' }, top: { style: 'thin' }, bottom: { style: 'thin' } };
+      team2Cell.alignment = { horizontal: 'center' };
       
       // 勝者をハイライト
       if (thirdPlaceMatch.status === 'completed') {
