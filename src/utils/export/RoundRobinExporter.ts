@@ -130,50 +130,48 @@ const addStandingsTable = (
     };
   });
   
-  // 完了した試合を処理して統計を更新
+  // 試合結果を処理して統計を更新（statusに依存せずスコアがある試合は集計）
   if (sport.matches && Array.isArray(sport.matches)) {
     sport.matches.forEach(match => {
-      if (match.status === 'completed') {
+      // チームIDの存在確認
+      if (!teamStats[match.team1Id] || !teamStats[match.team2Id]) return;
+      
+      // スコアがある場合は処理
+      if (match.team1Score !== undefined && match.team2Score !== undefined) {
         // チーム1の統計更新
-        if (teamStats[match.team1Id]) {
-          teamStats[match.team1Id].played++;
-          teamStats[match.team1Id].goalsFor += match.team1Score;
-          teamStats[match.team1Id].goalsAgainst += match.team2Score;
-          
-          if (match.team1Score > match.team2Score) {
-            teamStats[match.team1Id].won++;
-            teamStats[match.team1Id].points += settings.winPoints;
-          } else if (match.team1Score < match.team2Score) {
-            teamStats[match.team1Id].lost++;
-            if (settings.considerLosePoints) {
-              teamStats[match.team1Id].points += settings.losePoints;
-            }
-          } else {
-            // 引き分け
-            teamStats[match.team1Id].drawn++;
-            teamStats[match.team1Id].points += settings.drawPoints;
-          }
-        }
+        teamStats[match.team1Id].played++;
+        teamStats[match.team1Id].goalsFor += match.team1Score;
+        teamStats[match.team1Id].goalsAgainst += match.team2Score;
         
         // チーム2の統計更新
-        if (teamStats[match.team2Id]) {
-          teamStats[match.team2Id].played++;
-          teamStats[match.team2Id].goalsFor += match.team2Score;
-          teamStats[match.team2Id].goalsAgainst += match.team1Score;
+        teamStats[match.team2Id].played++;
+        teamStats[match.team2Id].goalsFor += match.team2Score;
+        teamStats[match.team2Id].goalsAgainst += match.team1Score;
+        
+        // 勝敗と勝点の計算
+        if (match.team1Score > match.team2Score) {
+          teamStats[match.team1Id].won++;
+          teamStats[match.team1Id].points += settings.winPoints;
           
-          if (match.team2Score > match.team1Score) {
-            teamStats[match.team2Id].won++;
-            teamStats[match.team2Id].points += settings.winPoints;
-          } else if (match.team2Score < match.team1Score) {
-            teamStats[match.team2Id].lost++;
-            if (settings.considerLosePoints) {
-              teamStats[match.team2Id].points += settings.losePoints;
-            }
-          } else {
-            // 引き分け
-            teamStats[match.team2Id].drawn++;
-            teamStats[match.team2Id].points += settings.drawPoints;
+          teamStats[match.team2Id].lost++;
+          if (settings.considerLosePoints) {
+            teamStats[match.team2Id].points += settings.losePoints;
           }
+        } else if (match.team1Score < match.team2Score) {
+          teamStats[match.team2Id].won++;
+          teamStats[match.team2Id].points += settings.winPoints;
+          
+          teamStats[match.team1Id].lost++;
+          if (settings.considerLosePoints) {
+            teamStats[match.team1Id].points += settings.losePoints;
+          }
+        } else {
+          // 引き分け
+          teamStats[match.team1Id].drawn++;
+          teamStats[match.team1Id].points += settings.drawPoints;
+          
+          teamStats[match.team2Id].drawn++;
+          teamStats[match.team2Id].points += settings.drawPoints;
         }
       }
     });
@@ -307,11 +305,16 @@ const addMatchResultsTable = (
     // 日付をフォーマット
     const matchDate = match.date ? new Date(match.date).toLocaleDateString() : '-';
     
+    // スコア表示を条件に応じて変更
+    const scoreDisplay = match.team1Score !== undefined && match.team2Score !== undefined
+      ? `${match.team1Score} - ${match.team2Score}`
+      : 'vs';
+    
     // 試合行を追加
     const row = sheet.addRow([
       match.matchNumber.toString(),
       team1,
-      match.status === 'completed' ? `${match.team1Score} - ${match.team2Score}` : 'vs',
+      scoreDisplay,
       team2,
       matchDate,
       match.status === 'completed' ? '完了' : match.status === 'inProgress' ? '進行中' : '予定'
@@ -332,8 +335,8 @@ const addMatchResultsTable = (
     row.getCell(2).alignment = { horizontal: 'left' };
     row.getCell(4).alignment = { horizontal: 'left' };
     
-    // 完了した試合は勝者をハイライト
-    if (match.status === 'completed') {
+    // スコアが存在する場合は勝者をハイライト
+    if (match.team1Score !== undefined && match.team2Score !== undefined) {
       const team1Cell = row.getCell(2);
       const team2Cell = row.getCell(4);
       
@@ -395,7 +398,7 @@ const addCrossTable = (
     right: { style: 'thin' }
   };
   
-  // 上部行にチーム名を追加
+  // 上部行にチーム名を追加（テキスト回転なし）
   teams.forEach((team, index) => {
     const cell = headerRow.getCell(index + 2);
     cell.value = team.name;
@@ -407,14 +410,8 @@ const addCrossTable = (
       bottom: { style: 'thin' },
       right: { style: 'thin' }
     };
-    
-    // ヘッダー行を高くして、テキストを回転（見やすくするため）
-    headerRow.height = 100;
-    cell.alignment = { 
-      horizontal: 'center', 
-      vertical: 'bottom', 
-      textRotation: 90 
-    };
+    // 横長のセルにして見やすく
+    sheet.getColumn(index + 2).width = 15;
   });
   startRow++;
   
@@ -429,10 +426,10 @@ const addCrossTable = (
     });
   });
   
-  // 試合結果をマトリックスに記入
+  // 試合結果をマトリックスに記入（スコアがある場合は表示）
   if (sport.matches && Array.isArray(sport.matches)) {
     sport.matches.forEach(match => {
-      if (match.status === 'completed') {
+      if (match.team1Score !== undefined && match.team2Score !== undefined) {
         // チーム1から見た結果：「自分のスコア-相手のスコア」
         matrix[match.team1Id][match.team2Id] = `${match.team1Score}-${match.team2Score}`;
         // チーム2から見た結果：「自分のスコア-相手のスコア」
