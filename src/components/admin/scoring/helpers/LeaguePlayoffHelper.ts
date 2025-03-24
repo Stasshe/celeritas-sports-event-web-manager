@@ -54,6 +54,10 @@ export class LeaguePlayoffHelper {
       // 1. 試合構造を生成
       const matchStructure = TournamentStructureHelper.generateInitialMatches(playoffTeamObjects.length);
       
+      // 重要：ラウンド番号を逆にする - より高い番号が初期ラウンド（準々決勝など）
+      // トーナメントの最終ラウンド数を計算
+      const maxRound = Math.max(...matchStructure.map(m => m.round));
+      
       // 2. チーム配置を計算
       const teamPlacements = TournamentStructureHelper.calculateTeamPlacements(playoffTeamObjects);
       
@@ -62,6 +66,9 @@ export class LeaguePlayoffHelper {
       
       matchStructure.forEach((matchInfo, index) => {
         const { round, matchNumber } = matchInfo;
+        
+        // ラウンド番号を逆にする - 決勝を1、準決勝を2などにする
+        const invertedRound = maxRound - round + 1;
         
         // この試合に配置されるチームを探す
         const team1Placement = teamPlacements.find(p => 
@@ -74,12 +81,12 @@ export class LeaguePlayoffHelper {
         
         // 新しい試合オブジェクトを作成
         const newMatch: Match = {
-          id: `playoff_match_${round}_${matchNumber}`,
+          id: `playoff_match_${invertedRound}_${matchNumber}`,
           team1Id: team1Placement?.teamId || '',
           team2Id: team2Placement?.teamId || '',
           team1Score: 0,
           team2Score: 0,
-          round,
+          round: invertedRound, // 逆にしたラウンド番号を使用
           matchNumber,
           status: 'scheduled',
           date: new Date().toISOString().split('T')[0],
@@ -91,14 +98,15 @@ export class LeaguePlayoffHelper {
       
       // 4. 自動進出処理 (不戦勝)
       newPlayoffMatches.forEach(match => {
-        if (match.round === 1) {
-          // 1回戦でどちらかのチームだけいる場合は自動的に次の試合に進出
+        // ラウンド1は決勝戦なので、不戦勝処理は最終ラウンドより前に実施
+        if (match.round > 1) {
+          // どちらかのチームだけいる場合は自動的に次の試合に進出
           if ((match.team1Id && !match.team2Id) || (!match.team1Id && match.team2Id)) {
             const winningTeamId = match.team1Id || match.team2Id;
             
-            // 次の試合を探す
+            // 次の試合を探す - ラウンド番号が1つ小さい試合が次の試合
             const nextRoundMatch = newPlayoffMatches.find(m => 
-              m.round === 2 && Math.ceil(match.matchNumber / 2) === m.matchNumber
+              m.round === match.round - 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
             );
             
             if (nextRoundMatch) {
@@ -114,23 +122,19 @@ export class LeaguePlayoffHelper {
       });
       
       // 3位決定戦を追加
-      // 参加チーム数が4未満の場合は3位決定戦は不要
       if (hasThirdPlaceMatch && newPlayoffMatches.length > 0 && playoffTeamObjects.length >= 4) {
-        // 最終ラウンド（決勝戦）を特定
-        const maxRound = Math.max(...newPlayoffMatches.map(m => m.round));
-        
-        // 準決勝戦を特定（最終ラウンドの1つ前）
-        const semifinalMatches = newPlayoffMatches.filter(m => m.round === maxRound - 1);
+        // 準決勝戦を特定 - ラウンド2が準決勝
+        const semifinalMatches = newPlayoffMatches.filter(m => m.round === 2);
         
         if (semifinalMatches.length >= 2) {
-          // 3位決定戦の試合を生成 - IDを明確に識別できる形式に
+          // 3位決定戦の試合を生成
           const thirdPlaceMatch: Match = {
             id: `playoff_third_place_match`,
             team1Id: '', // 準決勝敗者が入る
             team2Id: '', // 準決勝敗者が入る
             team1Score: 0,
             team2Score: 0,
-            round: maxRound, // 決勝と同じラウンド
+            round: 1, // 決勝と同じラウンド
             matchNumber: 0, // 特別な番号として0を使用
             status: 'scheduled',
             date: new Date().toISOString().split('T')[0],
@@ -164,9 +168,9 @@ export class LeaguePlayoffHelper {
     const newPlayoffMatches = [...matches];
     
     // 準決勝試合を検出して、敗者を3位決定戦に移動するロジックを追加
-    const maxRound = Math.max(...newPlayoffMatches.map(m => m.round));
+    // 準決勝はround=2
     const semifinalMatches = newPlayoffMatches.filter(m => 
-      m.round === maxRound - 1 && m.winnerId // 勝者が確定している準決勝
+      m.round === 2 && m.winnerId // 勝者が確定している準決勝
     );
     
     // 3位決定戦を探す

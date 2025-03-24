@@ -601,11 +601,16 @@ const generateLeagueScheduleWithCourts = (
         // 使用中のチームを追加
         usedTeamIds.push(match.team1Id, match.team2Id);
         
-        // ラウンド名を取得
+        // ラウンド名を取得 - このラウンド変換ロジックを修正
         let roundName = '';
         switch (match.round) {
           case 1:
-            roundName = '決勝';
+            // ラウンド1は決勝または3位決定戦
+            if (match.matchNumber === 0 || match.id.includes('third_place')) {
+              roundName = '3位決定戦';
+            } else {
+              roundName = '決勝';
+            }
             break;
           case 2:
             roundName = '準決勝';
@@ -615,11 +620,6 @@ const generateLeagueScheduleWithCourts = (
             break;
           default:
             roundName = `ラウンド${match.round}`;
-        }
-        
-        // 3位決定戦の特別処理
-        if (match.matchNumber === 0 || match.id.includes('third_place')) {
-          roundName = '3位決定戦';
         }
         
         // タイムスロットを追加
