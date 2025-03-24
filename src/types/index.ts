@@ -101,6 +101,7 @@ export interface Team {
   members?: string[];
   color?: string;
   logo?: string;
+  blockId?: string; // Add this property for league competitions
 }
 
 // 試合タイプ - winnerId を string | undefined に統一
