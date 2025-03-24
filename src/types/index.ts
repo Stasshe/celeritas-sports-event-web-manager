@@ -164,6 +164,7 @@ export interface TimeSlot {
   matchId?: string; // 試合ID（type: "match"の場合）
   courtId?: 'court1' | 'court2'; // どのコートで行うか
   description?: string; // オプショナルな説明
+  matchDescription?: string; // 試合の説明（チーム名など）を含むテキスト
 }
 
 // スケジュール設定インターフェース - 一貫性のために null 型も許可

@@ -92,7 +92,14 @@ const getMatchDescription = (match: Match, sport: Sport): string => {
   const team1 = sport.teams.find(t => t.id === match.team1Id);
   const team2 = sport.teams.find(t => t.id === match.team2Id);
   
-  return `${team1?.name || '不明'} vs ${team2?.name || '不明'}`;
+  // プレーオフの試合で、チームがまだ決まっていない場合
+  if (!match.blockId && (!team1 || !team2)) {
+    const team1Display = team1?.name || (match.team1Id ? '不明なチーム' : '勝者未定');
+    const team2Display = team2?.name || (match.team2Id ? '不明なチーム' : '勝者未定');
+    return `${team1Display} vs ${team2Display}`;
+  }
+  
+  return `${team1?.name || '不明なチーム'} vs ${team2?.name || '不明なチーム'}`;
 };
 
 // 同時進行に対応した新しいスケジュール生成関数
@@ -270,7 +277,8 @@ const generateMatchBasedScheduleWithCourts = (
         type: 'match',
         matchId: match.id,
         courtId: court as 'court1' | 'court2',
-        description: getMatchDescription(match, sport)
+        description: getMatchDescription(match, sport),
+        matchDescription: getMatchDescription(match, sport)
       });
       
       scheduledMatchesCount++;
@@ -609,6 +617,11 @@ const generateLeagueScheduleWithCourts = (
             roundName = `ラウンド${match.round}`;
         }
         
+        // 3位決定戦の特別処理
+        if (match.matchNumber === 0 || match.id.includes('third_place')) {
+          roundName = '3位決定戦';
+        }
+        
         // タイムスロットを追加
         timeSlots.push({
           startTime: minutesToTime(currentMinutes),
@@ -616,7 +629,8 @@ const generateLeagueScheduleWithCourts = (
           type: 'match',
           matchId: match.id,
           courtId: court as 'court1' | 'court2',
-          description: `プレーオフ: ${roundName}`
+          description: `プレーオフ: ${roundName} ${match.matchNumber > 0 ? `(試合${match.matchNumber})` : ''}`,
+          matchDescription: getMatchDescription(match, sport)
         });
         
         scheduledMatchesCount++;

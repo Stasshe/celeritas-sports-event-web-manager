@@ -1,21 +1,18 @@
 import React from 'react';
 import {
-  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Paper,
   Typography,
   Chip,
-  Box,
-  useTheme,
-  Divider,
-  Grid
+  Box
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { TimeSlot, Sport, Match, Team } from '../../../types/index';
+import { TimeSlot, Sport } from '../../../types';
 
 interface TimeSlotTableProps {
   timeSlots: TimeSlot[];
@@ -24,161 +21,107 @@ interface TimeSlotTableProps {
 
 const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
   const { t } = useTranslation();
-  const theme = useTheme();
-
-  // チーム名を取得する関数
-  const getTeamName = (teamId: string): string => {
-    const team = sport.teams?.find(t => t.id === teamId);
-    return team ? team.name : t('schedule.unknownTeam');
-  };
-
-  // 試合情報を取得する関数
-  const getMatchInfo = (matchId: string): Match | undefined => {
-    return sport.matches?.find(m => m.id === matchId);
-  };
-
-  // 時間枠の種類に応じた色を取得
-  const getTypeColor = (type: TimeSlot['type']) => {
-    switch (type) {
-      case 'match':
-        return theme.palette.primary.main;
-      case 'break':
-        return theme.palette.secondary.main;
-      case 'lunch':
-        return theme.palette.warning.main;
-      case 'preparation':
-        return theme.palette.info.main;
-      case 'cleanup':
-        return theme.palette.error.main;
-      default:
-        return theme.palette.text.secondary;
-    }
-  };
-
-  // 時間枠の種類に応じたラベルを取得
-  const getTypeLabel = (type: TimeSlot['type']) => {
-    switch (type) {
-      case 'match':
-        return t('schedule.match');
-      case 'break':
-        return t('schedule.break');
-      case 'lunch':
-        return t('schedule.lunch');
-      case 'preparation':
-        return t('schedule.preparation');
-      case 'cleanup':
-        return t('schedule.cleanup');
-      default:
-        return type;
-    }
-  };
-
-  // コート名を取得
-  const getCourtName = (courtId?: 'court1' | 'court2'): string => {
-    if (!courtId) return '';
-    return sport.scheduleSettings?.courtNames?.[courtId] || 
-           (courtId === 'court1' ? '第1コート' : '第2コート');
-  };
-
-  // 時間でグループ化して表示する
-  const timeSlotsByTime: { [key: string]: TimeSlot[] } = {};
-  timeSlots.forEach(slot => {
-    if (!timeSlotsByTime[slot.startTime]) {
-      timeSlotsByTime[slot.startTime] = [];
-    }
-    timeSlotsByTime[slot.startTime].push(slot);
+  
+  // タイムスロットを時間順にソート
+  const sortedTimeSlots = [...timeSlots].sort((a, b) => {
+    return a.startTime.localeCompare(b.startTime);
   });
-
+  
+  // 各時間ごとにタイムスロットをグループ化
+  const groupedTimeSlots: Record<string, TimeSlot[]> = {};
+  sortedTimeSlots.forEach(slot => {
+    const key = `${slot.startTime}-${slot.endTime}`;
+    if (!groupedTimeSlots[key]) {
+      groupedTimeSlots[key] = [];
+    }
+    groupedTimeSlots[key].push(slot);
+  });
+  
+  // チーム名を取得する関数
+  const getTeamName = (teamId?: string): string => {
+    if (!teamId) return t('schedule.undetermined');
+    const team = sport.teams.find(t => t.id === teamId);
+    return team?.name || t('schedule.unknownTeam');
+  };
+  
+  // 試合の説明を取得する関数
+  const getMatchInfo = (slot: TimeSlot): React.ReactNode => {
+    if (slot.type !== 'match') return null;
+    
+    // 対応する試合を探す
+    const match = sport.matches?.find(m => m.id === slot.matchId);
+    if (!match) return null;
+    
+    return (
+      <Box>
+        <Typography variant="body2" fontWeight="bold">
+          {getTeamName(match.team1Id)} vs {getTeamName(match.team2Id)}
+        </Typography>
+        {slot.description && (
+          <Typography variant="caption" color="text.secondary">
+            {slot.description}
+          </Typography>
+        )}
+      </Box>
+    );
+  };
+  
   return (
     <TableContainer component={Paper}>
-      <Table>
+      <Table sx={{ minWidth: 650 }} size="small">
         <TableHead>
           <TableRow>
-            <TableCell width="15%">{t('schedule.time')}</TableCell>
-            <TableCell>{t('schedule.activities')}</TableCell>
+            <TableCell>{t('schedule.time')}</TableCell>
+            <TableCell>{t('schedule.type')}</TableCell>
+            <TableCell>{t('schedule.court')}</TableCell>
+            <TableCell>{t('schedule.details')}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {Object.entries(timeSlotsByTime)
-            .sort(([timeA], [timeB]) => timeA.localeCompare(timeB))
-            .map(([time, slots]) => (
-              <TableRow key={time}>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="bold">
-                    {slots[0].startTime} - {slots[0].endTime}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Grid container spacing={2}>
-                    {slots.map((slot, idx) => (
-                      <Grid item xs={12} md={slot.type === 'match' ? 6 : 12} key={idx}>
-                        <Box 
-                          sx={{ 
-                            p: 1, 
-                            borderLeft: `4px solid ${getTypeColor(slot.type)}`,
-                            bgcolor: `${getTypeColor(slot.type)}10`,
-                            borderRadius: 1,
-                            mb: 1
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                            <Chip
-                              label={getTypeLabel(slot.type)}
-                              size="small"
-                              sx={{ 
-                                mr: 1,
-                                bgcolor: `${getTypeColor(slot.type)}20`,
-                                color: getTypeColor(slot.type),
-                                borderColor: getTypeColor(slot.type)
-                              }}
-                              variant="outlined"
-                            />
-                            {slot.courtId && (
-                              <Chip
-                                label={getCourtName(slot.courtId)}
-                                size="small"
-                                variant="outlined"
-                              />
-                            )}
-                          </Box>
-                          
-                          {slot.type === 'match' && slot.matchId ? (
-                            (() => {
-                              const match = getMatchInfo(slot.matchId);
-                              return match ? (
-                                <Box>
-                                  <Typography variant="body2" fontWeight="medium">
-                                    {getTeamName(match.team1Id)} vs {getTeamName(match.team2Id)}
-                                  </Typography>
-                                  {slot.description && (
-                                    <Typography variant="caption" color="text.secondary">
-                                      {slot.description}
-                                    </Typography>
-                                  )}
-                                </Box>
-                              ) : null;
-                            })()
-                          ) : (
-                            <Typography variant="body2">
-                              {slot.title || getTypeLabel(slot.type)}
-                              {slot.description && ` - ${slot.description}`}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </TableCell>
-              </TableRow>
-            ))}
-          
-          {Object.keys(timeSlotsByTime).length === 0 && (
-            <TableRow>
-              <TableCell colSpan={2} align="center">
-                {t('schedule.noTimeSlots')}
-              </TableCell>
-            </TableRow>
-          )}
+          {Object.entries(groupedTimeSlots).map(([timeKey, slots]) => (
+            <React.Fragment key={timeKey}>
+              {slots.map((slot, index) => (
+                <TableRow key={`${timeKey}-${index}`} hover>
+                  {index === 0 && (
+                    <TableCell rowSpan={slots.length} sx={{ whiteSpace: 'nowrap' }}>
+                      {`${slot.startTime} - ${slot.endTime}`}
+                    </TableCell>
+                  )}
+                  <TableCell>
+                    <Chip 
+                      size="small"
+                      label={t(`schedule.${slot.type}`)}
+                      color={
+                        slot.type === 'match' ? 'primary' :
+                        slot.type === 'break' ? 'secondary' :
+                        slot.type === 'lunch' ? 'warning' : 'default'
+                      }
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {slot.courtId && sport.scheduleSettings?.courtNames && (
+                      sport.scheduleSettings.courtNames[slot.courtId]
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {slot.type === 'match' ? (
+                      getMatchInfo(slot)
+                    ) : (
+                      <Typography variant="body2">
+                        {slot.title || t(`schedule.${slot.type}`)}
+                        {slot.description && (
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            {slot.description}
+                          </Typography>
+                        )}
+                      </Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </React.Fragment>
+          ))}
         </TableBody>
       </Table>
     </TableContainer>
