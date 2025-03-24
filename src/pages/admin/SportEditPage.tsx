@@ -164,13 +164,75 @@ const SportEditPage: React.FC = () => {
     }
   }, [sport]);
 
-  // sportIdが変更されたときにlocalSportをリセット
+  // sportIdが変更されたときにlocalSportをリセット - この部分を修正
   useEffect(() => {
+    // sportIdが変更されたら、すべての状態をリセット
     setLocalSport(null);
+    setActiveTab(0); // タブを最初のタブにリセット
+    
+    // タブの状態もリセット
+    setTabStates({
+      details: { 
+        isLoaded: true, 
+        isDirty: false, 
+        lastUpdated: 0,
+        loading: false,
+        hasChanges: false 
+      },
+      roster: { 
+        isLoaded: false, 
+        isDirty: false, 
+        lastUpdated: 0,
+        loading: false,
+        hasChanges: false 
+      },
+      schedule: {
+        isLoaded: false, 
+        isDirty: false, 
+        lastUpdated: 0,
+        loading: false,
+        hasChanges: false 
+      },
+      rules: { 
+        isLoaded: false, 
+        isDirty: false, 
+        lastUpdated: 0,
+        loading: false,
+        hasChanges: false 
+      },
+      manual: { 
+        isLoaded: false, 
+        isDirty: false, 
+        lastUpdated: 0,
+        loading: false,
+        hasChanges: false 
+      },
+      settings: { 
+        isLoaded: false, 
+        isDirty: false, 
+        lastUpdated: 0,
+        loading: false,
+        hasChanges: false 
+      }
+    });
+    
+    // 差分状態もリセット
+    setDifferences({});
+    
+    // sportがロードされたらlocalSportを設定
     if (sport) {
       setLocalSport(JSON.parse(JSON.stringify(sport)));
     }
-  }, [sportId, sport]);
+  }, [sportId]);
+
+  // sport変更時のlocalSport更新ロジックを修正
+  useEffect(() => {
+    // sportが変更され、かつlocalSportがnullか
+    // または後続処理で使うときにsportIdが変わったことをチェック
+    if (sport && (!localSport || localSport.id !== sport.id)) {
+      setLocalSport(JSON.parse(JSON.stringify(sport)));
+    }
+  }, [sport, localSport]);
 
   // スポーツIDが変更されたときだけinitialLoadingを使用
   useEffect(() => {
@@ -277,7 +339,7 @@ const SportEditPage: React.FC = () => {
   // タブ切り替えの統合されたハンドラ
   const handleTabChange = useCallback(async (event: React.SyntheticEvent, newValue: number) => {
     // 現在のタブのデータに変更があれば保存
-    if (localSport && sport && JSON.stringify(localSport) !== JSON.stringify(sport)) {
+    if (localSport && sport && JSON.stringify(localSport) !== JSON.stringify(sport) && localSport.id === sport.id) {
       await handleSave();
     }
 
@@ -567,32 +629,20 @@ const SportEditPage: React.FC = () => {
   // リモートデータの変更を監視
   useEffect(() => {
     if (sport && localSport && !isProcessingRef.current) {
-      const hasChanges = detectChanges(localSport, sport);
-      
-      if (hasChanges && sport.lastEditedBy !== currentUser?.email) {
-        setLastEditor(sport.lastEditedBy || 'unknown');
-        showAdminSnackbar(
-          t('sport.remoteChangesDetected'),
-          'warning'
-        );
+      // 同じスポーツのデータを比較していることを確認
+      if (sport.id === localSport.id) {
+        const hasChanges = detectChanges(localSport, sport);
+        
+        if (hasChanges && sport.lastEditedBy !== currentUser?.email) {
+          setLastEditor(sport.lastEditedBy || 'unknown');
+          showAdminSnackbar(
+            t('sport.remoteChangesDetected'),
+            'warning'
+          );
+        }
       }
     }
-  }, [sport, localSport, currentUser, showAdminSnackbar, t]);
-
-  // リモートデータの変更を監視
-  useEffect(() => {
-    if (sport && localSport && !isProcessingRef.current) {
-      const hasChanges = detectChanges(localSport, sport);
-      
-      if (hasChanges && sport.lastEditedBy !== currentUser?.email) {
-        setLastEditor(sport.lastEditedBy || 'unknown');
-        showAdminSnackbar(
-          t('sport.remoteChangesDetected'),
-          'warning'
-        );
-      }
-    }
-  }, [sport, localSport, currentUser, showAdminSnackbar, t]);
+  }, [sport, localSport, currentUser, showAdminSnackbar, t, detectChanges]);
 
   // 全ての変更を同期する関数
   const handleSync = async () => {

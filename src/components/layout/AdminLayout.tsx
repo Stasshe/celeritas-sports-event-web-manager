@@ -222,6 +222,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         contentRef.current.scrollTop = 0;
       }
       
+      // URLが変わった後で対象のイベントを展開する
+      const sportObj = sports?.[sportId];
+      if (sportObj && sportObj.eventId) {
+        setExpandedEventIds(prev => 
+          prev.includes(sportObj.eventId) ? prev : [...prev, sportObj.eventId]
+        );
+      }
+      
       // ローディング状態を少し遅延させて解除（データ取得のための時間）
       setTimeout(() => {
         setContentLoading(false);

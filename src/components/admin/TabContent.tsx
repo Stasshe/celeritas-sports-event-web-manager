@@ -12,6 +12,15 @@ export const TabContent: React.FC<{
   onLoad: () => void;
 }> = ({ children, active, sport, field, loading, hasChanges, onLoad }) => {
   const [contentReady, setContentReady] = useState(false);
+  const sportIdRef = useRef<string>(sport.id);
+  
+  // スポーツIDが変更されたときにcontentReadyをリセット
+  useEffect(() => {
+    if (sportIdRef.current !== sport.id) {
+      setContentReady(false);
+      sportIdRef.current = sport.id;
+    }
+  }, [sport.id]);
   
   // 初回表示時に一度だけonLoadを呼び出す
   useEffect(() => {
@@ -21,17 +30,6 @@ export const TabContent: React.FC<{
       setContentReady(true);
     }
   }, [active, contentReady, onLoad]);
-  
-  // この部分を削除（ローディングを表示しない）
-  /*
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress size={24} />
-      </Box>
-    );
-  }
-  */
   
   // 常にコンテンツを表示
   return <>{children}</>;

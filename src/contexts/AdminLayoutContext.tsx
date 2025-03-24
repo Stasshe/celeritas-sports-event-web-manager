@@ -20,17 +20,19 @@ interface AdminLayoutContextType {
   setHasUnsavedChanges: (value: boolean) => void;
 }
 
+type SavingStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 const AdminLayoutContext = createContext<AdminLayoutContextType | null>(null);
 
 export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 状態管理
-  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [savingStatus, setSavingStatus] = useState<SavingStatus>('idle');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { alpha } = useThemeContext();
   
   // 参照
-  const savingStatusRef = useRef<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const savingStatusRef = useRef<SavingStatus>('idle');
   const hasUnsavedChangesRef = useRef(false);
   const saveHandlersRef = useRef<Map<string, SaveHandler>>(new Map());
   const lastSavedRef = useRef<Date | null>(null);
@@ -50,46 +52,10 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     progress: 0,
   });
 
-  // オンライン状態の監視
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => {
-      setIsOnline(false);
-      updateSavingStatus('error');
-      showSnackbar('オフライン状態です。インターネット接続を確認してください', 'error');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // 未保存変更の警告
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChangesRef.current) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
-  // 保存ハンドラの登録
-  const registerSaveHandler = useCallback((handler: () => Promise<boolean>, scope: string) => {
-    saveHandlersRef.current.set(scope, { handler, scope });
-  }, []);
-
-  // 保存ハンドラの登録解除
-  const unregisterSaveHandler = useCallback((scope: string) => {
-    saveHandlersRef.current.delete(scope);
-  }, []);
+  // スナックバーを閉じる
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
   // スナックバーの表示関数を先に定義
   const showSnackbar = useCallback((
@@ -126,8 +92,11 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, []);
 
-  // 保存状態更新関数を先に定義
-  const updateSavingStatus = useCallback((status: 'idle' | 'saving' | 'saved' | 'error') => {
+  // 循環参照を避けるため、saveの型だけ先に宣言
+  const saveRef = useRef<(scope?: string) => Promise<boolean>>(async () => false);
+
+  // 保存状態更新関数を修正
+  const updateSavingStatus = useCallback((status: SavingStatus): void => {
     // オフライン時は保存を許可しない
     if (status === 'saving' && !isOnline) {
       showSnackbar('オフライン状態では保存できません', 'error', {
@@ -139,46 +108,53 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return;
     }
 
+    // 以前の状態を保存
+    const prevStatus = savingStatusRef.current;
+    
+    // 新しい状態を設定
     savingStatusRef.current = status;
     setSavingStatus(status);
 
-    switch (status) {
-      case 'saving':
-        showSnackbar('保存中...', 'info', {
-          icon: <CircularProgress size={20} />,
-          progress: true,
-          autoHideDuration: 3000
-        });
-        break;
-      case 'saved':
-        showSnackbar('変更が保存されました', 'success', {
-          icon: <SaveIcon />,
-          autoHideDuration: 2000
-        });
-        lastSavedRef.current = new Date();
-        hasUnsavedChangesRef.current = false;
-        setHasUnsavedChanges(false);
-        break;
-      case 'error':
-        showSnackbar('保存に失敗しました', 'error', {
-          icon: <WarningIcon />,
-          autoHideDuration: 4000,
-          action: (
-            <Button 
-              size="small" 
-              color="inherit" 
-              onClick={() => save()}
-              startIcon={<SyncIcon />}
-            >
-              再試行
-            </Button>
-          )
-        });
-        break;
+    // 状態が変わった場合のみ通知
+    if (prevStatus !== status) {
+      switch (status) {
+        case 'saving':
+          showSnackbar('保存中...', 'info', {
+            icon: <CircularProgress size={20} />,
+            progress: true,
+            autoHideDuration: 3000
+          });
+          break;
+        case 'saved':
+          showSnackbar('変更が保存されました', 'success', {
+            icon: <SaveIcon />,
+            autoHideDuration: 2000
+          });
+          lastSavedRef.current = new Date();
+          hasUnsavedChangesRef.current = false;
+          setHasUnsavedChanges(false);
+          break;
+        case 'error':
+          showSnackbar('保存に失敗しました', 'error', {
+            icon: <WarningIcon />,
+            autoHideDuration: 4000,
+            action: (
+              <Button 
+                size="small" 
+                color="inherit" 
+                onClick={() => saveRef.current()}
+                startIcon={<SyncIcon />}
+              >
+                再試行
+              </Button>
+            )
+          });
+          break;
+      }
     }
-  }, [isOnline]);
+  }, [isOnline, showSnackbar, setHasUnsavedChanges]);
 
-  // save関数の型注釈を追加
+  // save関数の実装
   const save = useCallback(async (scope?: string): Promise<boolean> => {
     // オフライン時は保存不可
     if (!isOnline) {
@@ -262,12 +238,57 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
       updateSavingStatus('error');
       return false;
     }
-  }, [isOnline, showSnackbar, updateSavingStatus]);
+  }, [isOnline, showSnackbar, updateSavingStatus, setHasUnsavedChanges]);
 
-  // スナックバーを閉じる
-  const handleSnackbarClose = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
+  // saveRefを実装で更新
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
+
+  // オンライン状態の監視
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => {
+      setIsOnline(false);
+      updateSavingStatus('error');
+      showSnackbar('オフライン状態です。インターネット接続を確認してください', 'error');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [updateSavingStatus, showSnackbar]);
+
+  // 未保存変更の警告
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChangesRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // 保存ハンドラの登録
+  const registerSaveHandler = useCallback((handler: () => Promise<boolean>, scope: string): void => {
+    // 既存のハンドラを置き換える（同じスコープの場合）
+    if (saveHandlersRef.current.has(scope)) {
+      saveHandlersRef.current.delete(scope);
+    }
+    saveHandlersRef.current.set(scope, { handler, scope });
+  }, []);
+
+  // 保存ハンドラの登録解除
+  const unregisterSaveHandler = useCallback((scope: string): void => {
+    saveHandlersRef.current.delete(scope);
+  }, []);
   
   // コンテキスト値
   const value: AdminLayoutContextType = {
