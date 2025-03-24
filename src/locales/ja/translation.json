@@ -1,0 +1,52 @@
+{
+  "home": {
+    "title": "スポーツイベント",
+    "gridView": "グリッド表示",
+    "scheduleView": "スケジュール表示",
+    "overallTimelineView": "タイムライン表示"
+  },
+  "schedule": {
+    "overview": "スケジュール概要",
+    "eventSchedule": "イベントスケジュール",
+    "clickToExpand": "クリックして展開",
+    "noSportsWithSchedule": "スケジュールが設定されている競技はありません。",
+    "hasSimultaneousMatches": "同時進行の試合があります",
+    "matchCount": "試合",
+    "breakCount": "休憩",
+    "lunch": "ランチ",
+    "courts": "コート",
+    "matchTimeRange": "試合時間範囲",
+    "firstMatch": "最初の試合",
+    "lastMatch": "最後の試合",
+    "courtInfo": "コート情報",
+    "court1": "第1コート",
+    "court2": "第2コート",
+    "viewDetails": "詳細を見る",
+    "noScheduleAvailable": "利用可能なスケジュールがありません。",
+    "unknownTeam": "不明なチーム",
+    "location": "場所",
+    "timeline": "タイムライン",
+    "timeRange": "時間範囲",
+    "activities": "アクティビティ",
+    "matchDetails": "試合詳細",
+    "status": "状態",
+    "round": "ラウンド",
+    "block": "ブロック",
+    "notes": "備考",
+    "overallTimeline": "全体タイムライン",
+    "currentTime": "現在時刻",
+    "matches": "試合",
+    "breaks": "休憩",
+    "sports": "競技",
+    "clickToView": "クリックして詳細を見る",
+    "timelineScrollHint": "横スクロールで全体を確認できます。"
+  },
+  "tournament": {
+    "final": "決勝",
+    "semifinal": "準決勝",
+    "quarterfinal": "準々決勝",
+    "round": "ラウンド",
+    "needAtLeastTwoTeams": "少なくとも2チームが必要です。",
+    "errorGenerating": "生成中にエラーが発生しました。"
+  }
+}

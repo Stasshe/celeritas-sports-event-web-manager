@@ -774,11 +774,11 @@ const SportEditPage: React.FC = () => {
             aria-label="sport management tabs"
           >
             <Tab icon={<SportIcon />} label={t('sport.tabs.home')} />
+            <Tab icon={<ScheduleIcon />} label={t('sport.tabs.schedule')} />  {/* 追加 */}
             <Tab icon={<PeopleIcon />} label={t('sport.tabs.roster')} />
             <Tab icon={<RulesIcon />} label={t('sport.tabs.rules')} />
             <Tab icon={<ManualIcon />} label={t('sport.tabs.manual')} />
             <Tab icon={<SettingsIcon />} label={t('sport.tabs.settings')} />
-            <Tab icon={<ScheduleIcon />} label={t('sport.tabs.schedule')} />  {/* 追加 */}
           </Tabs>
         </Paper>
 
@@ -931,6 +931,13 @@ const SportEditPage: React.FC = () => {
               </Grid>
             </Grid>
           </Box>
+        </TabPanel>
+
+        {/* スケジュールタブ (新しく追加) */}
+        <TabPanel value={activeTab} index={5}>
+          <Paper sx={{ p: 3 }}>
+            <ScheduleTab sport={localSport} onUpdate={handleSportUpdate} />
+          </Paper>
         </TabPanel>
 
         {/* 競技・名簿登録タブ */}
@@ -1145,12 +1152,7 @@ const SportEditPage: React.FC = () => {
           </Paper>
         </TabPanel>
 
-        {/* スケジュールタブ (新しく追加) */}
-        <TabPanel value={activeTab} index={5}>
-          <Paper sx={{ p: 3 }}>
-            <ScheduleTab sport={localSport} onUpdate={handleSportUpdate} />
-          </Paper>
-        </TabPanel>
+        
 
         <DeleteConfirmationDialog
           open={deleteDialogOpen}

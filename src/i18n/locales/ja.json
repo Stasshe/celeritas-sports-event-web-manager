@@ -25,7 +25,8 @@
     "viewEvent": "イベントを見る",
     "adminPanel": "管理パネル",
     "gridView": "グリッド表示",
-    "timelineView": "タイムライン表示"
+    "scheduleView": "スケジュール表示",
+    "overallTimelineView": "総合タイムライン"
   },
   "auth" : {
     "logout" : "ログアウト"
@@ -683,6 +684,12 @@
     "events": "イベント",
     "basicSettings": "基本設定",
     "breakSettings": "休憩設定",
+    "overallTimeline": "総合タイムスケジュール",
+    "sports": "競技",
+    "matches": "試合",
+    "breaks": "休憩",
+    "clickToView": "クリックして詳細を表示",
+    "timelineScrollHint": "横スクロールでタイムラインの詳細を確認できます",
     "startTime": "開始時間",
     "endTime": "終了時間",
     "matchDuration": "1試合の所要時間 (分)",

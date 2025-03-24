@@ -21,7 +21,8 @@ import {
   AdminPanelSettings as AdminIcon,
   Login as LoginIcon,
   Schedule as ScheduleIcon,
-  GridView as GridViewIcon 
+  GridView as GridViewIcon,
+  ViewTimeline as TimelineIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../hooks/useDatabase';
@@ -29,6 +30,7 @@ import { Event, Sport } from '../types';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import EventTimelineOverview from '../components/sports/EventTimelineOverview';
+import EventOverallTimeline from '../components/sports/EventOverallTimeline';
 
 const MotionCard = motion(Card);
 const MotionFab = motion(Fab);
@@ -41,7 +43,7 @@ const HomePage: React.FC = () => {
   const { data: sports, loading: sportsLoading } = useDatabase<Record<string, Sport>>('/sports');
   const [activeEvent, setActiveEvent] = useState<Event | null>(null);
   const [activeSports, setActiveSports] = useState<Sport[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline' | 'overall-timeline'>('grid');
 
   useEffect(() => {
     if (events && sports) {
@@ -60,7 +62,7 @@ const HomePage: React.FC = () => {
   }, [events, sports]);
 
   // 表示モードの切り替え
-  const handleViewChange = (event: React.SyntheticEvent, newValue: 'grid' | 'timeline') => {
+  const handleViewChange = (event: React.SyntheticEvent, newValue: 'grid' | 'timeline' | 'overall-timeline') => {
     setViewMode(newValue);
   };
 
@@ -138,8 +140,14 @@ const HomePage: React.FC = () => {
               />
               <Tab 
                 icon={<ScheduleIcon />} 
-                label={t('home.timelineView')} 
+                label={t('home.scheduleView')} 
                 value="timeline"
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<TimelineIcon />} 
+                label={t('home.overallTimelineView')} 
+                value="overall-timeline"
                 iconPosition="start"
               />
             </Tabs>
@@ -175,9 +183,13 @@ const HomePage: React.FC = () => {
                 </Grid>
               ))}
             </Grid>
-          ) : (
+          ) : viewMode === 'timeline' ? (
             <Box>
               <EventTimelineOverview sports={activeSports} activeEvent={activeEvent} />
+            </Box>
+          ) : (
+            <Box>
+              <EventOverallTimeline sports={activeSports} activeEvent={activeEvent} />
             </Box>
           )}
         </Box>
