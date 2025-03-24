@@ -50,7 +50,7 @@ export const exportLeague = async (
     currentRow += 2;
     
     // 3. Create playoff matches table if applicable
-    if (sport.leagueSettings.hasPlayoff) {
+    if (sport.leagueSettings?.hasPlayoff && sport.matches && Array.isArray(sport.matches)) {
       currentRow = addPlayoffMatches(sheet, sport, sport.matches.filter(m => m.round > 1), currentRow);
       
       // Add spacing
@@ -86,9 +86,12 @@ const addBlockStandingsTables = (
   sport: Sport,
   startRow: number
 ): number => {
+  // Ensure teams array exists
+  const teams = sport.teams && Array.isArray(sport.teams) ? sport.teams : [];
+  
   // Group teams by block
   const blocks: Record<string, Team[]> = {};
-  sport.teams.forEach(team => {
+  teams.forEach(team => {
     // Use optional chaining and nullish coalescing for blockId
     const blockId = team.blockId ?? 'default';
     if (!blocks[blockId]) {

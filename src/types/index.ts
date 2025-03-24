@@ -154,6 +154,7 @@ export interface RankingEntry {
   rank: number;
   score?: number | null; // スコアやタイム（null許可を追加）
   notes?: string;
+  participantName?: string; // チームが存在しない場合の参加者名
 }
 
 // スケジュール情報の型を追加

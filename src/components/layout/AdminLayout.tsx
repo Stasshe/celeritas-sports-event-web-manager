@@ -39,7 +39,8 @@ import {
   Help as HelpIcon,
   Home as HomeIcon,
   AccountCircle,
-  Scoreboard as ScoreboardIcon
+  Scoreboard as ScoreboardIcon,
+  FileDownload as ExportIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useThemeContext } from '../../contexts/ThemeContext';
@@ -379,6 +380,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </ListItem>
       </List>
       
+      {/*エクスポートタブ */}
+      <List>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={location.pathname === '/admin/export'}
+            onClick={() => navigate('/admin/export')}
+          >
+            <ListItemIcon>
+              <ExportIcon />
+            </ListItemIcon>
+            <ListItemText primary={t('admin.export')} />
+          </ListItemButton>
+        </ListItem>
+      </List>
       <Divider />
       
       {/* イベントリスト */}

@@ -34,9 +34,12 @@ export const exportTournament = async (
     // Space before the bracket
     sheet.addRow(['']);
     
+    // Ensure matches array exists
+    const matches = sport.matches && Array.isArray(sport.matches) ? sport.matches : [];
+    
     // Organize matches by round
     const matchesByRound: Record<number, Match[]> = {};
-    sport.matches.forEach(match => {
+    matches.forEach(match => {
       if (!matchesByRound[match.round]) {
         matchesByRound[match.round] = [];
       }

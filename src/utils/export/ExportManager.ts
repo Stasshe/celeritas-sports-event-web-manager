@@ -192,8 +192,13 @@ const addEventInfoSheet = (
   headerRow.font = { bold: true };
   
   sports.forEach(sport => {
-    const matchesCompleted = sport.matches.filter(m => m.status === 'completed').length;
-    const totalMatches = sport.matches.length;
+    // Add null check for matches array
+    const matchesCompleted = sport.matches && Array.isArray(sport.matches) 
+      ? sport.matches.filter(m => m.status === 'completed').length 
+      : 0;
+    const totalMatches = sport.matches && Array.isArray(sport.matches) 
+      ? sport.matches.length 
+      : 0;
     const status = totalMatches > 0 
       ? `${matchesCompleted}/${totalMatches} matches completed`
       : 'No matches';
@@ -201,7 +206,7 @@ const addEventInfoSheet = (
     sheet.addRow([
       sport.name,
       sport.type,
-      sport.teams.length.toString(),
+      (sport.teams && Array.isArray(sport.teams) ? sport.teams.length : 0).toString(),
       status
     ]);
   });
@@ -240,38 +245,44 @@ const addGenericSportSheet = (
     ]);
   });
   
-  // Add matches
-  sheet.addRow(['']);
-  sheet.addRow(['Matches:']);
-  const matchesHeader = sheet.addRow([
-    'Match #', 'Team 1', 'Team 2', 'Score', 'Winner', 'Status'
-  ]);
-  matchesHeader.font = { bold: true };
-  
-  sport.matches.forEach(match => {
-    const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || 'Unknown';
-    const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || 'Unknown';
-    const winner = match.winnerId 
-      ? sport.teams.find(t => t.id === match.winnerId)?.name 
-      : 'None';
-      
-    sheet.addRow([
-      match.matchNumber,
-      team1,
-      team2,
-      `${match.team1Score} - ${match.team2Score}`,
-      winner || '-',
-      match.status
+  // Add matches section only if matches array exists
+  if (sport.matches && Array.isArray(sport.matches) && sport.matches.length > 0) {
+    sheet.addRow(['']);
+    sheet.addRow(['Matches:']);
+    const matchesHeader = sheet.addRow([
+      'Match #', 'Team 1', 'Team 2', 'Score', 'Winner', 'Status'
     ]);
-  });
-  
-  // Format columns
-  sheet.getColumn(1).width = 15;
-  sheet.getColumn(2).width = 25;
-  sheet.getColumn(3).width = 25;
-  sheet.getColumn(4).width = 15;
-  sheet.getColumn(5).width = 25;
-  sheet.getColumn(6).width = 15;
+    matchesHeader.font = { bold: true };
+    
+    sport.matches.forEach(match => {
+      const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || 'Unknown';
+      const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || 'Unknown';
+      const winner = match.winnerId 
+        ? sport.teams.find(t => t.id === match.winnerId)?.name 
+        : 'None';
+        
+      sheet.addRow([
+        match.matchNumber,
+        team1,
+        team2,
+        `${match.team1Score} - ${match.team2Score}`,
+        winner || '-',
+        match.status
+      ]);
+    });
+    
+    // Format columns
+    sheet.getColumn(1).width = 15;
+    sheet.getColumn(2).width = 25;
+    sheet.getColumn(3).width = 25;
+    sheet.getColumn(4).width = 15;
+    sheet.getColumn(5).width = 25;
+    sheet.getColumn(6).width = 15;
+  } else {
+    // No matches section for ranking competitions
+    sheet.addRow(['']);
+    sheet.addRow(['Note: This competition type does not use matches']);
+  }
 };
 
 // Helper function to determine winners for a sport
@@ -282,6 +293,11 @@ const getWinners = (sport: Sport): {
 } => {
   try {
     const result: { first?: Team; second?: Team; third?: Team } = {};
+    
+    // Ensure matches and teams exist
+    if (!sport.matches || !Array.isArray(sport.matches) || !sport.teams || !Array.isArray(sport.teams)) {
+      return result;
+    }
     
     // For tournament and league formats
     if (['tournament', 'league'].includes(sport.type)) {

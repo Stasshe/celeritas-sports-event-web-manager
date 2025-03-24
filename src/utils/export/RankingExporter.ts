@@ -70,8 +70,8 @@ const addRankingTable = (
   // Check if we have dedicated ranking entries in the sport
   if (sport.rankings && Array.isArray(sport.rankings)) {
     rankings.push(...sport.rankings);
-  } else {
-    // Otherwise, generate from matches data
+  } else if (sport.teams && Array.isArray(sport.teams)) {
+    // Otherwise, generate from team data if teams exist but no rankings
     const teamResults: Record<string, { score: number; wins: number }> = {};
     
     // Initialize results
@@ -79,22 +79,24 @@ const addRankingTable = (
       teamResults[team.id] = { score: 0, wins: 0 };
     });
     
-    // Calculate scores from matches
-    sport.matches.forEach(match => {
-      if (match.status === 'completed') {
-        // For team 1
-        teamResults[match.team1Id].score += match.team1Score;
-        if (match.team1Score > match.team2Score) {
-          teamResults[match.team1Id].wins += 1;
+    // Calculate scores from matches only if matches array exists
+    if (sport.matches && Array.isArray(sport.matches)) {
+      sport.matches.forEach(match => {
+        if (match.status === 'completed') {
+          // For team 1
+          teamResults[match.team1Id].score += match.team1Score;
+          if (match.team1Score > match.team2Score) {
+            teamResults[match.team1Id].wins += 1;
+          }
+          
+          // For team 2
+          teamResults[match.team2Id].score += match.team2Score;
+          if (match.team2Score > match.team1Score) {
+            teamResults[match.team2Id].wins += 1;
+          }
         }
-        
-        // For team 2
-        teamResults[match.team2Id].score += match.team2Score;
-        if (match.team2Score > match.team1Score) {
-          teamResults[match.team2Id].wins += 1;
-        }
-      }
-    });
+      });
+    }
     
     // Create ranking entries from team results
     Object.entries(teamResults).forEach(([teamId, result], index) => {
@@ -132,7 +134,7 @@ const addRankingTable = (
   // Add column headers
   const rankingHeader = sheet.addRow([
     'Rank', 
-    'Team', 
+    'Team/Name', 
     sport.rankingSettings?.criteriaName || 'Score', 
     'Notes'
   ]);
@@ -149,12 +151,22 @@ const addRankingTable = (
   
   // Add each ranking row
   rankings.forEach((ranking) => {
-    const team = sport.teams.find(t => t.id === ranking.teamId);
-    if (!team) return;
+    // Handle case where teams array might not exist or team entry might not be found
+    let teamName = 'Unknown';
+    
+    if (sport.teams && Array.isArray(sport.teams)) {
+      const team = sport.teams.find(t => t.id === ranking.teamId);
+      if (team) {
+        teamName = team.name;
+      }
+    } else {
+      // If teams array doesn't exist, use participant name directly from ranking if available
+      teamName = ranking.participantName || `Participant ${ranking.rank}`;
+    }
     
     const row = sheet.addRow([
       ranking.rank.toString(),
-      team.name,
+      teamName,
       ranking.score !== undefined && ranking.score !== null ? ranking.score.toString() : '-',
       ranking.notes || ''
     ]);
@@ -205,12 +217,12 @@ const addTeamDetailsList = (
   // Add team details header
   sheet.mergeCells(`A${lastRow}:D${lastRow}`);
   const headerCell = sheet.getCell(`A${lastRow}`);
-  headerCell.value = 'Team Details';
+  headerCell.value = 'Participant Details';
   headerCell.font = { bold: true, size: 14 };
   headerCell.alignment = { horizontal: 'center' };
   
   // Add column headers
-  const teamHeaderRow = sheet.addRow(['Team Name', 'Members', 'Additional Information']);
+  const teamHeaderRow = sheet.addRow(['Name', 'Details', 'Additional Information']);
   teamHeaderRow.font = { bold: true };
   teamHeaderRow.eachCell((cell) => {
     cell.border = {
@@ -222,15 +234,53 @@ const addTeamDetailsList = (
     cell.alignment = { horizontal: 'center' };
   });
   
-  // Add each team with details
-  sport.teams.forEach(team => {
+  // Only add team details if teams array exists
+  if (sport.teams && Array.isArray(sport.teams) && sport.teams.length > 0) {
+    // Add each team with details
+    sport.teams.forEach(team => {
+      const row = sheet.addRow([
+        team.name,
+        team.members?.join(', ') || '',
+        '' // Additional information (could be customized)
+      ]);
+      
+      // Style the row
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    });
+  } else if (sport.rankings && Array.isArray(sport.rankings)) {
+    // If no teams, use rankings for participant details
+    sport.rankings.forEach(ranking => {
+      const row = sheet.addRow([
+        ranking.participantName || `Participant ${ranking.rank}`,
+        '', // No member details for direct ranking entries
+        ranking.notes || ''
+      ]);
+      
+      // Style the row
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    });
+  } else {
+    // Add a note if no team or participant details available
     const row = sheet.addRow([
-      team.name,
-      team.members?.join(', ') || '',
-      '' // Additional information (could be customized)
+      'No participant details available',
+      '',
+      ''
     ]);
     
-    // Style the row
     row.eachCell((cell) => {
       cell.border = {
         top: { style: 'thin' },
@@ -239,7 +289,7 @@ const addTeamDetailsList = (
         right: { style: 'thin' }
       };
     });
-  });
+  }
   
   // Set column widths
   sheet.getColumn(1).width = 25;

@@ -268,7 +268,9 @@ const addMatchResultsTable = (
   startRow++;
   
   // Group matches by round/matchday if possible
-  const matches = [...sport.matches].sort((a, b) => a.matchNumber - b.matchNumber);
+  const matches = sport.matches && Array.isArray(sport.matches) 
+    ? [...sport.matches].sort((a, b) => a.matchNumber - b.matchNumber)
+    : [];
   let currentMatchday = -1;
   
   matches.forEach(match => {
