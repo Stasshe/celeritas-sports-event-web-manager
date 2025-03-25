@@ -128,7 +128,7 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
             >
               <Chip 
                 icon={<SportIcon fontSize="small" />} 
-                label={`${counts.match}${t('schedule.matchCount')}`} 
+                label={`${t('schedule.matchCount')}:${counts.match}`} 
                 size="small" 
                 color="primary"
                 variant="outlined"
@@ -139,7 +139,7 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
         {counts.break > 0 && (
           <Chip 
             icon={<BreakIcon fontSize="small" />} 
-            label={`${counts.break}${t('schedule.breakCount')}`} 
+            label={`${t('schedule.breakCount')}:${counts.break}`} 
             size="small" 
             color="secondary"
             variant="outlined"

@@ -4,6 +4,7 @@
     "appName": "スポーツイベント管理",
     "save": "保存",
     "cancel": "キャンセル",
+    "close": "閉じる",
     "edit": "編集",
     "delete": "削除",
     "create": "作成",
@@ -120,6 +121,7 @@
   "admin": {
     "title": "管理パネル",
     "scoringBoard": "スコアリングボード",
+    "export": "データエクスポート",
     "noSportsInActiveEvent": "アクティブなイベントに競技がありません",
     "pleaseAddSports": "最初にいくつかの競技を追加してください",
     "goToEventManagement": "イベント管理へ移動",
@@ -757,5 +759,28 @@
     "unknownError": "不明なエラーが発生しました",
     "userNotFound": "ユーザーが見つかりません",
     "wrongPassword": "パスワードが間違っています"
+  },
+  "export": {
+    "description": "イベントと競技の結果をExcelファイルにエクスポートします。",
+    "selectEvent": "エクスポートするイベントを選択",
+    "event": "イベント",
+    "selectEventPlaceholder": "イベントを選択してください",
+    "selectedEvent": "選択されたイベント",
+    "date": "開催日",
+    "sports": "競技数",
+    "includedSports": "含まれる競技",
+    "participants": "参加者数",
+    "matches": "試合数",
+    "helpTip": "各競技の形式に合わせて最適化されたシートが生成されます",
+    "exportToExcel": "Excelにエクスポート",
+    "exporting": "エクスポート中...",
+    "success": "エクスポートに成功しました。ダウンロードが開始されます。",
+    "excelContents": "Excelファイルの内容",
+    "sheet.summary": "イベント概要",
+    "sheet.summaryDesc": "イベント情報と全競技の優勝者一覧",
+    "sheet.tournamentDesc": "トーナメント表と結果",
+    "sheet.roundRobinDesc": "対戦表と順位表",
+    "sheet.leagueDesc": "リーグ戦の対戦表と順位表",
+    "sheet.rankingDesc": "ランキング結果"
   }
 }

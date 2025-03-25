@@ -98,50 +98,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   // SVG要素を大文字で定義
   const ForeignObject = 'foreignObject';
 
-  // 参加者の状態を判定する関数を修正
-  const getParticipantStatus = (teamId: string | null, match: Match): 'no-team' | 'waiting' | null => {
-    if (!teamId) return 'no-team';
-
-    // シード試合の判定
-    if (TournamentStructureHelper.isNoTeam(teamId, match, matches)) return 'no-team';
-
-    // 両チームが揃っているかチェック
-    if (match.team1Id && match.team2Id) {
-      const team1HasPrevious = matches.some(m => 
-        m.round === match.round - 1 && 
-        (m.team1Id === match.team1Id || m.team2Id === match.team1Id)
-      );
-      const team2HasPrevious = matches.some(m => 
-        m.round === match.round - 1 && 
-        (m.team1Id === match.team2Id || m.team2Id === match.team2Id)
-      );
-
-      // 両チームとも前の試合がある場合は通常表示
-      if (team1HasPrevious && team2HasPrevious) return null;
-    }
-
-    // このチームの前の試合をチェック
-    const previousMatch = matches.find(m => 
-      m.round === match.round - 1 && 
-      (m.team1Id === teamId || m.team2Id === teamId)
-    );
-
-    // 前の試合がある場合かつその勝者が未定の場合は待機状態
-    if (previousMatch && !previousMatch.winnerId) return 'waiting';
-
-    // 対戦相手の有無をチェック
-    const hasOpponent = match.team1Id && match.team2Id;
-    if (!hasOpponent) return 'waiting';
-
-    return null;
-  };
-
-  // 試合の状態を判定する関数を追加
-  const getMatchState = (match: Match): 'DONE' | 'PLAYING' | 'SCHEDULED' => {
-    if (match.status === 'completed' || match.winnerId) return 'DONE';
-    if (match.team1Score > 0 || match.team2Score > 0) return 'PLAYING';
-    return 'SCHEDULED';
-  };
 
   // トーナメント表示用のデータ - メインブラケットと3位決定戦ブラケットを分離
   const { mainBracketMatches, thirdPlaceMatch } = useMemo(() => {
@@ -484,12 +440,9 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               ? theme.palette.warning.main  // tbd はオレンジ
               : bottomParty.isWinner
               ? theme.palette.primary.main
-              : bottomParty.status === 'waiting'
-              ? theme.palette.warning.main
               : 'inherit'
           }}>
             {bottomParty.name}
-            {bottomParty.status === 'waiting' && ' (待機中)'}
           </Typography>
           <Typography variant="body2" sx={{ 
             fontWeight: 'bold',
@@ -504,14 +457,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   }, [theme, t, readOnly, matches, handleEditMatch]);
   const nodeWidth = 200;
   const nodeHeight = 100;
-  // SVG要素の位置計算関数を修正
-  const calculateNodePosition = (roundIndex: number, matchIndex: number, totalRounds: number) => {
-    // NaNをチェックして安全な値にする
-    const x = roundIndex !== undefined && !isNaN(roundIndex) ? roundIndex * nodeWidth * 1.5 : 0;
-    const y = matchIndex !== undefined && !isNaN(matchIndex) ? matchIndex * nodeHeight * 2 : 0;
-    
-    return { x: String(x), y: String(y) }; // 文字列に変換して返す
-  };
 
   const savingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingUpdateRef = useRef<Sport | null>(null);
