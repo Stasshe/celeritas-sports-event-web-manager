@@ -178,9 +178,10 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
     };
   }, [sports, t]);
 
-  // スポーツごとにイベントをグループ化
+  // スポーツごとにイベントをグループ化し、重なりを計算
   const sportGroupedEvents = useMemo(() => {
     const grouped: Record<string, TimelineEvent[]> = {};
+    const metaInfo: Record<string, any> = {}; // メタ情報を別のオブジェクトに保存
     
     allEvents.forEach(event => {
       if (!grouped[event.sportId]) {
@@ -189,7 +190,46 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
       grouped[event.sportId].push(event);
     });
     
-    return grouped;
+    // 各スポーツごとに時間が重なるイベントを処理して垂直位置を計算
+    Object.keys(grouped).forEach(sportId => {
+      const events = grouped[sportId];
+      
+      // 開始時間でソート
+      events.sort((a, b) => a.startMinutes - b.startMinutes);
+      
+      // 各イベントに垂直位置（row）を割り当て
+      const rows: { end: number, row: number }[] = [];
+      
+      events.forEach(event => {
+        // このイベントを配置できる適切な行を探す
+        let rowIndex = 0;
+        let placed = false;
+        
+        for (let i = 0; i < rows.length; i++) {
+          if (event.startMinutes >= rows[i].end) {
+            // この行に配置可能
+            rows[i].end = event.endMinutes;
+            rowIndex = i;
+            placed = true;
+            break;
+          }
+        }
+        
+        if (!placed) {
+          // 新しい行を追加
+          rows.push({ end: event.endMinutes, row: rows.length });
+          rowIndex = rows.length - 1;
+        }
+        
+        // イベントにrow情報を追加
+        (event as any).row = rowIndex;
+      });
+      
+      // 行の総数を記録（メタ情報として別に保存）
+      metaInfo[`${sportId}_rowCount`] = Math.max(1, rows.length);
+    });
+    
+    return { events: grouped, meta: metaInfo };
   }, [allEvents]);
 
   // イベントをクリックしたときの処理
@@ -477,16 +517,21 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
             zIndex: 9,
             bgcolor: 'background.paper'
           }}>
-            {Object.entries(sportGroupedEvents).map(([sportId, events]) => {
+            {Object.entries(sportGroupedEvents.events).map(([sportId, events]) => {
               const sport = sports.find(s => s.id === sportId);
               if (!sport) return null;
+              
+              // 各スポーツの行数を取得
+              const rowCount = sportGroupedEvents.meta[`${sportId}_rowCount`] || 1;
+              // 行数に基づいて高さを調整（最低60px、行数に応じて増加）
+              const rowHeight = Math.max(60, rowCount * 50);
               
               return (
                 <Box 
                   key={`sport-${sportId}`}
                   sx={{ 
                     p: 1.5,
-                    height: 60,
+                    height: rowHeight,
                     borderBottom: '1px solid',
                     borderColor: 'divider',
                     display: 'flex',
@@ -590,79 +635,91 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
               )}
               
               {/* スポーツごとの行 */}
-              {Object.entries(sportGroupedEvents).map(([sportId, events], rowIndex) => (
-                <Box 
-                  key={`timeline-${sportId}`}
-                  sx={{ 
-                    height: 60,
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    position: 'relative'
-                  }}
-                >
-                  {/* イベント要素を配置 */}
-                  {events.map((event, index) => {
-                    const left = (event.startMinutes - minTime) * pixelPerMinute;
-                    const width = (event.endMinutes - event.startMinutes) * pixelPerMinute;
-                    const minWidth = 40;
-                    const finalWidth = Math.max(width, minWidth);
-                    
-                    return (
-                      <Box
-                        key={`event-${sportId}-${index}`}
-                        sx={{
-                          position: 'absolute',
-                          left: `${left}px`,
-                          width: `${finalWidth}px`,
-                          height: 40,
-                          top: 10,
-                          borderRadius: 1,
-                          bgcolor: event.type === 'match' 
-                            ? alpha(theme.palette.primary.main, 0.85) 
-                            : alpha(getEventColor(event.type), 0.7),
-                          border: '1px solid',
-                          borderColor: getEventColor(event.type),
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          overflow: 'hidden',
-                          p: 0.5,
-                          cursor: 'pointer',
-                          color: event.type === 'match' ? '#fff' : 'text.primary',
-                          '&:hover': {
-                            boxShadow: 2,
-                            filter: 'brightness(1.1)',
-                            zIndex: 5
-                          },
-                          zIndex: event.type === 'match' ? 4 : 2
-                        }}
-                        onClick={() => handleEventClick(event)}
-                      >
-                        {/* 試合の場合はチーム情報を表示、それ以外はアイコンのみ */}
-                        {event.type === 'match' && event.matchInfo ? (
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              textShadow: '0 0 2px rgba(0,0,0,0.7)',
-                              fontWeight: 'medium',
-                              textAlign: 'center',
-                              width: '100%'
-                            }}
-                          >
-                            {event.matchInfo.team1Name.slice(-3)}vs{event.matchInfo.team2Name.slice(-3)}
-                          </Typography>
-                        ) : (
-                          // 試合以外はアイコンのみ表示
-                          getTypeIcon(event.type)
-                        )}
-                      </Box>
-                    );
-                  })}
-                </Box>
-              ))}
+              {Object.entries(sportGroupedEvents.events).map(([sportId, events]) => {
+                // 各スポーツの行数を取得
+                const rowCount = sportGroupedEvents.meta[`${sportId}_rowCount`] || 1;
+                // 行数に基づいて高さを調整（最低60px、行数に応じて増加）
+                const rowHeight = Math.max(60, rowCount * 50);
+                
+                return (
+                  <Box 
+                    key={`timeline-${sportId}`}
+                    sx={{ 
+                      height: rowHeight,
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      position: 'relative'
+                    }}
+                  >
+                    {/* イベント要素を配置 */}
+                    {events.map((event, index) => {
+                      const left = (event.startMinutes - minTime) * pixelPerMinute;
+                      const width = (event.endMinutes - event.startMinutes) * pixelPerMinute;
+                      const minWidth = 40;
+                      const finalWidth = Math.max(width, minWidth);
+                      
+                      // 行の位置を取得（デフォルトは0）
+                      const row = (event as any).row || 0;
+                      // 行に基づいて上からの位置を計算
+                      const top = 5 + (row * 45);
+                      
+                      return (
+                        <Box
+                          key={`event-${sportId}-${index}`}
+                          sx={{
+                            position: 'absolute',
+                            left: `${left}px`,
+                            width: `${finalWidth}px`,
+                            height: 40,
+                            top: `${top}px`,
+                            borderRadius: 1,
+                            bgcolor: event.type === 'match' 
+                              ? alpha(theme.palette.primary.main, 0.85) 
+                              : alpha(getEventColor(event.type), 0.7),
+                            border: '1px solid',
+                            borderColor: getEventColor(event.type),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                            p: 0.5,
+                            cursor: 'pointer',
+                            color: event.type === 'match' ? '#fff' : 'text.primary',
+                            '&:hover': {
+                              boxShadow: 2,
+                              filter: 'brightness(1.1)',
+                              zIndex: 5
+                            },
+                            zIndex: event.type === 'match' ? 4 : 2
+                          }}
+                          onClick={() => handleEventClick(event)}
+                        >
+                          {/* 試合の場合はチーム情報を表示、それ以外はアイコンのみ */}
+                          {event.type === 'match' && event.matchInfo ? (
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                textShadow: '0 0 2px rgba(0,0,0,0.7)',
+                                fontWeight: 'medium',
+                                textAlign: 'center',
+                                width: '100%'
+                              }}
+                            >
+                              {event.matchInfo.team1Name.slice(-3)}vs{event.matchInfo.team2Name.slice(-3)}
+                            </Typography>
+                          ) : (
+                            // 試合以外はアイコンのみ表示
+                            getTypeIcon(event.type)
+                          )}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                );
+              })}
             </Box>
           </Box>
         </Box>
