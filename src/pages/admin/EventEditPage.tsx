@@ -28,7 +28,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Checkbox
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -36,7 +42,8 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
-  School as GradeIcon
+  School as GradeIcon,
+  Class as ClassIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -47,6 +54,8 @@ import AdminLayout from '../../components/layout/AdminLayout';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext'; // 正しいパスに修正
 import DeleteConfirmationDialog from '../../components/admin/dialogs/DeleteConfirmationDialog';
+import RosterEditor from '../../components/admin/RosterEditor';
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -96,6 +105,19 @@ const EventEditPage: React.FC = () => {
     grade: 2
   });
   
+  // クラステンプレートダイアログ用の状態
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [gradeParticipation, setGradeParticipation] = useState({
+    grade1: true,
+    grade2: true,
+    grade3: false
+  });
+  const [classCount, setClassCount] = useState({
+    grade1: 7,
+    grade2: 7,
+    grade3: 7
+  });
+
   // eventIdが変更されたときにlocalEventをリセットする
   useEffect(() => {
     // eventIdが変更されたらlocalEventをnullにリセット
@@ -115,6 +137,11 @@ const EventEditPage: React.FC = () => {
   useEffect(() => {
     if (event && !localEvent) {
       setLocalEvent(JSON.parse(JSON.stringify(event)));
+      
+      // gradeParticipationを設定
+      if (event.gradeParticipation) {
+        setGradeParticipation(event.gradeParticipation);
+      }
     }
   }, [event, localEvent]);
   
@@ -225,6 +252,56 @@ const EventEditPage: React.FC = () => {
     }
   };
 
+  // クラステンプレートの生成処理
+  const generateClassTemplate = () => {
+    if (!localEvent) return;
+    
+    const newRoster: Event['roster'] = {
+      grade1: {},
+      grade2: {},
+      grade3: {}
+    };
+    
+    // 学年ごとにクラスを生成
+    if (gradeParticipation.grade1) {
+      for (let i = 1; i <= classCount.grade1; i++) {
+        newRoster.grade1![`1-${i}`] = ['none']; // デフォルトの名簿を追加
+      }
+    }
+    
+    if (gradeParticipation.grade2) {
+      for (let i = 1; i <= classCount.grade2; i++) {
+        newRoster.grade2![`2-${i}`] = ['none']; // デフォルトの名簿を追加
+      }
+    }
+    
+    if (gradeParticipation.grade3) {
+      for (let i = 1; i <= classCount.grade3; i++) {
+        newRoster.grade3![`3-${i}`] = ['none']; // デフォルトの名簿を追加
+      }
+    }
+    
+    // 更新したイベントデータを設定
+    const updatedEvent = {
+      ...localEvent,
+      roster: newRoster,
+      gradeParticipation
+    };
+    
+    setLocalEvent(updatedEvent);
+    setTemplateDialogOpen(false);
+    
+    // 保存
+    updateEvent(updatedEvent)
+      .then(() => {
+        showSnackbar(t('event.classTemplateGenerated'), 'success');
+      })
+      .catch(error => {
+        console.error('Error generating class template:', error);
+        showSnackbar(t('event.classTemplateError'), 'error');
+      });
+  };
+
   const handleDelete = async () => {
     if (!localEvent) return;
     
@@ -235,6 +312,19 @@ const EventEditPage: React.FC = () => {
     } catch (error) {
       showSnackbar(t('event.deleteError'), 'error');
     }
+  };
+  
+  // ロスターの更新処理
+  const handleRosterUpdate = (updatedRoster: Event['roster']) => {
+    if (!localEvent) return;
+    
+    setLocalEvent(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        roster: updatedRoster
+      };
+    });
   };
   
   if (eventLoading) {
@@ -282,15 +372,17 @@ const EventEditPage: React.FC = () => {
               />
             )}
           </Box>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={saveStatus === 'saving'}
-          >
-            {saveStatus === 'saving' ? t('common.saving') : t('common.save')}
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<SaveIcon />}
+              onClick={handleSave}
+              disabled={saveStatus === 'saving'}
+            >
+              {saveStatus === 'saving' ? t('common.saving') : t('common.save')}
+            </Button>
+          </Box>
         </Box>
         
         <Paper sx={{ mb: 2 }}>
@@ -303,6 +395,8 @@ const EventEditPage: React.FC = () => {
           >
             <Tab label={t('event.tabs.details')} />
             <Tab label={t('event.tabs.organizers')} />
+            <Tab label={t('event.tabs.roster')} />
+            <Tab label={t('event.tabs.settings')} />
           </Tabs>
         </Paper>
         
@@ -572,7 +666,210 @@ const EventEditPage: React.FC = () => {
           </Paper>
         </TabPanel>
         
-        {/* スナックバーは削除 - AdminLayoutのスナックバーを使用 */}
+        {/* 名簿タブ (新規追加) */}
+        <TabPanel value={activeTab} index={2}>
+          <Paper sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6">
+                {t('event.manageClasses')}
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<ClassIcon />}
+                onClick={() => setTemplateDialogOpen(true)}
+              >
+                {t('event.generateClassTemplate')}
+              </Button>
+            </Box>
+            <Divider sx={{ mb: 3 }} />
+            
+            {/* クラス編集コンポーネント */}
+            {localEvent.roster ? (
+              <RosterEditor 
+                event={localEvent} 
+                onUpdate={handleRosterUpdate} 
+              />
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" gutterBottom>
+                  {t('event.noClassesYet')}
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<ClassIcon />}
+                  onClick={() => setTemplateDialogOpen(true)}
+                  sx={{ mt: 2 }}
+                >
+                  {t('event.generateClassTemplate')}
+                </Button>
+              </Box>
+            )}
+          </Paper>
+        </TabPanel>
+        
+        {/* 設定タブ (新規追加) */}
+        <TabPanel value={activeTab} index={3}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom color="error">
+              {t('event.dangerZone')}
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            
+            <Box sx={{ bgcolor: 'error.main', color: 'error.contrastText', p: 2, borderRadius: 1 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                {t('event.deleteEvent')}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                {t('event.deleteEventWarning')}
+              </Typography>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => setDeleteDialogOpen(true)}
+                startIcon={<DeleteIcon />}
+                sx={{ 
+                  bgcolor: 'error.dark',
+                  '&:hover': { bgcolor: 'error.dark' }
+                }}
+              >
+                {t('common.delete')}
+              </Button>
+            </Box>
+          </Paper>
+        </TabPanel>
+        
+        {/* クラステンプレート生成ダイアログ */}
+        <Dialog open={templateDialogOpen} onClose={() => setTemplateDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>{t('event.generateClassTemplate')}</DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ mb: 3 }}>
+              {t('event.classTemplateDescription')}
+            </DialogContentText>
+            
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
+              {t('event.gradeParticipation')}
+            </Typography>
+            
+            <Box sx={{ mb: 3 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={gradeParticipation.grade1}
+                    onChange={(e) => setGradeParticipation({
+                      ...gradeParticipation,
+                      grade1: e.target.checked
+                    })}
+                  />
+                }
+                label={t('event.grade1')}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={gradeParticipation.grade2}
+                    onChange={(e) => setGradeParticipation({
+                      ...gradeParticipation,
+                      grade2: e.target.checked
+                    })}
+                  />
+                }
+                label={t('event.grade2')}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={gradeParticipation.grade3}
+                    onChange={(e) => setGradeParticipation({
+                      ...gradeParticipation,
+                      grade3: e.target.checked
+                    })}
+                  />
+                }
+                label={t('event.grade3')}
+              />
+            </Box>
+            
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
+              {t('event.classCount')}
+            </Typography>
+            
+            <Grid container spacing={2}>
+              {gradeParticipation.grade1 && (
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    label={`${t('event.grade1')}${t('event.classCount')}`}
+                    type="number"
+                    value={classCount.grade1}
+                    onChange={(e) => setClassCount({
+                      ...classCount,
+                      grade1: parseInt(e.target.value) || 1
+                    })}
+                    InputProps={{ inputProps: { min: 1, max: 10 } }}
+                    fullWidth
+                  />
+                </Grid>
+              )}
+              
+              {gradeParticipation.grade2 && (
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    label={`${t('event.grade2')}${t('event.classCount')}`}
+                    type="number"
+                    value={classCount.grade2}
+                    onChange={(e) => setClassCount({
+                      ...classCount,
+                      grade2: parseInt(e.target.value) || 1
+                    })}
+                    InputProps={{ inputProps: { min: 1, max: 10 } }}
+                    fullWidth
+                  />
+                </Grid>
+              )}
+              
+              {gradeParticipation.grade3 && (
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    label={`${t('event.grade3')}${t('event.classCount')}`}
+                    type="number"
+                    value={classCount.grade3}
+                    onChange={(e) => setClassCount({
+                      ...classCount,
+                      grade3: parseInt(e.target.value) || 1
+                    })}
+                    InputProps={{ inputProps: { min: 1, max: 10 } }}
+                    fullWidth
+                  />
+                </Grid>
+              )}
+            </Grid>
+            
+            <Box sx={{ mt: 3, color: 'text.secondary' }}>
+              <Typography variant="caption">
+                {t('event.classTemplateWarning')}
+              </Typography>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setTemplateDialogOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={generateClassTemplate}
+              disabled={
+                !gradeParticipation.grade1 && 
+                !gradeParticipation.grade2 && 
+                !gradeParticipation.grade3
+              }
+            >
+              {t('common.generate')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+        
+        {/* 削除確認ダイアログ */}
         <DeleteConfirmationDialog
           open={deleteDialogOpen}
           onClose={() => setDeleteDialogOpen(false)}

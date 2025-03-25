@@ -68,7 +68,7 @@ export class LeaguePlayoffHelper {
         const { round, matchNumber } = matchInfo;
         
         // ラウンド番号を逆にする - 決勝を1、準決勝を2などにする
-        const invertedRound = maxRound - round + 1;
+        const invertedRound = round; //maxRound - round + 1;
         
         // この試合に配置されるチームを探す
         const team1Placement = teamPlacements.find(p => 

@@ -10,6 +10,17 @@ export interface Event {
   sports: string[]; // スポーツIDの配列
   coverImageUrl?: string; // カバー画像URL追加
   createdAt?: string; // オプショナルなcreatedAt属性を追加
+  // 以下を追加
+  roster?: {
+    grade1?: Record<string, string[]>; // クラス名: 名前リスト 1年生
+    grade2?: Record<string, string[]>; // クラス名: 名前リスト 2年生
+    grade3?: Record<string, string[]>; // クラス名: 名前リスト 3年生
+  };
+  gradeParticipation?: {
+    grade1: boolean;
+    grade2: boolean;
+    grade3: boolean;
+  };
 }
 
 // 担当者タイプ

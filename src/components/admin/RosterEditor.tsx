@@ -21,21 +21,26 @@ import {
   DialogActions,
   Chip,
   Tooltip,
-  useTheme
+  useTheme,
+  Alert
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   Save as SaveIcon,
-  Group as GroupIcon
+  Group as GroupIcon,
+  Sync as SyncIcon
 } from '@mui/icons-material';
-import { Sport } from '../../types';
+import { Sport, Event } from '../../types';
 import { useTranslation } from 'react-i18next';
+import { useDatabase } from '../../hooks/useDatabase';
 
+// onUpdateの型を修正: EventもしくはSportのrosterを更新する関数
 interface RosterEditorProps {
-  sport: Sport;
-  onUpdate: (sport: Sport) => void;
+  sport?: Sport;
+  event?: Event;
+  onUpdate: ((sport: Sport) => void) | ((event: Event) => void) | ((roster: Event['roster']) => void);
 }
 
 interface TabPanelProps {
@@ -60,16 +65,23 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
   );
 };
 
-const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
+const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) => {
   const { t } = useTranslation();
   const theme = useTheme();
   
+  // 競技を編集する場合は関連するイベントのデータを取得
+  const { data: eventData } = useDatabase<Event>(
+    sport ? `/events/${sport.eventId}` : '/events/none'
+  );
+  
   const [selectedGrade, setSelectedGrade] = useState(0);
-  const [roster, setRoster] = useState<Sport['roster']>(sport.roster || {
-    grade1: {},
-    grade2: {},
-    grade3: {}
-  });
+  const [roster, setRoster] = useState<Event['roster']>(
+    (sport?.roster || event?.roster) || {
+      grade1: {},
+      grade2: {},
+      grade3: {}
+    }
+  );
   
   // 編集ダイアログ用の状態
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -78,14 +90,25 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
   const [classMembers, setClassMembers] = useState<string[]>([]);
   const [newMember, setNewMember] = useState('');
   const [isNewClass, setIsNewClass] = useState(false);
+  const [showEventRosterAlert, setShowEventRosterAlert] = useState(false);
 
   useEffect(() => {
-    setRoster(sport.roster || {
-      grade1: {},
-      grade2: {},
-      grade3: {}
-    });
-  }, [sport]);
+    // sportまたはeventのrosterデータでrosterを初期化
+    setRoster(
+      (sport?.roster || event?.roster) || {
+        grade1: {},
+        grade2: {},
+        grade3: {}
+      }
+    );
+    
+    // sportの編集時に、関連するイベントにrosterがある場合は通知を表示
+    if (sport && eventData?.roster && Object.keys(eventData.roster).length > 0) {
+      setShowEventRosterAlert(true);
+    } else {
+      setShowEventRosterAlert(false);
+    }
+  }, [sport, event, eventData]);
 
   const handleGradeChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedGrade(newValue);
@@ -175,10 +198,26 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
       };
       
       setRoster(updatedRoster);
-      onUpdate({
-        ...sport,
-        roster: updatedRoster
-      });
+      
+      // sportかeventのどちらが提供されたかに基づいて更新
+      if (sport) {
+        (onUpdate as (sport: Sport) => void)({
+          ...sport,
+          roster: updatedRoster
+        });
+      } else if (event) {
+        // Event用の更新関数が渡された場合
+        if (typeof onUpdate === 'function') {
+          if (onUpdate.length === 1) {
+            // パラメータが1つの場合、Event全体またはRosterのみを想定
+            const param = onUpdate.toString().includes('roster') 
+              ? updatedRoster  // Rosterのみを更新する関数
+              : { ...event, roster: updatedRoster };  // Event全体を更新する関数
+              
+            (onUpdate as any)(param);
+          }
+        }
+      }
       
       closeClassDialog();
     }
@@ -196,11 +235,24 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
       
       setRoster(updatedRoster);
       
-      // スポーツデータを更新
-      onUpdate({
-        ...sport,
-        roster: updatedRoster
-      });
+      // sportかeventのどちらが提供されたかに基づいて更新
+      if (sport) {
+        (onUpdate as (sport: Sport) => void)({
+          ...sport,
+          roster: updatedRoster
+        });
+      } else if (event) {
+        // rosterだけを更新する関数の場合
+        if (onUpdate.toString().includes('roster')) {
+          (onUpdate as (roster: Event['roster']) => void)(updatedRoster);
+        } else {
+          // Event全体を更新する関数の場合
+          (onUpdate as (event: Event) => void)({
+            ...event,
+            roster: updatedRoster
+          });
+        }
+      }
     }
   };
 
@@ -211,11 +263,23 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
       Array.isArray(gradeData[key]) // 配列として保存されているもののみ
     );
     return classNames.sort((a, b) => {
-      const numA = Number(a);
-      const numB = Number(b);
-      if (!isNaN(numA) && !isNaN(numB)) {
-        return numA - numB;
+      // クラス名が 1-1, 1-2 等の形式でソート
+      const match1 = a.match(/(\d+)-(\d+)/);
+      const match2 = b.match(/(\d+)-(\d+)/);
+      
+      if (match1 && match2) {
+        const gradeA = parseInt(match1[1]);
+        const classA = parseInt(match1[2]);
+        const gradeB = parseInt(match2[1]);
+        const classB = parseInt(match2[2]);
+        
+        if (gradeA !== gradeB) {
+          return gradeA - gradeB;
+        }
+        return classA - classB;
       }
+      
+      // 標準の文字列比較
       return a.localeCompare(b);
     });
   };
@@ -223,11 +287,39 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
   // クラス別の生徒数をカウント
   const getMembersCount = (className: string) => {
     const gradeData = getCurrentGradeData();
-    return gradeData[className]?.length || 0;
+    // 'none'のみの場合は0とみなす
+    const members = gradeData[className] || [];
+    if (members.length === 1 && members[0] === 'none') {
+      return 0;
+    }
+    return members.length;
   };
 
   return (
     <Box>
+      {showEventRosterAlert && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          {t('roster.eventRosterAlert')}
+          <Button 
+            size="small" 
+            startIcon={<SyncIcon />} 
+            onClick={() => {
+              if (sport && eventData?.roster) {
+                setRoster(eventData.roster);
+                (onUpdate as (sport: Sport) => void)({
+                  ...sport,
+                  roster: eventData.roster
+                });
+                setShowEventRosterAlert(false);
+              }
+            }}
+            sx={{ ml: 2 }}
+          >
+            {t('roster.syncFromEvent')}
+          </Button>
+        </Alert>
+      )}
+      
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={selectedGrade} onChange={handleGradeChange} aria-label="grade tabs">
           <Tab label={t('roster.grade1')} />
@@ -291,10 +383,19 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
                 </Typography>
                 <Box sx={{ maxHeight: 150, overflowY: 'auto' }}>
                   {getCurrentGradeData()[className]?.map((member, index) => (
-                    <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
-                      {member}
-                    </Typography>
+                    member !== 'none' && (
+                      <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
+                        {member}
+                      </Typography>
+                    )
                   ))}
+                  {!getCurrentGradeData()[className] || 
+                   (getCurrentGradeData()[className].length === 1 && 
+                    getCurrentGradeData()[className][0] === 'none') ? (
+                    <Typography variant="body2" color="text.secondary">
+                      {t('roster.noMembers')}
+                    </Typography>
+                  ) : null}
                 </Box>
               </Box>
               <Box sx={{ mt: 2 }}>
@@ -367,24 +468,26 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, onUpdate }) => {
             </Box>
             
             <Paper variant="outlined" sx={{ maxHeight: 300, overflow: 'auto', p: 2 }}>
-              {classMembers.length > 0 ? (
+              {classMembers.length > 0 && !(classMembers.length === 1 && classMembers[0] === 'none') ? (
                 <Table size="small">
                   <TableBody>
                     {classMembers.map((member, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
-                          {member}
-                        </TableCell>
-                        <TableCell align="right" width="60px">
-                          <IconButton 
-                            size="small" 
-                            color="error"
-                            onClick={() => handleRemoveMember(index)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
+                      member !== 'none' && (
+                        <TableRow key={index}>
+                          <TableCell>
+                            {member}
+                          </TableCell>
+                          <TableCell align="right" width="60px">
+                            <IconButton 
+                              size="small" 
+                              color="error"
+                              onClick={() => handleRemoveMember(index)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      )
                     ))}
                   </TableBody>
                 </Table>

@@ -717,19 +717,15 @@ const generateLeagueScheduleWithCourts = (
         
         // ラウンド名を取得 - このラウンド変換ロジックを修正
         let roundName = '';
+        const maxRounds = Math.max(...playoffMatches.map(m => m.round));
         switch (match.round) {
-          case 1:
-            // ラウンド1は決勝または3位決定戦
-            if (match.matchNumber === 0 || match.id.includes('third_place')) {
-              roundName = '3位決定戦';
-            } else {
-              roundName = '決勝';
-            }
+          case maxRounds:
+            roundName = '決勝';
             break;
-          case 2:
+          case maxRounds - 1:
             roundName = '準決勝';
             break;
-          case 3:
+          case maxRounds - 2:
             roundName = '準々決勝';
             break;
           default:
