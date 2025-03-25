@@ -96,15 +96,23 @@ export class LeaguePlayoffHelper {
         newPlayoffMatches.push(newMatch);
       });
       
-      // 4. 自動進出処理 (不戦勝)
+      // 4. シード戦の処理 (片方のチームしかない場合)
       newPlayoffMatches.forEach(match => {
-        // ラウンド1は決勝戦なので、不戦勝処理は最終ラウンドより前に実施
+        // ラウンド1は決勝戦なので、シード処理は最終ラウンドより前に実施
         if (match.round > 1) {
-          // どちらかのチームだけいる場合は自動的に次の試合に進出
-          if ((match.team1Id && !match.team2Id) || (!match.team1Id && match.team2Id)) {
+          // 片方のチームしかない試合がシード戦
+          const isSeedMatch = Boolean(match.team1Id && !match.team2Id) || Boolean(!match.team1Id && match.team2Id);
+          
+          if (isSeedMatch) {
             const winningTeamId = match.team1Id || match.team2Id;
             
-            // 次の試合を探す - ラウンド番号が1つ小さい試合が次の試合
+            // シード戦は試合結果を自動的に設定
+            match.status = 'completed';
+            match.team1Score = match.team1Id ? 1 : 0;
+            match.team2Score = match.team2Id ? 1 : 0;
+            match.winnerId = winningTeamId;
+            
+            // 次の試合を探す
             const nextRoundMatch = newPlayoffMatches.find(m => 
               m.round === match.round - 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
             );
@@ -167,30 +175,77 @@ export class LeaguePlayoffHelper {
   static updatePlayoffMatches(matches: Match[]): Match[] {
     const newPlayoffMatches = [...matches];
     
-    // 準決勝試合を検出して、敗者を3位決定戦に移動するロジックを追加
-    // 準決勝はround=2
+    // 1. シード戦の処理 - まだ完了していないシード戦を自動的に処理
+    newPlayoffMatches.forEach(match => {
+      // 既に完了している試合はスキップ
+      if (match.status === 'completed') return;
+      
+      // シード戦かどうかを判定 (片方のチームしかない試合)
+      const isSeedMatch = Boolean(match.team1Id && !match.team2Id) || Boolean(!match.team1Id && match.team2Id);
+      
+      if (isSeedMatch) {
+        const winningTeamId = match.team1Id || match.team2Id;
+        
+        // シード戦は自動的に勝者を設定
+        match.status = 'completed';
+        match.team1Score = match.team1Id ? 1 : 0;
+        match.team2Score = match.team2Id ? 1 : 0;
+        match.winnerId = winningTeamId;
+        
+        // 次の試合を探して勝者を進出させる
+        const nextRoundMatch = newPlayoffMatches.find(m => 
+          m.round === match.round - 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
+        );
+        
+        if (nextRoundMatch) {
+          if (match.matchNumber % 2 !== 0) {
+            nextRoundMatch.team1Id = winningTeamId;
+          } else {
+            nextRoundMatch.team2Id = winningTeamId;
+          }
+        }
+      }
+    });
+    
+    // 2. 勝者が既に決まっている試合からの進出処理
+    newPlayoffMatches.forEach(match => {
+      // 完了して勝者が決まっている試合で、シード戦ではない試合
+      if (match.status === 'completed' && match.winnerId && match.team1Id && match.team2Id) {
+        const nextRoundMatch = newPlayoffMatches.find(m => 
+          m.round === match.round - 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
+        );
+        
+        // 次のラウンドがあり、進出先の位置が空いている場合のみ進出させる
+        if (nextRoundMatch) {
+          const position = match.matchNumber % 2 !== 0 ? 'team1Id' : 'team2Id';
+          
+          // 既に他の試合から進出してきた場合は上書きしない
+          if (!nextRoundMatch[position]) {
+            nextRoundMatch[position] = match.winnerId;
+          }
+        }
+      }
+    });
+    
+    // 3. 3位決定戦の処理
     const semifinalMatches = newPlayoffMatches.filter(m => 
       m.round === 2 && m.winnerId // 勝者が確定している準決勝
     );
     
-    // 3位決定戦を探す
     const thirdPlaceMatch = newPlayoffMatches.find(m => 
       m.matchNumber === 0 || m.id.includes('third_place')
     );
     
-    // 準決勝と3位決定戦が存在する場合
     if (semifinalMatches.length > 0 && thirdPlaceMatch) {
-      // 敗者を取得
       const losers = semifinalMatches.map(match => 
         match.team1Id === match.winnerId ? match.team2Id : match.team1Id
       ).filter(Boolean);
       
-      // チーム1が空なら1つ目の敗者を設定
+      // 空いている位置にのみ敗者を配置
       if (!thirdPlaceMatch.team1Id && losers.length > 0) {
         thirdPlaceMatch.team1Id = losers[0];
       }
       
-      // チーム2が空なら2つ目の敗者を設定
       if (!thirdPlaceMatch.team2Id && losers.length > 1) {
         thirdPlaceMatch.team2Id = losers[1];
       }
