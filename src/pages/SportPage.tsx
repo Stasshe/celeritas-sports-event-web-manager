@@ -14,7 +14,7 @@ import {
   Tabs,
   Tab
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Schedule as ScheduleIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Schedule as ScheduleIcon, MenuBook as RulesIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../hooks/useDatabase';
 import { Sport, Team, Match } from '../types';
@@ -23,6 +23,16 @@ import RoundRobinTable from '../components/sports/RoundRobinTable';
 import RankingScoring from '../components/admin/scoring/RankingScoring';
 import LeagueScoring from '../components/admin/scoring/LeagueScoring';
 import ScheduleTimeline from '../components/sports/ScheduleTimeline';
+import RulesDisplay from '../components/sports/RulesDisplay';
+
+// タブの型定義を追加
+interface SportTab {
+  label: string;
+  value: number;
+  icon?: React.ReactElement;
+  iconPosition?: "start" | "end" | "top" | "bottom";
+  disabled?: boolean;
+}
 
 const SportPage: React.FC = () => {
   const { sportId } = useParams<{ sportId: string }>();
@@ -64,6 +74,31 @@ const SportPage: React.FC = () => {
         </Button>
       </Box>
     );
+  }
+
+  // タブのリストを動的に生成
+  const tabs: SportTab[] = [
+    { 
+      label: t('sport.tabs.matches'), 
+      value: 0 
+    },
+    { 
+      label: t('sport.tabs.schedule'), 
+      icon: <ScheduleIcon />, 
+      iconPosition: "start",
+      value: 1,
+      disabled: !sport.scheduleSettings?.timeSlots?.length
+    }
+  ];
+  
+  // ルールタブを追加（ルールがある場合のみ）
+  if (sport.rules) {
+    tabs.push({
+      label: t('sport.tabs.rules'),
+      icon: <RulesIcon />,
+      iconPosition: "start",
+      value: tabs.length
+    });
   }
 
   return (
@@ -118,13 +153,15 @@ const SportPage: React.FC = () => {
           variant="fullWidth"
           aria-label="sport tabs"
         >
-          <Tab label={t('sport.tabs.matches')} />
-          <Tab 
-            label={t('sport.tabs.schedule')} 
-            icon={<ScheduleIcon />} 
-            iconPosition="start"
-            disabled={!sport.scheduleSettings?.timeSlots?.length}
-          />
+          {tabs.map((tab) => (
+            <Tab 
+              key={tab.value} 
+              label={tab.label} 
+              icon={tab.icon} 
+              iconPosition={tab.iconPosition}
+              disabled={tab.disabled} 
+            />
+          ))}
         </Tabs>
       </Box>
       
@@ -166,6 +203,14 @@ const SportPage: React.FC = () => {
           <ScheduleTimeline sport={sport} />
         </Paper>
       </Box>
+      
+      {sport.rules && (
+        <Box sx={{ mt: 4, display: tabValue === 2 ? 'block' : 'none' }}>
+          <Paper sx={{ p: 3 }}>
+            <RulesDisplay rules={sport.rules} />
+          </Paper>
+        </Box>
+      )}
     </Container>
   );
 };

@@ -7,7 +7,11 @@ import {
   List,
   ListItem,
   ListItemText,
+  Collapse,
+  Chip,
+  IconButton,
 } from '@mui/material';
+import { ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import { Match, Sport, Team } from '../../../../types';
 import { useTranslation } from 'react-i18next';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
@@ -20,6 +24,7 @@ interface TournamentBuilderProps {
 export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBuilderProps) => {
   const { t } = useTranslation();
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
+  const [teamsExpanded, setTeamsExpanded] = useState(false);
 
   // 名簿からチームを自動生成
   useEffect(() => {
@@ -104,6 +109,10 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
     onMatchesCreate(matches, selectedTeams);
   };
 
+  const toggleTeamsExpanded = () => {
+    setTeamsExpanded(!teamsExpanded);
+  };
+
   return (
     <Box sx={{ mb: 3 }}>
       <Paper sx={{ p: 2 }}>
@@ -113,16 +122,29 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
 
         {selectedTeams.length > 0 ? (
           <>
-            <List sx={{ mb: 2 }}>
-              {selectedTeams.map((team, index) => (
-                <ListItem key={team.id}>
-                  <ListItemText 
-                    primary={team.name}
-                    secondary={`${t('tournament.members')}: ${team.members?.length || 0}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Chip 
+                label={t('tournament.teamsSelected', { count: selectedTeams.length })} 
+                color="primary" 
+                sx={{ mr: 1 }}
+              />
+              <IconButton size="small" onClick={toggleTeamsExpanded} aria-expanded={teamsExpanded}>
+                {teamsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Box>
+
+            <Collapse in={teamsExpanded}>
+              <List sx={{ mb: 2, maxHeight: 200, overflow: 'auto' }}>
+                {selectedTeams.map((team, index) => (
+                  <ListItem key={team.id}>
+                    <ListItemText 
+                      primary={team.name}
+                      secondary={`${t('tournament.members')}: ${team.members?.length || 0}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Collapse>
 
             <Button
               variant="contained"

@@ -315,6 +315,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         },
         '& .MuiListItemButton-root': {
           px: !drawerOpen && !isMobile ? 2 : undefined,
+        },
+        '& .item-label': {
+          display: !drawerOpen && !isMobile ? 'block' : undefined,
+        },
+        '& .expand-icon': {
+          display: !drawerOpen && !isMobile ? 'block' : undefined,
+        },
+        '& .create-button-text': {
+          display: !drawerOpen && !isMobile ? 'inline-flex' : undefined,
         }
       }
     },
@@ -357,6 +366,24 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         duration: theme.transitions.duration.shorter,
       }),
     },
+    '& .item-label': {
+      display: drawerOpen ? 'block' : 'none',
+      transition: theme.transitions.create(['display', 'opacity'], {
+        duration: theme.transitions.duration.shorter,
+      }),
+    },
+    '& .expand-icon': {
+      display: drawerOpen ? 'block' : 'none',
+      transition: theme.transitions.create(['display'], {
+        duration: theme.transitions.duration.shorter,
+      }),
+    },
+    '& .create-button-text': {
+      display: drawerOpen ? 'inline-flex' : 'none',
+      transition: theme.transitions.create(['display'], {
+        duration: theme.transitions.duration.shorter,
+      }),
+    }
   };
 
   // ドロワーの内容をコンポーネント化（関数をコンポーネント内に移動）
@@ -400,15 +427,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <List
         subheader={
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1 }}>
-            <Typography variant="subtitle2">
+            <Typography variant="subtitle2" className="item-label">
               {t('admin.events')}
             </Typography>
             <Button
               size="small"
-              startIcon={<AddIcon />}
               onClick={handleCreateEvent}
+              sx={{
+                minWidth: drawerOpen ? 'auto' : 32,
+                p: drawerOpen ? 'auto' : '4px',
+              }}
             >
-              {t('admin.create')}
+              <AddIcon />
+              <span className="create-button-text">{t('admin.create')}</span>
             </Button>
           </Box>
         }
@@ -436,6 +467,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     size="small"
                     onClick={(e) => handleEventToggle(event.id, e)}
                     sx={{ ml: 'auto' }}
+                    className="expand-icon"
                   >
                     {expandedEventIds.includes(event.id) ? <ExpandLess /> : <ExpandMore />}
                   </IconButton>
@@ -443,7 +475,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               </ListItem>
               
               {/* 競技リスト */}
-              <Collapse in={expandedEventIds.includes(event.id)} timeout="auto" unmountOnExit>
+              <Collapse in={expandedEventIds.includes(event.id) || (!drawerOpen && !isMobile)} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                   <ListItem disablePadding>
                     <ListItemButton sx={{ pl: 4 }} onClick={() => handleCreateSport(event.id)}>
@@ -480,6 +512,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                       <ListItemText 
                         secondary={t('admin.noSportsInEvent')}
                         secondaryTypographyProps={{ variant: 'body2' }}
+                        className="item-label"
                       />
                     </ListItem>
                   )}
@@ -489,7 +522,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           ))
         ) : (
           <ListItem sx={{ pl: 2 }}>
-            <ListItemText secondary={t('admin.noEvents')} />
+            <ListItemText secondary={t('admin.noEvents')} className="item-label" />
           </ListItem>
         )}
       </List>
