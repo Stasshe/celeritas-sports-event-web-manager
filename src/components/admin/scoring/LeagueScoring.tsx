@@ -210,9 +210,56 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
           });
         }
       } else if (existingBlocks.length > targetBlockCount) {
-        // 超過分のブロックを削除 (必要に応じて)
-        // 注意: ここでブロックを削除すると、そのブロックの試合も消えてしまうので慎重に
-        // 実装は省略 - 必要に応じて実装する
+        // 超過分のブロックを削除する実装
+        // 削除前にユーザーに警告を表示
+        const shouldRemove = window.confirm(
+          t('league.confirmRemoveBlocks', { 
+            count: existingBlocks.length - targetBlockCount,
+            total: existingBlocks.length,
+            target: targetBlockCount
+          })
+        );
+        
+        if (shouldRemove) {
+          // 超過分のブロックとそれに関連する試合を削除
+          const blocksToKeep = existingBlocks.slice(0, targetBlockCount);
+          const removedBlockIds = existingBlocks
+            .slice(targetBlockCount)
+            .map(block => block.id);
+            
+          // 残すブロックだけを設定
+          existingBlocks.length = targetBlockCount;
+          
+          // スポーツデータからも該当ブロックの試合を削除
+          if (sport.matches) {
+            const updatedMatches = sport.matches.filter(match => 
+              !match.blockId || !removedBlockIds.includes(match.blockId)
+            );
+            
+            // スポーツデータを更新
+            onUpdate({
+              ...sport,
+              matches: updatedMatches,
+              leagueSettings: {
+                ...sport.leagueSettings,
+                blockCount: targetBlockCount
+              }
+            });
+          }
+        } else {
+          // キャンセルの場合は、targetBlockCountを既存のブロック数に合わせる
+          // これによりブロック数の不一致を防ぐ
+          setBlockCount(existingBlocks.length);
+          
+          // スポーツデータも合わせて更新
+          onUpdate({
+            ...sport,
+            leagueSettings: {
+              ...sport.leagueSettings,
+              blockCount: existingBlocks.length
+            }
+          });
+        }
       }
       
       setBlocks(existingBlocks);
@@ -234,7 +281,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
       setShowPlayoff(true);
     }
     
-  }, [sport.id, onUpdate, sport]); // blockCountを依存配列から削除
+  }, [sport.id, onUpdate, sport, t]); // tを依存配列に追加
 
   // チームをブロックに分配 - 完全に再構築するように修正
   const distributeTeams = useCallback(() => {
