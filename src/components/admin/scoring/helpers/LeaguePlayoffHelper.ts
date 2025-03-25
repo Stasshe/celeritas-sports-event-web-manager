@@ -91,38 +91,23 @@ export class LeaguePlayoffHelper {
         newPlayoffMatches.push(newMatch);
       });
       
-      // 4. シード戦の処理 (片方のチームしかない場合)
+      // 4. シード戦の処理 (1回戦の片方のチームしかない場合)
       newPlayoffMatches.forEach(match => {
-        // ラウンド1は決勝戦なので、シード処理は最終ラウンドより前に実施
-        if (match.round > 1) {
-          // 片方のチームしかない試合がシード戦
-          const isSeedMatch = Boolean(match.team1Id && !match.team2Id) || Boolean(!match.team1Id && match.team2Id);
-          
-          if (isSeedMatch) {
-            const winningTeamId = match.team1Id || match.team2Id;
-            
-            // シード戦は試合結果を自動的に設定
-            match.status = 'completed';
-            match.team1Score = match.team1Id ? 1 : 0;
-            match.team2Score = match.team2Id ? 1 : 0;
-            match.winnerId = winningTeamId;
-            
-            // 次の試合を探す
-            const nextRoundMatch = newPlayoffMatches.find(m => 
-              m.round === match.round - 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
-            );
-            
-            if (nextRoundMatch) {
-              // 奇数番号の試合は上側、偶数番号の試合は下側に進出
-              if (match.matchNumber % 2 !== 0) {
-                nextRoundMatch.team1Id = winningTeamId;
-              } else {
-                nextRoundMatch.team2Id = winningTeamId;
-              }
+        if (match.round === 1 && ((match.team1Id && !match.team2Id) || (!match.team1Id && match.team2Id))) {
+          const winningTeamId = match.team1Id || match.team2Id;
+          const nextMatch = newPlayoffMatches.find(m =>
+            m.round === 2 && Math.ceil(match.matchNumber / 2) === m.matchNumber
+          );
+          if (nextMatch) {
+            if (match.matchNumber % 2 !== 0) {
+              nextMatch.team1Id = winningTeamId;
+            } else {
+              nextMatch.team2Id = winningTeamId;
             }
           }
         }
       });
+  
       
       // 3位決定戦を追加
       if (hasThirdPlaceMatch && newPlayoffMatches.length > 0 && playoffTeamObjects.length >= 4) {

@@ -126,6 +126,7 @@ export interface Match {
   round: number; // トーナメントの場合のラウンド
   matchNumber: number; // 試合番号
   date?: string;
+  
   location?: string;
   status: "scheduled" | "inProgress" | "completed"; // リテラル型を使用
   notes?: string;
