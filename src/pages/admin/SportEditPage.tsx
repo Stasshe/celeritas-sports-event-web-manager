@@ -34,7 +34,8 @@ import {
   Schedule as ScheduleIcon,  // 追加
   Add as AddIcon,
   Sync as SyncIcon,
-  Image as ImageIcon // 画像アイコンを追加
+  Image as ImageIcon, // 画像アイコンを追加
+  Leaderboard as LeaderboardIcon, // 追加
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../../hooks/useDatabase';
@@ -50,6 +51,7 @@ import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { TabContent } from '../../components/admin/TabContent';
 import ScheduleTab from '../../components/admin/scheduling/ScheduleTab';  // 追加
+import SportPointEditor from '../../components/admin/scoring/SportPointEditor';  // 追加
 
 // フィールドとタブの関連付けを定義
 const fieldToTabMap: Record<keyof Sport, string> = {
@@ -344,7 +346,7 @@ const SportEditPage: React.FC = () => {
       await handleSave();
     }
 
-    const tabName = ['details','schedule', 'roster', 'rules', 'manual', 'settings'][newValue];
+    const tabName = ['details','schedule', 'roster', 'rules', 'manual', 'points', 'settings'][newValue];
     setActiveTab(newValue);
 
     if (!tabStates[tabName].isLoaded) {
@@ -888,6 +890,7 @@ const SportEditPage: React.FC = () => {
             <Tab icon={<PeopleIcon />} label={t('sport.tabs.roster')} />
             <Tab icon={<RulesIcon />} label={t('sport.tabs.rules')} />
             <Tab icon={<ManualIcon />} label={t('sport.tabs.manual')} />
+            <Tab icon={<LeaderboardIcon />} label={t('sport.tabs.points')} /> {/* 追加 */}
             <Tab icon={<SettingsIcon />} label={t('sport.tabs.settings')} />
           </Tabs>
         </Paper>
@@ -1122,8 +1125,16 @@ const SportEditPage: React.FC = () => {
           </Paper>
         </TabPanel>
 
-        {/* 設定タブ */}
+        {/* 総合成績ポイント設定タブ - 新規追加 */}
         <TabPanel value={activeTab} index={5}>
+          <SportPointEditor 
+            sport={localSport} 
+            onUpdate={handleSportUpdate} 
+          />
+        </TabPanel>
+
+        {/* 設定タブ */}
+        <TabPanel value={activeTab} index={6}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               {t('sport.tabs.settings')}

@@ -21,6 +21,16 @@ export interface Event {
     grade2: boolean;
     grade3: boolean;
   };
+  // 以下を追加：総合成績ボード設定
+  overallScoreboard?: {
+    enabled: boolean;
+    displayScores: boolean; // 詳細スコアを表示するか
+    displayRank: number; // 何位まで表示するか（デフォルト3位）
+    teamType: 'class' | 'grade' | 'custom'; // チーム種別
+    customTeams?: string[]; // カスタムチーム名リスト
+  };
+  // 以下を追加：総合成績
+  overallScores?: Record<string, number>; // チームID：合計点数
 }
 
 // 担当者タイプ
@@ -75,6 +85,13 @@ export interface Sport {
   lastEditedBy: string | undefined;  // nullを削除
   lastEditedAt?: string;
   scheduleSettings?: ScheduleSettings | LeagueScheduleSettings;
+  // 以下を追加：総合成績用ポイント設定
+  pointSettings?: {
+    enabled: boolean; // 総合成績に含めるか
+    points: number[]; // 順位ごとのポイント [1位, 2位, 3位, ...]
+    weight: number; // 重み付け係数（デフォルト1.0）
+    customPointRule?: string; // カスタムポイントルールの説明
+  };
 }
 
 // リーグのブロック情報
@@ -205,4 +222,13 @@ export interface LeagueScheduleSettings extends ScheduleSettings {
   groupStageDuration: number; // グループステージの試合時間（分）
   playoffDuration: number; // プレーオフの試合時間（分）
   breakBetweenStages: number; // ステージ間の休憩時間（分）
+}
+
+// 総合成績の結果エントリ
+export interface OverallScoreEntry {
+  teamId: string;
+  teamName: string;
+  totalPoints: number;
+  rank: number;
+  sportPoints: Record<string, number>; // 競技ID：獲得ポイント
 }

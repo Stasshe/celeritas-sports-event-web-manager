@@ -48,5 +48,69 @@
     "round": "ラウンド",
     "needAtLeastTwoTeams": "少なくとも2チームが必要です。",
     "errorGenerating": "生成中にエラーが発生しました。"
+  },
+  "scoreboard": {
+    "settings": "総合成績ボード設定",
+    "enableOverallScoreboard": "総合成績ボードを有効にする",
+    "displayDetailedScores": "詳細スコアを表示する",
+    "displayRankCount": "表示順位数",
+    "teamType": "チーム種別",
+    "teamTypeClass": "クラス単位",
+    "teamTypeGrade": "学年単位",
+    "teamTypeCustom": "カスタム",
+    "customTeams": "カスタムチーム",
+    "newTeam": "新しいチーム名",
+    "noCustomTeams": "カスタムチームが登録されていません",
+    "sportPointSettings": "競技ポイント設定",
+    "calculateScores": "成績を計算する",
+    "sportName": "競技名",
+    "includeInOverallScore": "総合成績に含める",
+    "pointDistribution": "ポイント配分",
+    "weight": "重み付け",
+    "weightHint": "重み付け係数の説明",
+    "editPointsHint": "ポイント設定を編集",
+    "noSportsFound": "競技が見つかりません",
+    "currentStandings": "現在の順位",
+    "noScoresCalculated": "まだ成績が計算されていません",
+    "rank": "順位",
+    "team": "チーム",
+    "totalPoints": "合計ポイント",
+    "points": "ポイント",
+    "overallStandings": "総合順位",
+    "firstPlace": "優勝",
+    "secondPlace": "準優勝",
+    "thirdPlace": "第3位",
+    "placePostfix": "位",
+    "editPoints": "ポイントを編集",
+    "editPointDistribution": "ポイント配分の編集",
+    "pointDistributionDescription": "各順位に対するポイント配分を設定してください",
+    "pointValue": "ポイント値",
+    "weightDescription": "この競技の重要度に応じた係数（1.0が標準）",
+    "weightHelp": "値が大きいほど総合成績への影響が大きくなります",
+    "customRule": "カスタムルール",
+    "customRulePlaceholder": "例: 参加人数に応じてボーナスポイントあり",
+    "customRuleHelp": "特別なポイントルールがある場合に記入してください",
+    "recalculatePrompt": "設定を更新しました。「成績を計算する」をクリックして再計算してください",
+    "updatePointsError": "ポイント設定の更新に失敗しました"
+  },
+  "event": {
+    "tabs": {
+      "details": "基本情報",
+      "organizers": "担当者",
+      "roster": "名簿",
+      "scoreboard": "総合成績",
+      "settings": "設定"
+    }
+  },
+  "sport": {
+    "tabs": {
+      "home": "ホーム",
+      "schedule": "スケジュール",
+      "roster": "名簿",
+      "rules": "ルール",
+      "manual": "マニュアル",
+      "points": "得点配分",
+      "settings": "設定"
+    }
   }
 }

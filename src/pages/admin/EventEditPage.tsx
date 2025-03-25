@@ -43,7 +43,9 @@ import {
   Delete as DeleteIcon,
   Person as PersonIcon,
   School as GradeIcon,
-  Class as ClassIcon
+  Class as ClassIcon,
+  EmojiEvents as EmojiEventsIcon,
+  Leaderboard as LeaderboardIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -55,6 +57,7 @@ import { useThemeContext } from '../../contexts/ThemeContext';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext'; // 正しいパスに修正
 import DeleteConfirmationDialog from '../../components/admin/dialogs/DeleteConfirmationDialog';
 import RosterEditor from '../../components/admin/RosterEditor';
+import OverallScoreTab from '../../components/admin/scoreboard/OverallScoreTab'; // 追加
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -396,6 +399,7 @@ const EventEditPage: React.FC = () => {
             <Tab label={t('event.tabs.details')} />
             <Tab label={t('event.tabs.organizers')} />
             <Tab label={t('event.tabs.roster')} />
+            <Tab label={t('event.tabs.scoreboard')} icon={<LeaderboardIcon />} iconPosition="start" /> {/* 追加 */}
             <Tab label={t('event.tabs.settings')} />
           </Tabs>
         </Paper>
@@ -708,8 +712,16 @@ const EventEditPage: React.FC = () => {
           </Paper>
         </TabPanel>
         
-        {/* 設定タブ (新規追加) */}
+        {/* 総合成績タブ (新規追加) */}
         <TabPanel value={activeTab} index={3}>
+          <OverallScoreTab event={localEvent} onUpdate={(updatedEvent) => {
+            setLocalEvent(updatedEvent);
+            handleSave();
+          }} />
+        </TabPanel>
+        
+        {/* 設定タブ - インデックスを4に変更 */}
+        <TabPanel value={activeTab} index={4}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom color="error">
               {t('event.dangerZone')}

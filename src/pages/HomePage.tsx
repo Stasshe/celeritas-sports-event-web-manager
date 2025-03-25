@@ -31,6 +31,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import EventTimelineOverview from '../components/sports/EventTimelineOverview';
 import EventOverallTimeline from '../components/sports/EventOverallTimeline';
+import OverallScoreCard from '../components/scoreboard/OverallScoreCard';
 
 const MotionCard = motion(Card);
 const MotionFab = motion(Fab);
@@ -123,6 +124,11 @@ const HomePage: React.FC = () => {
 
       {activeSports.length > 0 && (
         <Box sx={{ mb: 4 }}>
+          {/* 総合成績カードを追加 - 最初に表示 */}
+          {activeEvent && (
+            <OverallScoreCard event={activeEvent} sports={activeSports} />
+          )}
+
           <Paper sx={{ mb: 3 }}>
             <Tabs
               value={viewMode}
