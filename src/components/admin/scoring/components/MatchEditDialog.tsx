@@ -148,6 +148,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                     teams={sport.teams}
                     rosters={teamRosters}
                     onChange={(teamId) => handleTeamChange(teamId, 'team1')}
+                    disabled={editedMatch.round !== 1}
                   />
                 </Box>
               </Box>
@@ -172,6 +173,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                     teams={sport.teams}
                     rosters={teamRosters}
                     onChange={(teamId) => handleTeamChange(teamId, 'team2')}
+                    disabled={editedMatch.round !== 1}
                   />
                 </Box>
               </Box>
