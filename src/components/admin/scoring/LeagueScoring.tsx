@@ -111,8 +111,8 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
               const teamId = `${gradeKey}_${className}`;
               
               // チーム名を作成（例: 1年2組）
-              const gradeName = t(`roster.${gradeKey}`);
-              const teamName = `${gradeName}${className}`;
+              //const gradeName = t(`roster.${gradeKey}`);
+              const teamName = `${className}`;
               
               // 既存のチームと重複しないよう確認
               if (!rosterTeams.some(team => team.id === teamId)) {
@@ -539,6 +539,11 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
     return team ? team.name : 'Unknown';
   };
 
+  // アルファベットブロック名を取得するユーティリティ関数を追加
+  const getBlockLetter = (index: number): string => {
+    return String.fromCharCode(65 + index); // 0->A, 1->B, 2->C, ...
+  };
+
   return (
     <Box>
       {/* 設定パネル (readOnlyでない場合のみ表示) */}
@@ -620,7 +625,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
         </Alert>
       )}
       
-      {/* ブロックタブ */}
+      {/* ブロックタブ - 表示をアルファベットに変更 */}
       {blocks.length > 0 ? (
         <Box sx={{ mb: 4 }}>
           <Paper sx={{ mb: 2 }}>
@@ -631,7 +636,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
               scrollButtons="auto"
             >
               {blocks.map((block, index) => (
-                <Tab key={block.id} label={`${t('league.block')} ${index + 1}`} />
+                <Tab key={block.id} label={`${t('league.block')} ${getBlockLetter(index)}`} />
               ))}
               {showPlayoff && (
                 <Tab label={t('league.playoff')} />
@@ -639,12 +644,12 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
             </Tabs>
           </Paper>
           
-          {/* ブロックのタブパネル */}
+          {/* ブロックのタブパネル - 表示をアルファベットに変更 */}
           {blocks.map((block, index) => (
             <TabPanel key={block.id} value={activeTab} index={index}>
               <Paper sx={{ p: 2, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  {`${t('league.block')} ${index + 1} ${t('league.teams')}`}
+                  {`${t('league.block')} ${getBlockLetter(index)} ${t('league.teams')}`}
                 </Typography>
                 <Grid container spacing={1}>
                   {block.teamIds.map(teamId => (

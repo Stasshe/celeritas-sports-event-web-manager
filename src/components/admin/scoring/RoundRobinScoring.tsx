@@ -26,7 +26,7 @@ import {
 import { Sport, Match, Team } from '../../../types';
 import { useTranslation } from 'react-i18next';
 import RoundRobinTable from '../../sports/RoundRobinTable';
-import { Replay as AddIcon } from '@mui/icons-material';
+import { Replay as AddIcon, Info as InfoIcon } from '@mui/icons-material';
 
 interface RoundRobinScoringProps {
   sport: Sport;
@@ -323,6 +323,10 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
 
       <Typography variant="h6" gutterBottom>
         {t('roundRobin.matchTable') || '対戦表'}
+        <p>
+          <InfoIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+          {t('roundRobin.clickMatchToAddScore') || '対戦表の、それぞれの試合をクリックしてスコアを変更できます。'}
+        </p>
       </Typography>
       
       <TableContainer component={Paper} sx={{ mb: 4, overflow: 'auto' }}>

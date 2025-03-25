@@ -16,7 +16,10 @@ import {
   Alert,
   CircularProgress,
   alpha,
-  Divider
+  Divider,
+  Stack,
+  IconButton,
+  ButtonGroup,
 } from '@mui/material';
 import {
   SportsSoccer as SportsIcon,
@@ -25,7 +28,11 @@ import {
   Schedule as ScheduleIcon,
   Place as PlaceIcon,
   AccessTime as TimeIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
+  Add as AddIcon,
+  Remove as RemoveIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { timeToMinutes, minutesToTime } from '../../utils/scheduleGenerator';
@@ -77,6 +84,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
+  const [scale, setScale] = useState<number>(isMobile ? 3 : isTablet ? 4 : 5);
 
   // 1分ごとに現在時刻を更新
   useEffect(() => {
@@ -219,6 +227,19 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
     }
   };
 
+  // スケール調整用のハンドラー
+  const handleZoomIn = () => {
+    setScale(prev => Math.min(prev + 0.5, 10));
+  };
+  
+  const handleZoomOut = () => {
+    setScale(prev => Math.max(prev - 0.5, 1));
+  };
+
+  const handleScaleSet = (newScale: number) => {
+    setScale(newScale);
+  };
+
   // ローディング状態
   if (sports.length === 0) {
     return (
@@ -267,8 +288,8 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
     }
   };
 
-  // タイムラインのピクセル/分の比率を計算
-  const pixelPerMinute = isMobile ? 2 : isTablet ? 2.5 : 3;
+  // タイムラインのピクセル/分の比率を計算（固定値から動的な値に変更）
+  const pixelPerMinute = scale;
   
   // 総合タイムラインのコンテンツ幅
   const totalTimelineWidth = (maxTime - minTime) * pixelPerMinute;
@@ -280,6 +301,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
 
   return (
     <Box sx={{ mt: 3 }}>
+      {/* タイトル部分の後にスケール調整コントロールを追加 */}
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
           <ScheduleIcon sx={{ mr: 1 }} />
@@ -300,6 +322,57 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
         </Box>
       </Box>
       
+      {/* スケール調整コントロールをスライダーからボタンに変更 */}
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+        <Typography variant="body2" sx={{ mr: 2 }}>
+          {t('schedule.timelineScale')}:
+        </Typography>
+        
+        <ButtonGroup size="small" sx={{ mr: 2 }}>
+          <Button 
+            onClick={handleZoomOut}
+            disabled={scale <= 1}
+            startIcon={<RemoveIcon />}
+          >
+            {t('common.smaller')}
+          </Button>
+          <Button 
+            onClick={handleZoomIn}
+            disabled={scale >= 10}
+            startIcon={<AddIcon />}
+          >
+            {t('common.larger')}
+          </Button>
+        </ButtonGroup>
+        
+        {/* プリセットスケールボタン */}
+        <ButtonGroup size="small" sx={{ mr: 2 }}>
+          {[2, 4, 6, 8].map(presetScale => (
+            <Button 
+              key={`scale-${presetScale}`}
+              onClick={() => handleScaleSet(presetScale)}
+              variant={Math.abs(scale - presetScale) < 0.1 ? 'contained' : 'outlined'}
+            >
+              {presetScale}x
+            </Button>
+          ))}
+        </ButtonGroup>
+        
+        <Tooltip title={t('schedule.resetScale')}>
+          <Button 
+            size="small" 
+            onClick={() => setScale(isMobile ? 3 : isTablet ? 4 : 5)}
+            variant="outlined"
+          >
+            {t('schedule.reset')}
+          </Button>
+        </Tooltip>
+        
+        <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
+          {t('schedule.currentScale')}: {scale}x
+        </Typography>
+      </Box>
+
       <Paper 
         elevation={2} 
         sx={{ 
@@ -579,10 +652,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                               width: '100%'
                             }}
                           >
-                            {finalWidth > 120 
-                              ? `${event.matchInfo.team1Name} vs ${event.matchInfo.team2Name}`
-                              : `${event.matchInfo.team1Name.substring(0, 3)}.. vs ${event.matchInfo.team2Name.substring(0, 3)}..`
-                            }
+                            {event.matchInfo.team1Name.slice(-3)}vs{event.matchInfo.team2Name.slice(-3)}
                           </Typography>
                         ) : (
                           // 試合以外はアイコンのみ表示
@@ -598,9 +668,14 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
         </Box>
       </Paper>
       
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-        {t('schedule.timelineHint')}
-      </Typography>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+        <Typography variant="caption" color="text.secondary">
+          {t('schedule.timelineHint')}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          ({t('schedule.currentScale')}: {scale}x)
+        </Typography>
+      </Stack>
 
       {/* イベント詳細ダイアログ */}
       <Dialog
