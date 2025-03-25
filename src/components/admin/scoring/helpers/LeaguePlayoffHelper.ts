@@ -54,10 +54,6 @@ export class LeaguePlayoffHelper {
       // 1. 試合構造を生成
       const matchStructure = TournamentStructureHelper.generateInitialMatches(playoffTeamObjects.length);
       
-      // 重要：ラウンド番号を逆にする - より高い番号が初期ラウンド（準々決勝など）
-      // トーナメントの最終ラウンド数を計算
-      const maxRound = Math.max(...matchStructure.map(m => m.round));
-      
       // 2. チーム配置を計算
       const teamPlacements = TournamentStructureHelper.calculateTeamPlacements(playoffTeamObjects);
       
@@ -67,8 +63,7 @@ export class LeaguePlayoffHelper {
       matchStructure.forEach((matchInfo, index) => {
         const { round, matchNumber } = matchInfo;
         
-        // ラウンド番号を逆にする - 決勝を1、準決勝を2などにする
-        const invertedRound = round; //maxRound - round + 1;
+        
         
         // この試合に配置されるチームを探す
         const team1Placement = teamPlacements.find(p => 
@@ -81,12 +76,12 @@ export class LeaguePlayoffHelper {
         
         // 新しい試合オブジェクトを作成
         const newMatch: Match = {
-          id: `playoff_match_${invertedRound}_${matchNumber}`,
+          id: `playoff_match_${round}_${matchNumber}`,
           team1Id: team1Placement?.teamId || '',
           team2Id: team2Placement?.teamId || '',
           team1Score: 0,
           team2Score: 0,
-          round: invertedRound, // 逆にしたラウンド番号を使用
+          round,
           matchNumber,
           status: 'scheduled',
           date: new Date().toISOString().split('T')[0],

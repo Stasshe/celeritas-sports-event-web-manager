@@ -111,25 +111,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
     setPendingTeamChange(null);
   };
 
-  const handleStatusChange = (e: SelectChangeEvent<'scheduled' | 'inProgress' | 'completed'>) => {
-    if (!editedMatch) return;
-    
-    const status = e.target.value as 'scheduled' | 'inProgress' | 'completed';
-    setEditedMatch(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        status,
-        // 勝者は現在の editedMatch を使用して計算
-        winnerId: status === 'completed'
-          ? (prev.team1Score > prev.team2Score ? prev.team1Id
-             : prev.team2Score > prev.team1Score ? prev.team2Id
-             : undefined)
-          : undefined
-      };
-    });
-  };
-
+  
   const handleSave = () => {
     if (editedMatch) {
       onSave(editedMatch);

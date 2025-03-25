@@ -619,6 +619,7 @@
     "courtNumber": "コート番号"
   },
   "league": {
+    "confirmRemoveBlocks": "{{count}}個のブロック({{target}})を削除しますか？合計{{total}}です。",
     "confirmResetScores": "スコアをリセットしますか？",
     "confirmResetPlayoff": "プレーオフをリセットしますか？",
     "settings": "リーグ設定",

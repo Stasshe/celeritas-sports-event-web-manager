@@ -176,33 +176,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       thirdPlaceMatch: thirdPlaceMatchData
     };
   }, [sport, t, matches]);
-
-  // ラウンドごとの試合データを構築（修正）
-  const roundMatches = useMemo(() => {
-    if (!matches || matches.length === 0) {
-      return [];
-    }
-    const regularMatches = matches.filter(m => m.matchNumber !== 0);
-    const maxRound = Math.max(...regularMatches.map(m => m.round), 0);
-    const rounds: Match[][] = [];
-    
-    // 各ラウンドの試合を格納
-    for (let i = 1; i <= maxRound; i++) {
-      const matchesInRound = regularMatches
-        .filter(m => m.round === i)
-        .sort((a, b) => a.matchNumber - b.matchNumber);
-      if (matchesInRound.length > 0) {
-        rounds.push(matchesInRound);
-      }
-    }
-    // 3位決定戦があれば最後に追加
-    const thirdPlaceMatch = matches.find(m => m.matchNumber === 0);
-    if (thirdPlaceMatch) {
-      rounds.push([thirdPlaceMatch]);
-    }
-    return rounds;
-  }, [matches]);
-
+  
   // 試合の編集
   const handleEditMatch = (match: Match) => {
     if (readOnly) return;
