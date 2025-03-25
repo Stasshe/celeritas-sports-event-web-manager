@@ -33,7 +33,8 @@ import {
   Settings as SettingsIcon,
   Schedule as ScheduleIcon,  // 追加
   Add as AddIcon,
-  Sync as SyncIcon
+  Sync as SyncIcon,
+  Image as ImageIcon // 画像アイコンを追加
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../../hooks/useDatabase';
@@ -786,6 +787,65 @@ const SportEditPage: React.FC = () => {
     );
   }
 
+  // 設定タブ内に追加する写真選択コンポーネント
+  const SportImageSelector: React.FC<{
+    value: string;
+    onChange: (value: string) => void;
+  }> = ({ value, onChange }) => {
+    const { t } = useTranslation();
+    const [images, setImages] = useState<string[]>([
+      '/dodge-ball.jpeg',
+      '/assets/female-badminton.jpeg',
+      '/assets/female-basketball.jpeg',
+      '/assets/female-track-relay.jpeg',
+      '/assets/male-badminton.jpeg',
+      '/assets/male-basketball.png',
+      '/assets/male-track-relay.jpeg',
+      '/assets/soccer.jpeg',
+      '/assets/騎馬戦.jpeg',
+      '/assets/female-valleyball.jpeg',
+      '/assets/male-valleyball.jpeg'
+    ]);
+
+    const getFileName = (path: string) => {
+      return path.split('/').pop() || path;
+    };
+
+    return (
+      <Box sx={{ width: '100%' }}>
+        <FormControl fullWidth>
+          <InputLabel>{t('sport.coverImage')}</InputLabel>
+          <Select
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ImageIcon />
+                {getFileName(selected)}
+              </Box>
+            )}
+          >
+            <MenuItem value="">
+              <em>{t('common.none')}</em>
+            </MenuItem>
+            {images.map((image) => (
+              <MenuItem key={image} value={image}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box
+                    component="img"
+                    src={image}
+                    sx={{ width: 60, height: 40, objectFit: 'cover', borderRadius: 1 }}
+                  />
+                  {getFileName(image)}
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+    );
+  };
+
   return (
     <AdminLayout>
       <Container maxWidth="lg">
@@ -1069,6 +1129,44 @@ const SportEditPage: React.FC = () => {
               {t('sport.tabs.settings')}
             </Typography>
             <Divider sx={{ mb: 3 }} />
+            
+            {/* 写真設定を追加 */}
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom>
+                  {t('sport.displaySettings')}
+                </Typography>
+                <SportImageSelector
+                  value={localSport.coverImageUrl || ''}
+                  onChange={(value) => {
+                    setLocalSport(prev => ({
+                      ...prev!,
+                      coverImageUrl: value
+                    }));
+                  }}
+                />
+                {localSport.coverImageUrl && (
+                  <Box sx={{ mt: 2, p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                    <Typography variant="caption" display="block" gutterBottom>
+                      {t('sport.preview')}:
+                    </Typography>
+                    <Box
+                      component="img"
+                      src={localSport.coverImageUrl}
+                      alt={localSport.name}
+                      sx={{
+                        width: '100%',
+                        height: 200,
+                        objectFit: 'cover',
+                        borderRadius: 1
+                      }}
+                    />
+                  </Box>
+                )}
+              </Grid>
+            </Grid>
+
+            <Divider sx={{ my: 3 }} />
             
             {localSport.type === 'tournament' && (
               <Grid container spacing={3}>
