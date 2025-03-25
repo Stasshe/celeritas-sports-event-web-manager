@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Box,
@@ -154,13 +154,19 @@ const EventEditPage: React.FC = () => {
     
     // データが変更されている場合
     if (JSON.stringify(localEvent) !== JSON.stringify(event)) {
+      console.log('データ変更を検知 - 自動保存をスケジュール:', new Date().toISOString());
+      
       // 既存のタイマーをクリア
       if (autoSaveTimerId) {
         clearTimeout(autoSaveTimerId);
       }
       
-      // 新しいタイマーをセット（3秒後に自動保存）
-      const timerId = setTimeout(handleSave, 300);
+      // 新しいタイマーをセット
+      const timerId = setTimeout(() => {
+        console.log('自動保存実行:', new Date().toISOString());
+        handleSave();
+      }, 1000); // 1秒後に保存
+      
       setAutoSaveTimerId(timerId);
     }
     
@@ -170,6 +176,31 @@ const EventEditPage: React.FC = () => {
       }
     };
   }, [localEvent]);
+
+  // 即時保存用のヘルパー関数を追加
+  const saveImmediately = useCallback(async () => {
+    if (!localEvent) return;
+    
+    console.log('即時保存開始:', new Date().toISOString());
+    setSavingStatus('saving');
+    setSaveStatusLocal('saving');
+    
+    try {
+      await updateEvent(localEvent);
+      setSavingStatus('saved');
+      setSaveStatusLocal('saved');
+      showSnackbar(t('event.saveSuccess'), 'success');
+      
+      console.log('即時保存完了:', new Date().toISOString());
+      return true;
+    } catch (error) {
+      console.error('Error saving event data:', error);
+      setSavingStatus('error');
+      setSaveStatusLocal('error');
+      showSnackbar(t('event.saveError'), 'error');
+      return false;
+    }
+  }, [localEvent, updateEvent, setSavingStatus, showSnackbar, t]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -714,11 +745,16 @@ const EventEditPage: React.FC = () => {
         
         {/* 総合成績タブ (新規追加) */}
         <TabPanel value={activeTab} index={3}>
-          <OverallScoreTab event={localEvent} onUpdate={(updatedEvent) => {
-            // 更新されたイベントデータをlocalEventに設定するだけで、
-            // 自動保存はuseEffect内のロジックに任せる
-            setLocalEvent(updatedEvent);
-          }} />
+          <OverallScoreTab 
+            event={localEvent} 
+            onUpdate={(updatedEvent) => {
+              // 更新されたイベントデータを設定
+              setLocalEvent(updatedEvent);
+              
+              // 総合成績タブでの変更は重要なので即時保存を実行
+              saveImmediately();
+            }} 
+          />
         </TabPanel>
         
         {/* 設定タブ - インデックスを4に変更 */}

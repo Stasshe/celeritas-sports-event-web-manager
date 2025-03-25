@@ -149,13 +149,24 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
   // 設定の保存
   const saveSettings = () => {
     setLoading(true);
-    const updatedEvent = {
-      ...event,
-      overallScoreboard: settings
-    };
     
-    onUpdate(updatedEvent);
-    setLoading(false);
+    try {
+      const updatedEvent = {
+        ...event,
+        overallScoreboard: settings
+      };
+      
+      // onUpdate関数を呼び出して親コンポーネントに通知
+      onUpdate(updatedEvent);
+      
+      // 成功メッセージ
+      showSnackbar(t('scoreboard.settingsSaved'), 'success');
+    } catch (error) {
+      console.error('Error saving scoreboard settings:', error);
+      showSnackbar(t('scoreboard.settingsError'), 'error');
+    } finally {
+      setLoading(false);
+    }
   };
   
   // カスタムチームの追加
@@ -285,31 +296,31 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
     return Math.round(points * 10) / 10;
   };
 
-  // 競技のポイント設定を更新する関数を修正（イベント側に保存）
+  // 競技のポイント設定を更新する関数
   const handleSportPointUpdate = async (sportId: string, enabled: boolean, weight?: number, points?: number[]) => {
     if (!allSports || !allSports[sportId]) return;
     
-    // 現在のイベントのスポーツポイント設定を取得
-    const currentSportPointSettings = event.sportPointSettings || {};
-    
-    // 特定のスポーツの設定を更新
-    const updatedPointSettings = {
-      ...(currentSportPointSettings[sportId] || { points: [5, 3, 1], weight: 1.0 }),
-      enabled: enabled,
-      ...(weight !== undefined ? { weight } : {}),
-      ...(points !== undefined ? { points } : {})
-    };
-    
-    // 更新されたイベント全体
-    const updatedEvent = {
-      ...event,
-      sportPointSettings: {
-        ...currentSportPointSettings,
-        [sportId]: updatedPointSettings
-      }
-    };
-    
     try {
+      // 現在のイベントのスポーツポイント設定を取得
+      const currentSportPointSettings = event.sportPointSettings || {};
+      
+      // 特定のスポーツの設定を更新
+      const updatedPointSettings = {
+        ...(currentSportPointSettings[sportId] || { points: [5, 3, 1], weight: 1.0 }),
+        enabled: enabled,
+        ...(weight !== undefined ? { weight } : {}),
+        ...(points !== undefined ? { points } : {})
+      };
+      
+      // 更新されたイベント全体
+      const updatedEvent = {
+        ...event,
+        sportPointSettings: {
+          ...currentSportPointSettings,
+          [sportId]: updatedPointSettings
+        }
+      };
+      
       // イベント全体を更新
       onUpdate(updatedEvent);
       
