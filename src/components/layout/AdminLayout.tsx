@@ -79,6 +79,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   
   // ユーザーメニュー
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  // モバイルビューの状態管理を追加
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [mobileOpen, setMobileOpen] = useState(false);
   
   // イベント展開状態
   const [expandedEventIds, setExpandedEventIds] = useState<string[]>([]);
@@ -90,25 +94,41 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // 現在のパスに基づいて適切なイベントを展開
   useEffect(() => {
     if (events && sports) {
+      let eventIdsToExpand: string[] = [];
+      
+      // イベント詳細ページの場合
       if (location.pathname.includes('/admin/events/')) {
         const eventId = location.pathname.split('/').pop();
         if (eventId && events[eventId]) {
-          setExpandedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
+          eventIdsToExpand.push(eventId);
         }
       }
       
+      // 競技詳細ページの場合
       if (location.pathname.includes('/admin/sports/')) {
         const sportId = location.pathname.split('/').pop();
         if (sportId && sports[sportId]) {
           const sport = sports[sportId];
           const eventId = sport.eventId;
           if (eventId && events[eventId]) {
-            setExpandedEventIds(prev => prev.includes(eventId) ? prev : [...prev, eventId]);
+            eventIdsToExpand.push(eventId);
           }
         }
       }
+      
+      // イベントが有効なものを特定し、その競技も展開
+      if (!isMobile) {
+        Object.values(events).forEach(event => {
+          if (event.isActive) {
+            eventIdsToExpand.push(event.id);
+          }
+        });
+      }
+      
+      // 重複を排除して展開状態を更新
+      setExpandedEventIds([...new Set(eventIdsToExpand)]);
     }
-  }, [location.pathname, events, sports]);
+  }, [location.pathname, events, sports, isMobile]);
   
   // レイアウト全体の保存ハンドラを登録
   useEffect(() => {
@@ -135,9 +155,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     }
   };
   
-  // モバイルビューの状態管理を追加
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [mobileOpen, setMobileOpen] = useState(false);
+  
 
   // ドロワーの開閉ハンドラーを更新
   const handleDrawerToggle = () => {
@@ -303,29 +321,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       overflowX: 'hidden',
       borderRight: `1px solid ${theme.palette.divider}`,
       backgroundColor: theme.palette.background.paper,
-      '&:hover': {
-        width: !drawerOpen && !isMobile ? drawerWidth : undefined,
-        '& .MuiListItemText-root': {
-          display: !drawerOpen && !isMobile ? 'block' : undefined,
-          opacity: !drawerOpen && !isMobile ? 1 : undefined,
-        },
-        '& .MuiListItemIcon-root': {
-          minWidth: !drawerOpen && !isMobile ? 56 : undefined,
-          justifyContent: !drawerOpen && !isMobile ? 'initial' : undefined,
-        },
-        '& .MuiListItemButton-root': {
-          px: !drawerOpen && !isMobile ? 2 : undefined,
-        },
-        '& .item-label': {
-          display: !drawerOpen && !isMobile ? 'block' : undefined,
-        },
-        '& .expand-icon': {
-          display: !drawerOpen && !isMobile ? 'block' : undefined,
-        },
-        '& .create-button-text': {
-          display: !drawerOpen && !isMobile ? 'inline-flex' : undefined,
-        }
-      }
+      // ホバー時のスタイルを mouseEnter/mouseLeave で制御するため削除
     },
     '& .MuiListItemText-root': {
       opacity: drawerOpen ? 1 : 0,
@@ -358,31 +354,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         }
       }
     },
-    '& .MuiListItem-root': {
-      display: 'block',
-    },
-    '& .MuiButtonBase-root': {
-      transition: theme.transitions.create(['margin', 'padding'], {
-        duration: theme.transitions.duration.shorter,
-      }),
-    },
     '& .item-label': {
       display: drawerOpen ? 'block' : 'none',
-      transition: theme.transitions.create(['display', 'opacity'], {
-        duration: theme.transitions.duration.shorter,
-      }),
     },
     '& .expand-icon': {
       display: drawerOpen ? 'block' : 'none',
-      transition: theme.transitions.create(['display'], {
-        duration: theme.transitions.duration.shorter,
-      }),
     },
     '& .create-button-text': {
       display: drawerOpen ? 'inline-flex' : 'none',
-      transition: theme.transitions.create(['display'], {
-        duration: theme.transitions.duration.shorter,
-      }),
+    }
+  };
+
+  // 一時的なドロワー展開状態の管理
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // マウスイベントハンドラ
+  const handleMouseEnter = () => {
+    if (!drawerOpen && !isMobile) {
+      setIsHovered(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!drawerOpen && !isMobile) {
+      setIsHovered(false);
     }
   };
 
@@ -449,77 +444,90 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <CircularProgress size={24} />
           </Box>
         ) : events && Object.values(events).length > 0 ? (
-          Object.values(events).map((event) => (
-            <React.Fragment key={event.id}>
-              <ListItem disablePadding>
-                <ListItemButton 
-                  onClick={() => handleEventClick(event.id)}
-                  selected={location.pathname === `/admin/events/${event.id}`}
-                >
-                  <ListItemIcon>
-                    <EventIcon color={event.isActive ? "primary" : "inherit"} />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={event.name} 
-                    secondary={new Date(event.date).toLocaleDateString()}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleEventToggle(event.id, e)}
-                    sx={{ ml: 'auto' }}
-                    className="expand-icon"
+          Object.values(events).map((event) => {
+            // 現在のイベントまたはその下の競技が選択されているかどうかを確認
+            const isCurrentPath = location.pathname === `/admin/events/${event.id}`;
+            const hasSelectedSport = sports && 
+              Object.values(sports).some(sport => 
+                sport.eventId === event.id && location.pathname === `/admin/sports/${sport.id}`
+              );
+            const shouldExpand = expandedEventIds.includes(event.id) || isCurrentPath || hasSelectedSport;
+            
+            return (
+              <React.Fragment key={event.id}>
+                <ListItem disablePadding>
+                  <ListItemButton 
+                    onClick={() => handleEventClick(event.id)}
+                    selected={isCurrentPath}
                   >
-                    {expandedEventIds.includes(event.id) ? <ExpandLess /> : <ExpandMore />}
-                  </IconButton>
-                </ListItemButton>
-              </ListItem>
-              
-              {/* 競技リスト */}
-              <Collapse in={expandedEventIds.includes(event.id) || (!drawerOpen && !isMobile)} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  <ListItem disablePadding>
-                    <ListItemButton sx={{ pl: 4 }} onClick={() => handleCreateSport(event.id)}>
-                      <ListItemIcon>
-                        <AddIcon fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={t('admin.createSport')}
-                        primaryTypographyProps={{ variant: 'body2' }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                  
-                  {getSportsByEventId(event.id).map((sport) => (
-                    <ListItem disablePadding key={sport.id}>
-                      <ListItemButton 
-                        sx={{ pl: 4 }}
-                        selected={location.pathname === `/admin/sports/${sport.id}`}
-                        onClick={() => handleSportClick(sport.id)}
-                      >
+                    <ListItemIcon>
+                      <EventIcon color={event.isActive ? "primary" : "inherit"} />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={event.name} 
+                      secondary={new Date(event.date).toLocaleDateString()}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleEventToggle(event.id, e)}
+                      sx={{ ml: 'auto' }}
+                      className="expand-icon"
+                    >
+                      {shouldExpand ? <ExpandLess /> : <ExpandMore />}
+                    </IconButton>
+                  </ListItemButton>
+                </ListItem>
+                
+                {/* 競技リスト - 縮小時は自動展開しない */}
+                <Collapse in={shouldExpand || false} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    <ListItem disablePadding>
+                      <ListItemButton sx={{ pl: 4 }} onClick={() => handleCreateSport(event.id)}>
                         <ListItemIcon>
-                          <SportIcon fontSize="small" />
+                          <AddIcon fontSize="small" />
                         </ListItemIcon>
                         <ListItemText 
-                          primary={sport.name}
+                          primary={t('admin.createSport')}
                           primaryTypographyProps={{ variant: 'body2' }}
                         />
                       </ListItemButton>
                     </ListItem>
-                  ))}
-                  
-                  {getSportsByEventId(event.id).length === 0 && (
-                    <ListItem sx={{ pl: 4 }}>
-                      <ListItemText 
-                        secondary={t('admin.noSportsInEvent')}
-                        secondaryTypographyProps={{ variant: 'body2' }}
-                        className="item-label"
-                      />
-                    </ListItem>
-                  )}
-                </List>
-              </Collapse>
-            </React.Fragment>
-          ))
+                    
+                    {getSportsByEventId(event.id).map((sport) => {
+                      const isSportSelected = location.pathname === `/admin/sports/${sport.id}`;
+                      return (
+                        <ListItem disablePadding key={sport.id}>
+                          <ListItemButton 
+                            sx={{ pl: 4 }}
+                            selected={isSportSelected}
+                            onClick={() => handleSportClick(sport.id)}
+                          >
+                            <ListItemIcon>
+                              <SportIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText 
+                              primary={sport.name}
+                              primaryTypographyProps={{ variant: 'body2' }}
+                            />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    })}
+                    
+                    {getSportsByEventId(event.id).length === 0 && (
+                      <ListItem sx={{ pl: 4 }}>
+                        <ListItemText 
+                          secondary={t('admin.noSportsInEvent')}
+                          secondaryTypographyProps={{ variant: 'body2' }}
+                          className="item-label"
+                        />
+                      </ListItem>
+                    )}
+                  </List>
+                </Collapse>
+              </React.Fragment>
+            );
+          })
         ) : (
           <ListItem sx={{ pl: 2 }}>
             <ListItemText secondary={t('admin.noEvents')} className="item-label" />
@@ -677,9 +685,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <Drawer
           variant="permanent"
           open={drawerOpen}
-          sx={drawerStyles}
+          sx={{
+            ...drawerStyles,
+            '& .MuiDrawer-paper': {
+              ...drawerStyles['& .MuiDrawer-paper'],
+              width: drawerOpen ? drawerWidth : isHovered ? drawerWidth : collapsedDrawerWidth,
+            },
+            '& .MuiListItemText-root': {
+              ...drawerStyles['& .MuiListItemText-root'],
+              display: drawerOpen || isHovered ? 'block' : 'none',
+              opacity: drawerOpen || isHovered ? 1 : 0,
+            },
+            '& .item-label': {
+              display: drawerOpen || isHovered ? 'block' : 'none',
+            },
+            '& .expand-icon': {
+              display: drawerOpen || isHovered ? 'block' : 'none',
+            },
+            '& .create-button-text': {
+              display: drawerOpen || isHovered ? 'inline-flex' : 'none',
+            }
+          }}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
-          {/* ドロワーの内容 */}
           {renderDrawerContent()}
         </Drawer>
       </Box>
