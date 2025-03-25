@@ -52,7 +52,7 @@ interface OverallScoreTabProps {
 
 const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) => {
   const { t } = useTranslation();
-  const { data: allSports, partialUpdate: updateSportPartial } = useDatabase<Record<string, Sport>>('/sports');
+  const { data: allSports } = useDatabase<Record<string, Sport>>('/sports');
   const navigate = useNavigate();
   const { showSnackbar } = useAdminLayout();
   
@@ -76,6 +76,25 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
       .map(sportId => allSports[sportId])
       .filter(sport => sport !== undefined);
   }, [allSports, event.sports]);
+  
+  // スポーツのポイント設定をイベントから取得
+  const getSportPointSettings = (sportId: string) => {
+    if (!event.sportPointSettings) return null;
+    return event.sportPointSettings[sportId];
+  };
+  
+  // 各スポーツの有効なポイント設定を取得（イベント側の設定を優先）
+  const getEffectivePointSettings = (sport: Sport) => {
+    const eventSettings = getSportPointSettings(sport.id);
+    if (eventSettings) return eventSettings;
+    
+    // イベントに設定がない場合はデフォルト値を返す
+    return {
+      enabled: false,
+      points: [5, 3, 1],
+      weight: 1.0
+    };
+  };
   
   // 初期設定
   useEffect(() => {
@@ -202,16 +221,13 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
     
     // 各競技の結果からポイントを集計
     eventSports.forEach(sport => {
-      if (!sport.pointSettings?.enabled) return;
+      const pointSettings = getEffectivePointSettings(sport);
+      if (!pointSettings.enabled) return;
       
-      const points = sport.pointSettings.points || [5, 3, 1];
-      const weight = sport.pointSettings.weight || 1.0;
+      const points = pointSettings.points || [5, 3, 1];
+      const weight = pointSettings.weight || 1.0;
       
-      // ランキングデータから得点を計算
-      // 実際のアプリでは、競技結果から各チームのランキングを取得する処理を実装する必要があります
-      // ここではサンプルとして、ランダムにランキングを生成しています
-      
-      // 現実のアプリでは、sport.matches の結果からランキングを生成するロジックが必要です
+      // 競技の結果からランキングを取得
       const rankings = getTeamRankingsForSport(sport, teamList);
       
       // ポイント割り当て
@@ -269,33 +285,38 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
     return Math.round(points * 10) / 10;
   };
 
-  // 競技のポイント設定を更新する関数を修正
+  // 競技のポイント設定を更新する関数を修正（イベント側に保存）
   const handleSportPointUpdate = async (sportId: string, enabled: boolean, weight?: number, points?: number[]) => {
     if (!allSports || !allSports[sportId]) return;
     
-    const sport = allSports[sportId];
+    // 現在のイベントのスポーツポイント設定を取得
+    const currentSportPointSettings = event.sportPointSettings || {};
     
-    // 更新するポイント設定を構築
+    // 特定のスポーツの設定を更新
     const updatedPointSettings = {
-      ...(sport.pointSettings || { points: [5, 3, 1], weight: 1.0 }),
+      ...(currentSportPointSettings[sportId] || { points: [5, 3, 1], weight: 1.0 }),
       enabled: enabled,
       ...(weight !== undefined ? { weight } : {}),
       ...(points !== undefined ? { points } : {})
     };
     
+    // 更新されたイベント全体
+    const updatedEvent = {
+      ...event,
+      sportPointSettings: {
+        ...currentSportPointSettings,
+        [sportId]: updatedPointSettings
+      }
+    };
+    
     try {
-      // partialUpdateを使用して、pointSettingsフィールドのみを更新
-      /*
-      await updateSportPartial({
-        ...allSports[sportId],
-        pointSettings: updatedPointSettings
-      });
+      // イベント全体を更新
+      onUpdate(updatedEvent);
       
       // 成功したら再計算を促すメッセージを表示
       if (calculatedScores.length > 0) {
         showSnackbar(t('scoreboard.recalculatePrompt'), 'info');
       }
-        */
     } catch (error) {
       console.error('Error updating sport points:', error);
       showSnackbar(t('scoreboard.updatePointsError'), 'error');
@@ -470,67 +491,70 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {eventSports.map((sport) => (
-                    <TableRow key={sport.id}>
-                      <TableCell>{sport.name}</TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={sport.pointSettings?.enabled || false}
-                          onChange={(e) => {
-                            handleSportPointUpdate(sport.id, e.target.checked);
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {(sport.pointSettings?.points || [5, 3, 1]).map((point, i) => (
-                            <Chip
-                              key={i}
-                              icon={i === 0 ? <TrophyIcon color="primary" /> : (
-                                i === 1 ? <MedalIcon color="primary" /> : <MedalIcon />
-                              )}
-                              label={`${i + 1}位: ${point}点`}
-                              variant={i === 0 ? "filled" : "outlined"}
-                            />
-                          ))}
-                          <Tooltip title={t('scoreboard.editPointsHint')}>
-                            <IconButton
-                              size="small"
-                              onClick={() => navigate(`/admin/sport/${sport.id}?tab=points`)}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', width: 150 }}>
-                          <TextField
-                            type="number"
-                            size="small"
-                            inputProps={{ 
-                              min: 0.1, 
-                              max: 3, 
-                              step: 0.1 
-                            }}
-                            value={sport.pointSettings?.weight || 1.0}
+                  {eventSports.map((sport) => {
+                    const pointSettings = getEffectivePointSettings(sport);
+                    return (
+                      <TableRow key={sport.id}>
+                        <TableCell>{sport.name}</TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={pointSettings.enabled || false}
                             onChange={(e) => {
-                              const value = parseFloat(e.target.value);
-                              if (!isNaN(value)) {
-                                handleSportPointUpdate(sport.id, sport.pointSettings?.enabled ?? true, value);
-                              }
+                              handleSportPointUpdate(sport.id, e.target.checked);
                             }}
-                            sx={{ width: 80 }}
                           />
-                          <Tooltip title={t('scoreboard.weightHint')}>
-                            <IconButton size="small">
-                              <InfoIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {(pointSettings.points || [5, 3, 1]).map((point, i) => (
+                              <Chip
+                                key={i}
+                                icon={i === 0 ? <TrophyIcon color="primary" /> : (
+                                  i === 1 ? <MedalIcon color="primary" /> : <MedalIcon />
+                                )}
+                                label={`${i + 1}位: ${point}点`}
+                                variant={i === 0 ? "filled" : "outlined"}
+                              />
+                            ))}
+                            <Tooltip title={t('scoreboard.editPointsHint')}>
+                              <IconButton
+                                size="small"
+                                onClick={() => navigate(`/admin/sport/${sport.id}?tab=points`)}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', width: 150 }}>
+                            <TextField
+                              type="number"
+                              size="small"
+                              inputProps={{ 
+                                min: 0.1, 
+                                max: 3, 
+                                step: 0.1 
+                              }}
+                              value={pointSettings.weight || 1.0}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                if (!isNaN(value)) {
+                                  handleSportPointUpdate(sport.id, pointSettings.enabled, value);
+                                }
+                              }}
+                              sx={{ width: 80 }}
+                            />
+                            <Tooltip title={t('scoreboard.weightHint')}>
+                              <IconButton size="small">
+                                <InfoIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                   
                   {eventSports.length === 0 && (
                     <TableRow>

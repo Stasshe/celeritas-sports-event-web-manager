@@ -715,8 +715,9 @@ const EventEditPage: React.FC = () => {
         {/* 総合成績タブ (新規追加) */}
         <TabPanel value={activeTab} index={3}>
           <OverallScoreTab event={localEvent} onUpdate={(updatedEvent) => {
+            // 更新されたイベントデータをlocalEventに設定するだけで、
+            // 自動保存はuseEffect内のロジックに任せる
             setLocalEvent(updatedEvent);
-            handleSave();
           }} />
         </TabPanel>
         

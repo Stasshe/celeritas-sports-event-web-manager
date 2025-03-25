@@ -31,6 +31,13 @@ export interface Event {
   };
   // 以下を追加：総合成績
   overallScores?: Record<string, number>; // チームID：合計点数
+  // 以下を追加：スポーツごとのポイント設定
+  sportPointSettings?: Record<string, {
+    enabled: boolean; // 総合成績に含めるか
+    points: number[]; // 順位ごとのポイント [1位, 2位, 3位, ...]
+    weight: number; // 重み付け係数（デフォルト1.0）
+    customPointRule?: string; // カスタムポイントルールの説明
+  }>;
 }
 
 // 担当者タイプ
