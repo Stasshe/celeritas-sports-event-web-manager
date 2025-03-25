@@ -12,7 +12,9 @@ import {
   Select,
   MenuItem,
   Box,
-  Typography
+  Typography,
+  DialogContentText,
+  Alert
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { Match, Sport } from '../../../../types';
@@ -40,6 +42,11 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   const [editedMatch, setEditedMatch] = useState<Match | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingTeamChange, setPendingTeamChange] = useState<{
+    teamId: string;
+    position: 'team1' | 'team2';
+  } | null>(null);
 
   useEffect(() => {
     if (match) {
@@ -80,14 +87,28 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
   };
 
   const handleTeamChange = (teamId: string, position: 'team1' | 'team2') => {
-    if (!editedMatch) return;
+    setPendingTeamChange({ teamId, position });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmTeamChange = () => {
+    if (!editedMatch || !pendingTeamChange) return;
+    
     setEditedMatch(prev => {
       if (!prev) return prev;
       return {
         ...prev,
-        [`${position}Id`]: teamId
+        [`${pendingTeamChange.position}Id`]: pendingTeamChange.teamId
       };
     });
+    
+    setConfirmDialogOpen(false);
+    setPendingTeamChange(null);
+  };
+
+  const handleCancelTeamChange = () => {
+    setConfirmDialogOpen(false);
+    setPendingTeamChange(null);
   };
 
   const handleStatusChange = (e: SelectChangeEvent<'scheduled' | 'inProgress' | 'completed'>) => {
@@ -118,101 +139,134 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
   const maxRound = Math.max(...sport.matches.map(m => m.round));
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {match && (
-          match.round === maxRound && match.matchNumber === 1 
-            ? t('tournament.final')
-            : match.matchNumber === 0 
-            ? t('tournament.thirdPlace')
-            : t('tournament.round', { round: `${match.round}-${match.matchNumber}` })
-        )}
-      </DialogTitle>
-      <DialogContent dividers>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                {t('match.team1')}
-              </Typography>
-              <TeamSelector
-                selectedTeamId={editedMatch.team1Id}
-                teams={sport.teams}
-                rosters={teamRosters}
-                onChange={(teamId) => handleTeamChange(teamId, 'team1')}
+    <>
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {match && (
+            match.round === maxRound && match.matchNumber === 1 
+              ? t('tournament.final')
+              : match.matchNumber === 0 
+              ? t('tournament.thirdPlace')
+              : t('tournament.round', { round: `${match.round}-${match.matchNumber}` })
+          )}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {t('match.warningTeamChange')}
+          </Alert>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t('match.team1')}
+                </Typography>
+                <Box sx={{ opacity: 0.7 }}>
+                  <TeamSelector
+                    selectedTeamId={editedMatch.team1Id}
+                    teams={sport.teams}
+                    rosters={teamRosters}
+                    onChange={(teamId) => handleTeamChange(teamId, 'team1')}
+                  />
+                </Box>
+              </Box>
+              <TextField
+                label={t('match.score')}
+                type="number"
+                fullWidth
+                value={editedMatch.team1Score}
+                onChange={(e) => handleScoreChange(e, 'team1')}
+                inputProps={{ min: 0 }}
               />
-            </Box>
-            <TextField
-              label={t('match.score')}
-              type="number"
-              fullWidth
-              value={editedMatch.team1Score}
-              onChange={(e) => handleScoreChange(e, 'team1')}
-              inputProps={{ min: 0 }}
-            />
-          </Grid>
+            </Grid>
 
-          <Grid item xs={12}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                {t('match.team2')}
-              </Typography>
-              <TeamSelector
-                selectedTeamId={editedMatch.team2Id}
-                teams={sport.teams}
-                rosters={teamRosters}
-                onChange={(teamId) => handleTeamChange(teamId, 'team2')}
+            <Grid item xs={12}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t('match.team2')}
+                </Typography>
+                <Box sx={{ opacity: 0.7 }}>
+                  <TeamSelector
+                    selectedTeamId={editedMatch.team2Id}
+                    teams={sport.teams}
+                    rosters={teamRosters}
+                    onChange={(teamId) => handleTeamChange(teamId, 'team2')}
+                  />
+                </Box>
+              </Box>
+              <TextField
+                label={t('match.score')}
+                type="number"
+                fullWidth
+                value={editedMatch.team2Score}
+                onChange={(e) => handleScoreChange(e, 'team2')}
+                inputProps={{ min: 0 }}
               />
-            </Box>
-            <TextField
-              label={t('match.score')}
-              type="number"
-              fullWidth
-              value={editedMatch.team2Score}
-              onChange={(e) => handleScoreChange(e, 'team2')}
-              inputProps={{ min: 0 }}
-            />
-          </Grid>
+            </Grid>
 
-          <Grid item xs={12}>
-            <TextField
-              name="date"
-              label={t('match.date')}
-              type="date"
-              fullWidth
-              value={editedMatch.date || ''}
-              onChange={handleInputChange}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
+            <Grid item xs={12}>
+              <TextField
+                name="date"
+                label={t('match.date')}
+                type="date"
+                fullWidth
+                value={editedMatch.date || ''}
+                onChange={handleInputChange}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
 
-          <Grid item xs={12}>
-            <TextField
-              name="notes"
-              label={t('match.notes')}
-              multiline
-              rows={2}
-              fullWidth
-              value={editedMatch.notes || ''}
-              onChange={handleInputChange}
-            />
+            <Grid item xs={12}>
+              <TextField
+                name="notes"
+                label={t('match.notes')}
+                multiline
+                rows={2}
+                fullWidth
+                value={editedMatch.notes || ''}
+                onChange={handleInputChange}
+              />
+            </Grid>
           </Grid>
-        </Grid>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={disabled}>
-          {t('common.cancel')}
-        </Button>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          onClick={handleSave}
-          disabled={disabled}
-        >
-          {t('common.save')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} disabled={disabled}>
+            {t('common.cancel')}
+          </Button>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={handleSave}
+            disabled={disabled}
+          >
+            {t('common.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={handleCancelTeamChange}
+      >
+        <DialogTitle>{t('match.confirmTeamChangeTitle')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t('match.confirmTeamChangeMessage')}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelTeamChange}>
+            {t('common.cancel')}
+          </Button>
+          <Button 
+            onClick={handleConfirmTeamChange} 
+            color="error"
+            variant="contained"
+          >
+            {t('match.confirmTeamChange')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };
 

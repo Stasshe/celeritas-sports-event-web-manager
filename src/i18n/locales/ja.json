@@ -34,6 +34,10 @@
   },
   "match" : {
     "match": "試合",
+    "warningTeamChange": "チーム選択は試合結果の入力後に変更すると、トーナメントの整合性が損なわれる可能性があります",
+    "confirmTeamChangeTitle": "チーム変更の確認",
+    "confirmTeamChangeMessage": "チームを変更しますか？トーナメントが壊れる可能性があります。壊れた場合は生成し直してください。",
+    "confirmTeamChange": "変更する",
     "team": "チーム",
     "completed":"完了",
     "inProgress":"進行中",

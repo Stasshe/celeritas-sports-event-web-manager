@@ -399,8 +399,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               ? theme.palette.primary.main // 勝者は青
               : 'inherit'
           }}>
-            {topParty.name}
-            {topParty.status === 'waiting' && ' (待機中)'}
+            {topParty.name.slice(-3)}
           </Typography>
             <Typography variant="body2" sx={{ 
             fontWeight: 'bold',
@@ -442,7 +441,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               ? theme.palette.primary.main
               : 'inherit'
           }}>
-            {bottomParty.name}
+            {bottomParty.name.slice(-3)}
           </Typography>
           <Typography variant="body2" sx={{ 
             fontWeight: 'bold',
