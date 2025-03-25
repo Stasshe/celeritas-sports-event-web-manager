@@ -835,7 +835,26 @@ const SportEditPage: React.FC = () => {
         {/* ホームタブ */}
         <TabPanel value={activeTab} index={0}>
           <Box>
+            {/* スコア管理ボタン - 上部に移動 */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="h6">
+                  {t('sport.scoreManagement')}
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => navigate(`/admin/scoring/${sportId}`)}
+                  startIcon={<SportIcon />}
+                  size="large"
+                >
+                  {t('sport.manageScores')}
+                </Button>
+              </Box>
+            </Paper>
+
             <Grid container spacing={2}>
+              {/* 既存の詳細情報セクション */}
               <Grid item xs={12} md={6}>
                 <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
                   <Typography variant="h6" gutterBottom>
@@ -884,6 +903,7 @@ const SportEditPage: React.FC = () => {
                 </Paper>
               </Grid>
               
+              {/* 既存の主催者セクション */}
               <Grid item xs={12} md={6}>
                 <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
                   <Typography variant="h6" gutterBottom>
@@ -911,7 +931,7 @@ const SportEditPage: React.FC = () => {
                         >
                           <MenuItem value="leader">{t('sport.roleLeader')}</MenuItem>
                           <MenuItem value="member">{t('sport.roleMember')}</MenuItem>
-                          <MenuItem value="custom">{t('sport.roleTeacher')}</MenuItem>
+                          <MenuItem value="teacher">{t('sport.roleTeacher')}</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>
@@ -943,19 +963,6 @@ const SportEditPage: React.FC = () => {
                     </Grid>
                   </Grid>
                   
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={() => navigate(`/admin/scoring/${sportId}`)}
-                        startIcon={<SportIcon />}
-                      >
-                        {t('sport.manageScores')}
-                      </Button>
-                    </Grid>
-                  </Grid>
-
                   {/* 担当者リスト */}
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {(localSport.organizers || []).map(org => (
@@ -973,10 +980,6 @@ const SportEditPage: React.FC = () => {
                     )}
                   </Box>
                   <DifferenceIndicator field="organizers" />
-                </Paper>
-                
-                <Paper sx={{ p: 2 }}>
-                  
                 </Paper>
               </Grid>
             </Grid>
