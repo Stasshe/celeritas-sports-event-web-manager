@@ -51,7 +51,7 @@ import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { TabContent } from '../../components/admin/TabContent';
 import ScheduleTab from '../../components/admin/scheduling/ScheduleTab';  // 追加
-import SportPointEditor from '../../components/admin/scoring/SportPointEditor';  // 追加
+
 
 // フィールドとタブの関連付けを定義
 const fieldToTabMap: Record<keyof Sport, string> = {
@@ -346,7 +346,7 @@ const SportEditPage: React.FC = () => {
       await handleSave();
     }
 
-    const tabName = ['details','schedule', 'roster', 'rules', 'manual', 'points', 'settings'][newValue];
+    const tabName = ['details','schedule', 'roster', 'rules', 'manual', 'settings'][newValue];
     setActiveTab(newValue);
 
     if (!tabStates[tabName].isLoaded) {
@@ -533,6 +533,8 @@ const SportEditPage: React.FC = () => {
         return t('sport.roleLeader');
       case 'member':
         return t('sport.roleMember');
+      case 'teacher': 
+        return t('sport.roleTeacher');
       default:
         return role;
     }
@@ -890,7 +892,6 @@ const SportEditPage: React.FC = () => {
             <Tab icon={<PeopleIcon />} label={t('sport.tabs.roster')} />
             <Tab icon={<RulesIcon />} label={t('sport.tabs.rules')} />
             <Tab icon={<ManualIcon />} label={t('sport.tabs.manual')} />
-            <Tab icon={<LeaderboardIcon />} label={t('sport.tabs.points')} /> {/* 追加 */}
             <Tab icon={<SettingsIcon />} label={t('sport.tabs.settings')} />
           </Tabs>
         </Paper>
@@ -1123,14 +1124,6 @@ const SportEditPage: React.FC = () => {
               </Typography>
             </Box>
           </Paper>
-        </TabPanel>
-
-        {/* 総合成績ポイント設定タブ - 新規追加 */}
-        <TabPanel value={activeTab} index={5}>
-          <SportPointEditor 
-            sport={localSport} 
-            onUpdate={handleSportUpdate} 
-          />
         </TabPanel>
 
         {/* 設定タブ */}
