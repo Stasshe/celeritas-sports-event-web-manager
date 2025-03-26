@@ -4,6 +4,7 @@ import { Brightness4, Brightness7, Translate } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '../contexts/ThemeContext';
 import LanguageSelector from './LanguageSelector';
+import { useNavigate } from 'react-router-dom';
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,6 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { mode, toggleColorMode } = useThemeContext();
+  const navigate = useNavigate();
   
   return (
     <Box sx={{ 
@@ -26,7 +28,12 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
       {!hideHeader && (
         <AppBar position="static">
           <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <Typography 
+              variant="h6" 
+              component="div" 
+              sx={{ flexGrow: 1, cursor: 'pointer' }} 
+              onClick={() => navigate('/')}
+            >
               {t('common.appName')}
             </Typography>
             

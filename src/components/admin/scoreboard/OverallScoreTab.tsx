@@ -63,7 +63,8 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
     displayScores: event.overallScoreboard?.displayScores ?? true,
     displayRank: event.overallScoreboard?.displayRank || 3,
     teamType: event.overallScoreboard?.teamType || 'class' as 'class' | 'grade' | 'custom',
-    customTeams: event.overallScoreboard?.customTeams || []
+    customTeams: event.overallScoreboard?.customTeams || [],
+    displayOnHome: event.overallScoreboard?.displayOnHome ?? true // 追加
   });
   const [newTeam, setNewTeam] = useState('');
   const [calculatedScores, setCalculatedScores] = useState<OverallScoreEntry[]>([]);
@@ -104,7 +105,8 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
         displayScores: event.overallScoreboard.displayScores,
         displayRank: event.overallScoreboard.displayRank,
         teamType: event.overallScoreboard.teamType,
-        customTeams: event.overallScoreboard.customTeams || []
+        customTeams: event.overallScoreboard.customTeams || [],
+        displayOnHome: true
       });
     }
     
@@ -167,6 +169,34 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
     } finally {
       setLoading(false);
     }
+  };
+
+  // enabledトグル専用のハンドラ - 即時保存を行う
+  const handleEnabledToggle = (enabled: boolean) => {
+    // 明示的に全てのフィールドを含む新しい設定オブジェクトを作成
+    const newSettings = {
+      enabled: enabled,
+      displayScores: settings.displayScores !== undefined ? settings.displayScores : true,
+      displayRank: settings.displayRank || 3,
+      teamType: settings.teamType || 'class',
+      customTeams: settings.customTeams || [],
+      displayOnHome: settings.displayOnHome !== undefined ? settings.displayOnHome : true
+    };
+    
+    // ローカル状態を更新
+    setSettings(newSettings);
+    
+    // 直ちに保存操作を実行
+    const updatedEvent = {
+      ...event,
+      overallScoreboard: newSettings
+    };
+    
+    console.log('保存する設定:', JSON.stringify(newSettings));
+    onUpdate(updatedEvent);
+    
+    // 保存成功メッセージ
+    showSnackbar(t('scoreboard.settingsUpdated'), 'success');
   };
   
   // カスタムチームの追加
@@ -333,6 +363,13 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
       showSnackbar(t('scoreboard.updatePointsError'), 'error');
     }
   };
+
+  // 色定数を定義
+  const MEDAL_COLORS = {
+    gold: '#FFD700',
+    silver: '#C0C0C0',
+    bronze: '#CD7F32'
+  };
   
   return (
     <Box>
@@ -348,10 +385,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
               control={
                 <Switch
                   checked={settings.enabled}
-                  onChange={(e) => setSettings({
-                    ...settings,
-                    enabled: e.target.checked
-                  })}
+                  onChange={(e) => handleEnabledToggle(e.target.checked)}
                 />
               }
               label={t('scoreboard.enableOverallScoreboard')}
@@ -360,6 +394,21 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
           
           {settings.enabled && (
             <>
+              {/* 新しい設定を追加 */}
+              <Grid item xs={12} sm={6}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={settings.displayOnHome}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        displayOnHome: e.target.checked
+                      })}
+                    />
+                  }
+                  label={t('scoreboard.displayOnHome')}
+                />
+              </Grid>
               <Grid item xs={12} sm={6}>
                 <FormControlLabel
                   control={
@@ -594,8 +643,8 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                       variant="outlined" 
                       sx={{ 
                         width: 200,
-                        bgcolor: entry.rank === 1 ? 'gold' : (
-                          entry.rank === 2 ? 'silver' : '#cd7f32'
+                        bgcolor: entry.rank === 1 ? MEDAL_COLORS.gold : (
+                          entry.rank === 2 ? MEDAL_COLORS.silver : MEDAL_COLORS.bronze
                         ),
                         color: 'white',
                         textAlign: 'center'
@@ -634,8 +683,8 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                           key={entry.teamId}
                           sx={{ 
                             bgcolor: entry.rank <= 3 ? alpha(
-                              entry.rank === 1 ? 'gold' : (
-                                entry.rank === 2 ? 'silver' : '#cd7f32'
+                              entry.rank === 1 ? MEDAL_COLORS.gold : (
+                                entry.rank === 2 ? MEDAL_COLORS.silver : MEDAL_COLORS.bronze
                               ), 0.1
                             ) : 'inherit'
                           }}

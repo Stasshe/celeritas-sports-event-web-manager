@@ -28,6 +28,7 @@ export interface Event {
     displayRank: number; // 何位まで表示するか（デフォルト3位）
     teamType: 'class' | 'grade' | 'custom'; // チーム種別
     customTeams?: string[]; // カスタムチーム名リスト
+    displayOnHome?: boolean; // 追加: ホームページでの表示制御
   };
   // 以下を追加：総合成績
   overallScores?: Record<string, number>; // チームID：合計点数

@@ -18,7 +18,7 @@ import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import ExportPage from './pages/admin/ExportPage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
-
+import ScoreboardDetailsPage from './pages/ScoreboardDetailsPage';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -36,6 +36,7 @@ function App() {
               <Route path="/" element={<Layout><HomePage /></Layout>} />
               <Route path="/sport/:sportId" element={<Layout><SportPage /></Layout>} />
               <Route path="/login" element={<Layout><LoginPage /></Layout>} />
+              <Route path="/scoreboard/:eventId" element={<Layout><ScoreboardDetailsPage /></Layout>} />
               
               {/* 管理者用ルートの修正 */}
               <Route path="/admin/*" element={

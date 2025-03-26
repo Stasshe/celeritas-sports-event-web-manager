@@ -93,7 +93,13 @@
     "recalculatePrompt": "設定を更新しました。「成績を計算する」をクリックして再計算してください",
     "updatePointsError": "ポイント設定の更新に失敗しました",
     "settingsSaved": "総合成績ボード設定を保存しました",
-    "settingsError": "設定の保存中にエラーが発生しました"
+    "settingsError": "設定の保存中にエラーが発生しました",
+    "settingsUpdated": "設定を更新しました",
+    "displayOnHome": "ホームページに表示する",
+    "viewDetails": "詳細を見る",
+    "details": "総合成績詳細",
+    "pointSettings": "競技別ポイント設定",
+    "detailedScores": "競技別獲得ポイント"
   },
   "event": {
     "tabs": {
@@ -102,7 +108,8 @@
       "roster": "名簿",
       "scoreboard": "総合成績",
       "settings": "設定"
-    }
+    },
+    "dataValidationError": "データの検証に失敗しました"
   },
   "sport": {
     "tabs": {

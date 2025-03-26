@@ -15,14 +15,16 @@ import {
   Paper,
   Tab,
   Tabs,
-  Divider
+  Divider,
+  Button
 } from '@mui/material';
 import { 
   AdminPanelSettings as AdminIcon,
   Login as LoginIcon,
   Schedule as ScheduleIcon,
   GridView as GridViewIcon,
-  ViewTimeline as TimelineIcon
+  ViewTimeline as TimelineIcon,
+  Leaderboard as LeaderboardIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../hooks/useDatabase';
@@ -125,8 +127,11 @@ const HomePage: React.FC = () => {
       {activeSports.length > 0 && (
         <Box sx={{ mb: 4 }}>
           {/* 総合成績カードを追加 - 最初に表示 */}
-          {activeEvent && (
-            <OverallScoreCard event={activeEvent} sports={activeSports} />
+          {activeEvent && activeEvent.overallScoreboard?.enabled && 
+           activeEvent.overallScoreboard.displayOnHome && (
+            <Box sx={{ mb: 4 }}>
+              <OverallScoreCard event={activeEvent} sports={activeSports} />
+            </Box>
           )}
 
           <Paper sx={{ mb: 3 }}>

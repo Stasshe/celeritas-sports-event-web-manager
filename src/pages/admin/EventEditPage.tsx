@@ -748,11 +748,33 @@ const EventEditPage: React.FC = () => {
           <OverallScoreTab 
             event={localEvent} 
             onUpdate={(updatedEvent) => {
-              // 更新されたイベントデータを設定
-              setLocalEvent(updatedEvent);
-              
-              // 総合成績タブでの変更は重要なので即時保存を実行
-              saveImmediately();
+              try {
+                // 更新する前に深いコピーを作成して、値が正しいことを確認
+                const safeUpdatedEvent = JSON.parse(JSON.stringify(updatedEvent));
+                
+                // データの検証: overallScoreboardの構造を確認
+                if (safeUpdatedEvent.overallScoreboard) {
+                  // データの検証と安全確保
+                  const scoreboardSettings = safeUpdatedEvent.overallScoreboard;
+                  
+                  // 各フィールドのデフォルト値を設定
+                  scoreboardSettings.enabled = scoreboardSettings.enabled || false;
+                  scoreboardSettings.displayScores = 
+                    scoreboardSettings.displayScores !== undefined ? scoreboardSettings.displayScores : true;
+                  scoreboardSettings.displayRank = scoreboardSettings.displayRank || 3;
+                  scoreboardSettings.teamType = scoreboardSettings.teamType || 'class';
+                  scoreboardSettings.customTeams = scoreboardSettings.customTeams || [];
+                }
+                
+                // 更新されたイベントデータを設定
+                setLocalEvent(safeUpdatedEvent);
+                
+                // 総合成績タブでの変更は重要なので即時保存を実行
+                saveImmediately();
+              } catch (error) {
+                console.error("データの更新または検証中にエラーが発生:", error);
+                showSnackbar(t('event.dataValidationError'), 'error');
+              }
             }} 
           />
         </TabPanel>

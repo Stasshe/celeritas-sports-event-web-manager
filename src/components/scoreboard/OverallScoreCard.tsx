@@ -10,19 +10,21 @@ import {
   Grid,
   Chip,
   useTheme,
-  Paper
+  Paper,
+  Button
 } from '@mui/material';
 import {
   EmojiEvents as TrophyIcon,
   Leaderboard as LeaderboardIcon,
   LooksOne as OneIcon,
   LooksTwo as TwoIcon,
-  Looks3 as ThreeIcon
+  Looks3 as ThreeIcon,
+  Launch as LaunchIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { Event, Sport, OverallScoreEntry } from '../../types';
 import { motion } from 'framer-motion';
-
+import { useNavigate } from 'react-router-dom';
 interface OverallScoreCardProps {
   event: Event;
   sports?: Sport[];
@@ -30,9 +32,11 @@ interface OverallScoreCardProps {
 
 const MotionCard = motion(Card);
 
+
 const OverallScoreCard: React.FC<OverallScoreCardProps> = ({ event, sports = [] }) => {
   const { t } = useTranslation();
   const theme = useTheme();
+  const navigate = useNavigate();
   
   // 総合成績データがあるかチェック
   const hasScoreData = useMemo(() => {
@@ -108,100 +112,115 @@ const OverallScoreCard: React.FC<OverallScoreCardProps> = ({ event, sports = [] 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       sx={{ 
-        width: '100%', 
-        mb: 3,
-        borderRadius: 2,
-        overflow: 'hidden',
-        boxShadow: 3
+      width: '100%', 
+      mb: 3,
+      borderRadius: 2,
+      overflow: 'hidden',
+      boxShadow: 3
       }}
     >
       <CardHeader
         title={t('scoreboard.overallStandings')}
         subheader={event.name}
         avatar={<Avatar sx={{ bgcolor: theme.palette.primary.main }}><LeaderboardIcon /></Avatar>}
+        action={
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => navigate(`/scoreboard/${event.id}`)}
+              startIcon={<LaunchIcon />}
+              sx={{
+                bgcolor: 'white',
+                '&:hover': {
+                bgcolor: 'white',
+                },
+              }}
+              >
+              {t('scoreboard.viewDetails')}
+            </Button>
+        }
         sx={{ 
           bgcolor: theme.palette.primary.main,
           color: 'white',
           '& .MuiCardHeader-subheader': {
-            color: 'rgba(255, 255, 255, 0.8)'
+          color: 'rgba(255, 255, 255, 0.8)'
           }
         }}
       />
-      
       <CardContent>
-        <Grid container spacing={2}>
-          {overallRanking.slice(0, 3).map((entry) => {
-            const rankInfo = getRankDisplay(entry.rank);
+      <Grid container spacing={2}>
+        {overallRanking.slice(0, 3).map((entry) => {
+        const rankInfo = getRankDisplay(entry.rank);
+        
+        return (
+          <Grid item xs={12} sm={4} key={entry.teamId}>
+          <Paper
+            elevation={3}
+            sx={{
+            p: 2,
+            textAlign: 'center',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+            bgcolor: `${rankInfo.color}22`, // with transparency
+            border: `1px solid ${rankInfo.color}`
+            }}
+          >
+            <Box
+            sx={{
+              position: 'absolute',
+              top: -10,
+              right: -10,
+              transform: 'rotate(45deg)',
+              width: 40,
+              height: 40,
+              bgcolor: rankInfo.color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            >
+            {rankInfo.icon}
+            </Box>
             
-            return (
-              <Grid item xs={12} sm={4} key={entry.teamId}>
-                <Paper
-                  elevation={3}
-                  sx={{
-                    p: 2,
-                    textAlign: 'center',
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    bgcolor: `${rankInfo.color}22`, // with transparency
-                    border: `1px solid ${rankInfo.color}`
-                  }}
-                >
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: -10,
-                      right: -10,
-                      transform: 'rotate(45deg)',
-                      width: 40,
-                      height: 40,
-                      bgcolor: rankInfo.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {rankInfo.icon}
-                  </Box>
-                  
-                  <Typography 
-                    variant="h5" 
-                    component="div" 
-                    gutterBottom
-                    sx={{ 
-                      color: theme.palette.text.primary,
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {entry.teamName}
-                  </Typography>
-                  
-                  <Chip
-                    icon={<TrophyIcon />}
-                    label={`${formatPoints(entry.totalPoints)}${t('scoreboard.points')}`}
-                    sx={{ 
-                      fontSize: '1.2rem', 
-                      py: 2, 
-                      bgcolor: rankInfo.color,
-                      color: '#fff',
-                      '& .MuiChip-icon': {
-                        color: '#fff'
-                      }
-                    }}
-                  />
-                  
-                  <Box sx={{ color: 'text.secondary', fontSize: '0.875rem', mt: 1 }}>
-                    {rankInfo.label}
-                  </Box>
-                </Paper>
-              </Grid>
-            );
-          })}
-        </Grid>
+            <Typography 
+            variant="h5" 
+            component="div" 
+            gutterBottom
+            sx={{ 
+              color: theme.palette.text.primary,
+              fontWeight: 'bold'
+            }}
+            >
+            {entry.teamName}
+            </Typography>
+            
+            <Chip
+            icon={<TrophyIcon />}
+            label={`${formatPoints(entry.totalPoints)}${t('scoreboard.points')}`}
+            sx={{ 
+              fontSize: '1.2rem', 
+              py: 2, 
+              bgcolor: rankInfo.color,
+              color: '#fff',
+              '& .MuiChip-icon': {
+              color: '#fff'
+              }
+            }}
+            />
+            
+            <Box sx={{ color: 'text.secondary', fontSize: '0.875rem', mt: 1 }}>
+            {rankInfo.label}
+            </Box>
+          </Paper>
+          </Grid>
+        );
+        })}
+      </Grid>
       </CardContent>
     </MotionCard>
   );
