@@ -97,38 +97,115 @@ const extractClassName = (teamName: string): string | undefined => {
   return teamName;
 };
 
-// 試合の説明テキストを生成する関数
+// 試合の説明テキストを生成する関数を修正
 const getMatchDescription = (match: Match, sport: Sport): string => {
   const team1 = sport.teams.find(t => t.id === match.team1Id);
   const team2 = sport.teams.find(t => t.id === match.team2Id);
   
-  // シード試合（不戦勝）の場合は特別な表示
-  if (isSeededMatch(match)) {
+  // 不戦勝の場合は特別な表示
+  if ((!match.team1Id || match.team1Id === '') && match.team2Id && match.team2Id !== '') {
     // Team1がいない場合はTeam2が不戦勝
-    if (!match.team1Id || match.team1Id === '') {
-      return `${team2?.name || '不明なチーム'} (不戦勝)`;
-    }
+    return `${team2?.name || '不明なチーム'} (不戦勝)`;
+  } 
+  if (match.team1Id && match.team1Id !== '' && (!match.team2Id || match.team2Id === '')) {
     // Team2がいない場合はTeam1が不戦勝
-    if (!match.team2Id || match.team2Id === '') {
-      return `${team1?.name || '不明なチーム'} (不戦勝)`;
-    }
+    return `${team1?.name || '不明なチーム'} (不戦勝)`;
   }
   
   // プレーオフの試合で、チームがまだ決まっていない場合
-  if (!match.blockId && (!team1 || !team2)) {
-    const team1Display = team1?.name || (match.team1Id ? '不明なチーム' : '勝者未定');
-    const team2Display = team2?.name || (match.team2Id ? '不明なチーム' : '勝者未定');
+  if (!match.blockId) {
+    // 前の試合情報から「〇〇の勝者」のように表示
+    const team1Display = team1?.name || (match.team1Id ? '不明なチーム' : getPreviousMatchReference(match, 'team1', sport));
+    const team2Display = team2?.name || (match.team2Id ? '不明なチーム' : getPreviousMatchReference(match, 'team2', sport));
     return `${team1Display} vs ${team2Display}`;
   }
   
   return `${team1?.name || '不明なチーム'} vs ${team2?.name || '不明なチーム'}`;
 };
 
-// 試合がシード（不戦勝）かどうかをチェックする関数を追加
+// 前の試合からの参照を生成する関数を修正
+const getPreviousMatchReference = (match: Match, teamPosition: 'team1' | 'team2', sport: Sport): string => {
+  // マッチの参照情報がある場合
+  if (match.previousMatches && match.previousMatches.length > 0) {
+    const prevMatchIndex = teamPosition === 'team1' ? 0 : 1;
+    if (prevMatchIndex < match.previousMatches.length) {
+      const prevMatchId = match.previousMatches[prevMatchIndex];
+      const prevMatch = sport.matches?.find(m => m.id === prevMatchId);
+      
+      if (prevMatch) {
+        // 前のラウンド名を推定
+        const maxRounds = Math.max(...(sport.matches?.map(m => m.round) || [0]));
+        let roundName = '';
+        
+        switch (prevMatch.round) {
+          case maxRounds:
+            roundName = '決勝';
+            break;
+          case maxRounds - 1:
+            roundName = '準決勝';
+            break;
+          case maxRounds - 2:
+            roundName = '準々決勝';
+            break;
+          default:
+            roundName = `ラウンド${prevMatch.round}`;
+        }
+        
+        return `${roundName}${prevMatch.matchNumber ? ` #${prevMatch.matchNumber}` : ''}の勝者`;
+      }
+    }
+  }
+  
+  // previousMatchesがない場合、トーナメント構造から推測
+  if (match.round > 1) {
+    // 前のラウンドの試合番号を計算（従来のトーナメント構造に基づく）
+    const prevRound = match.round - 1;
+    const prevMatchNumber1 = match.matchNumber * 2 - 1;
+    const prevMatchNumber2 = match.matchNumber * 2;
+    
+    // 該当するチームの前の試合を取得
+    const prevMatchNumber = teamPosition === 'team1' ? prevMatchNumber1 : prevMatchNumber2;
+    
+    // 前のラウンド名を推定
+    const maxRounds = Math.max(...(sport.matches?.map(m => m.round) || [0]));
+    let roundName = '';
+    
+    switch (prevRound) {
+      case maxRounds:
+        roundName = '決勝';
+        break;
+      case maxRounds - 1:
+        roundName = '準決勝';
+        break;
+      case maxRounds - 2:
+        roundName = '準々決勝';
+        break;
+      default:
+        roundName = `ラウンド${prevRound}`;
+    }
+    
+    return `${roundName} #${prevMatchNumber}の勝者`;
+  }
+  
+  // マッチ番号がある場合は使用
+  if (match.matchNumber && match.round > 0) {
+    return `試合#${match.matchNumber}の勝者`;
+  }
+  
+  // 情報がない場合のデフォルト表示
+  return '勝者未定';
+};
+
+// 試合がシード戦（不戦勝/スキップ対象）かどうかをチェックする関数を修正
 const isSeededMatch = (match: Match): boolean => {
-  // どちらかのチームIDが空の場合はシード試合
-  return (!match.team1Id || match.team1Id === '') || 
-         (!match.team2Id || match.team2Id === '');
+  // ラウンド1で片方のチームIDが空の場合はシード戦（不戦勝）
+  if (match.round === 1) {
+    return (!match.team1Id || match.team1Id === '') || 
+           (!match.team2Id || match.team2Id === '');
+  }
+  
+  // ラウンド1以外では両方のチームIDが空の場合のみスキップ
+  return false;
 }
 
 // 同時進行に対応した新しいスケジュール生成関数
@@ -201,7 +278,7 @@ const generateMatchBasedScheduleWithCourts = (
   // トーナメントの場合はラウンド数の低い順にソートしてからランダム化
   let schedulableMatches: Match[] = [];
   if (sport.type === 'tournament') {
-    // シード試合（不戦勝）を除外
+    // ラウンド1のシード戦（不戦勝）のみ除外
     const nonSeededMatches = [...matches].filter(match => !isSeededMatch(match));
     
     // ラウンドごとにグループ化
@@ -411,7 +488,7 @@ const generateLeagueScheduleWithCourts = (
   const groupMatches = matches.filter(m => m.blockId !== undefined);
   const playoffMatches = matches.filter(m => m.blockId === undefined && m.round > 0);
   
-  // シード試合（不戦勝）をプレーオフから除外
+  // ラウンド1のシード戦のみ除外
   const schedulablePlayoffMatches = playoffMatches.filter(match => !isSeededMatch(match));
   
   // 試合を各ブロックに分類
@@ -729,6 +806,7 @@ const generateLeagueScheduleWithCourts = (
         
         // 同じラウンドの試合のみスケジュール
         const sameRoundMatches = sortedPlayoffMatches.filter(m => 
+          // ラウンド1のシード戦のみスキップ
           m.round === currentRound && !isSeededMatch(m)
         );
         if (sameRoundMatches.length === 0) break;

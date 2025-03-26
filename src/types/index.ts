@@ -159,6 +159,7 @@ export interface Match {
   blockId?: string; // リーグ戦のブロックID
   potentialParticipants?: string[]; // 潜在的な参加者（チームID）を追加
   certainty?: number; // 0-100で試合確度を表す (100%が確定)
+  previousMatches?: string[]; // 前の試合IDの配列を追加（準決勝→決勝など）
 }
 
 // カスタム形式のセル
