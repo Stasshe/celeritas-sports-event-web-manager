@@ -133,9 +133,12 @@ const HomePage: React.FC = () => {
           sx={{
             mt: 2,
             mb: 3,
-            px: 4,
+            px: { xs: 2, sm: 4 },  // スマホではパディングを小さく
             py: 1.5,
-            fontSize: '1.1rem',
+            fontSize: { xs: '1rem', sm: '1.1rem' },  // スマホではフォントサイズを小さく
+            width: { xs: '90%', sm: 'auto' },  // スマホでは幅を90%に
+            maxWidth: '400px',  // 最大幅を設定
+            mx: 'auto',  // 中央寄せ
             background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
             boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
             color: 'white',

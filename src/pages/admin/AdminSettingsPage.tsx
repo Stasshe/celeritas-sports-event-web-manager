@@ -153,59 +153,6 @@ const AdminSettingsPage: React.FC = () => {
           </Grid>
         </Grid>
       </Paper>
-      
-      <Paper sx={{ p: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          {t('settings.autoSave')}
-        </Typography>
-        <Divider sx={{ mb: 3 }} />
-        
-        <Grid container spacing={4} alignItems="center">
-          <Grid item xs={12} sm={6}>
-            <Typography variant="body1">
-              {t('settings.enableAutoSave')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('settings.autoSaveDescription')}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={isAutoSaveEnabled}
-                  onChange={handleAutoSaveChange}
-                />
-              }
-              label={t(isAutoSaveEnabled ? 'settings.enabled' : 'settings.disabled')}
-            />
-          </Grid>
-          
-          {isAutoSaveEnabled && (
-            <>
-              <Grid item xs={12}>
-                <Divider />
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Typography variant="body1">
-                  {t('settings.autoSaveInterval')}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  type="number"
-                  label={t('settings.seconds')}
-                  value={autoSaveInterval}
-                  onChange={handleIntervalChange}
-                  InputProps={{ inputProps: { min: 5, max: 300 } }}
-                  size="small"
-                />
-              </Grid>
-            </>
-          )}
-        </Grid>
-      </Paper>
     </Container>
   );
 };
