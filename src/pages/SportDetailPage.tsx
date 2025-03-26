@@ -25,7 +25,8 @@ import {
   GridView as GridViewIcon,
   ViewTimeline as TimelineIcon,
   Leaderboard as LeaderboardIcon,
-  CalendarMonth as CalendarIcon
+  CalendarToday as CalendarIcon,
+  ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../hooks/useDatabase';
@@ -123,41 +124,6 @@ const HomePage: React.FC = () => {
             {activeEvent.description}
           </Typography>
         )}
-
-        <Button
-          component={RouterLink}
-          to="/class-schedule"
-          variant="contained"
-          size="large"
-          startIcon={<CalendarIcon />}
-          sx={{
-            mt: 2,
-            mb: 3,
-            px: 4,
-            py: 1.5,
-            fontSize: '1.1rem',
-            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-            boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
-            color: 'white',
-            '&:hover': {
-              background: 'linear-gradient(45deg, #21CBF3 30%, #2196F3 90%)',
-              boxShadow: '0 4px 8px 3px rgba(33, 203, 243, .4)',
-              transform: 'translateY(-2px)',
-            },
-            transition: 'all 0.3s ease',
-            animation: 'glow 1.5s ease-in-out infinite alternate',
-            '@keyframes glow': {
-              '0%': {
-          boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
-              },
-              '100%': {
-          boxShadow: '0 3px 15px 2px rgba(33, 203, 243, .5)',
-              },
-            },
-          }}
-        >
-          {t('classSchedule.viewClassSchedule')}
-        </Button>
       </Box>
 
       {activeSports.length > 0 && (
@@ -199,6 +165,7 @@ const HomePage: React.FC = () => {
               />
             </Tabs>
           </Paper>
+
           {viewMode === 'grid' ? (
             <Grid container spacing={3}>
               {activeSports.map((sport, index) => (
@@ -240,37 +207,6 @@ const HomePage: React.FC = () => {
           )}
         </Box>
       )}
-
-      {/* クラススケジュールへの追加リンク - 下部にも表示 */}
-      <Paper 
-        sx={{ 
-          p: 3, 
-          mb: 4, 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' }, 
-          alignItems: 'center', 
-          justifyContent: 'space-between' 
-        }}
-      >
-        <Box sx={{ mb: { xs: 2, sm: 0 } }}>
-          <Typography variant="h6" gutterBottom>
-            {t('classSchedule.quickAccess')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('classSchedule.accessDescription')}
-          </Typography>
-        </Box>
-        <Button
-          component={RouterLink}
-          to="/class-schedule"
-          variant="contained"
-          color="secondary"
-          startIcon={<CalendarIcon />}
-          sx={{ minWidth: 200 }}
-        >
-          {t('classSchedule.viewSchedule')}
-        </Button>
-      </Paper>
 
       {activeSports.length === 0 && (
         <Box sx={{ textAlign: 'center', my: 8 }}>
