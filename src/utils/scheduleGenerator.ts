@@ -722,6 +722,9 @@ const generateLeagueScheduleWithCourts = (
     
     currentMinutes += stageBreakDuration;
     
+    // プレーオフの試合時間を取得
+    const playoffDuration = (settings as LeagueScheduleSettings).playoffDuration || settings.matchDuration;
+    
     // プレーオフの試合をラウンドごとにグループ化してからシャッフル
     const playoffRoundGroups: { [round: number]: Match[] } = {};
     let thirdPlaceMatch: Match | undefined;
@@ -781,8 +784,8 @@ const generateLeagueScheduleWithCourts = (
       let adjustedTime = false;
       
       while (
-        (overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
-        overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)) &&
+        (overlapsWithLunch(currentMinutes, currentMinutes + playoffDuration, settings.lunchBreak) ||
+        overlapsWithBreakTimes(currentMinutes, currentMinutes + playoffDuration, settings.breakTimes)) &&
         safetyCounter < 100 // 安全策として最大100回のループ制限
       ) {
         safetyCounter++;
@@ -791,7 +794,7 @@ const generateLeagueScheduleWithCourts = (
         // ランチ休憩との重複をチェック
         if (settings.lunchBreak && 
             currentMinutes < timeToMinutes(settings.lunchBreak.endTime) && 
-            currentMinutes + settings.matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
+            currentMinutes + playoffDuration > timeToMinutes(settings.lunchBreak.startTime)) {
           // ランチ休憩の終了時間にスキップ
           currentMinutes = timeToMinutes(settings.lunchBreak.endTime);
           adjustedTime = true;
@@ -805,7 +808,7 @@ const generateLeagueScheduleWithCourts = (
             const breakEndMinutes = timeToMinutes(breakTime.endTime);
             
             if (currentMinutes < breakEndMinutes && 
-                currentMinutes + settings.matchDuration > breakStartMinutes) {
+                currentMinutes + playoffDuration > breakStartMinutes) {
               // この休憩の終了時間にスキップ
               currentMinutes = breakEndMinutes;
               adjustedTime = true;
@@ -914,7 +917,7 @@ const generateLeagueScheduleWithCourts = (
         // タイムスロットを追加
         timeSlots.push({
           startTime: minutesToTime(currentMinutes),
-          endTime: minutesToTime(currentMinutes + settings.matchDuration),
+          endTime: minutesToTime(currentMinutes + playoffDuration),
           type: 'match',
           matchId: match.id,
           courtId: court as 'court1' | 'court2',
@@ -927,7 +930,7 @@ const generateLeagueScheduleWithCourts = (
       
       // 次の時間枠へ
       if (scheduledMatchesCount > 0) {
-        currentMinutes += settings.matchDuration + settings.breakDuration;
+        currentMinutes += playoffDuration + settings.breakDuration;
       } else {
         // もし試合がスケジュールできなかった場合、時間を少し進める
         currentMinutes += 5;
@@ -953,12 +956,12 @@ const generateLeagueScheduleWithCourts = (
         const availableCourts = ['court1', 'court2'];
         
         // 休憩とランチが被らないように調整
-        currentMinutes = adjustTimeForBreaks(currentMinutes, settings);
+        currentMinutes = adjustTimeForBreaksWithDuration(currentMinutes, settings, playoffDuration);
         
         // 決勝はcourt1、3位決定戦はcourt2に配置
         timeSlots.push({
           startTime: minutesToTime(currentMinutes),
-          endTime: minutesToTime(currentMinutes + settings.matchDuration),
+          endTime: minutesToTime(currentMinutes + playoffDuration),
           type: 'match',
           matchId: finalMatch.id,
           courtId: 'court1',
@@ -968,7 +971,7 @@ const generateLeagueScheduleWithCourts = (
         
         timeSlots.push({
           startTime: minutesToTime(currentMinutes),
-          endTime: minutesToTime(currentMinutes + settings.matchDuration),
+          endTime: minutesToTime(currentMinutes + playoffDuration),
           type: 'match',
           matchId: thirdPlaceMatch.id,
           courtId: 'court2',
@@ -976,17 +979,17 @@ const generateLeagueScheduleWithCourts = (
           matchDescription: getMatchDescription(thirdPlaceMatch, sport)
         });
         
-        currentMinutes += settings.matchDuration + settings.breakDuration;
+        currentMinutes += playoffDuration + settings.breakDuration;
         
       } else {
         // 1コートの場合: 3位決定戦の後に決勝戦を行う
         if (thirdPlaceMatch) {
           // 休憩とランチが被らないように調整
-          currentMinutes = adjustTimeForBreaks(currentMinutes, settings);
+          currentMinutes = adjustTimeForBreaksWithDuration(currentMinutes, settings, playoffDuration);
           
           timeSlots.push({
             startTime: minutesToTime(currentMinutes),
-            endTime: minutesToTime(currentMinutes + settings.matchDuration),
+            endTime: minutesToTime(currentMinutes + playoffDuration),
             type: 'match',
             matchId: thirdPlaceMatch.id,
             courtId: 'court1',
@@ -994,16 +997,16 @@ const generateLeagueScheduleWithCourts = (
             matchDescription: getMatchDescription(thirdPlaceMatch, sport)
           });
           
-          currentMinutes += settings.matchDuration + settings.breakDuration;
+          currentMinutes += playoffDuration + settings.breakDuration;
         }
         
         if (finalMatch) {
           // 休憩とランチが被らないように調整
-          currentMinutes = adjustTimeForBreaks(currentMinutes, settings);
+          currentMinutes = adjustTimeForBreaksWithDuration(currentMinutes, settings, playoffDuration);
           
           timeSlots.push({
             startTime: minutesToTime(currentMinutes),
-            endTime: minutesToTime(currentMinutes + settings.matchDuration),
+            endTime: minutesToTime(currentMinutes + playoffDuration),
             type: 'match',
             matchId: finalMatch.id,
             courtId: 'court1',
@@ -1011,7 +1014,7 @@ const generateLeagueScheduleWithCourts = (
             matchDescription: getMatchDescription(finalMatch, sport)
           });
           
-          currentMinutes += settings.matchDuration + settings.breakDuration;
+          currentMinutes += playoffDuration + settings.breakDuration;
         }
       }
     } else {
@@ -1035,13 +1038,18 @@ const generateLeagueScheduleWithCourts = (
 
 // 休憩時間と被らないように時間を調整するヘルパー関数を追加
 function adjustTimeForBreaks(currentMinutes: number, settings: ScheduleSettings): number {
+  return adjustTimeForBreaksWithDuration(currentMinutes, settings, settings.matchDuration);
+}
+
+// 指定された試合時間で休憩時間と被らないように時間を調整するヘルパー関数
+function adjustTimeForBreaksWithDuration(currentMinutes: number, settings: ScheduleSettings, matchDuration: number): number {
   let adjustedMinutes = currentMinutes;
   let safetyCounter = 0;
   let adjustedTime = false;
   
   while (
-    (overlapsWithLunch(adjustedMinutes, adjustedMinutes + settings.matchDuration, settings.lunchBreak) ||
-    overlapsWithBreakTimes(adjustedMinutes, adjustedMinutes + settings.matchDuration, settings.breakTimes)) &&
+    (overlapsWithLunch(adjustedMinutes, adjustedMinutes + matchDuration, settings.lunchBreak) ||
+    overlapsWithBreakTimes(adjustedMinutes, adjustedMinutes + matchDuration, settings.breakTimes)) &&
     safetyCounter < 100
   ) {
     safetyCounter++;
@@ -1050,7 +1058,7 @@ function adjustTimeForBreaks(currentMinutes: number, settings: ScheduleSettings)
     // ランチ休憩との重複をチェック
     if (settings.lunchBreak && 
         adjustedMinutes < timeToMinutes(settings.lunchBreak.endTime) && 
-        adjustedMinutes + settings.matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
+        adjustedMinutes + matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
       adjustedMinutes = timeToMinutes(settings.lunchBreak.endTime);
       adjustedTime = true;
       continue;
@@ -1063,7 +1071,7 @@ function adjustTimeForBreaks(currentMinutes: number, settings: ScheduleSettings)
         const breakEndMinutes = timeToMinutes(breakTime.endTime);
         
         if (adjustedMinutes < breakEndMinutes && 
-            adjustedMinutes + settings.matchDuration > breakStartMinutes) {
+            adjustedMinutes + matchDuration > breakStartMinutes) {
           adjustedMinutes = breakEndMinutes;
           adjustedTime = true;
           break;
