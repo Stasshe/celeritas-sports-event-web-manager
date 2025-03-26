@@ -195,7 +195,7 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                 <Box sx={{ p: 1 }}>
                   <Grid container spacing={1}>
                     {timeSlot.entries.map((entry, entryIndex) => (
-                      <Grid item xs={12} sm={6} md={4} key={`entry-${entryIndex}`}>
+                      <Grid item xs={12} sm={12} md={6} lg={4} key={`entry-${entryIndex}`}>
                         <Card 
                           variant={entry.status === 'potential' ? 'outlined' : 'elevation'} 
                           elevation={entry.status === 'potential' ? 0 : 1}
@@ -214,15 +214,23 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                           }}
                           onClick={() => navigate(`/sport/${entry.sportId}`)}
                         >
-                          <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                          <CardContent sx={{ p: { xs: 2, sm: 1.5 }, '&:last-child': { pb: { xs: 2, sm: 1.5 } } }}>
                             {/* ヘッダー行: スポーツ名と状態 */}
                             <Box sx={{ 
                               display: 'flex', 
                               justifyContent: 'space-between', 
                               alignItems: 'center', 
-                              mb: 0.5 
+                              mb: { xs: 1, sm: 0.5 }
                             }}>
-                              <Typography variant="body2" fontWeight="bold" noWrap sx={{ maxWidth: '70%' }}>
+                              <Typography 
+                                variant="body1" 
+                                fontWeight="bold" 
+                                noWrap 
+                                sx={{ 
+                                  maxWidth: '70%',
+                                  fontSize: { xs: '1rem', sm: '0.875rem' }
+                                }}
+                              >
                                 {entry.sportName}
                               </Typography>
                               
@@ -238,26 +246,32 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                                   size="small"
                                   color={entry.status === 'potential' ? "warning" : "success"}
                                   variant="outlined"
-                                  sx={{ height: 20, '& .MuiChip-label': { px: 0.5, fontSize: '0.7rem' } }}
+                                  sx={{ 
+                                    height: { xs: 24, sm: 20 }, 
+                                    '& .MuiChip-label': { 
+                                      px: 0.5, 
+                                      fontSize: { xs: '0.8rem', sm: '0.7rem' } 
+                                    } 
+                                  }}
                                 />
                               </Tooltip>
                             </Box>
-                            
+
                             {/* 確度バー（可能性の場合のみ） */}
                             {entry.status === 'potential' && entry.certainty !== undefined && (
                               <Box sx={{ 
                                 display: 'flex', 
                                 alignItems: 'center', 
-                                mb: 0.7,
+                                mb: { xs: 1.2, sm: 0.7 },
                                 gap: 0.5
                               }}>
-                                <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                                <Typography variant="caption" sx={{ fontSize: { xs: '0.8rem', sm: '0.7rem' } }}>
                                   {t('classSchedule.certainty')}:
                                 </Typography>
                                 <Box 
                                   sx={{ 
                                     flexGrow: 1, 
-                                    height: 4, 
+                                    height: { xs: 6, sm: 4 }, 
                                     bgcolor: alpha(theme.palette.warning.main, 0.2),
                                     borderRadius: 0.5
                                   }}
@@ -271,24 +285,28 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                                     }}
                                   />
                                 </Box>
-                                <Typography variant="caption" sx={{ fontSize: '0.7rem', minWidth: 24, textAlign: 'right' }}>
+                                <Typography variant="caption" sx={{ 
+                                  fontSize: { xs: '0.8rem', sm: '0.7rem' }, 
+                                  minWidth: 24, 
+                                  textAlign: 'right' 
+                                }}>
                                   {entry.certainty}%
                                 </Typography>
                               </Box>
                             )}
                             
-                            <Divider sx={{ my: 0.7 }} />
+                            <Divider sx={{ my: { xs: 1.2, sm: 0.7 } }} />
                             
-                            {/* 対戦情報 - 最も重要なのでスペースを確保 */}
+                            {/* 対戦情報 */}
                             <Box sx={{ 
                               display: 'flex', 
                               alignItems: 'center', 
                               justifyContent: 'space-between',
-                              gap: 1,
-                              mb: 0.7
+                              gap: { xs: 1.5, sm: 1 },
+                              mb: { xs: 1.2, sm: 0.7 }
                             }}>
                               <Typography 
-                                variant="body2" 
+                                variant="body1" 
                                 fontWeight="bold" 
                                 sx={{ 
                                   textAlign: 'right',
@@ -296,28 +314,36 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                                   color: selectedClasses.includes(entry.teams.team1Id) 
                                     ? theme.palette.primary.main 
                                     : 'inherit',
-                                  fontSize: '0.875rem'
+                                  fontSize: { xs: '1rem', sm: '0.875rem' }
                                 }}
                               >
                                 {entry.teams.team1Name}
                               </Typography>
-                              <Typography variant="caption" sx={{ flexShrink: 0 }}>vs</Typography>
                               <Typography 
-                                variant="body2" 
+                                variant="caption" 
+                                sx={{ 
+                                  flexShrink: 0,
+                                  fontSize: { xs: '0.9rem', sm: '0.8rem' }
+                                }}
+                              >
+                                vs
+                              </Typography>
+                              <Typography 
+                                variant="body1" 
                                 fontWeight="bold"
                                 sx={{ 
                                   flexBasis: '45%',
                                   color: selectedClasses.includes(entry.teams.team2Id) 
                                     ? theme.palette.primary.main 
                                     : 'inherit',
-                                  fontSize: '0.875rem'
+                                  fontSize: { xs: '1rem', sm: '0.875rem' }
                                 }}
                               >
                                 {entry.teams.team2Name}
                               </Typography>
                             </Box>
                             
-                            {/* 追加情報をコンパクトなインライン表示に */}
+                            {/* 追加情報 */}
                             <Stack 
                               direction="row" 
                               spacing={0.5} 
@@ -325,13 +351,13 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                               useFlexGap 
                               sx={{ 
                                 '& .MuiChip-root': { 
-                                  height: 20, 
+                                  height: { xs: 24, sm: 20 }, 
                                   '& .MuiChip-label': { 
                                     px: 0.5, 
-                                    fontSize: '0.7rem' 
+                                    fontSize: { xs: '0.8rem', sm: '0.7rem' }
                                   },
                                   '& .MuiChip-icon': {
-                                    fontSize: '0.75rem',
+                                    fontSize: { xs: '0.85rem', sm: '0.75rem' },
                                     ml: 0.3,
                                     mr: '-0.05rem'
                                   }
