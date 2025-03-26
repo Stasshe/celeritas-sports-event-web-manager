@@ -208,6 +208,24 @@ const isSeededMatch = (match: Match): boolean => {
   return false;
 }
 
+// 試合が3位決定戦かどうかをチェックする関数を修正
+const isThirdPlaceMatch = (match: Match): boolean => {
+  // matchNumberが0の場合、またはIDに"third_place"が含まれる場合、
+  // さらにIDに"playoff_third_place"が含まれる場合も3位決定戦とみなす
+  return match.matchNumber === 0 || 
+         (typeof match.id === 'string' && (
+            match.id.includes('third_place') || 
+            match.id.includes('3rd_place') ||
+            match.id.includes('playoff_third')
+         ));
+};
+
+// 試合が決勝戦かどうかをチェックする関数を追加
+const isFinalMatch = (match: Match, maxRound: number): boolean => {
+  // 最終ラウンドかつ3位決定戦ではない試合は決勝
+  return match.round === maxRound && !isThirdPlaceMatch(match);
+};
+
 // 同時進行に対応した新しいスケジュール生成関数
 export const generateSchedule = (sport: Sport, settings: ScheduleSettings): TimeSlot[] => {
   const timeSlots: TimeSlot[] = [];
@@ -488,8 +506,10 @@ const generateLeagueScheduleWithCourts = (
   const groupMatches = matches.filter(m => m.blockId !== undefined);
   const playoffMatches = matches.filter(m => m.blockId === undefined && m.round > 0);
   
-  // ラウンド1のシード戦のみ除外
-  const schedulablePlayoffMatches = playoffMatches.filter(match => !isSeededMatch(match));
+  // ラウンド1のシード戦のみ除外（3位決定戦は除外しない）
+  const schedulablePlayoffMatches = playoffMatches.filter(match => 
+    !isSeededMatch(match) || isThirdPlaceMatch(match)
+  );
   
   // 試合を各ブロックに分類
   const blockMatchesMap: { [blockId: string]: Match[] } = {};
@@ -704,17 +724,40 @@ const generateLeagueScheduleWithCourts = (
     
     // プレーオフの試合をラウンドごとにグループ化してからシャッフル
     const playoffRoundGroups: { [round: number]: Match[] } = {};
+    let thirdPlaceMatch: Match | undefined;
+    
+    // 3位決定戦と他の試合を分離
     schedulablePlayoffMatches.forEach(match => {
-      if (!playoffRoundGroups[match.round]) {
-        playoffRoundGroups[match.round] = [];
+      if (isThirdPlaceMatch(match)) {
+        console.log("Found third place match:", match);
+        thirdPlaceMatch = match;
+      } else {
+        if (!playoffRoundGroups[match.round]) {
+          playoffRoundGroups[match.round] = [];
+        }
+        playoffRoundGroups[match.round].push(match);
       }
-      playoffRoundGroups[match.round].push(match);
     });
+    
+    // 3位決定戦があるかログ出力
+    console.log("Third place match found:", !!thirdPlaceMatch);
     
     // 各ラウンドの試合をシャッフル
     Object.keys(playoffRoundGroups).forEach(round => {
       playoffRoundGroups[Number(round)] = shuffleArray(playoffRoundGroups[Number(round)]);
     });
+    
+    // 最大ラウンド（決勝ラウンド）を特定
+    const maxRound = Math.max(...Object.keys(playoffRoundGroups).map(Number));
+    
+    // 決勝戦を分離（コート数によって同時進行か連続かが決まるため）
+    let finalMatch: Match | undefined;
+    if (playoffRoundGroups[maxRound]) {
+      const finalIndex = playoffRoundGroups[maxRound].findIndex(m => isFinalMatch(m, maxRound));
+      if (finalIndex >= 0) {
+        finalMatch = playoffRoundGroups[maxRound].splice(finalIndex, 1)[0];
+      }
+    }
     
     // ラウンド順にソートしつつ、各ラウンド内はシャッフルされた状態で結合
     const sortedPlayoffMatches: Match[] = [];
@@ -895,8 +938,152 @@ const generateLeagueScheduleWithCourts = (
         throw new Error('時間内にすべての試合をスケジュールできません');
       }
     }
+    
+    // 3位決定戦と決勝戦のスケジューリング - 条件をチェック
+    console.log("Scheduling final matches:", { 
+      hasThirdPlace: !!thirdPlaceMatch, 
+      hasFinal: !!finalMatch,
+      timeLeft: currentMinutes < endMinutes 
+    });
+    
+    if ((thirdPlaceMatch || finalMatch) && currentMinutes < endMinutes) {
+      // コート数によって処理を分ける
+      if (courtCount === 2 && thirdPlaceMatch && finalMatch) {
+        // 2コートの場合: 3位決定戦と決勝戦を同時に行う
+        const availableCourts = ['court1', 'court2'];
+        
+        // 休憩とランチが被らないように調整
+        currentMinutes = adjustTimeForBreaks(currentMinutes, settings);
+        
+        // 決勝はcourt1、3位決定戦はcourt2に配置
+        timeSlots.push({
+          startTime: minutesToTime(currentMinutes),
+          endTime: minutesToTime(currentMinutes + settings.matchDuration),
+          type: 'match',
+          matchId: finalMatch.id,
+          courtId: 'court1',
+          description: `プレーオフ: 決勝`,
+          matchDescription: getMatchDescription(finalMatch, sport)
+        });
+        
+        timeSlots.push({
+          startTime: minutesToTime(currentMinutes),
+          endTime: minutesToTime(currentMinutes + settings.matchDuration),
+          type: 'match',
+          matchId: thirdPlaceMatch.id,
+          courtId: 'court2',
+          description: `プレーオフ: 3位決定戦`,
+          matchDescription: getMatchDescription(thirdPlaceMatch, sport)
+        });
+        
+        currentMinutes += settings.matchDuration + settings.breakDuration;
+        
+      } else {
+        // 1コートの場合: 3位決定戦の後に決勝戦を行う
+        if (thirdPlaceMatch) {
+          // 休憩とランチが被らないように調整
+          currentMinutes = adjustTimeForBreaks(currentMinutes, settings);
+          
+          timeSlots.push({
+            startTime: minutesToTime(currentMinutes),
+            endTime: minutesToTime(currentMinutes + settings.matchDuration),
+            type: 'match',
+            matchId: thirdPlaceMatch.id,
+            courtId: 'court1',
+            description: `プレーオフ: 3位決定戦`,
+            matchDescription: getMatchDescription(thirdPlaceMatch, sport)
+          });
+          
+          currentMinutes += settings.matchDuration + settings.breakDuration;
+        }
+        
+        if (finalMatch) {
+          // 休憩とランチが被らないように調整
+          currentMinutes = adjustTimeForBreaks(currentMinutes, settings);
+          
+          timeSlots.push({
+            startTime: minutesToTime(currentMinutes),
+            endTime: minutesToTime(currentMinutes + settings.matchDuration),
+            type: 'match',
+            matchId: finalMatch.id,
+            courtId: 'court1',
+            description: `プレーオフ: 決勝`,
+            matchDescription: getMatchDescription(finalMatch, sport)
+          });
+          
+          currentMinutes += settings.matchDuration + settings.breakDuration;
+        }
+      }
+    } else {
+      // 3位決定戦や決勝がなかったか、時間がなかった場合
+      console.log("Could not schedule final matches:", { 
+        hasThirdPlace: !!thirdPlaceMatch, 
+        hasFinal: !!finalMatch,
+        timeLeft: currentMinutes < endMinutes 
+      });
+    }
+    
+    // 終了時間チェック
+    if (currentMinutes > endMinutes) {
+      throw new Error('時間内にすべての試合をスケジュールできません');
+    }
   }
   
   // 時間順にソート
   return timeSlots.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 };
+
+// 休憩時間と被らないように時間を調整するヘルパー関数を追加
+function adjustTimeForBreaks(currentMinutes: number, settings: ScheduleSettings): number {
+  let adjustedMinutes = currentMinutes;
+  let safetyCounter = 0;
+  let adjustedTime = false;
+  
+  while (
+    (overlapsWithLunch(adjustedMinutes, adjustedMinutes + settings.matchDuration, settings.lunchBreak) ||
+    overlapsWithBreakTimes(adjustedMinutes, adjustedMinutes + settings.matchDuration, settings.breakTimes)) &&
+    safetyCounter < 100
+  ) {
+    safetyCounter++;
+    adjustedTime = false;
+    
+    // ランチ休憩との重複をチェック
+    if (settings.lunchBreak && 
+        adjustedMinutes < timeToMinutes(settings.lunchBreak.endTime) && 
+        adjustedMinutes + settings.matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
+      adjustedMinutes = timeToMinutes(settings.lunchBreak.endTime);
+      adjustedTime = true;
+      continue;
+    }
+    
+    // 他の休憩時間との重複をチェック
+    if (settings.breakTimes) {
+      for (const breakTime of settings.breakTimes) {
+        const breakStartMinutes = timeToMinutes(breakTime.startTime);
+        const breakEndMinutes = timeToMinutes(breakTime.endTime);
+        
+        if (adjustedMinutes < breakEndMinutes && 
+            adjustedMinutes + settings.matchDuration > breakStartMinutes) {
+          adjustedMinutes = breakEndMinutes;
+          adjustedTime = true;
+          break;
+        }
+      }
+      
+      if (adjustedTime) continue;
+    }
+    
+    // どの休憩時間にも該当しないが、まだ重複が解消されていない場合
+    if (!adjustedTime) {
+      adjustedMinutes += 5;
+      adjustedTime = true;
+    }
+  }
+  
+  // 無限ループ対策
+  if (safetyCounter >= 100) {
+    throw new Error('休憩時間の調整中に問題が発生しました。休憩時間の設定を見直してください。');
+  }
+  
+  return adjustedMinutes;
+}
