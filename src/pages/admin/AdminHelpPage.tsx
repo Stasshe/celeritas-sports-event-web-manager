@@ -68,7 +68,7 @@ const AdminHelpPage: React.FC = () => {
                 <ListItemText primary={t('adminHelp.scoring')} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel5')}>
-                <ListItemText primary={t('adminHelp.customFormat')} />
+                <ListItemText primary={t('adminHelp.exportFeature')} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel6')}>
                 <ListItemText primary={t('adminHelp.faq')} />
@@ -103,7 +103,7 @@ const AdminHelpPage: React.FC = () => {
                     <li>イベントを作成する（例：「2024年度体育祭」）</li>
                     <li>イベント内に複数の競技を追加する（例：「サッカー」「バスケットボール」）</li>
                     <li>各競技にチームを登録する</li>
-                    <li>競技形式（トーナメント・総当たり・カスタム）を選択する</li>
+                    <li>競技形式（トーナメント・総当たり・リーグ・ランキング）を選択する</li>
                     <li>試合スケジュールを設定する</li>
                     <li>イベント当日は、試合結果をリアルタイムで更新する</li>
                   </ol>
@@ -219,7 +219,8 @@ const AdminHelpPage: React.FC = () => {
                   <Typography variant="body2">
                     <strong>トーナメント形式：</strong> 勝ち抜き方式。敗者は脱落し、最終的に1つの優勝チームを決定します。<br />
                     <strong>総当たり形式：</strong> 全チームが互いに対戦し、勝ち点の合計で順位を決定します。<br />
-                    <strong>カスタム形式：</strong> 表形式で自由にデータを配置できます。特殊なルールや表示が必要な場合に使用します。
+                    <strong>リーグ形式：</strong> グループ分けと予選・決勝ラウンドを組み合わせた形式です。<br />
+                    <strong>ランキング形式：</strong> 個別得点や記録によりランキングを作成する形式です。陸上競技などに適しています。
                   </Typography>
                 </Box>
                 
@@ -292,58 +293,31 @@ const AdminHelpPage: React.FC = () => {
               onChange={handleAccordionChange('panel5')}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">{t('adminHelp.customFormat')}</Typography>
+                <Typography variant="h6">{t('adminHelp.exportFeature')}</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Typography paragraph>
-                  カスタム形式は、標準的なトーナメントや総当たり形式では表現できない競技形式に対応するためのものです。表形式で自由にデータを配置することができます。
+                  エクスポート機能では、イベントや競技のデータをCSV形式でエクスポートすることができます。これにより、データのバックアップや外部システムとの連携が容易になります。
                 </Typography>
 
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                    カスタムフォーマットの作成：
+                    エクスポートの手順：
                   </Typography>
                   <ol>
-                    <li>「競技管理」から新規競技を作成する際に「カスタム形式」を選択</li>
-                    <li>競技詳細画面で「レイアウト編集」ボタンをクリック</li>
-                    <li>表の行数と列数を設定</li>
-                    <li>各セルをクリックして内容とタイプを編集</li>
+                    <li>「エクスポート」タブを選択</li>
+                    <li>エクスポートしたいイベントや競技を選択</li>
+                    <li>「エクスポート」ボタンをクリック</li>
+                    <li>CSVファイルがダウンロードされます</li>
                   </ol>
-                </Box>
-
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                    セルタイプの説明：
-                  </Typography>
-                  <ul>
-                    <li><strong>ヘッダー：</strong> タイトルや見出し用（色：青）</li>
-                    <li><strong>データ：</strong> 通常のテキストデータ用</li>
-                    <li><strong>スコア：</strong> 点数や得点用（色：紫）</li>
-                    <li><strong>結果：</strong> 勝敗や順位などの結果用（色：緑）</li>
-                  </ul>
-                </Box>
-
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                    高度な設定：
-                  </Typography>
-                  <Typography paragraph>
-                    各セルには以下の設定も可能です：
-                  </Typography>
-                  <ul>
-                    <li>セルの結合（横方向・縦方向）</li>
-                    <li>テキストの配置（左・中央・右）</li>
-                    <li>フォントスタイル（太字・斜体）</li>
-                    <li>背景色の変更</li>
-                  </ul>
                 </Box>
 
                 <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: 1 }}>
                   <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                    使用例
+                    注意点
                   </Typography>
                   <Typography variant="body2">
-                    リレー競技の各チームのタイム記録表示、複雑なグループステージ+決勝トーナメント形式のハイブリッド表示、採点競技での点数表など、標準形式では表現できない競技結果の表示に最適です。
+                    エクスポートされたデータはCSV形式で保存されます。エクスポート前にデータが正確であることを確認してください。
                   </Typography>
                 </Box>
               </AccordionDetails>
@@ -363,7 +337,7 @@ const AdminHelpPage: React.FC = () => {
 
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" fontWeight="bold">
-                    Q: 一度作成した競技の形式（トーナメント・総当たり・カスタム）を変更できますか？
+                    Q: 一度作成した競技の形式（トーナメント・総当たり・リーグ・ランキング）を変更できますか？
                   </Typography>
                   <Typography paragraph>
                     A: いいえ、競技形式は作成時に決定され、後から変更することはできません。形式を変更したい場合は、新しい競技を作成する必要があります。

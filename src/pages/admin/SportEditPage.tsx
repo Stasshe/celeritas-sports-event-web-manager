@@ -1127,7 +1127,7 @@ const SportEditPage: React.FC = () => {
         </TabPanel>
 
         {/* 設定タブ */}
-        <TabPanel value={activeTab} index={6}>
+        <TabPanel value={activeTab} index={5}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               {t('sport.tabs.settings')}
