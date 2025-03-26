@@ -19,7 +19,12 @@ import {
   IconButton,
   Chip,
   ToggleButtonGroup,
-  ToggleButton
+  ToggleButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -88,6 +93,8 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
 
   // スケジュール生成のエラー
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
   // 入力変更のハンドラ
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,6 +255,26 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       scheduleSettings: safeSettings
     };
     onUpdate(updatedSport);
+  };
+
+  // ダイアログを開く
+  const handleGenerateClick = () => {
+    if (timeSlots.length > 0) {
+      setOpenConfirmDialog(true);
+    } else {
+      handleGenerateSchedule();
+    }
+  };
+
+  // ダイアログを閉じる
+  const handleCloseDialog = () => {
+    setOpenConfirmDialog(false);
+  };
+
+  // スケジュールの生成を確定
+  const handleConfirmGenerate = () => {
+    setOpenConfirmDialog(false);
+    handleGenerateSchedule();
   };
 
   // スポーツタイプに応じた入力フォーム
@@ -560,7 +587,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             <Button
               variant="contained"
               color="primary"
-              onClick={handleGenerateSchedule}
+              onClick={handleGenerateClick}
               startIcon={<ScheduleIcon />}
             >
               {t('schedule.generateSchedule')}
@@ -582,6 +609,27 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             </Alert>
           )}
         </Grid>
+        
+        {/* 確認ダイアログ */}
+        <Dialog
+          open={openConfirmDialog}
+          onClose={handleCloseDialog}
+        >
+          <DialogTitle>{t('schedule.confirmRegenerate')}</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              本当にスケジュールを再生成しますか？試合の順番はシャッフルされます。
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={handleConfirmGenerate} color="primary">
+              {t('common.confirm')}
+            </Button>
+          </DialogActions>
+        </Dialog>
         
         {/* スケジュール表示 */}
         <Grid item xs={12}>

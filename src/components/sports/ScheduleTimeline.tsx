@@ -229,7 +229,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
                                 fontWeight="bold"
                                 sx={{ flexGrow: 1, textAlign: 'right' }}
                               >
-                                {getTeamName(match.team1Id)}
+                                {getTeamName(match.team1Id.slice(-3))}
                               </Typography>
                               
                               <Avatar sx={{ 
@@ -246,7 +246,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
                                 fontWeight="bold"
                                 sx={{ flexGrow: 1 }}
                               >
-                                {getTeamName(match.team2Id)}
+                                {getTeamName(match.team2Id.slice(-3))}
                               </Typography>
                             </Box>
                             

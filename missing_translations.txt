@@ -1,99 +1,30 @@
-Overall Winners
 admin.deleteConfirmation, { name: itemName }
 admin.lastSaved, { time: lastSaved.toLocaleTimeString(
 admin.sportCount, { count: getSportCountByEvent(activeEvent.id
 admin.sportsCount, { count: eventSports.length }
-classSchedule.accessDescription
-classSchedule.quickAccess
-classSchedule.viewClassSchedule
-classSchedule.viewSchedule
+adminHelp.leagueFormat
+adminHelp.scheduling
 classes
 classes, classes.join(,
 classes, selectedClasses.join(,
 clear-all
-actions
-generate
-home
-larger
-none
-print
-refresh
-saveSettings
-share
-smaller
-event.classCount
-event.classTemplateDescription
-event.classTemplateError
-event.classTemplateGenerated
-event.classTemplateWarning
-event.dangerZone
-event.dataValidationError
-event.deleteEvent
-event.deleteEventWarning
-event.generateClassTemplate
-event.gradeParticipation
-event.manageClasses
-event.noClassesYet
-event.tabs.roster
-event.tabs.scoreboard
-event.tabs.settings
-export.allEvents
-export.contentOptions
-export.customFileName
-export.errorMessage
-export.exportInstructions
-export.exportOptions
-export.exportScope
-export.fileNameHelp
-export.includeIndividualEvents
-export.includeOverallWinners
-export.instructions
-export.noDataError
-export.noEvents
-export.noSports
-export.pageTitle
-export.selectAll
-export.selectEvents
-export.selectSports
-export.selectedEvents
-export.selectedSports
-export.successMessage
-export.title
 league.confirmRemoveBlocks, { 
 league.maxBlocks, { max: Math.max(1, Math.floor(teams.length / 2
 league.usingRosterTeams, { count: teams.length }
 match.number, { number: match.matchNumber }
 ranking.mobileHelp, ドラッグアイコンを長押ししてから上下に動かすことでランキングの順位を変更できます
-roster.eventRosterAlert
 roster.memberCount, { count: getMembersCount(className
-roster.syncFromEvent
-roundRobin.clickMatchToAddScore
-schedule.currentScale
-schedule.currentTime
-schedule.details
-schedule.reset
-schedule.resetScale
-schedule.timelineHint
-schedule.timelineScale
-schedule.type
-schedule.undetermined
-schedule.unknownTeam
-schedule.viewDetails
 scoring.title, { name: localSport.name }
 select-all
-sport.coverImage
 sport.deleteTeamWarning, { name: selectedTeam?.name }
-sport.displaySettings
 sport.memberCount, { count: team.members.length }
-sport.preview
-sport.scoreManagement
-sport.teamMembers
-sport.type
 tournament.round, { 
 tournament.round, { round: `${match.round}-${match.matchNumber}` }
 tournament.round, { round: match.tournamentRoundText }
 tournament.teamsSelected, { count: selectedTeams.length }
+web-vitals
+2, 0
 `classSchedule.${entry.status === potential ? potential : confirmed}`
-isAutoSaveEnabled ? settings.enabled : settings.disabled
-t(copiedToClipboard
+mode === dark ? settings.enabled : settings.disabled
+t(common.copiedToClipboard
 t(tournament.errorGenerating

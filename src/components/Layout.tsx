@@ -73,10 +73,8 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
         backgroundColor: theme.palette.background.paper
       }}>
         <Container maxWidth="sm">
-          {/* overflow hiddenにしたらフッターが消えた。でも見やすくなったから結果オーライ */}
-          {/* うそ。スマホで見にくいわ。改善せないかん。*/}
           <Typography variant="body2" color="text.secondary" align="center">
-            {`© ${new Date().getFullYear()} ${t('common.appName')} created by Roughfts`}
+            {`© Roughfts 2025 all rights reserved.`}
           </Typography>
         </Container>
       </Box>

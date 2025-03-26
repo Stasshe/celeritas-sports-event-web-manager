@@ -140,7 +140,8 @@
   "sports": {
     "tournament": "トーナメント",
     "roundRobin": "総当たり戦",
-    "custom": "カスタム形式",
+    "league": "リーグ形式",
+    "ranking": "ランキング形式",
     "noSports": "競技がありません",
     "selectSport": "競技を選択",
     "sportDetails": "競技詳細",
@@ -593,6 +594,8 @@
     "gettingStarted": "はじめに",
     "eventManagement": "イベント管理",
     "sportManagement": "競技管理",
+    "leagueFormat": "リーグ形式",
+    "scheduling": "スケジューリング",
     "scoring": "スコアリング",
     "customFormat": "カスタム形式",
     "faq": "よくある質問"
