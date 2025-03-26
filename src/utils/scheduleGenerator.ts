@@ -710,14 +710,14 @@ const generateLeagueScheduleWithCourts = (
   // プレーオフがある場合は追加
   if (playoffMatches.length > 0) {
     // ステージ間の休憩を追加
-    const stageBreakDuration = 15; // 15分の休憩
+    const stageBreakDuration = 10; // 10分の休憩
     
     timeSlots.push({
       startTime: minutesToTime(currentMinutes),
       endTime: minutesToTime(currentMinutes + stageBreakDuration),
       title: 'ステージ間休憩',
       type: 'break',
-      description: 'グループステージとプレーオフの間の休憩'
+      description: 'グループステージとプレーオフの間の予備時間'
     });
     
     currentMinutes += stageBreakDuration;

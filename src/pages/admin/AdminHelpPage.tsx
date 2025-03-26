@@ -179,7 +179,7 @@ const AdminHelpPage: React.FC = () => {
               </AccordionSummary>
               <AccordionDetails>
                 <Typography paragraph>
-                  競技管理では、各イベント内の個別競技の設定やチーム管理を行います。競技ごとに形式（トーナメント・総当たり・カスタム）を選択できます。
+                  競技管理では、各イベント内の個別競技の設定やチーム管理を行います。競技ごとに形式（トーナメント・総当たり・リーグ・ランキング）を選択できます。
                 </Typography>
 
                 <Box sx={{ mb: 3 }}>
@@ -191,7 +191,7 @@ const AdminHelpPage: React.FC = () => {
                     <li>「新規競技作成」ボタンをクリック</li>
                     <li>競技名、説明を入力</li>
                     <li>競技が属するイベントを選択</li>
-                    <li>競技形式（トーナメント・総当たり・カスタム）を選択</li>
+                    <li>競技形式（トーナメント・総当たり・リーグ・ランキング）を選択</li>
                     <li>「作成」ボタンをクリック</li>
                   </ol>
                 </Box>
@@ -219,8 +219,8 @@ const AdminHelpPage: React.FC = () => {
                   <Typography variant="body2">
                     <strong>トーナメント形式：</strong> 勝ち抜き方式。敗者は脱落し、最終的に1つの優勝チームを決定します。<br />
                     <strong>総当たり形式：</strong> 全チームが互いに対戦し、勝ち点の合計で順位を決定します。<br />
-                    <strong>リーグ形式：</strong> グループ分けと予選・決勝ラウンドを組み合わせた形式です。<br />
-                    <strong>ランキング形式：</strong> 個別得点や記録によりランキングを作成する形式です。陸上競技などに適しています。
+                    <strong>リーグ形式：</strong> 主にこれ。グループ分けと予選・決勝ラウンドを組み合わせた形式です。<br />
+                    <strong>ランキング形式：</strong> リレーなど。個別得点や記録によりランキングを作成する形式です。陸上競技などに適しています。
                   </Typography>
                 </Box>
                 
@@ -268,15 +268,7 @@ const AdminHelpPage: React.FC = () => {
                   </ol>
                 </Box>
 
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                    カスタム形式のスコアリング：
-                  </Typography>
-                  <Typography>
-                    カスタム形式では、表内の各セルを直接編集することができます。セルをクリックして内容を入力し、セルタイプ（ヘッダー・データ・スコア・結果）を選択できます。
-                  </Typography>
-                </Box>
-
+                
                 <Box sx={{ bgcolor: theme.palette.info.light, color: theme.palette.info.contrastText, p: 2, borderRadius: 1 }}>
                   <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                     自動保存について
@@ -308,7 +300,7 @@ const AdminHelpPage: React.FC = () => {
                     <li>「エクスポート」タブを選択</li>
                     <li>エクスポートしたいイベントや競技を選択</li>
                     <li>「エクスポート」ボタンをクリック</li>
-                    <li>CSVファイルがダウンロードされます</li>
+                    <li>Excelファイルがダウンロードされます</li>
                   </ol>
                 </Box>
 
@@ -317,7 +309,7 @@ const AdminHelpPage: React.FC = () => {
                     注意点
                   </Typography>
                   <Typography variant="body2">
-                    エクスポートされたデータはCSV形式で保存されます。エクスポート前にデータが正確であることを確認してください。
+                    エクスポートされたデータはExcel形式で保存されます。エクスポート前にデータが正確であることを確認してください。また、この機能はベータ版であり、不完全なので先生に提出する前に必ず照らし合わせて確認してください。
                   </Typography>
                 </Box>
               </AccordionDetails>

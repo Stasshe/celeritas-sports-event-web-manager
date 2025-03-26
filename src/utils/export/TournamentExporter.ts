@@ -50,7 +50,7 @@ export const exportTournament = async (
     const rounds = Object.keys(matchesByRound).map(Number).sort((a, b) => a - b);
     
     // シンプルなトーナメント構造の場合はビジュアル表現を使用
-    if (rounds.length <= 4 && !sport.tournamentSettings?.hasRepechage) {
+    if (rounds.length <= 5 && !sport.tournamentSettings?.hasRepechage) {
       await createImprovedVisualBracket(sheet, sport, matchesByRound, rounds);
     } else {
       // より複雑な場合はテーブル形式にフォールバック

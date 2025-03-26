@@ -63,9 +63,9 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   // リーグ戦用のデフォルト拡張設定
   const defaultLeagueSettings: LeagueScheduleSettings = {
     ...defaultSettings,
-    groupStageDuration: 15,
-    playoffDuration: 20,
-    breakBetweenStages: 30
+    groupStageDuration: 10,
+    playoffDuration: 10,
+    breakBetweenStages: 5
   };
 
   // スケジュール設定のローカルステート
@@ -259,36 +259,12 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
           <Grid item xs={12} sm={4}>
             <TextField
               fullWidth
-              label={t('schedule.groupStageDuration')}
-              name="groupStageDuration"
-              type="number"
-              value={leagueSettings.groupStageDuration}
-              onChange={handleInputChange}
-              InputProps={{ inputProps: { min: 5 } }}
-              margin="normal"
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
               label={t('schedule.playoffDuration')}
               name="playoffDuration"
               type="number"
               value={leagueSettings.playoffDuration}
               onChange={handleInputChange}
               InputProps={{ inputProps: { min: 5 } }}
-              margin="normal"
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label={t('schedule.breakBetweenStages')}
-              name="breakBetweenStages"
-              type="number"
-              value={leagueSettings.breakBetweenStages}
-              onChange={handleInputChange}
-              InputProps={{ inputProps: { min: 0 } }}
               margin="normal"
             />
           </Grid>
