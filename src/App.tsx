@@ -19,6 +19,7 @@ import ExportPage from './pages/admin/ExportPage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ScoreboardDetailsPage from './pages/ScoreboardDetailsPage';
+import ClassSchedulePage from './pages/ClassSchedulePage'; // 追加: クラススケジュールページ
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -37,6 +38,7 @@ function App() {
               <Route path="/sport/:sportId" element={<Layout><SportPage /></Layout>} />
               <Route path="/login" element={<Layout><LoginPage /></Layout>} />
               <Route path="/scoreboard/:eventId" element={<Layout><ScoreboardDetailsPage /></Layout>} />
+              <Route path="/class-schedule" element={<Layout><ClassSchedulePage /></Layout>} /> {/* 追加: クラススケジュールルート */}
               
               {/* 管理者用ルートの修正 */}
               <Route path="/admin/*" element={

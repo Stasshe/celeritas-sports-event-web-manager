@@ -153,10 +153,12 @@ export interface Match {
   date?: string;
   
   location?: string;
-  status: "scheduled" | "inProgress" | "completed"; // リテラル型を使用
+  status: "scheduled" | "inProgress" | "completed" | "potential"; // potential を追加
   notes?: string;
   group?: string; 
   blockId?: string; // リーグ戦のブロックID
+  potentialParticipants?: string[]; // 潜在的な参加者（チームID）を追加
+  certainty?: number; // 0-100で試合確度を表す (100%が確定)
 }
 
 // カスタム形式のセル
@@ -239,4 +241,25 @@ export interface OverallScoreEntry {
   totalPoints: number;
   rank: number;
   sportPoints: Record<string, number>; // 競技ID：獲得ポイント
+}
+
+// 新しく追加するクラススケジュール用の型
+export interface ClassScheduleEntry {
+  sportId: string;
+  sportName: string;
+  matchId: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  teams: {
+    team1Id: string;
+    team1Name: string;
+    team2Id: string;
+    team2Name: string;
+  };
+  status: "scheduled" | "inProgress" | "completed" | "potential";
+  certainty?: number;
+  courtId?: 'court1' | 'court2';
+  courtName?: string;
+  date?: string;
 }

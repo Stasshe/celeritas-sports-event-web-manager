@@ -1,0 +1,30 @@
+{
+  "classSchedule": {
+    "title": "クラス別スケジュール",
+    "selectClasses": "クラスを選択",
+    "selectClassesHint": "表示したいクラスを選択してください",
+    "selectAll": "すべて選択",
+    "clearAll": "選択解除",
+    "allGrades": "全学年",
+    "grade": "学年",
+    "noClassesInGrade": "この学年にクラスがありません",
+    "selectedClasses": "選択中のクラス",
+    "noSchedule": "スケジュールが見つかりません",
+    "noMatchingSchedule": "該当するスケジュールが見つかりません",
+    "trySelectingDifferentClasses": "他のクラスを選択してみてください",
+    "undefinedDate": "日付未定",
+    "selectClassesToView": "表示するクラスを選択してください",
+    "classSelectionHint": "上記のクラス選択から、表示したいクラスを選んでください",
+    "notes": "注意事項",
+    "scheduleMayChange": "スケジュールは変更される場合があります。最新情報をご確認ください。",
+    "potentialMatchExplanation": "※「可能性」と表示されている試合は、組み合わせによって出場する可能性のある試合です。",
+    "potential": "可能性",
+    "confirmed": "確定",
+    "potentialMatch": "出場の可能性がある試合",
+    "confirmedMatch": "出場が確定している試合",
+    "certainty": "確率",
+    "shareTitle": "クラス別スケジュール",
+    "shareText": "クラス別スケジュールを確認してください",
+    "noActiveEvent": "現在アクティブな行事がありません"
+  }
+}
