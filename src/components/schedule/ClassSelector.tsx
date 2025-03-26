@@ -226,7 +226,7 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({
             return (
               <Chip 
                 key={classId}
-                label={`${grade}${classId}`}
+                label={`${classId}`}
                 color={isSelected ? "primary" : "default"}
                 onClick={() => handleClassToggle(classId)}
                 variant={isSelected ? "filled" : "outlined"}

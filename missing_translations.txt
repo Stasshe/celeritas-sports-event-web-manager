@@ -1,120 +1,99 @@
-admin.changesSaved
-admin.create
+Overall Winners
 admin.deleteConfirmation, { name: itemName }
-admin.deleteConfirmationDetails
 admin.lastSaved, { time: lastSaved.toLocaleTimeString(
-admin.noEvents
 admin.sportCount, { count: getSportCountByEvent(activeEvent.id
 admin.sportsCount, { count: eventSports.length }
-common.back
-common.savedError
-common.savedSuccess
-custom.noData
-event.backToSportsManagement
-event.create
-event.date
-event.description
-event.details
-event.edit
-event.name
-event.noOrganizers
-event.notFound
-event.organizers
-event.setAsActive
-home.gridView
-home.timelineView
+classSchedule.accessDescription
+classSchedule.quickAccess
+classSchedule.viewClassSchedule
+classSchedule.viewSchedule
+classes
+classes, classes.join(,
+classes, selectedClasses.join(,
+clear-all
+actions
+generate
+home
+larger
+none
+print
+refresh
+saveSettings
+share
+smaller
+event.classCount
+event.classTemplateDescription
+event.classTemplateError
+event.classTemplateGenerated
+event.classTemplateWarning
+event.dangerZone
+event.dataValidationError
+event.deleteEvent
+event.deleteEventWarning
+event.generateClassTemplate
+event.gradeParticipation
+event.manageClasses
+event.noClassesYet
+event.tabs.roster
+event.tabs.scoreboard
+event.tabs.settings
+export.allEvents
+export.contentOptions
+export.customFileName
+export.errorMessage
+export.exportInstructions
+export.exportOptions
+export.exportScope
+export.fileNameHelp
+export.includeIndividualEvents
+export.includeOverallWinners
+export.instructions
+export.noDataError
+export.noEvents
+export.noSports
+export.pageTitle
+export.selectAll
+export.selectEvents
+export.selectSports
+export.selectedEvents
+export.selectedSports
+export.successMessage
+export.title
+league.confirmRemoveBlocks, { 
 league.maxBlocks, { max: Math.max(1, Math.floor(teams.length / 2
 league.usingRosterTeams, { count: teams.length }
-login.email
-login.fillAllFields
-login.invalidCredentials
-login.password
-login.unknownError
-login.userNotFound
-login.wrongPassword
-match.date
-match.edit
-match.notes
 match.number, { number: match.matchNumber }
-match.score
-match.team1
-match.team2
-ranking.ascendingDescription
-ranking.descendingDescription
 ranking.mobileHelp, ドラッグアイコンを長押ししてから上下に動かすことでランキングの順位を変更できます
-roster.editClass
+roster.eventRosterAlert
 roster.memberCount, { count: getMembersCount(className
-roundRobin.addScore
-roundRobin.considerLosePoints
-roundRobin.drawPoints
-roundRobin.losePoints
-roundRobin.matchDetails
-roundRobin.matchTable
-roundRobin.notPlayed
-roundRobin.notes
-roundRobin.status
-roundRobin.winPoints
-schedule.activities
-schedule.break
-schedule.breakCount
-schedule.cleanup
-schedule.clickToExpand
-schedule.court
-schedule.court1
-schedule.court1Name
-schedule.court2
-schedule.court2Name
-schedule.courtCount
-schedule.courtInfo
-schedule.courtSettings
-schedule.courts
-schedule.eventSchedule
-schedule.firstMatch
-schedule.hasSimultaneousMatches
-schedule.lastMatch
-schedule.location
-schedule.lunch
-schedule.match
-schedule.matchCount
-schedule.matchTimeRange
-schedule.noMatchesWarning
-schedule.noSportsWithSchedule
-schedule.noTimeSlots
-schedule.overview
-schedule.preparation
-schedule.rankingInfo
-schedule.rankingScheduleInfo
-schedule.time
+roster.syncFromEvent
+roundRobin.clickMatchToAddScore
+schedule.currentScale
+schedule.currentTime
+schedule.details
+schedule.reset
+schedule.resetScale
+schedule.timelineHint
+schedule.timelineScale
+schedule.type
+schedule.undetermined
 schedule.unknownTeam
 schedule.viewDetails
 scoring.title, { name: localSport.name }
-settings.enableAutoSave
-sport.addMember
-sport.create
+select-all
+sport.coverImage
 sport.deleteTeamWarning, { name: selectedTeam?.name }
-sport.edit
-sport.league
-sport.leagueDescription
+sport.displaySettings
 sport.memberCount, { count: team.members.length }
-sport.noMembers
-sport.noTeams
-sport.ranking
-sport.rankingDescription
-sport.roleTeacher
-sport.tabs.matches
-sport.tabs.schedule
+sport.preview
+sport.scoreManagement
 sport.teamMembers
 sport.type
-sports.notFound
-tournament.final
-tournament.hasRepechage
-tournament.hasThirdPlaceMatch
-tournament.noRoster
 tournament.round, { 
 tournament.round, { round: `${match.round}-${match.matchNumber}` }
 tournament.round, { round: match.tournamentRoundText }
-web-vitals
-2, 0
+tournament.teamsSelected, { count: selectedTeams.length }
+`classSchedule.${entry.status === potential ? potential : confirmed}`
 isAutoSaveEnabled ? settings.enabled : settings.disabled
-mode === dark ? settings.enabled : settings.disabled
+t(copiedToClipboard
 t(tournament.errorGenerating

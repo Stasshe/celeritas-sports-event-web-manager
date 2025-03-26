@@ -168,7 +168,7 @@ const ClassSchedulePage: React.FC = () => {
       if (navigator.share) {
         await navigator.share({
           title: t('classSchedule.shareTitle'),
-          text: t('classSchedule.shareText'),
+          text: url.toString(),
           url: url.toString()
         });
       } else {
