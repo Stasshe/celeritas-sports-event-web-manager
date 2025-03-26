@@ -33,14 +33,15 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
               component="div" 
               sx={{ 
                 flexGrow: 1,
+                fontFamily: "'Racing Sans One', sans-serif",
                 cursor: 'pointer',
-                fontFamily: "'Ribeye', sans-serif",
-                fontWeight: 400
-              }} 
+                fontWeight: 400,
+                fontSize: 40
+              }}
               onClick={() => navigate('/')}
               className="site-title"
             >
-              Celeritas
+              CELERITAS
             </Typography>
             
             <IconButton 
