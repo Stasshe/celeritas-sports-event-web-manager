@@ -243,7 +243,7 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
         processUpdateQueue();
       }
     }
-  }, [path]);
+  }, []);
 
   const updateData = useCallback(async (updates: Partial<T>, options: UpdateOptions = {}): Promise<boolean> => {
     if (!navigator.onLine) {
@@ -273,7 +273,7 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
       console.error('Update error:', error);
       return false;
     }
-  }, [database, path]);
+  }, [path]);
 
   // フィールド変更の追跡
   const trackFieldChange = useCallback((fieldName: string) => {

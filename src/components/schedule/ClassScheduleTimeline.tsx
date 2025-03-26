@@ -143,12 +143,12 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
     <Box>
       {/* 日付ごとのセクション */}
       {groupedEntries.map((dateGroup, dateIndex) => (
-        <Box key={`date-${dateIndex}`} sx={{ mb: 4 }}>
+        <Box key={`date-${dateIndex}`} sx={{ mb: 3 }}>
           {/* 日付ヘッダー */}
           <Paper 
             elevation={2} 
             sx={{ 
-              p: 1.5, 
+              p: 1, 
               mb: 2, 
               display: 'flex',
               alignItems: 'center',
@@ -156,27 +156,28 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
               color: theme.palette.primary.contrastText
             }}
           >
-            <DateIcon sx={{ mr: 1 }} />
-            <Typography variant="h6">
+            <DateIcon sx={{ mr: 0.5 }} fontSize="small" />
+            <Typography variant="subtitle1">
               {dateGroup.formattedDate}
             </Typography>
           </Paper>
           
           {/* 時間ごとのグループ */}
-          <Stack spacing={2}>
+          <Stack spacing={1.5}>
             {dateGroup.timeSlots.map((timeSlot, timeIndex) => (
               <Paper
                 key={`time-${timeIndex}`}
                 elevation={1}
                 sx={{ 
                   overflow: 'hidden',
-                  borderRadius: 2
+                  borderRadius: 1
                 }}
               >
                 {/* 時間ヘッダー */}
                 <Box 
                   sx={{ 
-                    p: 1.5, 
+                    py: 0.5,
+                    px: 1.5, 
                     bgcolor: alpha(theme.palette.primary.main, 0.1),
                     borderBottom: '1px solid',
                     borderColor: 'divider',
@@ -184,76 +185,81 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                     alignItems: 'center'
                   }}
                 >
-                  <TimeIcon sx={{ mr: 1, color: theme.palette.text.secondary }} />
-                  <Typography variant="subtitle1" fontWeight="bold">
+                  <TimeIcon sx={{ mr: 0.5, color: theme.palette.text.secondary }} fontSize="small" />
+                  <Typography variant="body1" fontWeight="medium">
                     {timeSlot.time}
                   </Typography>
                 </Box>
                 
                 {/* 同じ時間のスケジュールエントリー */}
-                <Box sx={{ p: 2 }}>
-                  <Grid container spacing={2}>
+                <Box sx={{ p: 1 }}>
+                  <Grid container spacing={1}>
                     {timeSlot.entries.map((entry, entryIndex) => (
-                      <Grid item xs={12} md={6} key={`entry-${entryIndex}`}>
+                      <Grid item xs={12} sm={6} md={4} key={`entry-${entryIndex}`}>
                         <Card 
                           variant={entry.status === 'potential' ? 'outlined' : 'elevation'} 
-                          elevation={entry.status === 'potential' ? 0 : 2}
+                          elevation={entry.status === 'potential' ? 0 : 1}
                           sx={{ 
                             height: '100%',
                             cursor: 'pointer',
-                            borderLeft: '4px solid',
+                            borderLeft: '3px solid',
                             borderColor: entry.status === 'potential' 
                               ? theme.palette.warning.main 
                               : theme.palette.primary.main,
-                            transition: 'transform 0.2s',
+                            transition: 'transform 0.1s',
                             '&:hover': {
-                              transform: 'translateY(-2px)'
+                              transform: 'translateY(-1px)',
+                              boxShadow: 2
                             }
                           }}
                           onClick={() => navigate(`/sport/${entry.sportId}`)}
                         >
-                          <CardContent>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                              <Typography variant="subtitle1" fontWeight="bold">
+                          <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                            {/* ヘッダー行: スポーツ名と状態 */}
+                            <Box sx={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center', 
+                              mb: 0.5 
+                            }}>
+                              <Typography variant="body2" fontWeight="bold" noWrap sx={{ maxWidth: '70%' }}>
                                 {entry.sportName}
                               </Typography>
                               
                               {/* 確定/可能性の表示 */}
-                              {entry.status === 'potential' ? (
-                                <Tooltip title={t('classSchedule.potentialMatch')}>
-                                  <Chip
-                                    icon={<PotentialIcon fontSize="small" />}
-                                    label={t('classSchedule.potential')}
-                                    size="small"
-                                    color="warning"
-                                    variant="outlined"
-                                  />
-                                </Tooltip>
-                              ) : (
-                                <Tooltip title={t('classSchedule.confirmedMatch')}>
-                                  <Chip
-                                    icon={<ConfirmedIcon fontSize="small" />}
-                                    label={t('classSchedule.confirmed')}
-                                    size="small"
-                                    color="success"
-                                    variant="outlined"
-                                  />
-                                </Tooltip>
-                              )}
+                              <Tooltip title={
+                                entry.status === 'potential' 
+                                  ? t('classSchedule.potentialMatch') 
+                                  : t('classSchedule.confirmedMatch')
+                              }>
+                                <Chip
+                                  icon={entry.status === 'potential' ? <PotentialIcon fontSize="small" /> : <ConfirmedIcon fontSize="small" />}
+                                  label={t(`classSchedule.${entry.status === 'potential' ? 'potential' : 'confirmed'}`)}
+                                  size="small"
+                                  color={entry.status === 'potential' ? "warning" : "success"}
+                                  variant="outlined"
+                                  sx={{ height: 20, '& .MuiChip-label': { px: 0.5, fontSize: '0.7rem' } }}
+                                />
+                              </Tooltip>
                             </Box>
                             
-                            {/* 確度表示（可能性の場合） */}
+                            {/* 確度バー（可能性の場合のみ） */}
                             {entry.status === 'potential' && entry.certainty !== undefined && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                <Typography variant="caption" sx={{ mr: 1 }}>
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                mb: 0.7,
+                                gap: 0.5
+                              }}>
+                                <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
                                   {t('classSchedule.certainty')}:
                                 </Typography>
                                 <Box 
                                   sx={{ 
-                                    width: '100%', 
-                                    height: 6, 
+                                    flexGrow: 1, 
+                                    height: 4, 
                                     bgcolor: alpha(theme.palette.warning.main, 0.2),
-                                    borderRadius: 1
+                                    borderRadius: 0.5
                                   }}
                                 >
                                   <Box 
@@ -261,72 +267,92 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                                       width: `${entry.certainty}%`, 
                                       height: '100%', 
                                       bgcolor: theme.palette.warning.main,
-                                      borderRadius: 1
+                                      borderRadius: 0.5
                                     }}
                                   />
                                 </Box>
-                                <Typography variant="caption" sx={{ ml: 1 }}>
+                                <Typography variant="caption" sx={{ fontSize: '0.7rem', minWidth: 24, textAlign: 'right' }}>
                                   {entry.certainty}%
                                 </Typography>
                               </Box>
                             )}
                             
-                            <Divider sx={{ my: 1.5 }} />
+                            <Divider sx={{ my: 0.7 }} />
                             
-                            {/* 対戦情報 */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                            {/* 対戦情報 - 最も重要なのでスペースを確保 */}
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              gap: 1,
+                              mb: 0.7
+                            }}>
                               <Typography 
-                                variant="body1" 
+                                variant="body2" 
                                 fontWeight="bold" 
                                 sx={{ 
                                   textAlign: 'right',
-                                  width: '45%',
+                                  flexBasis: '45%',
                                   color: selectedClasses.includes(entry.teams.team1Id) 
                                     ? theme.palette.primary.main 
-                                    : 'inherit'
+                                    : 'inherit',
+                                  fontSize: '0.875rem'
                                 }}
                               >
                                 {entry.teams.team1Name}
                               </Typography>
-                              <Typography variant="body2" sx={{ mx: 1 }}>vs</Typography>
+                              <Typography variant="caption" sx={{ flexShrink: 0 }}>vs</Typography>
                               <Typography 
-                                variant="body1" 
+                                variant="body2" 
                                 fontWeight="bold"
                                 sx={{ 
-                                  width: '45%',
+                                  flexBasis: '45%',
                                   color: selectedClasses.includes(entry.teams.team2Id) 
                                     ? theme.palette.primary.main 
-                                    : 'inherit'
+                                    : 'inherit',
+                                  fontSize: '0.875rem'
                                 }}
                               >
                                 {entry.teams.team2Name}
                               </Typography>
                             </Box>
                             
-                            {/* 追加情報 */}
-                            <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {/* 追加情報をコンパクトなインライン表示に */}
+                            <Stack 
+                              direction="row" 
+                              spacing={0.5} 
+                              flexWrap="wrap" 
+                              useFlexGap 
+                              sx={{ 
+                                '& .MuiChip-root': { 
+                                  height: 20, 
+                                  '& .MuiChip-label': { 
+                                    px: 0.5, 
+                                    fontSize: '0.7rem' 
+                                  },
+                                  '& .MuiChip-icon': {
+                                    fontSize: '0.75rem',
+                                    ml: 0.3,
+                                    mr: '-0.05rem'
+                                  }
+                                }
+                              }}
+                            >
                               {entry.courtName && (
                                 <Chip
                                   icon={<PlaceIcon fontSize="small" />}
-                                  label={entry.courtName}
+                                  label={entry.courtName.replace(/コート|場|Court/gi, '')}
                                   size="small"
                                   variant="outlined"
                                 />
                               )}
                               <Chip
                                 icon={<TimeIcon fontSize="small" />}
-                                label={`${entry.startTime} - ${entry.endTime}`}
+                                label={`${entry.startTime}-${entry.endTime}`}
                                 size="small"
                                 variant="outlined"
                               />
-                              <Chip
-                                icon={<SportIcon fontSize="small" />}
-                                label={entry.sportName}
-                                size="small"
-                                variant="outlined"
-                                color="primary"
-                              />
-                            </Box>
+                            </Stack>
                           </CardContent>
                         </Card>
                       </Grid>

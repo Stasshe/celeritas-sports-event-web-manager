@@ -86,6 +86,15 @@ const ClassSchedulePage: React.FC = () => {
         const relatedSports = Object.values(sports).filter(
           sport => sport.eventId === activeEventObj.id
         );
+        
+        console.log(`Found ${relatedSports.length} sports for event ${activeEventObj.name}`);
+        
+        // スケジュール設定を持つスポーツのデバッグ情報
+        const sportsWithSchedule = relatedSports.filter(
+          sport => sport.scheduleSettings?.timeSlots && sport.scheduleSettings.timeSlots.length > 0
+        );
+        console.log(`${sportsWithSchedule.length} sports have schedule settings`);
+        
         setActiveSports(relatedSports);
       }
     }

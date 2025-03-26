@@ -262,7 +262,7 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({
               return (
                 <Chip
                   key={`selected-${classId}`}
-                  label={`${grade}${classId}`}
+                  label={`${classId}`}
                   size="small"
                   color="primary"
                   onDelete={() => handleClassToggle(classId)}
