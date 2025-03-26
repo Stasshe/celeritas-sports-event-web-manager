@@ -26,15 +26,21 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
       
       }}>
       {!hideHeader && (
-        <AppBar position="static">
+        <AppBar position="static" sx={{ borderRadius: 0 }}>
           <Toolbar>
             <Typography 
               variant="h6" 
               component="div" 
-              sx={{ flexGrow: 1, cursor: 'pointer' }} 
+              sx={{ 
+                flexGrow: 1,
+                cursor: 'pointer',
+                fontFamily: "'Ribeye', sans-serif",
+                fontWeight: 400
+              }} 
               onClick={() => navigate('/')}
+              className="site-title"
             >
-              {t('common.appName')}
+              Celeritas
             </Typography>
             
             <IconButton 

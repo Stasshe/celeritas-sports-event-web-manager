@@ -421,7 +421,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* イベントリスト */}
       <List
         subheader={
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1, borderRadius: 0 }}>
             <Typography variant="subtitle2" className="item-label">
               {t('admin.events')}
             </Typography>
