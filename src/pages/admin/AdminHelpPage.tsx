@@ -16,11 +16,20 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  useTheme
+  useTheme,
+  Stepper,
+  Step,
+  StepLabel,
+  ListItemIcon
 } from '@mui/material';
 import { 
   ArrowBack as ArrowBackIcon,
-  ExpandMore as ExpandMoreIcon 
+  ExpandMore as ExpandMoreIcon,
+  CheckCircle as CheckCircleIcon,
+  Settings as SettingsIcon,
+  Groups as GroupsIcon,
+  SportsScore as SportsScoreIcon,
+  Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -56,19 +65,34 @@ const AdminHelpPage: React.FC = () => {
             <Divider sx={{ mb: 2 }} />
             <List dense>
               <ListItem button onClick={() => setExpanded('panel1')}>
+                <ListItemIcon>
+                  <CheckCircleIcon fontSize="small" />
+                </ListItemIcon>
                 <ListItemText primary={t('adminHelp.gettingStarted')} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel2')}>
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
                 <ListItemText primary={t('adminHelp.eventManagement')} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel3')}>
+                <ListItemIcon>
+                  <GroupsIcon fontSize="small" />
+                </ListItemIcon>
                 <ListItemText primary={t('adminHelp.sportManagement')} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel4')}>
-                <ListItemText primary={t('adminHelp.scoring')} />
+                <ListItemIcon>
+                  <SportsScoreIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t('adminHelp.leagueFormat')} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel5')}>
-                <ListItemText primary={t('adminHelp.exportFeature')} />
+                <ListItemIcon>
+                  <ScheduleIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t('adminHelp.scheduling')} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel6')}>
                 <ListItemText primary={t('adminHelp.faq')} />
@@ -88,36 +112,80 @@ const AdminHelpPage: React.FC = () => {
                 <Typography variant="h6">{t('adminHelp.gettingStarted')}</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <Typography paragraph>
-                  このスポーツイベント管理システムでは、簡単に学校のスポーツイベントを管理・表示することができます。最初に行うべき設定や基本操作の流れをご説明します。
+                <Typography variant="h6" gutterBottom>
+                  基本的な使い方の流れ
                 </Typography>
-                <Typography paragraph>
-                  管理パネルでは、イベントの作成、競技の追加、そして試合結果の入力が可能です。これらの情報はリアルタイムでユーザー向けページに反映されます。
-                </Typography>
-
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                    基本的な流れ：
-                  </Typography>
-                  <ol>
-                    <li>イベントを作成する（例：「2024年度体育祭」）</li>
-                    <li>イベント内に複数の競技を追加する（例：「サッカー」「バスケットボール」）</li>
-                    <li>各競技にチームを登録する</li>
-                    <li>競技形式（トーナメント・総当たり・リーグ・ランキング）を選択する</li>
-                    <li>試合スケジュールを設定する</li>
-                    <li>イベント当日は、試合結果をリアルタイムで更新する</li>
-                  </ol>
-                </Box>
-
-                <Box sx={{ mt: 3, bgcolor: theme.palette.background.default, p: 2, borderRadius: 1 }}>
-                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                    ヒント
-                  </Typography>
-                  <Typography variant="body2">
-                    イベントの編集は「イベント管理」タブ、競技の編集は「競技管理」タブから行うことができます。
-                    設定変更は自動で保存されますが、重要な変更の後は手動保存ボタンを押して確実に保存してください。
-                  </Typography>
-                </Box>
+                
+                <Stepper orientation="vertical" sx={{ mt: 2 }}>
+                  <Step active>
+                    <StepLabel>
+                      <Typography variant="subtitle1">1. 行事（イベント）を作成する</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        ダッシュボードから「イベント作成」を押し、イベント名を設定して作成します。
+                        詳細情報は後から編集できます。
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                  
+                  <Step active>
+                    <StepLabel>
+                      <Typography variant="subtitle1">2. 名簿を設定する</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        名簿タブに移動し、クラステンプレートを作成します。
+                        これにより参加者情報を管理できます。
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                  
+                  <Step active>
+                    <StepLabel>
+                      <Typography variant="subtitle1">3. 競技を作成する</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        サイドパネルから「競技作成」を押し、競技形式を選択します。
+                        ほとんどの場合はリーグ戦形式を選択します。
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                  
+                  <Step active>
+                    <StepLabel>
+                      <Typography variant="subtitle1">4. チームを設定する</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        名簿タブで「イベントから同期」を押してチームを取得します。
+                        必要に応じてチーム情報を編集できます。
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                  
+                  <Step active>
+                    <StepLabel>
+                      <Typography variant="subtitle1">5. リーグ戦を設定する</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        「スコア管理」を押し、ブロック数と進出チーム数を決定後、
+                        「チームを振り分け」で予選リーグを作成します。
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                  
+                  <Step active>
+                    <StepLabel>
+                      <Typography variant="subtitle1">6. プレーオフを生成する</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        必要に応じて「プレーオフを生成」を押し、決勝トーナメントを作成します。
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                  
+                  <Step active>
+                    <StepLabel>
+                      <Typography variant="subtitle1">7. スケジュールを生成する</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        競技編集ページの「スケジュール」タブで「スケジュール生成」を押します。
+                        パラメータは後からでも変更可能です。
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                </Stepper>
               </AccordionDetails>
             </Accordion>
 
@@ -238,43 +306,43 @@ const AdminHelpPage: React.FC = () => {
               onChange={handleAccordionChange('panel4')}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">{t('adminHelp.scoring')}</Typography>
+                <Typography variant="h6">{t('adminHelp.leagueFormat')}</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <Typography paragraph>
-                  スコアリングページでは、試合の進行状況や結果をリアルタイムで入力・更新することができます。入力されたデータはユーザー向け画面にすぐに反映されます。
+                <Typography variant="h6" gutterBottom>
+                  リーグ戦形式の詳細説明
                 </Typography>
 
                 <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                    トーナメント形式のスコアリング：
+                  <Typography variant="subtitle1" gutterBottom>
+                    1. ブロック分けとチーム振り分け
                   </Typography>
-                  <ol>
-                    <li>各試合のカードを見つける</li>
-                    <li>両チームのスコアを入力</li>
-                    <li>試合ステータスを「進行中」から「完了」に変更</li>
-                    <li>勝者が自動的に次の試合に進出</li>
-                  </ol>
+                  <Typography variant="body2" paragraph>
+                    • ブロック数を設定（例：4ブロック）<br/>
+                    • 各ブロックからの進出チーム数を設定（例：各ブロック上位2チーム）<br/>
+                    • 「チームを振り分け」を押すと自動的にチームが均等に分配されます
+                  </Typography>
                 </Box>
 
                 <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                    総当たり形式のスコアリング：
+                  <Typography variant="subtitle1" gutterBottom>
+                    2. 予選リーグ戦
                   </Typography>
-                  <ol>
-                    <li>対戦表から試合を選択</li>
-                    <li>両チームのスコアを入力</li>
-                    <li>試合ステータスを「完了」に変更すると、自動的に順位表が更新される</li>
-                  </ol>
+                  <Typography variant="body2" paragraph>
+                    • 各ブロック内で総当たり戦を実施<br/>
+                    • 勝ち点制で順位を決定（勝:3点、引分:1点、負:0点）<br/>
+                    • 同点の場合は得失点差で順位を決定
+                  </Typography>
                 </Box>
 
-                
-                <Box sx={{ bgcolor: theme.palette.info.light, color: theme.palette.info.contrastText, p: 2, borderRadius: 1 }}>
-                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                    自動保存について
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    3. 決勝トーナメント（プレーオフ）
                   </Typography>
-                  <Typography variant="body2">
-                    スコアリングページでの変更は自動的に保存されますが、重要な更新後は画面上部の「保存」ボタンを押して確実に保存することをお勧めします。
+                  <Typography variant="body2" paragraph>
+                    • 各ブロックの上位チームが進出<br/>
+                    • トーナメント形式で優勝を決定<br/>
+                    • 3位決定戦の有無を選択可能
                   </Typography>
                 </Box>
               </AccordionDetails>
@@ -285,31 +353,34 @@ const AdminHelpPage: React.FC = () => {
               onChange={handleAccordionChange('panel5')}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">{t('adminHelp.exportFeature')}</Typography>
+                <Typography variant="h6">{t('adminHelp.scheduling')}</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <Typography paragraph>
-                  エクスポート機能では、イベントや競技のデータをCSV形式でエクスポートすることができます。これにより、データのバックアップや外部システムとの連携が容易になります。
+                <Typography variant="h6" gutterBottom>
+                  スケジュール生成について
                 </Typography>
 
                 <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                    エクスポートの手順：
+                  <Typography variant="subtitle1" gutterBottom>
+                    スケジュール生成の手順
                   </Typography>
-                  <ol>
-                    <li>「エクスポート」タブを選択</li>
-                    <li>エクスポートしたいイベントや競技を選択</li>
-                    <li>「エクスポート」ボタンをクリック</li>
-                    <li>Excelファイルがダウンロードされます</li>
-                  </ol>
+                  <Typography variant="body2" paragraph>
+                    1. 競技編集ページの「スケジュール」タブを開く<br/>
+                    2. 開始日時と終了日時を設定<br/>
+                    3. 1日あたりの試合数を設定<br/>
+                    4. 試合時間（分）を設定<br/>
+                    5. 「スケジュール生成」を押す
+                  </Typography>
                 </Box>
 
-                <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: 1 }}>
-                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                    注意点
+                <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1, mb: 3 }}>
+                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                    パラメータについて
                   </Typography>
                   <Typography variant="body2">
-                    エクスポートされたデータはExcel形式で保存されます。エクスポート前にデータが正確であることを確認してください。また、この機能はベータ版であり、不完全なので先生に提出する前に必ず照らし合わせて確認してください。
+                    • パラメータは後からでも変更可能<br/>
+                    • 変更後は再度「生成」を押すことで更新される<br/>
+                    • 既存のスケジュールは上書きされるため注意
                   </Typography>
                 </Box>
               </AccordionDetails>
