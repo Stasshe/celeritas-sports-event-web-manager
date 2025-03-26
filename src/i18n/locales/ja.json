@@ -29,7 +29,11 @@
     "refresh": "リフレッシュ",
     "saveSettings": "設定を保存",
     "share": "共有",
-    "smaller": "小さくする"
+    "smaller": "小さくする",
+    "clear-all": "すべて消去",
+    "select-all": "すべて選択",
+    "classes": "クラス",
+    "copiedToClipboard": "クリップボードにコピーしました"
   },
   "home": {
     "title": "スポーツイベント",
@@ -101,7 +105,10 @@
     "deleteConfirmTitle": "イベントの削除",
     "tabs": {
       "details": "基本情報",
-      "organizers": "担当者"
+      "organizers": "担当者",
+      "roster": "名簿",
+      "scoreboard": "スコアボード",
+      "settings": "設定"
     },
     "manageOrganizers": "担当者管理",
     "organizersHelp": "担当者はイベントの管理・運営を行うメンバーです",
@@ -115,7 +122,20 @@
     "notFound": "イベントが見つかりません",
     "organizers": "担当者",
     "setAsActive": "アクティブに設定",
-    "backToSportsManagement": "競技管理に戻る"
+    "backToSportsManagement": "競技管理に戻る",
+    "classCount": "クラス数",
+    "classTemplateDescription": "クラステンプレートの説明",
+    "classTemplateError": "クラステンプレート生成エラー",
+    "classTemplateGenerated": "クラステンプレートを生成しました",
+    "classTemplateWarning": "クラステンプレート警告",
+    "dangerZone": "危険な操作",
+    "dataValidationError": "データ検証エラー",
+    "deleteEvent": "イベント削除",
+    "deleteEventWarning": "イベント削除の警告",
+    "generateClassTemplate": "クラステンプレートを生成",
+    "gradeParticipation": "学年参加",
+    "manageClasses": "クラス管理",
+    "noClassesYet": "クラスがまだありません"
   },
   "sports": {
     "tournament": "トーナメント",
@@ -395,7 +415,8 @@
     "notPlayed": "未実施",
     "notes": "メモ",
     "status": "状態",
-    "winPoints": "勝利ポイント"
+    "winPoints": "勝利ポイント",
+    "clickMatchToAddScore": "試合をクリックしてスコアを追加"
   },
   "custom" : {
     "round": "ラウンド",
@@ -445,7 +466,9 @@
     "newMember": "新規メンバー",
     "viewEdit": "表示・編集",
     "editClass": "クラスを編集",
-    "memberCount": "メンバー数: {{count}}"
+    "memberCount": "メンバー数: {{count}}",
+    "eventRosterAlert": "イベント名簿アラート",
+    "syncFromEvent": "イベントから同期"
   },
   "sport": {
     "loading": "競技の編集ページを読み込み中...",
@@ -556,7 +579,13 @@
     "noTeams": "チームがありません",
     "ranking": "ランキング",
     "rankingDescription": "ランキング形式で順位を決定します",
-    "roleTeacher": "教員"
+    "roleTeacher": "教員",
+    "coverImage": "カバー画像",
+    "displaySettings": "表示設定",
+    "preview": "プレビュー",
+    "scoreManagement": "スコア管理",
+    "teamMembers": "チームメンバー",
+    "type": "タイプ"
   },
   "adminHelp": {
     "title": "管理者ヘルプ",
@@ -767,7 +796,18 @@
     "status": "状態",
     "round": "ラウンド",
     "block": "ブロック",
-    "notes": "備考"
+    "notes": "備考",
+    "currentScale": "現在の縮尺",
+    "currentTime": "現在時刻",
+    "details": "詳細",
+    "reset": "リセット",
+    "resetScale": "縮尺をリセット",
+    "timelineHint": "タイムラインヒント",
+    "timelineScale": "タイムライン縮尺",
+    "type": "タイプ",
+    "undetermined": "未定",
+    "unknownTeam": "不明なチーム",
+    "viewDetails": "詳細を表示"
   },
   "login": {
     "email": "メールアドレス",
@@ -799,7 +839,29 @@
     "sheet.tournamentDesc": "トーナメント表と結果",
     "sheet.roundRobinDesc": "対戦表と順位表",
     "sheet.leagueDesc": "リーグ戦の対戦表と順位表",
-    "sheet.rankingDesc": "ランキング結果"
+    "sheet.rankingDesc": "ランキング結果",
+    "allEvents": "すべてのイベント",
+    "contentOptions": "コンテンツオプション",
+    "customFileName": "カスタムファイル名",
+    "errorMessage": "エクスポートエラー",
+    "exportInstructions": "エクスポート手順",
+    "exportOptions": "エクスポートオプション",
+    "exportScope": "エクスポート範囲",
+    "fileNameHelp": "ファイル名のヘルプ",
+    "includeIndividualEvents": "個別イベントを含める",
+    "includeOverallWinners": "総合優勝者を含める",
+    "instructions": "手順",
+    "noDataError": "データが見つかりません",
+    "noEvents": "イベントがありません",
+    "noSports": "競技がありません",
+    "pageTitle": "エクスポートページ",
+    "selectAll": "すべて選択",
+    "selectEvents": "イベントを選択",
+    "selectSports": "競技を選択",
+    "selectedEvents": "選択されたイベント",
+    "selectedSports": "選択された競技",
+    "successMessage": "エクスポート成功",
+    "title": "エクスポート"
   },
   "scoreboard": {
     "settings": "総合成績ボード設定",
@@ -879,6 +941,11 @@
     "certainty": "確率",
     "shareTitle": "クラス別スケジュール",
     "shareText": "クラス別スケジュールを確認してください",
-    "noActiveEvent": "現在アクティブな行事がありません"
-  }
+    "noActiveEvent": "現在アクティブな行事がありません",
+    "accessDescription": "クラスのスケジュールに簡単にアクセス",
+    "quickAccess": "クイックアクセス",
+    "viewClassSchedule": "クラススケジュールを表示",
+    "viewSchedule": "スケジュールを表示"
+  },
+  "Overall Winners": "総合優勝者"
 }
