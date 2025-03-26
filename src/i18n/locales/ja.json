@@ -19,7 +19,17 @@
     "backToHome": "ホームに戻る",
     "back": "戻る",
     "savedSuccess": "保存しました",
-    "savedError": "保存に失敗しました"
+    "savedError": "保存に失敗しました",
+    "actions": "操作",
+    "generate": "生成",
+    "home": "ホーム",
+    "larger": "大きくする",
+    "none": "なし",
+    "print": "プリント",
+    "refresh": "リフレッシュ",
+    "saveSettings": "設定を保存",
+    "share": "共有",
+    "smaller": "小さくする"
   },
   "home": {
     "title": "スポーツイベント",
