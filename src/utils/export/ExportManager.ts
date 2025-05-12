@@ -181,9 +181,14 @@ const addEventInfoSheet = (
   // Add organizers
   sheet.addRow(['']);
   sheet.addRow(['Organizers:']);
-  event.organizers.forEach(org => {
-    sheet.addRow([org.name, org.role, `Grade: ${org.grade}`]);
-  });
+  // Check if organizers array exists before iterating
+  if (event.organizers && Array.isArray(event.organizers) && event.organizers.length > 0) {
+    event.organizers.forEach(org => {
+      sheet.addRow([org.name, org.role, `Grade: ${org.grade}`]);
+    });
+  } else {
+    sheet.addRow(['No organizers assigned']);
+  }
   
   // Sports list
   sheet.addRow(['']);
