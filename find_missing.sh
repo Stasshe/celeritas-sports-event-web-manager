@@ -2,7 +2,7 @@
 
 # 入力ファイル
 translation_file="translation.txt"
-json_file="src/i18n/locales/en.json"
+json_file="src/i18n/locales/fr.json"
 output_file="missing_translations.txt"
 
 # 一時ファイル作成

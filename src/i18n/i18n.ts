@@ -4,6 +4,7 @@ import jaTranslation from './locales/ja.json';
 import enTranslation from './locales/en.json';
 import frTranslation from './locales/fr.json';
 import deTranslation from './locales/de.json';
+import zhTranslation from './locales/zh.json';
 
 i18n
   .use(initReactI18next)
@@ -20,6 +21,9 @@ i18n
       },
       de: {
         translation: deTranslation,
+      },
+      zh: {
+        translation: zhTranslation,
       },
     },
     lng: 'ja', // デフォルト言語を日本語に設定
