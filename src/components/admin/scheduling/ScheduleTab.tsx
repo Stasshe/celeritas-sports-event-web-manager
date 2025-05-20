@@ -282,8 +282,8 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     if (sport.type === 'league') {
       const leagueSettings = scheduleSettings as LeagueScheduleSettings;
       return (
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={4}>
+        <Grid container spacing={2} justifyContent="center">
+          <Grid item xs={12} sm={8} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
             <TextField
               fullWidth
               label={t('schedule.playoffDuration')}
@@ -291,8 +291,9 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               type="number"
               value={leagueSettings.playoffDuration}
               onChange={handleInputChange}
-              InputProps={{ inputProps: { min: 5 } }}
+              InputProps={{ inputProps: { min: 1 } }}
               margin="normal"
+              sx={{ maxWidth: 400 }}
             />
           </Grid>
         </Grid>
@@ -592,7 +593,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             >
               {t('schedule.generateSchedule')}
             </Button>
-            
+            {/*
             <Button
               variant="outlined"
               color="primary"
@@ -601,6 +602,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             >
               {t('common.save')}
             </Button>
+            */}
           </Box>
           
           {scheduleError && (
