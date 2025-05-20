@@ -331,18 +331,18 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
   const handleMatchUpdate = (updatedMatch: Match) => {
     if (readOnly) return;
     
-    // 勝者を自動判定
+    // 勝者を自動判定 (リーグでは同点を許可)
     const winner = updatedMatch.team1Score > updatedMatch.team2Score 
       ? updatedMatch.team1Id 
       : updatedMatch.team2Score > updatedMatch.team1Score 
         ? updatedMatch.team2Id 
-        : undefined;
+        : 'tie'; // 同点の場合は勝者なし（null を使用）
     
     const finalMatch: Match = {
       ...updatedMatch,
       winnerId: winner,
       status: (updatedMatch.team1Score > 0 || updatedMatch.team2Score > 0) 
-        ? 'completed' as const
+        ? 'completed' as const // スコアがある場合は完了とする（同点でも）
         : 'scheduled' as const
     };
     

@@ -277,7 +277,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
         } else if (updatedMatch.team1Score < updatedMatch.team2Score) {
           updatedMatch.winnerId = updatedMatch.team2Id;
         } else {
-          updatedMatch.winnerId = undefined; // 同点の場合は勝者なし
+          updatedMatch.winnerId = 'tie-error'; // 同点の場合は勝者なし（null を使用）
         }
 
         // マッチリストを更新

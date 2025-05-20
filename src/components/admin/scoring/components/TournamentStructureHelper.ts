@@ -227,10 +227,15 @@ export class TournamentStructureHelper {
   }
 
   // 試合の状態を自動判定する
-  static getMatchStatus(match: { team1Score: number; team2Score: number }): 'scheduled' | 'inProgress' | 'completed' {
+  static getMatchStatus(match: { team1Score: number; team2Score: number; type?: string }): 'scheduled' | 'inProgress' | 'completed' {
     if (match.team1Score === 0 && match.team2Score === 0) return 'scheduled';
     if (match.team1Score > 0 || match.team2Score > 0) return 'completed';
     return 'inProgress';
+  }
+  
+  // トーナメント形式で同点をチェック（トーナメントでは同点は許可されない）
+  static isTie(match: { team1Score: number; team2Score: number }): boolean {
+    return match.team1Score === match.team2Score && (match.team1Score > 0 || match.team2Score > 0);
   }
 
   // トーナメントに得点が存在するかチェック

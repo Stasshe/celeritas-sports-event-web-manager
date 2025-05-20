@@ -189,26 +189,34 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     if (readOnly) return;
     setIsDialogProcessing(true);
     try {
+      // トーナメントでは同点をチェック（3位決定戦を除く）
+      const isThirdPlaceMatch = updatedMatch.matchNumber === 0 || updatedMatch.id.includes('third_place');
+      
+      // トーナメントでは同点を許可しない（3位決定戦を除く）
+      if (!isThirdPlaceMatch && TournamentStructureHelper.isTie(updatedMatch)) {
+        alert(t('tournament.tieNotAllowed') || 'トーナメントでは同点は許可されません。勝者を決定してください。');
+        setIsDialogProcessing(false);
+        return;
+      }
+      
       // チームIDの検証
       const team1Exists = sport.teams.some(t => t.id === updatedMatch.team1Id);
       const team2Exists = sport.teams.some(t => t.id === updatedMatch.team2Id);
       
       // 存在しないチームIDがあればエラー（3位決定戦で準決勝の敗者が未定の場合を除く）
-      const isThirdPlaceMatch = updatedMatch.matchNumber === 0 || updatedMatch.id.includes('third_place');
-      
       if (!isThirdPlaceMatch && (!team1Exists || !team2Exists)) {
         throw new Error('Invalid team IDs in match');
       }
       
       const status = TournamentStructureHelper.getMatchStatus(updatedMatch);
       
-      // winnerId を型に合わせて設定（undefined を使用）
+      // winnerId を型に合わせて設定（Firebase用にnullを使用する）
       const newMatch: Match = {
         ...updatedMatch,
         status,
         winnerId: updatedMatch.team1Score > updatedMatch.team2Score ? updatedMatch.team1Id :
                   updatedMatch.team2Score > updatedMatch.team1Score ? updatedMatch.team2Id :
-                  undefined  // null ではなく undefined を使用
+                  'tie error'  // 同点の場合は null に設定（Firebase用）
       };
 
       // 即時にローカル状態を更新（UXのため）

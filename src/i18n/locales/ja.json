@@ -309,6 +309,8 @@
     "noMatches": "マッチがありません",
     "noTeams": "チームがありません",
     "noScores": "スコアがありません",
+    "tieNotAllowed": "トーナメントでは同点は許可されません。勝者を決定してください。",
+    "noMatchesInRound": "このラウンドには試合がありません",
     "noRounds": "ラウンドがありません",
     "noBracket": "トーナメントがありません",
     "noRoundRobin": "総当たり戦がありません",

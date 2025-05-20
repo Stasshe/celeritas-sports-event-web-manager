@@ -251,10 +251,30 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
     }
 
     try {
-      // 更新対象のパスのデータを個別に更新
+      // undefinedをnullに変換する関数
+      const normalizeValue = (value: any): any => {
+        if (value === undefined) return null;
+        
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          return Object.entries(value).reduce((acc, [k, v]) => {
+            acc[k] = normalizeValue(v);
+            return acc;
+          }, {} as Record<string, any>);
+        }
+        
+        if (Array.isArray(value)) {
+          return value.map(v => normalizeValue(v));
+        }
+        
+        return value;
+      };
+      
+      // 更新対象のパスのデータを個別に更新（undefinedをnullに変換して保存）
       const updatePromises = Object.entries(updates).map(([key, value]) => {
         const updatePath = `${path}/${key}`;
-        return update(ref(database), { [updatePath]: value });
+        // undefinedをnullに変換してから保存
+        const normalizedValue = normalizeValue(value);
+        return update(ref(database), { [updatePath]: normalizedValue });
       });
 
       // すべての更新を並行して実行
