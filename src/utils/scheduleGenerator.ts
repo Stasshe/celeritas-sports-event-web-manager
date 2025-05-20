@@ -779,6 +779,10 @@ const generateLeagueScheduleWithCourts = (
       // この時間枠で利用可能なコート
       const availableCourts = courtCount === 1 ? ['court1'] : ['court1', 'court2'];
       
+      // 現在処理中のラウンドを保存（同時進行できる試合を判断するため）
+      const currentRound = sortedPlayoffMatches[0].round;
+      console.log(`Processing playoff round ${currentRound} with ${sortedPlayoffMatches.length} matches. Available courts: ${availableCourts.length}`);
+      
       // 休憩とランチが被らないように調整
       let safetyCounter = 0; // 無限ループ防止用のカウンター
       let adjustedTime = false;
@@ -843,59 +847,76 @@ const generateLeagueScheduleWithCourts = (
       let scheduledMatchesCount = 0;
       usedTeamIds = [];
       
-      // 最初の試合のラウンド
-      const currentRound = sortedPlayoffMatches[0].round;
+      // 同じラウンドの試合のみをフィルタリング
+      const sameRoundMatches = sortedPlayoffMatches.filter(m => 
+        // 現在のラウンドと同じで、シード戦でないもの
+        m.round === currentRound && !isSeededMatch(m)
+      );
+      
+      console.log(`Found ${sameRoundMatches.length} matches in round ${currentRound} to schedule on ${availableCourts.length} courts`);
       
       // 各コートについて処理
       for (const court of availableCourts) {
-        if (sortedPlayoffMatches.length === 0) break;
-        
-        // 同じラウンドの試合のみスケジュール
-        const sameRoundMatches = sortedPlayoffMatches.filter(m => 
-          // ラウンド1のシード戦のみスキップ
-          m.round === currentRound && !isSeededMatch(m)
-        );
         if (sameRoundMatches.length === 0) break;
         
         // この時間枠でスケジュール可能な試合を探す
+        let matchToSchedule: Match | null = null;
         let matchIndex = -1;
         
+        // すべての同じラウンドの試合から、スケジュール可能なものを探す
         for (let i = 0; i < sameRoundMatches.length; i++) {
           const match = sameRoundMatches[i];
           
-          // 既に使用されているチームがいるかチェック
-          if (usedTeamIds.includes(match.team1Id) || usedTeamIds.includes(match.team2Id)) {
+          // 既に使用されているチームがいるかチェック - プレーオフでは未定のチームも考慮
+          const hasTeam1 = match.team1Id && match.team1Id !== '';
+          const hasTeam2 = match.team2Id && match.team2Id !== '';
+          
+          // 実際のチームIDのみをチェック（未定の場合はスキップ）
+          if ((hasTeam1 && usedTeamIds.includes(match.team1Id)) || 
+              (hasTeam2 && usedTeamIds.includes(match.team2Id))) {
             continue;
           }
           
-          // クラスの競合チェック
-          const team1Class = teamInfoMap[match.team1Id]?.className;
-          const team2Class = teamInfoMap[match.team2Id]?.className;
+          // クラスの競合チェック - プレーオフでは未定のチームの場合はクラス競合なしとみなす
+          const team1Class = hasTeam1 ? teamInfoMap[match.team1Id]?.className : undefined;
+          const team2Class = hasTeam2 ? teamInfoMap[match.team2Id]?.className : undefined;
           let hasClassConflict = false;
           
           // すでにスケジュールされた試合のクラスと競合しないかチェック
           for (const usedTeamId of usedTeamIds) {
+            if (!usedTeamId) continue; // 空のチームIDはスキップ
             const usedTeamClass = teamInfoMap[usedTeamId]?.className;
-            if (usedTeamClass && (usedTeamClass === team1Class || usedTeamClass === team2Class)) {
+            if (usedTeamClass && ((team1Class && usedTeamClass === team1Class) || 
+                                  (team2Class && usedTeamClass === team2Class))) {
               hasClassConflict = true;
               break;
             }
           }
           
           if (!hasClassConflict) {
+            matchToSchedule = match;
             matchIndex = sortedPlayoffMatches.findIndex(m => m.id === match.id);
             break;
           }
         }
         
         // スケジュール可能な試合がない場合はこのコートをスキップ
-        if (matchIndex === -1) continue;
+        if (matchIndex === -1 || !matchToSchedule) {
+          console.log(`No schedulable match found for court ${court}`);
+          continue;
+        }
         
         // 試合をスケジュール
         const match = sortedPlayoffMatches.splice(matchIndex, 1)[0];
+        // 同じラウンドの試合リストからも削除
+        const sameRoundMatchIndex = sameRoundMatches.findIndex(m => m.id === match.id);
+        if (sameRoundMatchIndex !== -1) {
+          sameRoundMatches.splice(sameRoundMatchIndex, 1);
+        }
         
-        // 使用中のチームを追加
-        usedTeamIds.push(match.team1Id, match.team2Id);
+        // 使用中のチームを追加（非空のチームIDのみ）
+        if (match.team1Id && match.team1Id !== '') usedTeamIds.push(match.team1Id);
+        if (match.team2Id && match.team2Id !== '') usedTeamIds.push(match.team2Id);
         
         // ラウンド名を取得 - このラウンド変換ロジックを修正
         let roundName = '';
@@ -913,6 +934,8 @@ const generateLeagueScheduleWithCourts = (
           default:
             roundName = `ラウンド${match.round}`;
         }
+        
+        console.log(`Scheduling playoff match on ${court}: Round ${match.round}(${roundName}), Match ${match.matchNumber}, Teams: ${match.team1Id} vs ${match.team2Id}`);
         
         // タイムスロットを追加
         timeSlots.push({
