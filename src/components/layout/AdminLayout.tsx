@@ -444,7 +444,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <CircularProgress size={24} />
           </Box>
         ) : events && Object.values(events).length > 0 ? (
-          Object.values(events).map((event) => {
+          Object.values(events)
+            // _versionキーを持つオブジェクトを除外
+            .filter(event => event.id !== '_version')
+            .map((event) => {
             // 現在のイベントまたはその下の競技が選択されているかどうかを確認
             const isCurrentPath = location.pathname === `/admin/events/${event.id}`;
             const hasSelectedSport = sports && 
