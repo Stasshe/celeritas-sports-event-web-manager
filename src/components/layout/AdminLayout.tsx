@@ -40,7 +40,8 @@ import {
   Home as HomeIcon,
   AccountCircle,
   Scoreboard as ScoreboardIcon,
-  FileDownload as ExportIcon
+  FileDownload as ExportIcon,
+  Backup as BackupIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useThemeContext } from '../../contexts/ThemeContext';
@@ -413,6 +414,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <ExportIcon />
             </ListItemIcon>
             <ListItemText primary={t('admin.export')} />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={location.pathname === '/admin/backup'}
+            onClick={() => navigate('/admin/backup')}
+          >
+            <ListItemIcon>
+              <BackupIcon />
+            </ListItemIcon>
+            <ListItemText primary={t('admin.backup')} />
           </ListItemButton>
         </ListItem>
       </List>
