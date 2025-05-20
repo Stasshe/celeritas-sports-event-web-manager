@@ -227,7 +227,34 @@ export class TournamentStructureHelper {
   }
 
   // 試合の状態を自動判定する
-  static getMatchStatus(match: { team1Score: number; team2Score: number; type?: string }): 'scheduled' | 'inProgress' | 'completed' {
+  static getMatchStatus(match: { 
+    team1Score: number; 
+    team2Score: number; 
+    status?: 'scheduled' | 'inProgress' | 'completed' | 'potential';
+    type?: 'tournament' | 'league' | 'roundRobin' | string;
+    format?: 'tournament' | 'league' | 'roundRobin';
+  }): 'scheduled' | 'inProgress' | 'completed' {
+    // ステータスの明示的な処理（potentialを除く）
+    if (match.status === 'completed') return 'completed';
+    if (match.status === 'scheduled') return 'scheduled';
+    if (match.status === 'inProgress') return 'inProgress';
+    // potential状態は処理しない（下のロジックで評価）
+    
+    // リーグ戦・総当たり戦の場合
+    const isRoundRobinOrLeague = 
+      match.type === 'roundRobin' || 
+      match.type === 'league' || 
+      match.format === 'roundRobin' || 
+      match.format === 'league';
+    
+    if (isRoundRobinOrLeague) {
+      // スコアがある場合は完了
+      if (match.team1Score > 0 || match.team2Score > 0) return 'completed';
+      // それ以外はスケジュール済み
+      return 'scheduled';
+    }
+    
+    // 通常のトーナメント戦の場合（デフォルト）
     if (match.team1Score === 0 && match.team2Score === 0) return 'scheduled';
     if (match.team1Score > 0 || match.team2Score > 0) return 'completed';
     return 'inProgress';

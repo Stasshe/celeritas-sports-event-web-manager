@@ -213,10 +213,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       // winnerId を型に合わせて設定（Firebase用にnullを使用する）
       const newMatch: Match = {
         ...updatedMatch,
-        status,
+        type: 'tournament' as const, // トーナメント形式を明示的に指定
+        status: status as "scheduled" | "inProgress" | "completed", // statusを明示的に型指定
         winnerId: updatedMatch.team1Score > updatedMatch.team2Score ? updatedMatch.team1Id :
                   updatedMatch.team2Score > updatedMatch.team1Score ? updatedMatch.team2Id :
-                  'tie error'  // 同点の場合は null に設定（Firebase用）
+                  undefined  // 同点の場合は undefined に設定
       };
 
       // 即時にローカル状態を更新（UXのため）

@@ -336,14 +336,19 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
       ? updatedMatch.team1Id 
       : updatedMatch.team2Score > updatedMatch.team1Score 
         ? updatedMatch.team2Id 
-        : 'tie'; // 同点の場合は勝者なし（null を使用）
+        : undefined; // 同点の場合は勝者なし（undefinedを使用）
     
+    // ステータスを設定：明示的な完了が設定されていれば優先し、それ以外はスコアに応じて判断
+    const status = updatedMatch.status === 'completed' ? 'completed' as const :
+                  (updatedMatch.team1Score > 0 || updatedMatch.team2Score > 0)
+                    ? 'completed' as const
+                    : 'scheduled' as const;
+
     const finalMatch: Match = {
       ...updatedMatch,
+      type: 'league' as const, // リーグ戦のタイプを明示的に指定
       winnerId: winner,
-      status: (updatedMatch.team1Score > 0 || updatedMatch.team2Score > 0) 
-        ? 'completed' as const // スコアがある場合は完了とする（同点でも）
-        : 'scheduled' as const
+      status: status
     };
     
     // ブロック内の試合を更新

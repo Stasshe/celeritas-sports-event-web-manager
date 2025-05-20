@@ -270,14 +270,19 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
     if (selectedMatch) {
       try {
         // 勝者を自動判定
-        let updatedMatch = { ...selectedMatch };
+        let updatedMatch: Match = {
+          ...selectedMatch,
+          type: 'roundRobin' as const, // 総当たり戦のタイプを明示的に指定
+          // 明示的にステータスが設定されていればそれを維持、そうでなければ完了にする
+          status: selectedMatch.status || 'completed'
+        };
         
         if (updatedMatch.team1Score > updatedMatch.team2Score) {
           updatedMatch.winnerId = updatedMatch.team1Id;
         } else if (updatedMatch.team1Score < updatedMatch.team2Score) {
           updatedMatch.winnerId = updatedMatch.team2Id;
         } else {
-          updatedMatch.winnerId = 'tie-error'; // 同点の場合は勝者なし（null を使用）
+          updatedMatch.winnerId = undefined; // 同点の場合は勝者なし（undefinedを使用）
         }
 
         // マッチリストを更新
