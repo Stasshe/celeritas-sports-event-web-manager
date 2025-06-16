@@ -798,7 +798,7 @@ const SportEditPage: React.FC = () => {
   }> = ({ value, onChange }) => {
     const { t } = useTranslation();
     const [images, setImages] = useState<string[]>([
-      '/dodge-ball.jpeg',
+      '/dodge-ball.png',
       '/assets/female-badminton.jpeg',
       '/assets/female-basketball.jpeg',
       '/assets/female-track-relay.jpeg',
