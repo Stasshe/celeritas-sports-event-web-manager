@@ -17,6 +17,7 @@ interface TeamSelectorProps {
   rosters: Record<string, string[]>;
   onChange: (teamId: string) => void;
   disabled?: boolean;
+  compact?: boolean; // コンパクトモードを追加
 }
 
 const TeamSelector: React.FC<TeamSelectorProps> = ({
@@ -24,18 +25,20 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
   teams,
   rosters,
   onChange,
-  disabled = false
+  disabled = false,
+  compact = false
 }) => {
   const { t } = useTranslation();
 
   return (
-    <Box>
+    <Box sx={{ flex: compact ? 1 : 'auto' }}>
       <FormControl fullWidth>
         <Select
           value={selectedTeamId}
           onChange={(e) => onChange(e.target.value)}
           displayEmpty
           disabled={disabled}
+          size={compact ? "small" : "medium"}
         >
           <MenuItem value="">
             <em>{t('tournament.selectTeam')}</em>
@@ -46,7 +49,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
                 <Typography>
                   {team.name}
                 </Typography>
-                {rosters[team.id] && (
+                {!compact && rosters[team.id] && (
                   <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
                     {rosters[team.id].slice(0, 3).map((member, idx) => (
                       <Chip
@@ -69,7 +72,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
           ))}
         </Select>
       </FormControl>
-      {disabled && (
+      {disabled && !compact && (
         <Typography 
           variant="caption" 
           color="info.main" 

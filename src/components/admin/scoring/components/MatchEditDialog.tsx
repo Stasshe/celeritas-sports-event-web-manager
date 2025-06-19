@@ -14,8 +14,11 @@ import {
   Box,
   Typography,
   DialogContentText,
-  Alert
+  Alert,
+  IconButton,
+  Tooltip
 } from '@mui/material';
+import { Edit as EditIcon } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { Match, Sport } from '../../../../types';
 import { useTranslation } from 'react-i18next';
@@ -47,6 +50,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
     teamId: string;
     position: 'team1' | 'team2';
   } | null>(null);
+  const [editingTeam, setEditingTeam] = useState<'team1' | 'team2' | null>(null);
 
   useEffect(() => {
     if (match) {
@@ -91,6 +95,16 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
     setConfirmDialogOpen(true);
   };
 
+  const handleEditTeam = (position: 'team1' | 'team2') => {
+    if (editedMatch && editedMatch.round === 1) {
+      setEditingTeam(position);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTeam(null);
+  };
+
   const handleConfirmTeamChange = () => {
     if (!editedMatch || !pendingTeamChange) return;
     
@@ -104,11 +118,13 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
     
     setConfirmDialogOpen(false);
     setPendingTeamChange(null);
+    setEditingTeam(null);
   };
 
   const handleCancelTeamChange = () => {
     setConfirmDialogOpen(false);
     setPendingTeamChange(null);
+    setEditingTeam(null);
   };
 
   
@@ -142,15 +158,76 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                 <Typography variant="subtitle2" gutterBottom>
                   {t('match.team1')}
                 </Typography>
-                <Box sx={{ opacity: 0.7 }}>
-                  <TeamSelector
-                    selectedTeamId={editedMatch.team1Id}
-                    teams={sport.teams}
-                    rosters={teamRosters}
-                    onChange={(teamId) => handleTeamChange(teamId, 'team1')}
-                    disabled={editedMatch.round !== 1}
-                  />
+                
+                {/* チーム表示エリア */}
+                <Box 
+                  sx={{ 
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    p: 2,
+                    bgcolor: 'background.paper',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    minHeight: '60px'
+                  }}
+                >
+                  <Box sx={{ flex: 1 }}>
+                    {editingTeam === 'team1' ? (
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <TeamSelector
+                          selectedTeamId={editedMatch.team1Id}
+                          teams={sport.teams}
+                          rosters={teamRosters}
+                          onChange={(teamId) => handleTeamChange(teamId, 'team1')}
+                          disabled={false}
+                          compact={true}
+                        />
+                        <Button 
+                          size="small" 
+                          onClick={handleCancelEdit}
+                          color="inherit"
+                        >
+                          {t('common.cancel')}
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+                        {sport.teams.find(t => t.id === editedMatch.team1Id)?.name || t('tournament.tbd')}
+                      </Typography>
+                    )}
+                  </Box>
+                  
+                  {editingTeam !== 'team1' && (
+                    <Tooltip title={editedMatch.round === 1 ? t('match.editTeam') : t('match.cannotEditTeam')}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditTeam('team1')}
+                          disabled={editedMatch.round !== 1}
+                          sx={{ 
+                            opacity: editedMatch.round === 1 ? 1 : 0.3,
+                            ml: 1
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
                 </Box>
+                
+                {/* 1stラウンド以外の説明テキスト */}
+                {editedMatch.round !== 1 && (
+                  <Typography 
+                    variant="caption" 
+                    color="info.main" 
+                    sx={{ display: 'block', mt: 1, fontSize: '0.75rem' }}
+                  >
+                    1stラウンド以外でチームの選択はできません
+                  </Typography>
+                )}
               </Box>
               <TextField
                 label={t('match.score')}
@@ -167,15 +244,76 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                 <Typography variant="subtitle2" gutterBottom>
                   {t('match.team2')}
                 </Typography>
-                <Box sx={{ opacity: 0.7 }}>
-                  <TeamSelector
-                    selectedTeamId={editedMatch.team2Id}
-                    teams={sport.teams}
-                    rosters={teamRosters}
-                    onChange={(teamId) => handleTeamChange(teamId, 'team2')}
-                    disabled={editedMatch.round !== 1}
-                  />
+                
+                {/* チーム表示エリア */}
+                <Box 
+                  sx={{ 
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    p: 2,
+                    bgcolor: 'background.paper',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    minHeight: '60px'
+                  }}
+                >
+                  <Box sx={{ flex: 1 }}>
+                    {editingTeam === 'team2' ? (
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <TeamSelector
+                          selectedTeamId={editedMatch.team2Id}
+                          teams={sport.teams}
+                          rosters={teamRosters}
+                          onChange={(teamId) => handleTeamChange(teamId, 'team2')}
+                          disabled={false}
+                          compact={true}
+                        />
+                        <Button 
+                          size="small" 
+                          onClick={handleCancelEdit}
+                          color="inherit"
+                        >
+                          {t('common.cancel')}
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+                        {sport.teams.find(t => t.id === editedMatch.team2Id)?.name || t('tournament.tbd')}
+                      </Typography>
+                    )}
+                  </Box>
+                  
+                  {editingTeam !== 'team2' && (
+                    <Tooltip title={editedMatch.round === 1 ? t('match.editTeam') : t('match.cannotEditTeam')}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditTeam('team2')}
+                          disabled={editedMatch.round !== 1}
+                          sx={{ 
+                            opacity: editedMatch.round === 1 ? 1 : 0.3,
+                            ml: 1
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
                 </Box>
+                
+                {/* 1stラウンド以外の説明テキスト */}
+                {editedMatch.round !== 1 && (
+                  <Typography 
+                    variant="caption" 
+                    color="info.main" 
+                    sx={{ display: 'block', mt: 1, fontSize: '0.75rem' }}
+                  >
+                    1stラウンド以外でチームの選択はできません
+                  </Typography>
+                )}
               </Box>
               <TextField
                 label={t('match.score')}
