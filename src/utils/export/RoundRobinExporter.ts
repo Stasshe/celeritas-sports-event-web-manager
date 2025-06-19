@@ -429,7 +429,9 @@ const addCrossTable = (
   // 試合結果をマトリックスに記入（スコアがある場合は表示）
   if (sport.matches && Array.isArray(sport.matches)) {
     sport.matches.forEach(match => {
-      if (match.team1Score !== undefined && match.team2Score !== undefined) {
+      if (match.team1Score !== undefined && match.team2Score !== undefined &&
+          match.team1Id && match.team2Id &&
+          matrix[match.team1Id] && matrix[match.team2Id]) {
         // チーム1から見た結果：「自分のスコア-相手のスコア」
         matrix[match.team1Id][match.team2Id] = `${match.team1Score}-${match.team2Score}`;
         // チーム2から見た結果：「自分のスコア-相手のスコア」

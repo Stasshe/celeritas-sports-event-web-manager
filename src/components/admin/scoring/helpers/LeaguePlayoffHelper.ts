@@ -167,8 +167,8 @@ export class LeaguePlayoffHelper {
           // 3位決定戦の試合を生成
           const thirdPlaceMatch: Match = {
             id: `playoff_third_place_match`,
-            team1Id: '', // 準決勝敗者が入る
-            team2Id: '', // 準決勝敗者が入る
+            team1Id: undefined as any, // 準決勝敗者が入る
+            team2Id: undefined as any, // 準決勝敗者が入る
             team1Score: 0,
             team2Score: 0,
             round: maxRound, // 決勝と同じラウンド

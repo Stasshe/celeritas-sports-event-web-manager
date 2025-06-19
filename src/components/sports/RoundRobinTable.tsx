@@ -143,10 +143,15 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
 
     // 試合情報をグリッドに配置
     sport.matches.forEach(match => {
-      grid[match.team1Id][match.team2Id] = match;
-      // 逆方向（チーム2視点でのチーム1との対戦）もNULLではなく同じ試合を参照するように
-      // この値は表示上使わないが、両方とも同じ試合情報を参照することでデータ整合性を保つ
-      grid[match.team2Id][match.team1Id] = match;
+      // チームIDが有効な場合のみグリッドに配置（空文字列や未定義も除外）
+      if (match.team1Id && match.team2Id && 
+          match.team1Id.trim() !== '' && match.team2Id.trim() !== '' &&
+          grid[match.team1Id] && grid[match.team2Id]) {
+        grid[match.team1Id][match.team2Id] = match;
+        // 逆方向（チーム2視点でのチーム1との対戦）もNULLではなく同じ試合を参照するように
+        // この値は表示上使わないが、両方とも同じ試合情報を参照することでデータ整合性を保つ
+        grid[match.team2Id][match.team1Id] = match;
+      }
     });
 
     return grid;
