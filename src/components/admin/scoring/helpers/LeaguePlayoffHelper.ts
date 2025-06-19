@@ -167,8 +167,8 @@ export class LeaguePlayoffHelper {
           // 3位決定戦の試合を生成
           const thirdPlaceMatch: Match = {
             id: `playoff_third_place_match`,
-            team1Id: undefined as any, // 準決勝敗者が入る
-            team2Id: undefined as any, // 準決勝敗者が入る
+            team1Id: '', // 準決勝敗者が入る（空文字列で初期化）
+            team2Id: '', // 準決勝敗者が入る（空文字列で初期化）
             team1Score: 0,
             team2Score: 0,
             round: maxRound, // 決勝と同じラウンド
@@ -204,7 +204,7 @@ export class LeaguePlayoffHelper {
   static updatePlayoffMatches(matches: Match[]): Match[] {
     const newPlayoffMatches = [...matches];
     
-    // 1. シード戦の処理 - まだ完了していないシード戦を自動的に処理
+    // 1. シード戦の処理 - 1回戦の不戦勝のみを自動的に処理
     newPlayoffMatches.forEach(match => {
       // 既に完了している試合はスキップ
       if (match.status === 'completed') return;
@@ -214,8 +214,12 @@ export class LeaguePlayoffHelper {
       const isTBDTeam2 = match.team2Id && match.team2Id.startsWith('tbd_');
       if (isTBDTeam1 || isTBDTeam2) return;
       
-      // シード戦かどうかを判定 (片方のチームしかない試合)
-      const isSeedMatch = Boolean(match.team1Id && !match.team2Id) || Boolean(!match.team1Id && match.team2Id);
+      // シード戦は1回戦でのみ発生し、片方のチームのみが存在する場合
+      const isFirstRound = match.round === 1;
+      const hasOnlyOneTeam = Boolean(match.team1Id && match.team1Id !== '' && (!match.team2Id || match.team2Id === '')) || 
+                            Boolean(match.team2Id && match.team2Id !== '' && (!match.team1Id || match.team1Id === ''));
+      
+      const isSeedMatch = isFirstRound && hasOnlyOneTeam;
       
       if (isSeedMatch) {
         const winningTeamId = match.team1Id || match.team2Id;
@@ -228,7 +232,7 @@ export class LeaguePlayoffHelper {
         
         // 次の試合を探して勝者を進出させる
         const nextRoundMatch = newPlayoffMatches.find(m => 
-          m.round === match.round - 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
+          m.round === match.round + 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
         );
         
         if (nextRoundMatch) {
@@ -248,10 +252,12 @@ export class LeaguePlayoffHelper {
       const isTBDTeam2 = match.team2Id && match.team2Id.startsWith('tbd_');
       if (isTBDTeam1 || isTBDTeam2) return;
       
-      // 完了して勝者が決まっている試合で、シード戦ではない試合
-      if (match.status === 'completed' && match.winnerId && match.team1Id && match.team2Id) {
+      // 完了して勝者が決まっている試合で、両方のチームが存在する試合
+      if (match.status === 'completed' && match.winnerId && 
+          match.team1Id && match.team1Id !== '' && 
+          match.team2Id && match.team2Id !== '') {
         const nextRoundMatch = newPlayoffMatches.find(m => 
-          m.round === match.round - 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
+          m.round === match.round + 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
         );
         
         // 次のラウンドがあり、進出先の位置が空いている場合のみ進出させる
@@ -261,7 +267,8 @@ export class LeaguePlayoffHelper {
           // 既に他の試合から進出してきた場合は上書きしない
           // また、TBDチームがある場合も上書きしない
           const isTBDNextTeam = nextRoundMatch[position] && nextRoundMatch[position].startsWith('tbd_');
-          if (!nextRoundMatch[position] || (nextRoundMatch[position] && !isTBDNextTeam)) {
+          if (!nextRoundMatch[position] || nextRoundMatch[position] === '' || 
+              (nextRoundMatch[position] && !isTBDNextTeam)) {
             nextRoundMatch[position] = match.winnerId;
           }
         }
@@ -270,33 +277,41 @@ export class LeaguePlayoffHelper {
     
     // 3. 3位決定戦の処理
     const maxRound = newPlayoffMatches.length > 0 ? Math.max(...newPlayoffMatches.map(m => m.round)) : 0;
+    
+    // 準決勝ラウンドを正しく特定する
+    // 4チームの場合：準決勝=Round1、決勝=Round2
+    // 8チームの場合：準々決勝=Round1、準決勝=Round2、決勝=Round3
     const semifinalRound = maxRound - 1;
     
+    // 準決勝の試合を取得（完了した試合のみ）
     const semifinalMatches = newPlayoffMatches.filter(m => 
-      m.round === semifinalRound && m.winnerId && 
-      !m.team1Id?.startsWith('tbd_') && !m.team2Id?.startsWith('tbd_') // TBDチームを含まない準決勝のみ
+      m.round === semifinalRound && 
+      m.status === 'completed' && 
+      m.winnerId && 
+      m.team1Id && m.team2Id && // 両方のチームが存在
+      !m.team1Id?.startsWith('tbd_') && !m.team2Id?.startsWith('tbd_') // TBDチームを含まない
     );
     
     const thirdPlaceMatch = newPlayoffMatches.find(m => 
       m.matchNumber === 0 || m.id.includes('third_place')
     );
     
-    if (semifinalMatches.length > 0 && thirdPlaceMatch) {
+    if (semifinalMatches.length >= 2 && thirdPlaceMatch) {
+      // 準決勝の敗者を取得
       const losers = semifinalMatches.map(match => {
-        // TBDチームを含む試合からは敗者を取得しない
-        if (match.team1Id?.startsWith('tbd_') || match.team2Id?.startsWith('tbd_')) {
-          return null;
-        }
+        // 勝者でない方が敗者
         return match.team1Id === match.winnerId ? match.team2Id : match.team1Id;
-      }).filter((id): id is string => Boolean(id)); // nullを除外して文字列型だけに絞り込む
+      }).filter((id): id is string => Boolean(id) && !id.startsWith('tbd_'));
       
-      // 空いている位置にのみ敗者を配置
-      if (!thirdPlaceMatch.team1Id && losers.length > 0) {
-        thirdPlaceMatch.team1Id = losers[0];
-      }
-      
-      if (!thirdPlaceMatch.team2Id && losers.length > 1) {
-        thirdPlaceMatch.team2Id = losers[1];
+      // 3位決定戦に敗者を配置（空いている位置のみ）
+      if (losers.length >= 2) {
+        if (!thirdPlaceMatch.team1Id || thirdPlaceMatch.team1Id === '') {
+          thirdPlaceMatch.team1Id = losers[0];
+        }
+        
+        if (!thirdPlaceMatch.team2Id || thirdPlaceMatch.team2Id === '') {
+          thirdPlaceMatch.team2Id = losers[1];
+        }
       }
     }
     
