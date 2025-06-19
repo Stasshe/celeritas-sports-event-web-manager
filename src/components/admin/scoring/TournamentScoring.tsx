@@ -223,46 +223,44 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       // 即時にローカル状態を更新（UXのため）
       let newMatches = matches.map(m => 
         m.id === newMatch.id ? newMatch : m
-      );
-
-      // 準決勝の試合でスコアが入ったときの特別処理
-      if (newMatch.winnerId && team1Exists && team2Exists) {
-        // 通常の勝者進出処理
-        newMatches = TournamentStructureHelper.progressWinnerToNextMatch(newMatch, newMatches);
-        
-        // 準決勝の場合は敗者を3位決定戦に進出させる
-        const maxRound = Math.max(...newMatches.map(m => m.round));
-        const isSemiFinal = newMatch.round === maxRound - 1;
-        
-        if (isSemiFinal) {
-          // 敗者を特定
-          const loserId = newMatch.team1Id === newMatch.winnerId 
-            ? newMatch.team2Id 
-            : newMatch.team1Id;
+      );        // 準決勝の試合でスコアが入ったときの特別処理
+        if (newMatch.winnerId && team1Exists && team2Exists) {
+          // 通常の勝者進出処理
+          newMatches = TournamentStructureHelper.progressWinnerToNextMatch(newMatch, newMatches);
           
-          // 3位決定戦の試合を探す
-          const thirdPlaceMatch = newMatches.find(m => 
-            m.matchNumber === 0 || m.id.includes('third_place')
-          );
+          // 準決勝の場合は敗者を3位決定戦に進出させる
+          const maxRound = Math.max(...newMatches.map(m => m.round));
+          const isSemiFinal = newMatch.round === maxRound - 1;
           
-          // 3位決定戦が存在する場合、敗者を配置
-          if (thirdPlaceMatch) {
-            const updatedThirdPlaceMatch = { ...thirdPlaceMatch };
+          if (isSemiFinal) {
+            // 敗者を特定
+            const loserId = newMatch.team1Id === newMatch.winnerId 
+              ? newMatch.team2Id 
+              : newMatch.team1Id;
             
-            // 最初の敗者をteam1に、2番目の敗者をteam2に配置
-            if (!updatedThirdPlaceMatch.team1Id) {
-              updatedThirdPlaceMatch.team1Id = loserId;
-            } else if (!updatedThirdPlaceMatch.team2Id) {
-              updatedThirdPlaceMatch.team2Id = loserId;
-            }
-            
-            // 3位決定戦を更新
-            newMatches = newMatches.map(m => 
-              m.id === updatedThirdPlaceMatch.id ? updatedThirdPlaceMatch : m
+            // 3位決定戦の試合を探す
+            const thirdPlaceMatch = newMatches.find(m => 
+              m.matchNumber === 0 || m.id.includes('third_place')
             );
+            
+            // 3位決定戦が存在する場合、敗者を配置
+            if (thirdPlaceMatch) {
+              const updatedThirdPlaceMatch = { ...thirdPlaceMatch };
+              
+              // 最初の敗者をteam1に、2番目の敗者をteam2に配置
+              if (!updatedThirdPlaceMatch.team1Id) {
+                updatedThirdPlaceMatch.team1Id = loserId;
+              } else if (!updatedThirdPlaceMatch.team2Id) {
+                updatedThirdPlaceMatch.team2Id = loserId;
+              }
+              
+              // 3位決定戦を更新
+              newMatches = newMatches.map(m => 
+                m.id === updatedThirdPlaceMatch.id ? updatedThirdPlaceMatch : m
+              );
+            }
           }
         }
-      }
 
       // ローカルのUI更新を先に行い、ダイアログを閉じる
       setMatches(newMatches);

@@ -155,9 +155,14 @@ export class LeaguePlayoffHelper {
       
       // 3位決定戦を追加
       if (hasThirdPlaceMatch && newPlayoffMatches.length > 0 && playoffTeamObjects.length >= 4) {
-        // 準決勝戦を特定 - ラウンド2が準決勝
-        const semifinalMatches = newPlayoffMatches.filter(m => m.round === 2);
+        // 最大ラウンドを取得（決勝戦のラウンド）
+        const maxRound = Math.max(...newPlayoffMatches.map(m => m.round));
         
+        // 準決勝戦を特定 - 決勝の一つ前のラウンドが準決勝
+        const semifinalRound = maxRound - 1;
+        const semifinalMatches = newPlayoffMatches.filter(m => m.round === semifinalRound);
+        
+        // 準決勝戦が2試合以上ある場合のみ3位決定戦を生成
         if (semifinalMatches.length >= 2) {
           // 3位決定戦の試合を生成
           const thirdPlaceMatch: Match = {
@@ -166,7 +171,7 @@ export class LeaguePlayoffHelper {
             team2Id: '', // 準決勝敗者が入る
             team1Score: 0,
             team2Score: 0,
-            round: 1, // 決勝と同じラウンド
+            round: maxRound, // 決勝と同じラウンド
             matchNumber: 0, // 特別な番号として0を使用
             status: 'scheduled',
             date: new Date().toISOString().split('T')[0],
@@ -264,8 +269,11 @@ export class LeaguePlayoffHelper {
     });
     
     // 3. 3位決定戦の処理
+    const maxRound = newPlayoffMatches.length > 0 ? Math.max(...newPlayoffMatches.map(m => m.round)) : 0;
+    const semifinalRound = maxRound - 1;
+    
     const semifinalMatches = newPlayoffMatches.filter(m => 
-      m.round === 2 && m.winnerId && 
+      m.round === semifinalRound && m.winnerId && 
       !m.team1Id?.startsWith('tbd_') && !m.team2Id?.startsWith('tbd_') // TBDチームを含まない準決勝のみ
     );
     
