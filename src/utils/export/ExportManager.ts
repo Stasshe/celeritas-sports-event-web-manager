@@ -19,7 +19,9 @@ export class ExportError extends Error {
   constructor(
     public code: string,
     message: string,
-    public originalError?: Error
+    public originalError?: Error,
+    public details?: string[],
+    public context?: any
   ) {
     super(message);
     this.name = 'ExportError';
@@ -99,8 +101,19 @@ export const exportToExcel = async (
     try {
       // Add overall winners sheet if requested
       if (options.includeOverallWinners) {
-        const overallSheet = workbook.addWorksheet('Overall Winners');
-        addOverallWinnersSheet(overallSheet, events, sports);
+        try {
+          const overallSheet = workbook.addWorksheet('Overall Winners');
+          addOverallWinnersSheet(overallSheet, events, sports);
+        } catch (error) {
+          const errorDetails = [`総合優勝者シート作成エラー: ${error instanceof Error ? error.message : String(error)}`];
+          throw new ExportError(
+            ERROR_CODES.DATA_PROCESSING_FAILED,
+            '総合優勝者シートの作成に失敗しました',
+            error as Error,
+            errorDetails,
+            { section: 'overallWinners' }
+          );
+        }
       }
       
       // Add individual event sheets
@@ -115,7 +128,7 @@ export const exportToExcel = async (
           : filteredSports;
 
         if (finalFilteredSports.length === 0) {
-          throw new ExportError(ERROR_CODES.NO_DATA, 'No sports data matches the selected filters');
+          throw new ExportError(ERROR_CODES.NO_DATA, 'フィルター条件に一致する競技データがありません');
         }
           
         // Group sports by event
@@ -127,44 +140,93 @@ export const exportToExcel = async (
           sportsByEvent[sport.eventId].push(sport);
         });
         
+        const processingErrors: string[] = [];
+        
         // Create sheets for each event and its sports
         for (const [eventId, eventSports] of Object.entries(sportsByEvent)) {
           const event = events[eventId];
-          if (!event) continue;
+          if (!event) {
+            processingErrors.push(`イベントID ${eventId} のデータが見つかりません`);
+            continue;
+          }
           
-          // Add event information sheet
-          const eventSheet = workbook.addWorksheet(`Event - ${event.name}`);
-          addEventInfoSheet(eventSheet, event, eventSports);
+          try {
+            // Add event information sheet
+            const eventSheet = workbook.addWorksheet(`Event - ${event.name}`);
+            addEventInfoSheet(eventSheet, event, eventSports);
+          } catch (error) {
+            processingErrors.push(`イベント情報シート作成エラー (${event.name}): ${error instanceof Error ? error.message : String(error)}`);
+          }
           
           // Add sheets for each sport based on its type
           for (const sport of eventSports) {
-            const sportSheet = workbook.addWorksheet(`${event.name} - ${sport.name}`);
-            
-            // Use the appropriate exporter based on sport type
-            switch (sport.type) {
-              case 'tournament':
-                await exportTournament(sportSheet, sport);
-                break;
-              case 'roundRobin':
-                await exportRoundRobin(sportSheet, sport);
-                break;
-              case 'league':
-                await exportLeague(sportSheet, sport);
-                break;
-              case 'ranking':
-                await exportRanking(sportSheet, sport);
-                break;
-              default:
-                addGenericSportSheet(sportSheet, sport);
+            try {
+              const sportSheet = workbook.addWorksheet(`${event.name} - ${sport.name}`);
+              
+              // Use the appropriate exporter based on sport type
+              switch (sport.type) {
+                case 'tournament':
+                  try {
+                    await exportTournament(sportSheet, sport);
+                  } catch (error) {
+                    processingErrors.push(`トーナメント処理エラー (${sport.name}): ${error instanceof Error ? error.message : String(error)}`);
+                    // フォールバックとして汎用シートを作成
+                    addGenericSportSheet(sportSheet, sport);
+                  }
+                  break;
+                case 'roundRobin':
+                  try {
+                    await exportRoundRobin(sportSheet, sport);
+                  } catch (error) {
+                    processingErrors.push(`ラウンドロビン処理エラー (${sport.name}): ${error instanceof Error ? error.message : String(error)}`);
+                    addGenericSportSheet(sportSheet, sport);
+                  }
+                  break;
+                case 'league':
+                  try {
+                    await exportLeague(sportSheet, sport);
+                  } catch (error) {
+                    processingErrors.push(`リーグ処理エラー (${sport.name}): ${error instanceof Error ? error.message : String(error)}`);
+                    addGenericSportSheet(sportSheet, sport);
+                  }
+                  break;
+                case 'ranking':
+                  try {
+                    await exportRanking(sportSheet, sport);
+                  } catch (error) {
+                    processingErrors.push(`ランキング処理エラー (${sport.name}): ${error instanceof Error ? error.message : String(error)}`);
+                    addGenericSportSheet(sportSheet, sport);
+                  }
+                  break;
+                default:
+                  try {
+                    addGenericSportSheet(sportSheet, sport);
+                  } catch (error) {
+                    processingErrors.push(`汎用シート作成エラー (${sport.name}): ${error instanceof Error ? error.message : String(error)}`);
+                  }
+              }
+            } catch (error) {
+              processingErrors.push(`競技シート作成エラー (${sport.name}): ${error instanceof Error ? error.message : String(error)}`);
             }
           }
         }
+        
+        // 処理エラーがある場合は警告として投げる（処理は続行）
+        if (processingErrors.length > 0) {
+          console.warn('Export processing warnings:', processingErrors);
+          // 部分的な成功として扱う場合は、エラーを投げずに警告として保持
+        }
       }
     } catch (error) {
+      if (error instanceof ExportError) {
+        throw error;
+      }
       throw new ExportError(
         ERROR_CODES.DATA_PROCESSING_FAILED,
-        'Failed to process data for export',
-        error as Error
+        'データ処理中にエラーが発生しました',
+        error as Error,
+        [`詳細: ${error instanceof Error ? error.message : String(error)}`],
+        { section: 'dataProcessing' }
       );
     }
     
@@ -173,10 +235,17 @@ export const exportToExcel = async (
     try {
       buffer = await workbook.xlsx.writeBuffer();
     } catch (error) {
+      const errorDetails = [
+        `ファイル生成エラーの詳細: ${error instanceof Error ? error.message : String(error)}`,
+        `ワークシート数: ${workbook.worksheets.length}`,
+        `メモリ使用量推定: ${Math.round(JSON.stringify(workbook).length / 1024 / 1024)}MB`
+      ];
       throw new ExportError(
         ERROR_CODES.FILE_GENERATION_FAILED,
-        'Failed to generate Excel file',
-        error as Error
+        'Excelファイルの生成に失敗しました',
+        error as Error,
+        errorDetails,
+        { worksheetCount: workbook.worksheets.length }
       );
     }
 
@@ -186,23 +255,35 @@ export const exportToExcel = async (
       saveAs(blob, fileName);
     } catch (error) {
       const err = error as Error;
+      const errorDetails = [
+        `ダウンロードエラーの詳細: ${err.message}`,
+        `ファイルサイズ: ${Math.round(buffer.byteLength / 1024 / 1024 * 100) / 100}MB`,
+        `ブラウザ: ${navigator.userAgent}`,
+        `エラー名: ${err.name}`
+      ];
+      
       if (err.name === 'SecurityError' || err.message.includes('permission')) {
         throw new ExportError(
           ERROR_CODES.PERMISSION_DENIED,
-          'Permission denied to save file',
-          err
+          'ファイル保存の権限がありません',
+          err,
+          errorDetails,
+          { fileSize: buffer.byteLength }
         );
       } else if (err.message.includes('network') || err.message.includes('Network')) {
         throw new ExportError(
           ERROR_CODES.NETWORK_ERROR,
-          'Network error during download',
-          err
+          'ネットワークエラーが発生しました',
+          err,
+          errorDetails
         );
       } else {
         throw new ExportError(
           ERROR_CODES.DOWNLOAD_FAILED,
-          'Failed to download file',
-          err
+          'ファイルのダウンロードに失敗しました',
+          err,
+          errorDetails,
+          { fileSize: buffer.byteLength }
         );
       }
     }

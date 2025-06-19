@@ -16,12 +16,21 @@ import {
   Grid, 
   Divider, 
   Alert, 
-  useTheme
+  useTheme,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Chip,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import { 
   GetApp as DownloadIcon,
   Event as EventIcon,
-  SportsSoccer as SportIcon
+  SportsSoccer as SportIcon,
+  ExpandMore as ExpandMoreIcon,
+  ContentCopy as ContentCopyIcon,
+  BugReport as BugReportIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../../hooks/useDatabase';
@@ -32,7 +41,10 @@ import { useThemeContext } from '../../contexts/ThemeContext';
 const ExportPanel: React.FC = () => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { alpha } = useThemeContext(); // Add this line to get the alpha function
+  const { alpha } = useThemeContext();
+  
+  // 詳細エラー表示の状態
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
   
   // Fetch data
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
@@ -53,55 +65,36 @@ const ExportPanel: React.FC = () => {
     status: 'idle' | 'loading' | 'success' | 'error';
     message?: string;
     errorCode?: string;
-    details?: string;
+    details?: string[];
+    originalError?: string;
+    context?: any;
   }>({ status: 'idle' });
   
   // Loading state
   const isLoading = eventsLoading || sportsLoading || exportStatus.status === 'loading';
 
-  // エラーメッセージの翻訳を取得する関数
-  const getErrorMessage = (error: ExportError | Error): { message: string; details?: string } => {
+  // エラーメッセージの処理を改善
+  const getErrorMessage = (error: ExportError | Error): { 
+    message: string; 
+    details?: string[];
+    originalError?: string;
+    context?: any;
+  } => {
     if (error instanceof ExportError) {
-      const errorKey = `export.errors.${getErrorKeyFromCode(error.code)}`;
       return {
-        message: t(errorKey),
-        details: error.originalError?.message
+        message: error.message,
+        details: error.details,
+        originalError: error.originalError?.message,
+        context: error.context
       };
     }
     
     // 一般的なエラーの場合
     return {
-      message: t('export.errors.unknown'),
-      details: error.message
+      message: '予期しないエラーが発生しました',
+      details: [error.message],
+      originalError: error.message
     };
-  };
-
-  // エラーコードからキーを取得する関数
-  const getErrorKeyFromCode = (code: string): string => {
-    switch (code) {
-      case ERROR_CODES.NO_DATA:
-        return 'noData';
-      case ERROR_CODES.NO_EVENTS_SELECTED:
-        return 'noEventsSelected';
-      case ERROR_CODES.NO_SPORTS_SELECTED:
-        return 'noSportsSelected';
-      case ERROR_CODES.INVALID_FILE_NAME:
-        return 'invalidFileName';
-      case ERROR_CODES.WORKBOOK_CREATION_FAILED:
-        return 'workbookCreationFailed';
-      case ERROR_CODES.DATA_PROCESSING_FAILED:
-        return 'dataProcessingFailed';
-      case ERROR_CODES.FILE_GENERATION_FAILED:
-        return 'fileGenerationFailed';
-      case ERROR_CODES.DOWNLOAD_FAILED:
-        return 'downloadFailed';
-      case ERROR_CODES.NETWORK_ERROR:
-        return 'networkError';
-      case ERROR_CODES.PERMISSION_DENIED:
-        return 'permissionDenied';
-      default:
-        return 'unknown';
-    }
   };
   
   // Handle export option changes
@@ -160,7 +153,11 @@ const ExportPanel: React.FC = () => {
       if (!events || !sports) {
         setExportStatus({
           status: 'error',
-          message: t('export.errors.noData'),
+          message: 'エクスポートするデータが見つかりません',
+          details: [
+            'イベントデータ: ' + (events ? `${Object.keys(events).length}件` : '未読み込み'),
+            'スポーツデータ: ' + (sports ? `${Object.keys(sports).length}件` : '未読み込み')
+          ],
           errorCode: ERROR_CODES.NO_DATA
         });
         return;
@@ -170,7 +167,8 @@ const ExportPanel: React.FC = () => {
       if (exportOptions.exportScope === 'selectedEvents' && exportOptions.selectedEventIds.length === 0) {
         setExportStatus({
           status: 'error',
-          message: t('export.errors.noEventsSelected'),
+          message: 'エクスポートするイベントが選択されていません',
+          details: ['少なくとも1つのイベントを選択してください'],
           errorCode: ERROR_CODES.NO_EVENTS_SELECTED
         });
         return;
@@ -179,7 +177,8 @@ const ExportPanel: React.FC = () => {
       if (exportOptions.exportScope === 'selectedSports' && exportOptions.selectedSportIds.length === 0) {
         setExportStatus({
           status: 'error',
-          message: t('export.errors.noSportsSelected'),
+          message: 'エクスポートする競技が選択されていません',
+          details: ['少なくとも1つの競技を選択してください'],
           errorCode: ERROR_CODES.NO_SPORTS_SELECTED
         });
         return;
@@ -189,8 +188,12 @@ const ExportPanel: React.FC = () => {
       if (!exportOptions.includeOverallWinners && !exportOptions.includeIndividualEvents) {
         setExportStatus({
           status: 'error',
-          message: t('export.errors.noData'),
-          details: 'すべてのコンテンツオプションが無効になっています'
+          message: 'エクスポートするコンテンツが選択されていません',
+          details: [
+            '総合優勝者または個別イベントのいずれかを選択してください',
+            '現在の設定: 総合優勝者=' + (exportOptions.includeOverallWinners ? '有効' : '無効'),
+            '現在の設定: 個別イベント=' + (exportOptions.includeIndividualEvents ? '有効' : '無効')
+          ]
         });
         return;
       }
@@ -252,13 +255,15 @@ const ExportPanel: React.FC = () => {
         status: 'error',
         message: errorInfo.message,
         details: errorInfo.details,
+        originalError: errorInfo.originalError,
+        context: errorInfo.context,
         errorCode: error instanceof ExportError ? error.code : ERROR_CODES.UNKNOWN
       });
 
       // Reset status after a longer delay for errors
       setTimeout(() => {
         setExportStatus({ status: 'idle' });
-      }, 10000);
+      }, 15000); // エラーは15秒表示
     }
   };
   
@@ -298,6 +303,38 @@ const ExportPanel: React.FC = () => {
     return Object.values(sports).filter(sport => sport.eventId === eventId);
   };
   
+  // エラーログをクリップボードにコピーする関数
+  const copyErrorToClipboard = () => {
+    if (exportStatus.status === 'error') {
+      const errorLog = [
+        `エラー発生時刻: ${new Date().toLocaleString()}`,
+        `エラーメッセージ: ${exportStatus.message}`,
+        `エラーコード: ${exportStatus.errorCode || 'UNKNOWN'}`,
+        '',
+        '詳細ログ:',
+        ...(exportStatus.details || []).map(detail => `- ${detail}`),
+        '',
+        exportStatus.originalError ? `元エラー: ${exportStatus.originalError}` : '',
+        exportStatus.context ? `コンテキスト: ${JSON.stringify(exportStatus.context, null, 2)}` : '',
+        '',
+        `エクスポート設定:`,
+        `- 総合優勝者を含む: ${exportOptions.includeOverallWinners}`,
+        `- 個別イベントを含む: ${exportOptions.includeIndividualEvents}`,
+        `- エクスポート範囲: ${exportOptions.exportScope}`,
+        `- カスタムファイル名: ${exportOptions.customFileName || '(なし)'}`,
+        `- 選択イベント数: ${exportOptions.selectedEventIds.length}`,
+        `- 選択競技数: ${exportOptions.selectedSportIds.length}`,
+        '',
+        `ブラウザ情報: ${navigator.userAgent}`
+      ].filter(Boolean).join('\n');
+
+      navigator.clipboard.writeText(errorLog).then(() => {
+        // コピー成功の通知（簡単なフィードバック）
+        console.log('エラーログをクリップボードにコピーしました');
+      });
+    }
+  };
+
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h4" gutterBottom>
@@ -324,34 +361,98 @@ const ExportPanel: React.FC = () => {
               severity="error" 
               sx={{ mb: 2 }}
               action={
-                exportStatus.details && (
-                  <Button 
-                    color="inherit" 
-                    size="small" 
-                    onClick={() => {
-                      navigator.clipboard.writeText(exportStatus.details || '');
-                    }}
-                  >
-                    詳細をコピー
-                  </Button>
-                )
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Tooltip title="エラーログをクリップボードにコピー">
+                    <IconButton 
+                      color="inherit" 
+                      size="small" 
+                      onClick={copyErrorToClipboard}
+                    >
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  {(exportStatus.details || exportStatus.originalError || exportStatus.context) && (
+                    <Button 
+                      color="inherit" 
+                      size="small" 
+                      onClick={() => setShowErrorDetails(!showErrorDetails)}
+                      startIcon={<BugReportIcon />}
+                    >
+                      {showErrorDetails ? '詳細を隠す' : '詳細を表示'}
+                    </Button>
+                  )}
+                </Box>
               }
             >
               <Box>
                 <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                   {exportStatus.message}
                 </Typography>
-                {exportStatus.details && (
-                  <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
-                    詳細: {exportStatus.details}
-                  </Typography>
-                )}
                 {exportStatus.errorCode && (
-                  <Typography variant="caption" sx={{ mt: 1, display: 'block', opacity: 0.7 }}>
-                    エラーコード: {exportStatus.errorCode}
-                  </Typography>
+                  <Chip 
+                    label={`エラーコード: ${exportStatus.errorCode}`} 
+                    size="small" 
+                    variant="outlined" 
+                    sx={{ mt: 1 }} 
+                  />
                 )}
               </Box>
+              
+              {showErrorDetails && (
+                <Accordion sx={{ mt: 2, bgcolor: 'transparent' }} elevation={0}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle2">詳細エラーログ</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Box sx={{ backgroundColor: alpha(theme.palette.error.main, 0.1), p: 2, borderRadius: 1 }}>
+                      {exportStatus.details && exportStatus.details.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="subtitle2" gutterBottom>処理詳細:</Typography>
+                          {exportStatus.details.map((detail, index) => (
+                            <Typography key={index} variant="body2" sx={{ fontFamily: 'monospace', mb: 0.5 }}>
+                              • {detail}
+                            </Typography>
+                          ))}
+                        </Box>
+                      )}
+                      
+                      {exportStatus.originalError && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="subtitle2" gutterBottom>元エラー:</Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'error.dark' }}>
+                            {exportStatus.originalError}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {exportStatus.context && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="subtitle2" gutterBottom>コンテキスト:</Typography>
+                          <pre style={{ 
+                            fontSize: '0.75rem', 
+                            margin: 0, 
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word'
+                          }}>
+                            {JSON.stringify(exportStatus.context, null, 2)}
+                          </pre>
+                        </Box>
+                      )}
+                      
+                      <Box>
+                        <Typography variant="subtitle2" gutterBottom>エクスポート設定:</Typography>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                          総合優勝者: {exportOptions.includeOverallWinners ? '有効' : '無効'}<br />
+                          個別イベント: {exportOptions.includeIndividualEvents ? '有効' : '無効'}<br />
+                          範囲: {exportOptions.exportScope}<br />
+                          選択イベント数: {exportOptions.selectedEventIds.length}<br />
+                          選択競技数: {exportOptions.selectedSportIds.length}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
+              )}
             </Alert>
           )}
           
