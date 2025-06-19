@@ -14,6 +14,40 @@ interface ExportOptions {
   fileName?: string;
 }
 
+// カスタムエラークラスを定義
+export class ExportError extends Error {
+  constructor(
+    public code: string,
+    message: string,
+    public originalError?: Error
+  ) {
+    super(message);
+    this.name = 'ExportError';
+  }
+}
+
+// エラーコード定数
+export const ERROR_CODES = {
+  NO_DATA: 'NO_DATA',
+  NO_EVENTS_SELECTED: 'NO_EVENTS_SELECTED', 
+  NO_SPORTS_SELECTED: 'NO_SPORTS_SELECTED',
+  INVALID_FILE_NAME: 'INVALID_FILE_NAME',
+  WORKBOOK_CREATION_FAILED: 'WORKBOOK_CREATION_FAILED',
+  DATA_PROCESSING_FAILED: 'DATA_PROCESSING_FAILED',
+  FILE_GENERATION_FAILED: 'FILE_GENERATION_FAILED',
+  DOWNLOAD_FAILED: 'DOWNLOAD_FAILED',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  PERMISSION_DENIED: 'PERMISSION_DENIED',
+  UNKNOWN: 'UNKNOWN'
+} as const;
+
+// ファイル名のバリデーション関数
+const validateFileName = (fileName: string): boolean => {
+  // 英数字、ハイフン、アンダースコア、日本語文字のみ許可
+  const validPattern = /^[a-zA-Z0-9\-_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\s]+$/;
+  return validPattern.test(fileName) && fileName.length > 0 && fileName.length <= 255;
+};
+
 /**
  * Main export manager for generating Excel files with competition results
  */
@@ -23,78 +57,170 @@ export const exportToExcel = async (
   options: ExportOptions = {}
 ): Promise<void> => {
   try {
-    // Initialize workbook
-    const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Sports Event Manager';
-    workbook.created = new Date();
-    
-    // Set default filename if not provided
+    // データの存在チェック
+    if (!events || Object.keys(events).length === 0) {
+      throw new ExportError(ERROR_CODES.NO_DATA, 'No events data available');
+    }
+
+    if (!sports || Object.keys(sports).length === 0) {
+      throw new ExportError(ERROR_CODES.NO_DATA, 'No sports data available');
+    }
+
+    // オプションのバリデーション
+    if (options.eventIds && options.eventIds.length === 0) {
+      throw new ExportError(ERROR_CODES.NO_EVENTS_SELECTED, 'No events selected for export');
+    }
+
+    if (options.sportIds && options.sportIds.length === 0) {
+      throw new ExportError(ERROR_CODES.NO_SPORTS_SELECTED, 'No sports selected for export');
+    }
+
+    // ファイル名のバリデーション
     const fileName = options.fileName || 'sports-results.xlsx';
-    
-    // Add overall winners sheet if requested
-    if (options.includeOverallWinners) {
-      const overallSheet = workbook.addWorksheet('Overall Winners');
-      addOverallWinnersSheet(overallSheet, events, sports);
+    const baseFileName = fileName.replace(/\.xlsx$/, '');
+    if (!validateFileName(baseFileName)) {
+      throw new ExportError(ERROR_CODES.INVALID_FILE_NAME, 'Invalid file name format');
+    }
+
+    // Initialize workbook
+    let workbook: ExcelJS.Workbook;
+    try {
+      workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Sports Event Manager';
+      workbook.created = new Date();
+    } catch (error) {
+      throw new ExportError(
+        ERROR_CODES.WORKBOOK_CREATION_FAILED, 
+        'Failed to create Excel workbook',
+        error as Error
+      );
     }
     
-    // Add individual event sheets
-    if (options.includeIndividualEvents) {
-      const filteredSports = options.sportIds 
-        ? Object.values(sports).filter(sport => options.sportIds?.includes(sport.id))
-        : Object.values(sports);
-        
-      // Group sports by event
-      const sportsByEvent: Record<string, Sport[]> = {};
-      filteredSports.forEach(sport => {
-        if (!sportsByEvent[sport.eventId]) {
-          sportsByEvent[sport.eventId] = [];
-        }
-        sportsByEvent[sport.eventId].push(sport);
-      });
+    try {
+      // Add overall winners sheet if requested
+      if (options.includeOverallWinners) {
+        const overallSheet = workbook.addWorksheet('Overall Winners');
+        addOverallWinnersSheet(overallSheet, events, sports);
+      }
       
-      // Create sheets for each event and its sports
-      for (const [eventId, eventSports] of Object.entries(sportsByEvent)) {
-        const event = events[eventId];
-        if (!event) continue;
-        
-        // Add event information sheet
-        const eventSheet = workbook.addWorksheet(`Event - ${event.name}`);
-        addEventInfoSheet(eventSheet, event, eventSports);
-        
-        // Add sheets for each sport based on its type
-        for (const sport of eventSports) {
-          const sportSheet = workbook.addWorksheet(`${event.name} - ${sport.name}`);
+      // Add individual event sheets
+      if (options.includeIndividualEvents) {
+        const filteredSports = options.sportIds 
+          ? Object.values(sports).filter(sport => options.sportIds?.includes(sport.id))
+          : Object.values(sports);
           
-          // Use the appropriate exporter based on sport type
-          switch (sport.type) {
-            case 'tournament':
-              await exportTournament(sportSheet, sport);
-              break;
-            case 'roundRobin':
-              await exportRoundRobin(sportSheet, sport);
-              break;
-            case 'league':
-              await exportLeague(sportSheet, sport);
-              break;
-            case 'ranking':
-              await exportRanking(sportSheet, sport);
-              break;
-            default:
-              addGenericSportSheet(sportSheet, sport);
+        // イベントIDフィルターが指定されている場合はそれも考慮
+        const finalFilteredSports = options.eventIds
+          ? filteredSports.filter(sport => options.eventIds?.includes(sport.eventId))
+          : filteredSports;
+
+        if (finalFilteredSports.length === 0) {
+          throw new ExportError(ERROR_CODES.NO_DATA, 'No sports data matches the selected filters');
+        }
+          
+        // Group sports by event
+        const sportsByEvent: Record<string, Sport[]> = {};
+        finalFilteredSports.forEach(sport => {
+          if (!sportsByEvent[sport.eventId]) {
+            sportsByEvent[sport.eventId] = [];
+          }
+          sportsByEvent[sport.eventId].push(sport);
+        });
+        
+        // Create sheets for each event and its sports
+        for (const [eventId, eventSports] of Object.entries(sportsByEvent)) {
+          const event = events[eventId];
+          if (!event) continue;
+          
+          // Add event information sheet
+          const eventSheet = workbook.addWorksheet(`Event - ${event.name}`);
+          addEventInfoSheet(eventSheet, event, eventSports);
+          
+          // Add sheets for each sport based on its type
+          for (const sport of eventSports) {
+            const sportSheet = workbook.addWorksheet(`${event.name} - ${sport.name}`);
+            
+            // Use the appropriate exporter based on sport type
+            switch (sport.type) {
+              case 'tournament':
+                await exportTournament(sportSheet, sport);
+                break;
+              case 'roundRobin':
+                await exportRoundRobin(sportSheet, sport);
+                break;
+              case 'league':
+                await exportLeague(sportSheet, sport);
+                break;
+              case 'ranking':
+                await exportRanking(sportSheet, sport);
+                break;
+              default:
+                addGenericSportSheet(sportSheet, sport);
+            }
           }
         }
       }
+    } catch (error) {
+      throw new ExportError(
+        ERROR_CODES.DATA_PROCESSING_FAILED,
+        'Failed to process data for export',
+        error as Error
+      );
     }
     
     // Generate Excel file
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, fileName);
+    let buffer: ArrayBuffer;
+    try {
+      buffer = await workbook.xlsx.writeBuffer();
+    } catch (error) {
+      throw new ExportError(
+        ERROR_CODES.FILE_GENERATION_FAILED,
+        'Failed to generate Excel file',
+        error as Error
+      );
+    }
+
+    // Download file
+    try {
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, fileName);
+    } catch (error) {
+      const err = error as Error;
+      if (err.name === 'SecurityError' || err.message.includes('permission')) {
+        throw new ExportError(
+          ERROR_CODES.PERMISSION_DENIED,
+          'Permission denied to save file',
+          err
+        );
+      } else if (err.message.includes('network') || err.message.includes('Network')) {
+        throw new ExportError(
+          ERROR_CODES.NETWORK_ERROR,
+          'Network error during download',
+          err
+        );
+      } else {
+        throw new ExportError(
+          ERROR_CODES.DOWNLOAD_FAILED,
+          'Failed to download file',
+          err
+        );
+      }
+    }
     
     return;
   } catch (error) {
+    // ExportErrorの場合はそのまま再throw
+    if (error instanceof ExportError) {
+      throw error;
+    }
+    
+    // その他のエラーは汎用エラーとして扱う
     console.error('Export to Excel failed:', error);
-    throw error;
+    throw new ExportError(
+      ERROR_CODES.UNKNOWN,
+      'An unexpected error occurred during export',
+      error as Error
+    );
   }
 };
 

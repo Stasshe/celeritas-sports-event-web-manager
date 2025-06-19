@@ -26,7 +26,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
-import { exportToExcel } from '../../utils/export/ExportManager';
+import { exportToExcel, ExportError, ERROR_CODES } from '../../utils/export/ExportManager';
 import { useThemeContext } from '../../contexts/ThemeContext';
 
 const ExportPanel: React.FC = () => {
@@ -52,10 +52,57 @@ const ExportPanel: React.FC = () => {
   const [exportStatus, setExportStatus] = useState<{
     status: 'idle' | 'loading' | 'success' | 'error';
     message?: string;
+    errorCode?: string;
+    details?: string;
   }>({ status: 'idle' });
   
   // Loading state
   const isLoading = eventsLoading || sportsLoading || exportStatus.status === 'loading';
+
+  // エラーメッセージの翻訳を取得する関数
+  const getErrorMessage = (error: ExportError | Error): { message: string; details?: string } => {
+    if (error instanceof ExportError) {
+      const errorKey = `export.errors.${getErrorKeyFromCode(error.code)}`;
+      return {
+        message: t(errorKey),
+        details: error.originalError?.message
+      };
+    }
+    
+    // 一般的なエラーの場合
+    return {
+      message: t('export.errors.unknown'),
+      details: error.message
+    };
+  };
+
+  // エラーコードからキーを取得する関数
+  const getErrorKeyFromCode = (code: string): string => {
+    switch (code) {
+      case ERROR_CODES.NO_DATA:
+        return 'noData';
+      case ERROR_CODES.NO_EVENTS_SELECTED:
+        return 'noEventsSelected';
+      case ERROR_CODES.NO_SPORTS_SELECTED:
+        return 'noSportsSelected';
+      case ERROR_CODES.INVALID_FILE_NAME:
+        return 'invalidFileName';
+      case ERROR_CODES.WORKBOOK_CREATION_FAILED:
+        return 'workbookCreationFailed';
+      case ERROR_CODES.DATA_PROCESSING_FAILED:
+        return 'dataProcessingFailed';
+      case ERROR_CODES.FILE_GENERATION_FAILED:
+        return 'fileGenerationFailed';
+      case ERROR_CODES.DOWNLOAD_FAILED:
+        return 'downloadFailed';
+      case ERROR_CODES.NETWORK_ERROR:
+        return 'networkError';
+      case ERROR_CODES.PERMISSION_DENIED:
+        return 'permissionDenied';
+      default:
+        return 'unknown';
+    }
+  };
   
   // Handle export option changes
   const handleOptionChange = (
@@ -109,10 +156,41 @@ const ExportPanel: React.FC = () => {
   // Handle export button click
   const handleExport = async () => {
     try {
+      // データの存在チェック
       if (!events || !sports) {
         setExportStatus({
           status: 'error',
-          message: t('export.noDataError')
+          message: t('export.errors.noData'),
+          errorCode: ERROR_CODES.NO_DATA
+        });
+        return;
+      }
+
+      // 選択範囲の検証
+      if (exportOptions.exportScope === 'selectedEvents' && exportOptions.selectedEventIds.length === 0) {
+        setExportStatus({
+          status: 'error',
+          message: t('export.errors.noEventsSelected'),
+          errorCode: ERROR_CODES.NO_EVENTS_SELECTED
+        });
+        return;
+      }
+
+      if (exportOptions.exportScope === 'selectedSports' && exportOptions.selectedSportIds.length === 0) {
+        setExportStatus({
+          status: 'error',
+          message: t('export.errors.noSportsSelected'),
+          errorCode: ERROR_CODES.NO_SPORTS_SELECTED
+        });
+        return;
+      }
+
+      // コンテンツオプションの検証
+      if (!exportOptions.includeOverallWinners && !exportOptions.includeIndividualEvents) {
+        setExportStatus({
+          status: 'error',
+          message: t('export.errors.noData'),
+          details: 'すべてのコンテンツオプションが無効になっています'
         });
         return;
       }
@@ -168,10 +246,19 @@ const ExportPanel: React.FC = () => {
       
     } catch (error) {
       console.error('Export error:', error);
+      
+      const errorInfo = getErrorMessage(error as ExportError | Error);
       setExportStatus({
         status: 'error',
-        message: t('export.errorMessage')
+        message: errorInfo.message,
+        details: errorInfo.details,
+        errorCode: error instanceof ExportError ? error.code : ERROR_CODES.UNKNOWN
       });
+
+      // Reset status after a longer delay for errors
+      setTimeout(() => {
+        setExportStatus({ status: 'idle' });
+      }, 10000);
     }
   };
   
@@ -233,8 +320,38 @@ const ExportPanel: React.FC = () => {
           )}
           
           {exportStatus.status === 'error' && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {exportStatus.message}
+            <Alert 
+              severity="error" 
+              sx={{ mb: 2 }}
+              action={
+                exportStatus.details && (
+                  <Button 
+                    color="inherit" 
+                    size="small" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(exportStatus.details || '');
+                    }}
+                  >
+                    詳細をコピー
+                  </Button>
+                )
+              }
+            >
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                  {exportStatus.message}
+                </Typography>
+                {exportStatus.details && (
+                  <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
+                    詳細: {exportStatus.details}
+                  </Typography>
+                )}
+                {exportStatus.errorCode && (
+                  <Typography variant="caption" sx={{ mt: 1, display: 'block', opacity: 0.7 }}>
+                    エラーコード: {exportStatus.errorCode}
+                  </Typography>
+                )}
+              </Box>
             </Alert>
           )}
           
