@@ -43,6 +43,20 @@
 │   ├── apple-touch-icon-76x76.png
 │   ├── apple-touch-icon-precomposed.png
 │   ├── apple-touch-icon.png
+│   ├── assets
+│   │   ├── dodge-ball.png
+│   │   ├── female-badminton.jpeg
+│   │   ├── female-basketball.jpeg
+│   │   ├── female-track-relay.jpeg
+│   │   ├── female-valleyball.jpeg
+│   │   ├── male-badminton.jpeg
+│   │   ├── male-basketball.png
+│   │   ├── male-track-relay.jpeg
+│   │   ├── male-valleyball.jpeg
+│   │   ├── readme.md
+│   │   ├── soccer.jpeg
+│   │   ├── temp.txt
+│   │   └── 騎馬戦.jpeg
 │   ├── icon-128x128.png
 │   ├── icon-144x144.png
 │   ├── icon-152x152.png
@@ -69,11 +83,13 @@
 ├── src
 │   ├── App.tsx
 │   ├── components
+│   │   ├── EventList.tsx
 │   │   ├── LanguageSelector.tsx
 │   │   ├── Layout.tsx
 │   │   ├── ProtectedRoute.tsx
 │   │   ├── admin
 │   │   │   ├── AdminDashboard.tsx
+│   │   │   ├── BackupPanel.tsx
 │   │   │   ├── ExportPanel.tsx
 │   │   │   ├── RosterEditor.tsx
 │   │   │   ├── TabContent.tsx
@@ -85,10 +101,13 @@
 │   │   │   ├── scheduling
 │   │   │   │   ├── ScheduleTab.tsx
 │   │   │   │   └── TimeSlotTable.tsx
+│   │   │   ├── scoreboard
+│   │   │   │   └── OverallScoreTab.tsx.txt
 │   │   │   └── scoring
 │   │   │       ├── LeagueScoring.tsx
 │   │   │       ├── RankingScoring.tsx
 │   │   │       ├── RoundRobinScoring.tsx
+│   │   │       ├── SportPointEditor.tsx
 │   │   │       ├── TournamentScoring.tsx
 │   │   │       ├── components
 │   │   │       │   ├── MatchCard.tsx
@@ -101,11 +120,17 @@
 │   │   │           └── LeaguePlayoffHelper.ts
 │   │   ├── layout
 │   │   │   └── AdminLayout.tsx
+│   │   ├── schedule
+│   │   │   ├── ClassScheduleTimeline.tsx
+│   │   │   └── ClassSelector.tsx
+│   │   ├── scoreboard
+│   │   │   └── OverallScoreCard.tsx
 │   │   └── sports
 │   │       ├── CustomLayout.tsx
 │   │       ├── EventOverallTimeline.tsx
 │   │       ├── EventTimelineOverview.tsx
 │   │       ├── RoundRobinTable.tsx
+│   │       ├── RulesDisplay.tsx
 │   │       └── ScheduleTimeline.tsx
 │   ├── config
 │   │   └── firebase.ts
@@ -114,35 +139,37 @@
 │   │   ├── AuthContext.tsx
 │   │   └── ThemeContext.tsx
 │   ├── hooks
+│   │   ├── useBackup.ts
+│   │   ├── useClassSchedule.ts
 │   │   └── useDatabase.ts
 │   ├── i18n
 │   │   ├── i18n.ts
 │   │   └── locales
 │   │       ├── de.json
 │   │       ├── en.json
-│   │       ├── export.txt
 │   │       ├── fr.json
-│   │       └── ja.json
+│   │       ├── ja.json
+│   │       └── zh.json
 │   ├── index.css
 │   ├── index.tsx
-│   ├── locales
-│   │   └── ja
-│   │       └── translation.json
 │   ├── pages
+│   │   ├── ClassSchedulePage.tsx
 │   │   ├── HomePage.tsx
 │   │   ├── LoginPage.tsx
 │   │   ├── NotFoundPage.tsx
+│   │   ├── ScoreboardDetailsPage.tsx
+│   │   ├── SportDetailPage.tsx
 │   │   ├── SportPage.tsx
 │   │   └── admin
 │   │       ├── AdminHelpPage.tsx
 │   │       ├── AdminPage.tsx
 │   │       ├── AdminSettingsPage.tsx
+│   │       ├── BackupPage.tsx
 │   │       ├── EventEditPage.tsx
 │   │       ├── ExportPage.tsx
 │   │       ├── ScoringPage.tsx
 │   │       └── SportEditPage.tsx
 │   ├── reportWebVitals.ts
-│   ├── router
 │   ├── types
 │   │   ├── index.ts
 │   │   ├── react-color.d.ts
@@ -158,7 +185,13 @@
 │       └── tournamentViewHelper.ts
 ├── start.sh
 ├── translation.txt
+├── tree.sh
 ├── tree.txt
 └── tsconfig.json
 
-24 directories, 137 files
+25 directories, 164 files
+
+src/*.ts, *.tsx の統計:
+合計行数: 24255
+合計文字数: 763927
+合計ファイルサイズ(bytes): 819541
