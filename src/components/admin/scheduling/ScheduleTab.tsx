@@ -54,15 +54,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
 
   // 手動エディタのモーダル表示状態
   const [manualEditorOpen, setManualEditorOpen] = useState(false);
-  // 手動エディタでスロットを更新
-  const handleManualEditorChange = (slots: TimeSlot[]) => {
-    setTimeSlots(slots);
-    // scheduleSettingsのtimeSlotsも更新
-    setScheduleSettings(prev => ({
-      ...prev,
-      timeSlots: slots
-    }));
-  };
 
   // 初期設定値
   const defaultSettings: ScheduleSettings = {
@@ -76,8 +67,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       court2: '第2コート'
     },
     lunchBreak: hasLunchBreak ? { startTime: '12:00', endTime: '13:00' } : undefined,
-    breakTimes: [],
-    timeSlots: []
+    breakTimes: []
   };
 
   // リーグ戦用のデフォルト拡張設定
@@ -94,30 +84,25 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     (sport.type === 'league' ? defaultLeagueSettings : defaultSettings)
   );
 
-  // sportが変更されたらscheduleSettingsもリセット
+  // 生成されたタイムスロット
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(
+    sport.scheduleSettings?.timeSlots || []
+  );
+
+  // sportが変更されたらローカルstateをリセット
   useEffect(() => {
     setScheduleSettings(
       sport.scheduleSettings ||
       (sport.type === 'league' ? defaultLeagueSettings : defaultSettings)
     );
     setHasLunchBreak(!!sport.scheduleSettings?.lunchBreak);
+    setTimeSlots(sport.scheduleSettings?.timeSlots || []);
   }, [sport]);
 
-  // scheduleSettingsが変更されたらonUpdateで即時反映
-  useEffect(() => {
-    // timeSlotsはスケジュール生成時のみ反映するため除外
-    const { timeSlots, ...restSettings } = scheduleSettings;
-    const updatedSport = {
-      ...sport,
-      scheduleSettings: {
-        ...sport.scheduleSettings,
-        ...restSettings,
-        timeSlots: sport.scheduleSettings?.timeSlots || []
-      }
-    };
-    onUpdate(updatedSport);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scheduleSettings]);
+  // 手動エディタでスロットを更新
+  const handleManualEditorChange = (slots: TimeSlot[]) => {
+    setTimeSlots(slots);
+  };
 
   // 新しい休憩時間
   const [newBreakTime, setNewBreakTime] = useState<Omit<TimeSlot, 'type'>>({
@@ -125,11 +110,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     endTime: '11:15',
     title: '休憩'
   });
-
-  // 生成されたタイムスロット
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(
-    sport.scheduleSettings?.timeSlots || []
-  );
 
   // スケジュール生成のエラー
   const [scheduleError, setScheduleError] = useState<string | null>(null);
@@ -165,12 +145,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   // コート名変更のハンドラ
   const handleCourtNameChange = (court: 'court1' | 'court2', value: string) => {
     setScheduleSettings(prev => {
-      // Ensure courtNames exists with defaults before updating
       const currentCourtNames = prev.courtNames || { 
         court1: '第1コート', 
         court2: prev.courtCount > 1 ? '第2コート' : undefined 
       };
-      
       return {
         ...prev,
         courtNames: {
@@ -189,7 +167,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       ...prev,
       lunchBreak: checked 
         ? { startTime: '12:00', endTime: '13:00' }
-        : null // undefinedではなくnullを使用
+        : null
     }));
   };
 
@@ -220,14 +198,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       ...newBreakTime,
       type: 'break'
     };
-    
     const updatedBreakTimes = [...(scheduleSettings.breakTimes || []), newBreak];
     setScheduleSettings(prev => ({
       ...prev,
       breakTimes: updatedBreakTimes
     }));
-    
-    // 入力フィールドをリセット
     setNewBreakTime({
       startTime: '11:00',
       endTime: '11:15',
@@ -249,30 +224,20 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   const handleGenerateSchedule = () => {
     try {
       setScheduleError(null);
-      
-      // Firebase対応：undefinedをnullに変換
       const safeSettings = {
         ...scheduleSettings,
         lunchBreak: scheduleSettings.lunchBreak || null,
-        breakTimes: scheduleSettings.breakTimes || [],
-        timeSlots: scheduleSettings.timeSlots || []
+        breakTimes: scheduleSettings.breakTimes || []
       };
-      
-      // ランキング形式の場合は試合がなくてもスケジュールを生成可能
       const generatedTimeSlots = generateSchedule(sport, safeSettings);
       setTimeSlots(generatedTimeSlots);
-      
-      // スケジュール設定とタイムスロットを保存
-      const updatedSettings = {
-        ...safeSettings,
-        timeSlots: generatedTimeSlots
-      };
-      
       const updatedSport = {
         ...sport,
-        scheduleSettings: updatedSettings
+        scheduleSettings: {
+          ...safeSettings,
+          timeSlots: generatedTimeSlots
+        }
       };
-      
       onUpdate(updatedSport);
     } catch (error) {
       console.error('Schedule generation error:', error);
@@ -282,7 +247,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
 
   // スケジュールを保存
   const handleSaveSchedule = () => {
-    // Firebase対応：undefinedをnullに変換
     const safeSettings = {
       ...scheduleSettings,
       lunchBreak: scheduleSettings.lunchBreak || null,
@@ -293,7 +257,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       ...sport,
       scheduleSettings: safeSettings
     };
-    setScheduleSettings(safeSettings); // ローカルstateも更新
+    setScheduleSettings(safeSettings);
     onUpdate(updatedSport);
   };
 
