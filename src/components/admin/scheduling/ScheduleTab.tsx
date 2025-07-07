@@ -277,6 +277,33 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     handleGenerateSchedule();
   };
 
+  // 順番を維持してリスケ
+  const handleRescheduleWithoutShuffle = () => {
+    try {
+      setScheduleError(null);
+      const safeSettings = {
+        ...scheduleSettings,
+        lunchBreak: scheduleSettings.lunchBreak || null,
+        breakTimes: scheduleSettings.breakTimes || [],
+        timeSlots: scheduleSettings.timeSlots || []
+      };
+      const generatedTimeSlots = generateSchedule(sport, safeSettings, false); // シャッフルしない
+      setTimeSlots(generatedTimeSlots);
+      const updatedSettings = {
+        ...safeSettings,
+        timeSlots: generatedTimeSlots
+      };
+      const updatedSport = {
+        ...sport,
+        scheduleSettings: updatedSettings
+      };
+      onUpdate(updatedSport);
+    } catch (error) {
+      console.error('Schedule generation error:', error);
+      setScheduleError(error instanceof Error ? error.message : '不明なエラーが発生しました');
+    }
+  };
+
   // スポーツタイプに応じた入力フォーム
   const renderSportTypeSpecificInputs = () => {
     if (sport.type === 'league') {
@@ -584,7 +611,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         
         {/* アクション */}
         <Grid item xs={12}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, gap: 2 }}>
             <Button
               variant="contained"
               color="primary"
@@ -593,16 +620,14 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             >
               {t('schedule.generateSchedule')}
             </Button>
-            {/*
             <Button
               variant="outlined"
-              color="primary"
-              onClick={handleSaveSchedule}
-              disabled={timeSlots.length === 0}
+              color="secondary"
+              onClick={handleRescheduleWithoutShuffle}
+              disabled={sport.matches?.length === 0}
             >
-              {t('common.save')}
+              順番を維持してリスケ
             </Button>
-            */}
           </Box>
           
           {scheduleError && (

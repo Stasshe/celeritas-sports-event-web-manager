@@ -227,7 +227,7 @@ const isFinalMatch = (match: Match, maxRound: number): boolean => {
 };
 
 // 同時進行に対応した新しいスケジュール生成関数
-export const generateSchedule = (sport: Sport, settings: ScheduleSettings): TimeSlot[] => {
+export const generateSchedule = (sport: Sport, settings: ScheduleSettings, shuffle: boolean = true): TimeSlot[] => {
   const timeSlots: TimeSlot[] = [];
   
   // ランキング形式は特殊処理
@@ -263,9 +263,9 @@ export const generateSchedule = (sport: Sport, settings: ScheduleSettings): Time
   
   // スポーツタイプに応じたスケジュール生成
   if (sport.type === 'league') {
-    return generateLeagueScheduleWithCourts(sport, settings, timeSlots);
+    return generateLeagueScheduleWithCourts(sport, settings, timeSlots, shuffle);
   } else {
-    return generateMatchBasedScheduleWithCourts(sport, settings, timeSlots);
+    return generateMatchBasedScheduleWithCourts(sport, settings, timeSlots, shuffle);
   }
 };
 
@@ -273,7 +273,8 @@ export const generateSchedule = (sport: Sport, settings: ScheduleSettings): Time
 const generateMatchBasedScheduleWithCourts = (
   sport: Sport,
   settings: ScheduleSettings,
-  initialTimeSlots: TimeSlot[]
+  initialTimeSlots: TimeSlot[],
+  shuffle: boolean = true
 ): TimeSlot[] => {
   const timeSlots = [...initialTimeSlots];
   const { matches } = sport;
@@ -310,15 +311,18 @@ const generateMatchBasedScheduleWithCourts = (
     
     // 各ラウンド内でランダム化してから結合（ラウンド順は維持）
     const sortedRounds = Object.keys(roundGroups).map(Number).sort((a, b) => a - b);
-    
     schedulableMatches = [];
     sortedRounds.forEach(round => {
-      // 各ラウンド内の試合をランダムにシャッフル
-      schedulableMatches.push(...shuffleArray(roundGroups[round]));
+      // 各ラウンド内の試合をランダムにシャッフル or そのまま
+      if (shuffle) {
+        schedulableMatches.push(...shuffleArray(roundGroups[round]));
+      } else {
+        schedulableMatches.push(...roundGroups[round]);
+      }
     });
   } else {
-    // 総当たり戦の場合は全試合をランダムにシャッフル
-    schedulableMatches = shuffleArray([...matches]);
+    // 総当たり戦の場合は全試合をランダムにシャッフル or そのまま
+    schedulableMatches = shuffle ? shuffleArray([...matches]) : [...matches];
   }
   
   // チーム情報マップ（クラス競合チェック用）
@@ -488,7 +492,8 @@ const generateMatchBasedScheduleWithCourts = (
 const generateLeagueScheduleWithCourts = (
   sport: Sport,
   settings: ScheduleSettings,
-  initialTimeSlots: TimeSlot[]
+  initialTimeSlots: TimeSlot[],
+  shuffle: boolean = true
 ): TimeSlot[] => {
   const timeSlots = [...initialTimeSlots];
   const { matches } = sport;
@@ -533,7 +538,7 @@ const generateLeagueScheduleWithCourts = (
   
   // 各ブロック内の試合をランダム化
   Object.keys(blockMatchesMap).forEach(blockId => {
-    blockMatchesMap[blockId] = shuffleArray(blockMatchesMap[blockId]);
+    blockMatchesMap[blockId] = shuffle ? shuffleArray(blockMatchesMap[blockId]) : blockMatchesMap[blockId];
   });
   
   // ブロックの試合を均等に取得するための配列
@@ -560,7 +565,7 @@ const generateLeagueScheduleWithCourts = (
     let anyMatchAdded = false;
     
     // ブロックの順序をランダム化して、取得順もランダムにする
-    const shuffledBlockIds = shuffleArray([...blockIds]);
+    const shuffledBlockIds = shuffle ? shuffleArray([...blockIds]) : [...blockIds];
     
     for (const blockId of shuffledBlockIds) {
       if (blockMatchesMap[blockId].length > 0) {
@@ -739,7 +744,7 @@ const generateLeagueScheduleWithCourts = (
     // プレーオフの試合時間を取得
     const playoffDuration = (settings as LeagueScheduleSettings).playoffDuration || settings.matchDuration;
     
-    // プレーオフの試合をラウンドごとにグループ化してからシャッフル
+    // プレーオフの試合をラウンドごとにグループ化してからシャッフル or そのまま
     const playoffRoundGroups: { [round: number]: Match[] } = {};
     let thirdPlaceMatch: Match | undefined;
     
@@ -761,7 +766,7 @@ const generateLeagueScheduleWithCourts = (
     
     // 各ラウンドの試合をシャッフル
     Object.keys(playoffRoundGroups).forEach(round => {
-      playoffRoundGroups[Number(round)] = shuffleArray(playoffRoundGroups[Number(round)]);
+      playoffRoundGroups[Number(round)] = shuffle ? shuffleArray(playoffRoundGroups[Number(round)]) : playoffRoundGroups[Number(round)];
     });
     
     // 最大ラウンド（決勝ラウンド）を特定
