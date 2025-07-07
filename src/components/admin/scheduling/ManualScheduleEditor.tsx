@@ -230,7 +230,7 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
                     <TableCell>{slot.startTime}～{slot.endTime}</TableCell>
                     <TableCell>{timeSlotTypes.find(t => t.value === slot.type)?.label || slot.type}</TableCell>
                     <TableCell>{slot.courtId === 'court2' ? (courtNames?.court2 || '第2コート') : (courtNames?.court1 || '第1コート')}</TableCell>
-                    <TableCell>{slot.matchDescription || ''}</TableCell>
+                    <TableCell>{slot.matchDescription || slot.description || slot.title || '-'}</TableCell>
                     <TableCell>
                       <IconButton onClick={() => handleEdit(idx)} size="small"><EditIcon fontSize="small" /></IconButton>
                       <IconButton onClick={() => handleDelete(idx)} size="small"><DeleteIcon fontSize="small" /></IconButton>

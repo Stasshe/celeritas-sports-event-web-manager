@@ -39,12 +39,12 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "PORT=3001 react-scripts start",
     "build": "react-scripts build && cp build/index.html build/404.html",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "npm run build && npx surge ./build sports-event-manager.surge.sh",
-    "preview": "serve -s build"
+    "preview": "PORT=3001 serve -s build"
   },
   "eslintConfig": {
     "extends": [
