@@ -235,6 +235,7 @@ export interface LeagueScheduleSettings extends ScheduleSettings {
   groupStageDuration: number; // グループステージの試合時間（分）
   playoffDuration: number; // プレーオフの試合時間（分）
   breakBetweenStages: number; // ステージ間の休憩時間（分）
+  blockToPlayoffBreak?: number; // ブロック→プレーオフ間の休憩時間（分）
 }
 
 // 総合成績の結果エントリ

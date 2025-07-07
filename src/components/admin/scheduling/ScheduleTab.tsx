@@ -323,6 +323,19 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               sx={{ maxWidth: 400 }}
             />
           </Grid>
+          <Grid item xs={12} sm={8} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <TextField
+              fullWidth
+              label={"ブロック→プレーオフ間休憩（分）"}
+              name="blockToPlayoffBreak"
+              type="number"
+              value={leagueSettings.blockToPlayoffBreak ?? ''}
+              onChange={handleInputChange}
+              InputProps={{ inputProps: { min: 0 } }}
+              margin="normal"
+              sx={{ maxWidth: 400 }}
+            />
+          </Grid>
         </Grid>
       );
     }
