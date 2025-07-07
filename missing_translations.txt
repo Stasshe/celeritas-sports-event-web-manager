@@ -1,8 +1,8 @@
-Overall Winners
 admin.active
 admin.activeEvent
 admin.activeEventUpdated
 admin.allChangesSaved
+admin.backup
 admin.create
 admin.createFirstEvent
 admin.createFirstSport
@@ -43,37 +43,43 @@ adminHelp.scheduling
 adminHelp.sportManagement
 adminHelp.title
 auth.logout
-classSchedule.accessDescription
-classSchedule.allGrades
-classSchedule.certainty
-classSchedule.classSelectionHint
-classSchedule.clearAll
-classSchedule.confirmedMatch
-classSchedule.grade
-classSchedule.noActiveEvent
-classSchedule.noClassesInGrade
-classSchedule.noMatchingSchedule
-classSchedule.noSchedule
-classSchedule.notes
-classSchedule.potentialMatch
-classSchedule.potentialMatchExplanation
-classSchedule.quickAccess
-classSchedule.scheduleMayChange
-classSchedule.selectAll
-classSchedule.selectClasses
-classSchedule.selectClassesHint
-classSchedule.selectClassesToView
-classSchedule.selectedClasses
-classSchedule.shareTitle
-classSchedule.title
-classSchedule.trySelectingDifferentClasses
-classSchedule.undefinedDate
-classSchedule.viewClassSchedule
-classSchedule.viewSchedule
-classes
+backup.added
+backup.autoDescription
+backup.automatic
+backup.compareWith
+backup.confirmRestore
+backup.create
+backup.createBackup
+backup.createError
+backup.createNow
+backup.createSuccess
+backup.current
+backup.description
+backup.diffError
+backup.diffTitle
+backup.eventChanges
+backup.manual
+backup.manualDescription
+backup.modified
+backup.newValue
+backup.noAutoBackups
+backup.noDiffData
+backup.noEventChanges
+backup.noManualBackups
+backup.noSportChanges
+backup.oldValue
+backup.removed
+backup.restore
+backup.restoreConfirmation
+backup.restoreError
+backup.restoreSuccess
+backup.restoreWarning
+backup.showDiff
+backup.sportChanges
+backup.title
+backup.version
 classes, classes.join(,
 classes, selectedClasses.join(,
-clear-all
 common.actions
 common.add
 common.backToAdmin
@@ -92,7 +98,6 @@ common.savedError
 common.savedSuccess
 common.saving
 common.smaller
-custom.noData
 event.active
 event.alternativeDate
 event.alternativeDateHelp
@@ -149,30 +154,6 @@ event.tabs.organizers
 event.tabs.roster
 event.tabs.scoreboard
 event.tabs.settings
-export.allEvents
-export.contentOptions
-export.customFileName
-export.errorMessage
-export.exportInstructions
-export.exportOptions
-export.exportScope
-export.exportToExcel
-export.exporting
-export.fileNameHelp
-export.includeIndividualEvents
-export.includeOverallWinners
-export.instructions
-export.noDataError
-export.noEvents
-export.noSports
-export.pageTitle
-export.selectAll
-export.selectEvents
-export.selectSports
-export.selectedEvents
-export.selectedSports
-export.successMessage
-export.title
 home.gridView
 home.overallTimelineView
 home.scheduleView
@@ -218,12 +199,14 @@ login.password
 login.unknownError
 login.userNotFound
 login.wrongPassword
+match.cannotEditTeam
 match.completed
 match.confirmTeamChange
 match.confirmTeamChangeMessage
 match.confirmTeamChangeTitle
 match.date
 match.edit
+match.editTeam
 match.inProgress
 match.notes
 match.number, { number: match.matchNumber }
@@ -447,6 +430,11 @@ sport.confirmDeleteTeam
 sport.coverImage
 sport.create
 sport.dangerZone
+sport.delayMinutesLabel
+sport.delayMinutesLabel, { defaultValue: 遅延時間 (分
+sport.delayMinutesUnit, { defaultValue: 分 }
+sport.delayTime
+sport.delayTimeOverview, { defaultValue: 競技ごとの遅延時間一覧 }
 sport.deleteConfirmTitle
 sport.deleteSport
 sport.deleteSportButton
@@ -517,16 +505,12 @@ sport.tournamentDescription
 sport.type
 sport.unknownEvent
 sport.useRemoteValue
-tournament.builder
+tournament.allBlocksMustBeCompleted
 tournament.confirmReset
-tournament.errorGenerating
 tournament.final
-tournament.hasRepechage
 tournament.hasThirdPlace
 tournament.hasThirdPlaceMatch
-tournament.mainBracket
-tournament.needAtLeastTwoTeams
-tournament.noRoster
+tournament.pendingCompletion
 tournament.round, { 
 tournament.round, { round: `${match.round}-${match.matchNumber}` }
 tournament.round, { round: match.tournamentRoundText }
@@ -537,9 +521,9 @@ tournament.tbd
 tournament.teamsSelected, { count: selectedTeams.length }
 tournament.thirdPlace
 tournament.thirdPlaceMatch
-web-vitals
 2, 0
 `classSchedule.${entry.status === potential ? potential : confirmed}`
 mode === dark ? settings.enabled : settings.disabled
 t(common.copiedToClipboard
 t(tournament.errorGenerating
+t(tournament.tieNotAllowed

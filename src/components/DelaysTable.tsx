@@ -1,5 +1,5 @@
 import React from 'react';
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Box } from '@mui/material';
+import { Paper, Typography, Box, useTheme } from '@mui/material';
 import { Sport } from '../types';
 import { useTranslation } from 'react-i18next';
 
@@ -9,36 +9,62 @@ interface DelaysTableProps {
 
 const DelaysTable: React.FC<DelaysTableProps> = ({ sports }) => {
   const { t } = useTranslation();
-  // すべての競技を表示（0分も含める）
-  const sportsWithDelay = sports;
+  const theme = useTheme();
 
-  if (sportsWithDelay.length === 0) {
-    return null;
-  }
+  if (sports.length === 0) return null;
 
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h6" gutterBottom>
         {t('sport.delayTimeOverview', { defaultValue: '競技ごとの遅延時間一覧' })}
       </Typography>
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>{t('sport.name')}</TableCell>
-              <TableCell align="right">{t('sport.delayMinutesLabel', { defaultValue: '遅延時間 (分)' })}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sportsWithDelay.map((sport) => (
-              <TableRow key={sport.id}>
-                <TableCell>{sport.name}</TableCell>
-                <TableCell align="right">{typeof sport.delayMinutes === 'number' ? sport.delayMinutes : 0}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Paper sx={{ p: 2, overflowX: 'auto' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            alignItems: 'flex-end',
+            gap: { xs: 2, sm: 4 },
+            overflowX: 'auto',
+            pb: 2,
+          }}
+        >
+          {sports.map((sport) => (
+            <Box
+              key={sport.id}
+              sx={{
+                minWidth: 90,
+                textAlign: 'center',
+                flex: '0 0 auto',
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  borderBottom: `2px solid ${theme.palette.primary.main}`,
+                  mb: 1,
+                  fontWeight: 600,
+                  fontSize: { xs: '0.95rem', sm: '1.05rem' },
+                  wordBreak: 'break-word',
+                }}
+              >
+                {sport.name}
+              </Typography>
+              <Typography
+                variant="h5"
+                color="primary"
+                sx={{ fontWeight: 700, fontSize: { xs: '1.3rem', sm: '1.7rem' } }}
+              >
+                {typeof sport.delayMinutes === 'number' ? sport.delayMinutes : 0}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {t('sport.delayMinutesUnit', { defaultValue: '分' })}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Paper>
     </Box>
   );
 };

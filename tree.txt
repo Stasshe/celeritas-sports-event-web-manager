@@ -1,4 +1,7 @@
 .
+├── Development
+│   ├── en_missing.json
+│   └── ja_missing.json
 ├── LICENSE
 ├── README.md
 ├── build_result.txt
@@ -83,6 +86,7 @@
 ├── src
 │   ├── App.tsx
 │   ├── components
+│   │   ├── DelaysTable.tsx
 │   │   ├── EventList.tsx
 │   │   ├── LanguageSelector.tsx
 │   │   ├── Layout.tsx
@@ -102,7 +106,7 @@
 │   │   │   │   ├── ScheduleTab.tsx
 │   │   │   │   └── TimeSlotTable.tsx
 │   │   │   ├── scoreboard
-│   │   │   │   └── OverallScoreTab.tsx.txt
+│   │   │   │   └── OverallScoreTab.tsx
 │   │   │   └── scoring
 │   │   │       ├── LeagueScoring.tsx
 │   │   │       ├── RankingScoring.tsx
@@ -189,9 +193,9 @@
 ├── tree.txt
 └── tsconfig.json
 
-25 directories, 164 files
+26 directories, 167 files
 
 src/*.ts, *.tsx の統計:
-合計行数: 24255
-合計文字数: 763927
-合計ファイルサイズ(bytes): 819541
+合計行数: 25516
+合計文字数: 807758
+合計ファイルサイズ(bytes): 866766
