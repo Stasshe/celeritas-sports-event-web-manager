@@ -150,62 +150,64 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
               {timeSlots.map((slot, idx) => (
                 editingIndex === idx ? (
                   <TableRow key={idx}>
-                    <TableCell>
-                      <TextField
-                        name="startTime"
-                        type="time"
-                        value={editSlot.startTime || ''}
-                        onChange={handleEditChange}
-                        size="small"
-                        sx={{ width: 90 }}
-                      />
-                      ～
-                      <TextField
-                        name="endTime"
-                        type="time"
-                        value={editSlot.endTime || ''}
-                        onChange={handleEditChange}
-                        size="small"
-                        sx={{ width: 90 }}
-                      />
+                    <TableCell sx={{ minWidth: 220 }}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <TextField
+                          name="startTime"
+                          type="time"
+                          value={editSlot.startTime || ''}
+                          onChange={handleEditChange}
+                          size="small"
+                          sx={{ minWidth: 110 }}
+                        />
+                        <span>～</span>
+                        <TextField
+                          name="endTime"
+                          type="time"
+                          value={editSlot.endTime || ''}
+                          onChange={handleEditChange}
+                          size="small"
+                          sx={{ minWidth: 110 }}
+                        />
+                      </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ minWidth: 120 }}>
                       <Select
                         name="type"
                         value={editSlot.type || 'match'}
                         onChange={handleEditSelectChange}
                         size="small"
-                        sx={{ width: 100 }}
+                        sx={{ minWidth: 110 }}
                       >
                         {timeSlotTypes.map(opt => (
                           <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                         ))}
                       </Select>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ minWidth: 120 }}>
                       <Select
                         name="courtId"
                         value={editSlot.courtId || 'court1'}
                         onChange={handleEditSelectChange}
                         size="small"
-                        sx={{ width: 100 }}
+                        sx={{ minWidth: 110 }}
                       >
                         <MenuItem value="court1">{courtNames?.court1 || '第1コート'}</MenuItem>
                         {courtNames?.court2 && <MenuItem value="court2">{courtNames.court2}</MenuItem>}
                       </Select>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ minWidth: 200 }}>
                       <TextField
                         name="matchDescription"
                         value={editSlot.matchDescription || ''}
                         onChange={handleEditChange}
                         size="small"
-                        sx={{ width: 180 }}
+                        sx={{ minWidth: 180 }}
                         placeholder="例: 1年A vs 2年B"
                       />
                     </TableCell>
-                    <TableCell>
-                      <Button color="primary" onClick={handleEditSave} size="small">保存</Button>
+                    <TableCell sx={{ minWidth: 160 }}>
+                      <Button color="primary" onClick={handleEditSave} size="small" sx={{ mr: 1 }}>保存</Button>
                       <Button color="inherit" onClick={handleEditCancel} size="small">キャンセル</Button>
                     </TableCell>
                   </TableRow>
@@ -229,6 +231,19 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
         </TableContainer>
       </DialogContent>
       <DialogActions>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            if (editingIndex !== null) {
+              handleEditSave();
+            } else {
+              onChange(timeSlots);
+            }
+          }}
+        >
+          保存
+        </Button>
         <Button onClick={onClose}>閉じる</Button>
       </DialogActions>
     </Dialog>
