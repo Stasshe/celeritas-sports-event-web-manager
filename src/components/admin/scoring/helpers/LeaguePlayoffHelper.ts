@@ -54,11 +54,13 @@ export class LeaguePlayoffHelper {
         }
       });
       
-      // 試合未完了のブロックがある場合でも、少なくとも1つのブロックが完了していればトーナメント作成
-      if (advancingTeamIds.length === 0) {
+      // 試合未完了のブロックがあっても、プレーオフ生成を許可する（全て未完了でもTBDで生成）
+      // 進出チームが1つもいない場合でも、未完了ブロック数×進出枠分のTBDチームで生成する
+      // ただし、進出チームも未完了ブロックも0の場合はエラー
+      if (advancingTeamIds.length === 0 && incompleteBlocks.length === 0) {
         return {
           success: false,
-          message: t('tournament.needAtLeastTwoTeams') + ' ' + t('tournament.allBlocksMustBeCompleted'),
+          message: t('tournament.needAtLeastTwoTeams'),
           matches: []
         };
       }
