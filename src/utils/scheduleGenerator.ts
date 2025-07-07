@@ -729,7 +729,7 @@ const generateLeagueScheduleWithCourts = (
   if (playoffMatches.length > 0) {
     // ステージ間の休憩を追加
     // blockToPlayoffBreakがあれば優先、なければ従来のstageBreakDuration
-    const stageBreakDuration = (settings as LeagueScheduleSettings).blockToPlayoffBreak ?? (settings as LeagueScheduleSettings).breakBetweenStages ?? 10; // デフォルト10分
+    const stageBreakDuration = Number((settings as LeagueScheduleSettings).blockToPlayoffBreak ?? (settings as LeagueScheduleSettings).breakBetweenStages ?? 10);
     timeSlots.push({
       startTime: minutesToTime(currentMinutes),
       endTime: minutesToTime(currentMinutes + stageBreakDuration),
