@@ -35,8 +35,11 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { Sport, ScheduleSettings, TimeSlot, Match, LeagueScheduleSettings } from '../../../types';
+
 import TimeSlotTable from './TimeSlotTable';
 import { generateSchedule } from '../../../utils/scheduleGenerator';
+import ManualScheduleEditor from './ManualScheduleEditor';
+  
 
 interface ScheduleTabProps {
   sport: Sport;
@@ -48,6 +51,18 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   const [hasLunchBreak, setHasLunchBreak] = useState<boolean>(
     !!sport.scheduleSettings?.lunchBreak
   );
+
+  // 手動エディタのモーダル表示状態
+  const [manualEditorOpen, setManualEditorOpen] = useState(false);
+  // 手動エディタでスロットを更新
+  const handleManualEditorChange = (slots: TimeSlot[]) => {
+    setTimeSlots(slots);
+    // scheduleSettingsのtimeSlotsも更新
+    setScheduleSettings(prev => ({
+      ...prev,
+      timeSlots: slots
+    }));
+  };
 
   // 初期設定値
   const defaultSettings: ScheduleSettings = {
@@ -666,14 +681,29 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             >
               順番を維持してリスケ
             </Button>
+            <Button
+              variant="outlined"
+              color="info"
+              onClick={() => setManualEditorOpen(true)}
+            >
+              手動編集
+            </Button>
           </Box>
-          
           {scheduleError && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {scheduleError}
             </Alert>
           )}
         </Grid>
+      {/* 手動エディタモーダル */}
+      <ManualScheduleEditor
+        open={manualEditorOpen}
+        onClose={() => setManualEditorOpen(false)}
+        timeSlots={timeSlots}
+        onChange={handleManualEditorChange}
+        courtNames={scheduleSettings.courtNames}
+        teams={sport.teams}
+      />
         
         {/* 確認ダイアログ */}
         <Dialog
