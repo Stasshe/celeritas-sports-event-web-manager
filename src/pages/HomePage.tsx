@@ -116,6 +116,12 @@ const HomePage: React.FC = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ mb: 4, textAlign: 'center' }}>
+        <Typography variant="body1" color="text.secondary">
+          このサイトでは、情報は全てリアルタイム更新されています。<br />
+          ページリロードをする必要は全くありません！
+        </Typography>
+      </Box>
+      <Box sx={{ mb: 4, textAlign: 'center' }}>
         <Typography variant="h3" component="h1" gutterBottom>
           {activeEvent ? activeEvent.name : t('home.title')}
         </Typography>

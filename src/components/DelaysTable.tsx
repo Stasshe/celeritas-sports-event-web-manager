@@ -18,6 +18,9 @@ const DelaysTable: React.FC<DelaysTableProps> = ({ sports }) => {
       <Typography variant="h6" gutterBottom>
         {t('sport.delayTimeOverview', { defaultValue: '競技ごとの遅延時間一覧' })}
       </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        遅延時間はこの表にしか反映されません。スケジュールタブなど、他のフィールドには、予定の時間が表示されます。
+      </Typography>
       <Paper sx={{ p: 2, overflowX: 'auto' }}>
         <Box
           sx={{

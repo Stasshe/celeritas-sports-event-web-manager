@@ -442,6 +442,22 @@ const AdminHelpPage: React.FC = () => {
                     A: 全てのデータはFirebaseに保存されており、自動的にバックアップされています。データ復旧が必要な場合は、システム管理者にお問い合わせください。
                   </Typography>
                 </Box>
+                {/* ここから開発者連絡フィールド */}
+                <Divider sx={{ my: 3 }} />
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                    開発者への連絡・質問
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    ご不明点やご要望があれば、下記までお気軽にご連絡ください。
+                  </Typography>
+                  <Typography variant="body2">
+                    メール1: <a href="mailto:eterynity2024workplace@gmail.com">eterynity2024workplace@gmail.com</a><br />
+                    メール2: <a href="mailto:egnm9stasshe@gmail.com">egnm9stasshe@gmail.com</a><br />
+                    GitHub: <a href="https://github.com/Stasshe" target="_blank" rel="noopener noreferrer">Stasshe</a><br />
+                    このサイトのソースコード: <a href="https://github.com/Stasshe/celeritas-sports-event-web-manager" target="_blank" rel="noopener noreferrer">https://github.com/Stasshe/celeritas-sports-event-web-manager</a>
+                  </Typography>
+                </Box>
               </AccordionDetails>
             </Accordion>
           </Paper>
