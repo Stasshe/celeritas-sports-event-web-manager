@@ -106,23 +106,37 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
     setEditSlot(emptySlot);
   };
 
-  // 行を上に詰める
+  // 行を上に詰める（時間帯は固定、内容のみ入れ替え）
   const handleRowMoveUp = (idx: number) => {
     if (idx === 0) return;
     const updated = [...timeSlots];
-    const temp = updated[idx - 1];
-    updated[idx - 1] = updated[idx];
-    updated[idx] = temp;
+    const keys = [
+      'type', 'courtId', 'matchDescription', 'description', 'matchId', 'title'
+    ] as const;
+    const prev = updated[idx - 1];
+    const curr = updated[idx];
+    keys.forEach(key => {
+      const temp = prev[key];
+      (prev as any)[key] = curr[key];
+      (curr as any)[key] = temp;
+    });
     onChange(updated);
   };
 
-  // 行を下に詰める
+  // 行を下に詰める（時間帯は固定、内容のみ入れ替え）
   const handleRowMoveDown = (idx: number) => {
     if (idx === timeSlots.length - 1) return;
     const updated = [...timeSlots];
-    const temp = updated[idx + 1];
-    updated[idx + 1] = updated[idx];
-    updated[idx] = temp;
+    const curr = updated[idx];
+    const next = updated[idx + 1];
+    const keys = [
+      'type', 'courtId', 'matchDescription', 'description', 'matchId', 'title'
+    ] as const;
+    keys.forEach(key => {
+      const temp = next[key];
+      (next as any)[key] = curr[key];
+      (curr as any)[key] = temp;
+    });
     onChange(updated);
   };
 
