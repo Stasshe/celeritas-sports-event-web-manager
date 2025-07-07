@@ -143,7 +143,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       ...prev,
       [name]: name === 'matchDuration' || name === 'breakDuration' || 
               name === 'groupStageDuration' || name === 'playoffDuration' || 
-              name === 'breakBetweenStages'
+              name === 'breakBetweenStages' || name === 'blockToPlayoffBreak'
         ? parseInt(value) || 0
         : value
     }));
