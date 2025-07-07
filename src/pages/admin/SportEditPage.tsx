@@ -917,6 +917,33 @@ const SportEditPage: React.FC = () => {
               </Box>
             </Paper>
 
+            {/* 遅延時間入力欄を追加 */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="h6">
+                  {t('sport.delayTime')}
+                </Typography>
+                <TextField
+                  type="number"
+                  name="delayMinutes"
+                  label={t('sport.delayMinutesLabel')}
+                  value={localSport.delayMinutes ?? 0}
+                  onChange={e => {
+                    const value = Math.max(0, parseInt(e.target.value) || 0);
+                    handlePartialUpdate('delayMinutes', value);
+                  }}
+                  InputProps={{ inputProps: { min: 0 } }}
+                  sx={{ width: 120 }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  {t('sport.delayMinutesUnit', { defaultValue: '分' })}
+                </Typography>
+              </Box>
+              <Box sx={{ mt: 1 }}>
+                <DifferenceIndicator field="delayMinutes" />
+              </Box>
+            </Paper>
+
             <Grid container spacing={2}>
               {/* 既存の詳細情報セクション */}
               <Grid item xs={12} md={6}>

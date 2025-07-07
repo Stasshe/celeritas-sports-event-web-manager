@@ -100,6 +100,7 @@ export interface Sport {
     weight: number; // 重み付け係数（デフォルト1.0）
     customPointRule?: string; // カスタムポイントルールの説明
   };
+  delayMinutes?: number; // 追加: 競技ごとの遅延時間（分）
 }
 
 // リーグのブロック情報

@@ -35,6 +35,7 @@ import { useAuth } from '../contexts/AuthContext';
 import EventTimelineOverview from '../components/sports/EventTimelineOverview';
 import EventOverallTimeline from '../components/sports/EventOverallTimeline';
 import OverallScoreCard from '../components/scoreboard/OverallScoreCard';
+import DelaysTable from '../components/DelaysTable';
 
 const MotionCard = motion(Card);
 const MotionFab = motion(Fab);
@@ -172,6 +173,9 @@ const HomePage: React.FC = () => {
               <OverallScoreCard event={activeEvent} sports={activeSports} />
             </Box>
           )}
+
+          {/* 遅延時間テーブルを追加 */}
+          <DelaysTable sports={activeSports} />
 
           <Paper sx={{ mb: 3 }}>
             <Tabs
