@@ -217,13 +217,14 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
                         {courtNames?.court2 && <MenuItem value="court2">{courtNames.court2}</MenuItem>}
                       </Select>
                     </TableCell>
-                    <TableCell sx={{ minWidth: 200 }}>
+                    <TableCell sx={{ minWidth: 200, maxWidth: 220, wordBreak: 'break-all' }}>
                       <TextField
                         name="matchDescription"
                         value={editSlot.matchDescription ?? editSlot.description ?? editSlot.title ?? ''}
                         onChange={handleEditChange}
                         size="small"
-                        sx={{ minWidth: 180 }}
+                        sx={{ minWidth: 180, maxWidth: 220 }}
+                        inputProps={{ maxLength: 100 }}
                         placeholder="例: 1年A vs 2年B"
                       />
                     </TableCell>
@@ -237,7 +238,9 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
                     <TableCell>{slot.startTime}～{slot.endTime}</TableCell>
                     <TableCell>{timeSlotTypes.find(t => t.value === slot.type)?.label || slot.type}</TableCell>
                     <TableCell>{slot.courtId === 'court2' ? (courtNames?.court2 || '第2コート') : (courtNames?.court1 || '第1コート')}</TableCell>
-                    <TableCell>{slot.matchDescription || slot.description || slot.title || '-'}</TableCell>
+                    <TableCell sx={{ minWidth: 200, maxWidth: 220, wordBreak: 'break-all' }}>
+                      {slot.matchDescription || slot.description || slot.title || '-'}
+                    </TableCell>
                     <TableCell>
                       <IconButton onClick={() => handleEdit(idx)} size="small"><EditIcon fontSize="small" /></IconButton>
                       <IconButton onClick={() => handleDelete(idx)} size="small"><DeleteIcon fontSize="small" /></IconButton>
