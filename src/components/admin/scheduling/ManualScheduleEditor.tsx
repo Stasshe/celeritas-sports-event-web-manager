@@ -60,8 +60,15 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
 
   // 編集開始
   const handleEdit = (idx: number) => {
+    const slot = timeSlots[idx];
     setEditingIndex(idx);
-    setEditSlot({ ...timeSlots[idx] });
+    setEditSlot({
+      ...slot,
+      matchDescription:
+        slot.matchDescription && slot.matchDescription.trim() !== ''
+          ? slot.matchDescription
+          : slot.description || slot.title || ''
+    });
   };
 
 
@@ -213,7 +220,7 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
                     <TableCell sx={{ minWidth: 200 }}>
                       <TextField
                         name="matchDescription"
-                        value={editSlot.matchDescription || ''}
+                        value={editSlot.matchDescription ?? editSlot.description ?? editSlot.title ?? ''}
                         onChange={handleEditChange}
                         size="small"
                         sx={{ minWidth: 180 }}
