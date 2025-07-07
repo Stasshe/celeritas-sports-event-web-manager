@@ -133,14 +133,23 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   // 入力変更のハンドラ
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setScheduleSettings(prev => ({
-      ...prev,
+    const updatedSettings = {
+      ...scheduleSettings,
       [name]: name === 'matchDuration' || name === 'breakDuration' || 
               name === 'groupStageDuration' || name === 'playoffDuration' || 
               name === 'breakBetweenStages' || name === 'blockToPlayoffBreak'
         ? parseInt(value) || 0
         : value
-    }));
+    };
+    setScheduleSettings(updatedSettings);
+    // ここで即onUpdate
+    onUpdate({
+      ...sport,
+      scheduleSettings: {
+        ...updatedSettings,
+        timeSlots: timeSlots
+      }
+    });
   };
 
   // コート数変更のハンドラ
@@ -149,27 +158,41 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     newCourtCount: 1 | 2 | null
   ) => {
     if (newCourtCount !== null) {
-      setScheduleSettings(prev => ({
-        ...prev,
+      const updatedSettings = {
+        ...scheduleSettings,
         courtCount: newCourtCount
-      }));
+      };
+      setScheduleSettings(updatedSettings);
+      onUpdate({
+        ...sport,
+        scheduleSettings: {
+          ...updatedSettings,
+          timeSlots: timeSlots
+        }
+      });
     }
   };
 
   // コート名変更のハンドラ
   const handleCourtNameChange = (court: 'court1' | 'court2', value: string) => {
-    setScheduleSettings(prev => {
-      const currentCourtNames = prev.courtNames || { 
-        court1: '第1コート', 
-        court2: prev.courtCount > 1 ? '第2コート' : undefined 
-      };
-      return {
-        ...prev,
-        courtNames: {
-          ...currentCourtNames,
-          [court]: value
-        }
-      };
+    const currentCourtNames = scheduleSettings.courtNames || { 
+      court1: '第1コート', 
+      court2: scheduleSettings.courtCount > 1 ? '第2コート' : undefined 
+    };
+    const updatedSettings = {
+      ...scheduleSettings,
+      courtNames: {
+        ...currentCourtNames,
+        [court]: value
+      }
+    };
+    setScheduleSettings(updatedSettings);
+    onUpdate({
+      ...sport,
+      scheduleSettings: {
+        ...updatedSettings,
+        timeSlots: timeSlots
+      }
     });
   };
 
@@ -177,24 +200,40 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   const handleLunchBreakToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setHasLunchBreak(checked);
-    setScheduleSettings(prev => ({
-      ...prev,
+    const updatedSettings = {
+      ...scheduleSettings,
       lunchBreak: checked 
         ? { startTime: '12:00', endTime: '13:00' }
         : null
-    }));
+    };
+    setScheduleSettings(updatedSettings);
+    onUpdate({
+      ...sport,
+      scheduleSettings: {
+        ...updatedSettings,
+        timeSlots: timeSlots
+      }
+    });
   };
 
   // ランチ休憩時間の変更
   const handleLunchBreakChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setScheduleSettings(prev => ({
-      ...prev,
+    const updatedSettings = {
+      ...scheduleSettings,
       lunchBreak: {
-        ...prev.lunchBreak!,
+        ...scheduleSettings.lunchBreak!,
         [name]: value
       }
-    }));
+    };
+    setScheduleSettings(updatedSettings);
+    onUpdate({
+      ...sport,
+      scheduleSettings: {
+        ...updatedSettings,
+        timeSlots: timeSlots
+      }
+    });
   };
 
   // 新しい休憩時間の入力変更
@@ -213,14 +252,22 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       type: 'break'
     };
     const updatedBreakTimes = [...(scheduleSettings.breakTimes || []), newBreak];
-    setScheduleSettings(prev => ({
-      ...prev,
+    const updatedSettings = {
+      ...scheduleSettings,
       breakTimes: updatedBreakTimes
-    }));
+    };
+    setScheduleSettings(updatedSettings);
     setNewBreakTime({
       startTime: '11:00',
       endTime: '11:15',
       title: '休憩'
+    });
+    onUpdate({
+      ...sport,
+      scheduleSettings: {
+        ...updatedSettings,
+        timeSlots: timeSlots
+      }
     });
   };
 
@@ -228,10 +275,18 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   const handleRemoveBreakTime = (index: number) => {
     const updatedBreakTimes = [...(scheduleSettings.breakTimes || [])];
     updatedBreakTimes.splice(index, 1);
-    setScheduleSettings(prev => ({
-      ...prev,
+    const updatedSettings = {
+      ...scheduleSettings,
       breakTimes: updatedBreakTimes
-    }));
+    };
+    setScheduleSettings(updatedSettings);
+    onUpdate({
+      ...sport,
+      scheduleSettings: {
+        ...updatedSettings,
+        timeSlots: timeSlots
+      }
+    });
   };
 
   // スケジュールの生成
@@ -257,22 +312,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       console.error('Schedule generation error:', error);
       setScheduleError(error instanceof Error ? error.message : '不明なエラーが発生しました');
     }
-  };
-
-  // スケジュールを保存
-  const handleSaveSchedule = () => {
-    const safeSettings = {
-      ...scheduleSettings,
-      lunchBreak: scheduleSettings.lunchBreak || null,
-      breakTimes: scheduleSettings.breakTimes || [],
-      timeSlots: timeSlots || []
-    };
-    const updatedSport = {
-      ...sport,
-      scheduleSettings: safeSettings
-    };
-    setScheduleSettings(safeSettings);
-    onUpdate(updatedSport);
   };
 
   // ダイアログを開く
@@ -665,13 +704,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               onClick={() => setManualEditorOpen(true)}
             >
               手動編集
-            </Button>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={handleSaveSchedule}
-            >
-              保存
             </Button>
           </Box>
           {scheduleError && (
