@@ -549,6 +549,48 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
     return String.fromCharCode(65 + index); // 0->A, 1->B, 2->C, ...
   };
 
+  const [blockEditDialogOpen, setBlockEditDialogOpen] = useState(false);
+  const [manualBlockTeams, setManualBlockTeams] = useState<string[][]>([]);
+
+  // ブロック分け編集ダイアログを開く
+  const openBlockEditDialog = () => {
+    // 現在のブロック分けを初期値に
+    setManualBlockTeams(blocks.map(b => [...b.teamIds]));
+    setBlockEditDialogOpen(true);
+  };
+
+  // ブロック分け編集ダイアログでのチーム割り当て変更
+  const handleManualBlockChange = (blockIdx: number, newTeamIds: string[]) => {
+    setManualBlockTeams(prev => prev.map((ids, i) => i === blockIdx ? newTeamIds : ids));
+  };
+
+  // ブロック分け編集ダイアログの保存
+  const handleSaveBlockEdit = () => {
+    // チームが重複しないように全体で一意にする
+    const allSelected = manualBlockTeams.flat();
+    const uniqueTeams = Array.from(new Set(allSelected));
+    // 未割当チームも考慮
+    const unassigned = teams.map(t => t.id).filter(id => !uniqueTeams.includes(id));
+    // 新しいブロック配列
+    const newBlocks = blocks.map((block, i) => {
+      const teamIds = manualBlockTeams[i] || [];
+      const blockTeams = teamIds.map(id => teams.find(t => t.id === id)).filter(Boolean) as Team[];
+      return {
+        ...block,
+        teamIds,
+        matches: LeagueMatchHelper.generateRoundRobinMatches(blockTeams, block.id)
+      };
+    });
+    setBlocks(newBlocks);
+    setBlockEditDialogOpen(false);
+    // sportデータも更新
+    const allMatches = newBlocks.flatMap(b => b.matches);
+    onUpdate({
+      ...sport,
+      matches: allMatches
+    });
+  };
+
   return (
     <Box>
       {/* 設定パネル (readOnlyでない場合のみ表示) */}
@@ -580,6 +622,17 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
               <Typography variant="body1">
                 {t('league.hasThirdPlace')}: <strong>{hasThirdPlaceMatch ? t('common.yes') : t('common.no')}</strong>
               </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={openBlockEditDialog}
+                disabled={teams.length === 0 || blocks.length === 0}
+                sx={{ mt: 1 }}
+              >
+                {t('league.editBlockAssignment') || 'ブロック分けを編集'}
+              </Button>
             </Grid>
           </Grid>
           
@@ -956,6 +1009,46 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
           >
             {t('common.save')}
           </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* ブロック分け編集ダイアログ */}
+      <Dialog
+        open={blockEditDialogOpen}
+        onClose={() => setBlockEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{t('league.editBlockAssignment') || 'ブロック分けを編集'}</DialogTitle>
+        <DialogContent dividers>
+          <Grid container spacing={2}>
+            {blocks.map((block, idx) => (
+              <Grid item xs={12} key={block.id}>
+                <Typography variant="subtitle1" gutterBottom>
+                  {`${t('league.block')} ${getBlockLetter(idx)}`}
+                </Typography>
+                <FormControl fullWidth>
+                  <InputLabel>{t('league.teams')}</InputLabel>
+                  <Select
+                    multiple
+                    value={manualBlockTeams[idx] || []}
+                    onChange={e => handleManualBlockChange(idx, typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
+                    renderValue={selected => (selected as string[]).map(id => getTeamName(id)).join(', ')}
+                  >
+                    {teams.map(team => (
+                      <MenuItem key={team.id} value={team.id}>
+                        {getTeamName(team.id)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            ))}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBlockEditDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button variant="contained" color="primary" onClick={handleSaveBlockEdit}>{t('common.save')}</Button>
         </DialogActions>
       </Dialog>
     </Box>
