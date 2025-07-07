@@ -79,6 +79,31 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     (sport.type === 'league' ? defaultLeagueSettings : defaultSettings)
   );
 
+  // sportが変更されたらscheduleSettingsもリセット
+  useEffect(() => {
+    setScheduleSettings(
+      sport.scheduleSettings ||
+      (sport.type === 'league' ? defaultLeagueSettings : defaultSettings)
+    );
+    setHasLunchBreak(!!sport.scheduleSettings?.lunchBreak);
+  }, [sport]);
+
+  // scheduleSettingsが変更されたらonUpdateで即時反映
+  useEffect(() => {
+    // timeSlotsはスケジュール生成時のみ反映するため除外
+    const { timeSlots, ...restSettings } = scheduleSettings;
+    const updatedSport = {
+      ...sport,
+      scheduleSettings: {
+        ...sport.scheduleSettings,
+        ...restSettings,
+        timeSlots: sport.scheduleSettings?.timeSlots || []
+      }
+    };
+    onUpdate(updatedSport);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleSettings]);
+
   // 新しい休憩時間
   const [newBreakTime, setNewBreakTime] = useState<Omit<TimeSlot, 'type'>>({
     startTime: '11:00',
@@ -249,11 +274,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       breakTimes: scheduleSettings.breakTimes || [],
       timeSlots: timeSlots || []
     };
-    
     const updatedSport = {
       ...sport,
       scheduleSettings: safeSettings
     };
+    setScheduleSettings(safeSettings); // ローカルstateも更新
     onUpdate(updatedSport);
   };
 
