@@ -329,7 +329,10 @@ const generateMatchBasedScheduleWithCourts = (
   
   // 使用中のチームIDを追跡
   let usedTeamIds: string[] = [];
-  
+  // --- ここから追加 ---
+  // 直前の時間枠で試合をしたチームIDを記録するための変数を追加
+  let prevSlotTeamIds: string[] = [];
+  // --- ここまで追加 ---
   // すべての試合がスケジュールされるまでループ
   while (schedulableMatches.length > 0) {
     // この時間枠で利用可能なコート
@@ -398,17 +401,22 @@ const generateMatchBasedScheduleWithCourts = (
     // この時間枠でスケジュールされた試合数
     let scheduledMatchesCount = 0;
     usedTeamIds = [];
-    
+    // --- ここから追加 ---
+    // この時間枠で試合をしたチームIDを記録するリスト
+    let thisSlotTeamIds: string[] = [];
+    // --- ここまで追加 ---
     // 各コートについて処理
     for (const court of availableCourts) {
       if (schedulableMatches.length === 0) break;
-      
-      // この時間枠でスケジュール可能な試合を探す
       let matchIndex = -1;
-      
       for (let i = 0; i < schedulableMatches.length; i++) {
         const match = schedulableMatches[i];
-        
+        // --- ここから追加 ---
+        // 直前の時間枠で試合をしたチームが含まれていればスキップ
+        if (prevSlotTeamIds.includes(match.team1Id) || prevSlotTeamIds.includes(match.team2Id)) {
+          continue;
+        }
+        // --- ここまで追加 ---
         // 既に使用されているチームがいるかチェック
         if (usedTeamIds.includes(match.team1Id) || usedTeamIds.includes(match.team2Id)) {
           continue;
@@ -433,16 +441,13 @@ const generateMatchBasedScheduleWithCourts = (
           break;
         }
       }
-      
-      // スケジュール可能な試合がない場合はこのコートをスキップ
       if (matchIndex === -1) continue;
-      
-      // 試合をスケジュール
       const match = schedulableMatches.splice(matchIndex, 1)[0];
-      
-      // 使用中のチームを追加
       usedTeamIds.push(match.team1Id, match.team2Id);
-      
+      // --- ここから追加 ---
+      // この時間枠で試合をしたチームIDを記録
+      thisSlotTeamIds.push(match.team1Id, match.team2Id);
+      // --- ここまで追加 ---
       // タイムスロットを追加
       timeSlots.push({
         startTime: minutesToTime(currentMinutes),
@@ -469,6 +474,10 @@ const generateMatchBasedScheduleWithCourts = (
     if (currentMinutes >= endMinutes && schedulableMatches.length > 0) {
       throw new Error('時間内にすべての試合をスケジュールできません');
     }
+    // --- ここから追加 ---
+    // この時間枠のチームIDを次のループのために保存
+    prevSlotTeamIds = thisSlotTeamIds;
+    // --- ここまで追加 ---
   }
   
   // 時間順にソート
@@ -566,7 +575,9 @@ const generateLeagueScheduleWithCourts = (
   
   // 使用中のチームIDを追跡
   let usedTeamIds: string[] = [];
-  
+  // --- ここから追加 ---
+  let prevSlotTeamIds: string[] = [];
+  // --- ここまで追加 ---
   // グループステージの試合をスケジュール
   while (schedulableMatches.length > 0) {
     // この時間枠で利用可能なコート
@@ -635,17 +646,20 @@ const generateLeagueScheduleWithCourts = (
     // この時間枠でスケジュールされた試合数
     let scheduledMatchesCount = 0;
     usedTeamIds = [];
-    
+    // --- ここから追加 ---
+    let thisSlotTeamIds: string[] = [];
+    // --- ここまで追加 ---
     // 各コートについて処理
     for (const court of availableCourts) {
       if (schedulableMatches.length === 0) break;
-      
-      // この時間枠でスケジュール可能な試合を探す
       let matchIndex = -1;
-      
       for (let i = 0; i < schedulableMatches.length; i++) {
         const match = schedulableMatches[i];
-        
+        // --- ここから追加 ---
+        if (prevSlotTeamIds.includes(match.team1Id) || prevSlotTeamIds.includes(match.team2Id)) {
+          continue;
+        }
+        // --- ここまで追加 ---
         // 既に使用されているチームがいるかチェック
         if (usedTeamIds.includes(match.team1Id) || usedTeamIds.includes(match.team2Id)) {
           continue;
@@ -670,16 +684,12 @@ const generateLeagueScheduleWithCourts = (
           break;
         }
       }
-      
-      // スケジュール可能な試合がない場合はこのコートをスキップ
       if (matchIndex === -1) continue;
-      
-      // 試合をスケジュール
       const match = schedulableMatches.splice(matchIndex, 1)[0];
-      
-      // 使用中のチームを追加
       usedTeamIds.push(match.team1Id, match.team2Id);
-      
+      // --- ここから追加 ---
+      thisSlotTeamIds.push(match.team1Id, match.team2Id);
+      // --- ここまで追加 ---
       // タイムスロットを追加
       timeSlots.push({
         startTime: minutesToTime(currentMinutes),
@@ -687,7 +697,8 @@ const generateLeagueScheduleWithCourts = (
         type: 'match',
         matchId: match.id,
         courtId: court as 'court1' | 'court2',
-        description: `ブロック ${match.blockId}: ${getMatchDescription(match, sport)}`
+        description: `ブロック ${match.blockId}: ${getMatchDescription(match, sport)}`,
+        matchDescription: getMatchDescription(match, sport)
       });
       
       scheduledMatchesCount++;
@@ -705,6 +716,9 @@ const generateLeagueScheduleWithCourts = (
     if (currentMinutes >= endMinutes && schedulableMatches.length > 0) {
       throw new Error('時間内にすべての試合をスケジュールできません');
     }
+    // --- ここから追加 ---
+    prevSlotTeamIds = thisSlotTeamIds;
+    // --- ここまで追加 ---
   }
   
   // プレーオフがある場合は追加
