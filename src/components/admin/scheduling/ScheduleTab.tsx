@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -48,11 +48,12 @@ interface ScheduleTabProps {
 
 const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   const { t } = useTranslation();
+  // 現在のスポーツIDを保持
+  const sportIdRef = useRef(sport.id);
+
   const [hasLunchBreak, setHasLunchBreak] = useState<boolean>(
     !!sport.scheduleSettings?.lunchBreak
   );
-
-  // 手動エディタのモーダル表示状態
   const [manualEditorOpen, setManualEditorOpen] = useState(false);
 
   // 初期設定値
@@ -89,19 +90,32 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     sport.scheduleSettings?.timeSlots || []
   );
 
-  // sportが変更されたらローカルstateをリセット
+  // sport.idが変わった時だけローカルstateを初期化
   useEffect(() => {
-    setScheduleSettings(
-      sport.scheduleSettings ||
-      (sport.type === 'league' ? defaultLeagueSettings : defaultSettings)
-    );
-    setHasLunchBreak(!!sport.scheduleSettings?.lunchBreak);
-    setTimeSlots(sport.scheduleSettings?.timeSlots || []);
-  }, [sport]);
+    if (sportIdRef.current !== sport.id) {
+      sportIdRef.current = sport.id;
+      const newSettings = sport.scheduleSettings ||
+        (sport.type === 'league' ? defaultLeagueSettings : defaultSettings);
+      setScheduleSettings(newSettings);
+      setHasLunchBreak(!!sport.scheduleSettings?.lunchBreak);
+      setTimeSlots(sport.scheduleSettings?.timeSlots || []);
+    }
+  }, [sport.id]);
 
-  // 手動エディタでスロットを更新
+  // 手動エディタでスロットを更新し、onUpdateで保存
   const handleManualEditorChange = (slots: TimeSlot[]) => {
     setTimeSlots(slots);
+    // 手動編集も即保存
+    const safeSettings = {
+      ...scheduleSettings,
+      lunchBreak: scheduleSettings.lunchBreak || null,
+      breakTimes: scheduleSettings.breakTimes || [],
+      timeSlots: slots
+    };
+    onUpdate({
+      ...sport,
+      scheduleSettings: safeSettings
+    });
   };
 
   // 新しい休憩時間
@@ -651,6 +665,13 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               onClick={() => setManualEditorOpen(true)}
             >
               手動編集
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleSaveSchedule}
+            >
+              保存
             </Button>
           </Box>
           {scheduleError && (
