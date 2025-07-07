@@ -337,99 +337,72 @@ const generateMatchBasedScheduleWithCourts = (
   // --- ここまで追加 ---
   // すべての試合がスケジュールされるまでループ
   while (schedulableMatches.length > 0) {
-    // この時間枠で利用可能なコート
     const availableCourts = courtCount === 1 ? ['court1'] : ['court1', 'court2'];
-    
-    // 休憩とランチが被らないように調整
-    let safetyCounter = 0; // 無限ループ防止用のカウンター
+    let safetyCounter = 0;
     let adjustedTime = false;
-    
     while (
       (overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
       overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)) &&
-      safetyCounter < 100 // 安全策として最大100回のループ制限
+      safetyCounter < 100
     ) {
       safetyCounter++;
       adjustedTime = false;
-      
-      // ランチ休憩との重複をチェック
       if (settings.lunchBreak && 
           currentMinutes < timeToMinutes(settings.lunchBreak.endTime) && 
           currentMinutes + settings.matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
-        // ランチ休憩の終了時間にスキップ
         currentMinutes = timeToMinutes(settings.lunchBreak.endTime);
         adjustedTime = true;
-        continue; // 時間が調整されたので、他の休憩も再チェック
+        continue;
       }
-      
-      // 他の休憩時間との重複をチェック
       if (settings.breakTimes) {
         for (const breakTime of settings.breakTimes) {
           const breakStartMinutes = timeToMinutes(breakTime.startTime);
           const breakEndMinutes = timeToMinutes(breakTime.endTime);
-          
           if (currentMinutes < breakEndMinutes && 
               currentMinutes + settings.matchDuration > breakStartMinutes) {
-            // この休憩の終了時間にスキップ
             currentMinutes = breakEndMinutes;
             adjustedTime = true;
-            break; // 調整されたので、ループの先頭から再チェック
+            break;
           }
         }
-        
         if (adjustedTime) {
-          continue; // 時間が調整されたので、再チェック
+          continue;
         }
       }
-      
-      // どの休憩時間にも該当しないが、まだ重複が解消されていない場合
-      // 念のため少し時間を進める（5分）
       if (!adjustedTime) {
         currentMinutes += 5;
         adjustedTime = true;
       }
-      
-      // 終了時間チェック
       if (currentMinutes >= endMinutes) {
         throw new Error('休憩時間が多すぎるか、休憩時間設定に問題があります。スケジュールを生成できません。');
       }
     }
-    
-    // 無限ループに陥った場合
     if (safetyCounter >= 100) {
       throw new Error('休憩時間の調整中に問題が発生しました。休憩時間の設定を見直してください。');
     }
-    
-    // この時間枠でスケジュールされた試合数
     let scheduledMatchesCount = 0;
     usedTeamIds = [];
-    // --- ここから追加 ---
-    // この時間枠で試合をしたチームIDを記録するリスト
     let thisSlotTeamIds: string[] = [];
-    // --- ここまで追加 ---
-    // 各コートについて処理
-    for (const court of availableCourts) {
-      if (schedulableMatches.length === 0) break;
-      let matchIndex = -1;
-      for (let i = 0; i < schedulableMatches.length; i++) {
-        const match = schedulableMatches[i];
-        // --- ここから追加 ---
+
+    // --- 順番厳守: shuffle=false の場合は先頭から courtCount 分だけ詰めていく ---
+    if (shuffle === false) {
+      for (let c = 0; c < availableCourts.length; c++) {
+        if (schedulableMatches.length === 0) break;
+        const match = schedulableMatches[0];
         // 直前の時間枠で試合をしたチームが含まれていればスキップ
         if (prevSlotTeamIds.includes(match.team1Id) || prevSlotTeamIds.includes(match.team2Id)) {
-          continue;
+          // 直前チームが含まれていたら、次の時間枠で再挑戦
+          break;
         }
-        // --- ここまで追加 ---
         // 既に使用されているチームがいるかチェック
         if (usedTeamIds.includes(match.team1Id) || usedTeamIds.includes(match.team2Id)) {
+          // 既にこの枠で使われているチームがいれば、次のコートへ
           continue;
         }
-        
-        // クラスの競合チェック
+        // クラス競合チェック
         const team1Class = teamInfoMap[match.team1Id]?.className;
         const team2Class = teamInfoMap[match.team2Id]?.className;
         let hasClassConflict = false;
-        
-        // すでにスケジュールされた試合のクラスと競合しないかチェック
         for (const usedTeamId of usedTeamIds) {
           const usedTeamClass = teamInfoMap[usedTeamId]?.className;
           if (usedTeamClass && (usedTeamClass === team1Class || usedTeamClass === team2Class)) {
@@ -437,49 +410,77 @@ const generateMatchBasedScheduleWithCourts = (
             break;
           }
         }
-        
-        if (!hasClassConflict) {
-          matchIndex = i;
-          break;
+        if (hasClassConflict) {
+          continue;
         }
+        // スケジュール
+        schedulableMatches.shift();
+        usedTeamIds.push(match.team1Id, match.team2Id);
+        thisSlotTeamIds.push(match.team1Id, match.team2Id);
+        timeSlots.push({
+          startTime: minutesToTime(currentMinutes),
+          endTime: minutesToTime(currentMinutes + settings.matchDuration),
+          type: 'match',
+          matchId: match.id,
+          courtId: availableCourts[c] as 'court1' | 'court2',
+          description: getMatchDescription(match, sport),
+          matchDescription: getMatchDescription(match, sport)
+        });
+        scheduledMatchesCount++;
       }
-      if (matchIndex === -1) continue;
-      const match = schedulableMatches.splice(matchIndex, 1)[0];
-      usedTeamIds.push(match.team1Id, match.team2Id);
-      // --- ここから追加 ---
-      // この時間枠で試合をしたチームIDを記録
-      thisSlotTeamIds.push(match.team1Id, match.team2Id);
-      // --- ここまで追加 ---
-      // タイムスロットを追加
-      timeSlots.push({
-        startTime: minutesToTime(currentMinutes),
-        endTime: minutesToTime(currentMinutes + settings.matchDuration),
-        type: 'match',
-        matchId: match.id,
-        courtId: court as 'court1' | 'court2',
-        description: getMatchDescription(match, sport),
-        matchDescription: getMatchDescription(match, sport)
-      });
-      
-      scheduledMatchesCount++;
+    } else {
+      // --- 既存のロジック（シャッフルあり） ---
+      for (const court of availableCourts) {
+        if (schedulableMatches.length === 0) break;
+        let matchIndex = -1;
+        for (let i = 0; i < schedulableMatches.length; i++) {
+          const match = schedulableMatches[i];
+          if (prevSlotTeamIds.includes(match.team1Id) || prevSlotTeamIds.includes(match.team2Id)) {
+            continue;
+          }
+          if (usedTeamIds.includes(match.team1Id) || usedTeamIds.includes(match.team2Id)) {
+            continue;
+          }
+          const team1Class = teamInfoMap[match.team1Id]?.className;
+          const team2Class = teamInfoMap[match.team2Id]?.className;
+          let hasClassConflict = false;
+          for (const usedTeamId of usedTeamIds) {
+            const usedTeamClass = teamInfoMap[usedTeamId]?.className;
+            if (usedTeamClass && (usedTeamClass === team1Class || usedTeamClass === team2Class)) {
+              hasClassConflict = true;
+              break;
+            }
+          }
+          if (!hasClassConflict) {
+            matchIndex = i;
+            break;
+          }
+        }
+        if (matchIndex === -1) continue;
+        const match = schedulableMatches.splice(matchIndex, 1)[0];
+        usedTeamIds.push(match.team1Id, match.team2Id);
+        thisSlotTeamIds.push(match.team1Id, match.team2Id);
+        timeSlots.push({
+          startTime: minutesToTime(currentMinutes),
+          endTime: minutesToTime(currentMinutes + settings.matchDuration),
+          type: 'match',
+          matchId: match.id,
+          courtId: court as 'court1' | 'court2',
+          description: getMatchDescription(match, sport),
+          matchDescription: getMatchDescription(match, sport)
+        });
+        scheduledMatchesCount++;
+      }
     }
-    
-    // 次の時間枠へ
     if (scheduledMatchesCount > 0) {
       currentMinutes += settings.matchDuration + settings.breakDuration;
     } else {
-      // もし試合がスケジュールできなかった場合、時間を少し進める
       currentMinutes += 5;
     }
-    
-    // 終了時間チェック
     if (currentMinutes >= endMinutes && schedulableMatches.length > 0) {
       throw new Error('時間内にすべての試合をスケジュールできません');
     }
-    // --- ここから追加 ---
-    // この時間枠のチームIDを次のループのために保存
     prevSlotTeamIds = thisSlotTeamIds;
-    // --- ここまで追加 ---
   }
   
   // 時間順にソート
