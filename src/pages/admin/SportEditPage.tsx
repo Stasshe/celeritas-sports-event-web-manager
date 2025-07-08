@@ -808,7 +808,8 @@ const SportEditPage: React.FC = () => {
       '/assets/soccer.jpeg',
       '/assets/騎馬戦.jpeg',
       '/assets/female-valleyball.jpeg',
-      '/assets/male-valleyball.jpeg'
+      '/assets/male-valleyball.jpeg',
+      '/assets/soft-ball.jpeg'
     ]);
 
     const getFileName = (path: string) => {
