@@ -213,7 +213,7 @@ const ScoringPage: React.FC = () => {
     <Container maxWidth="lg">
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
+          <IconButton onClick={() => navigate(`/admin/sports/${sportId}`)} aria-label="back" sx={{ mr: 1 }}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h4" component="h1">
