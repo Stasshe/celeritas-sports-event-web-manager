@@ -1,10 +1,12 @@
 # Sports Event Web Manager
 
-![バージョン](https://img.shields.io/badge/version-0.2.0-blue)
+![バージョン](https://img.shields.io/badge/version-1.5.6-blue)
 ![ライセンス](https://img.shields.io/badge/license-GPL-green)
 ![言語](https://img.shields.io/badge/TypeScript-5.0.2-blue)
 ![フレームワーク](https://img.shields.io/badge/React-18.2.0-61dafb)
 ![テスト済み](https://img.shields.io/badge/テスト済み-✓-success)
+
+※ちゃんと使えます笑
 
 ## 概要
 
