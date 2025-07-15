@@ -82,6 +82,8 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
         <Container maxWidth="sm">
           <Typography variant="body2" color="text.secondary" align="center">
             {`© Roughfts 2025 all rights reserved.`}
+            <br />
+            Contact:  <a href="mailto:egnm9stasshe@gmail.com">egnm9stasshe@gmail.com</a>
           </Typography>
         </Container>
       </Box>

@@ -444,8 +444,8 @@ A: アプリケーションは変更検出と競合解決のメカニズムを�
 
 プロジェクトに関するご質問やフィードバックは、イシューを立てるか、以下の連絡先までお願いします。
 
-- メール: example@example.com
-- Twitter: [@sportsEventManager](https://twitter.com/sportsEventManager)
+- メール: egnm9stasshe@gmail.com
+- mail2: eterynity2024workplace@gmail.com
 
 ## 謝辞
 
@@ -454,8 +454,6 @@ A: アプリケーションは変更検出と競合解決のメカニズムを�
 - Firebase、ExcelJS
 - i18next、Framer Motion
 
-また、貢献してくださったすべての開発者に感謝いたします。
-
 ---
 
-© 2025 Sports Event Web Manager Team
+© 2025 Sports Event Web Manager Developer, Stassshe-Roughfts
