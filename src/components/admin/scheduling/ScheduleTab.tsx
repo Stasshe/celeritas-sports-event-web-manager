@@ -85,10 +85,40 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     (sport.type === 'league' ? defaultLeagueSettings : defaultSettings)
   );
 
-  // 生成されたタイムスロット
+  // スケジュール履歴管理
+  const LOCAL_STORAGE_KEY = `scheduleHistory_${sport.id}`;
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(
     sport.scheduleSettings?.timeSlots || []
   );
+  const [history, setHistory] = useState<TimeSlot[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+
+  // 履歴をローカルストレージから読み込む
+  useEffect(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed: TimeSlot[][] = JSON.parse(saved);
+        setHistory(parsed);
+        setHistoryIndex(parsed.length - 1);
+        if (parsed.length > 0) {
+          setTimeSlots(parsed[parsed.length - 1]);
+        }
+      } catch {}
+    } else {
+      // 初期履歴
+      setHistory([sport.scheduleSettings?.timeSlots || []]);
+      setHistoryIndex(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sport.id]);
+
+  // 履歴が変わったらローカルストレージに保存
+  useEffect(() => {
+    if (history.length > 0) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(history));
+    }
+  }, [history, LOCAL_STORAGE_KEY]);
 
   // sport.idが変わった時だけローカルstateを初期化
   useEffect(() => {
@@ -105,6 +135,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   // 手動エディタでスロットを更新し、onUpdateで保存
   const handleManualEditorChange = (slots: TimeSlot[]) => {
     setTimeSlots(slots);
+    // 履歴に追加
+    const newHistory = history.slice(0, historyIndex + 1);
+    setHistory([...newHistory, slots]);
+    setHistoryIndex(newHistory.length);
     // 手動編集も即保存
     const safeSettings = {
       ...scheduleSettings,
@@ -300,6 +334,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       };
       const generatedTimeSlots = generateSchedule(sport, safeSettings);
       setTimeSlots(generatedTimeSlots);
+      // 履歴に追加
+      const newHistory = history.slice(0, historyIndex + 1);
+      setHistory([...newHistory, generatedTimeSlots]);
+      setHistoryIndex(newHistory.length);
       const updatedSport = {
         ...sport,
         scheduleSettings: {
@@ -346,6 +384,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       };
       const generatedTimeSlots = generateSchedule(sport, safeSettings, false); // シャッフルしない
       setTimeSlots(generatedTimeSlots);
+      // 履歴に追加
+      const newHistory = history.slice(0, historyIndex + 1);
+      setHistory([...newHistory, generatedTimeSlots]);
+      setHistoryIndex(newHistory.length);
       const updatedSettings = {
         ...safeSettings,
         timeSlots: generatedTimeSlots
@@ -434,13 +476,34 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
     return null;
   };
 
+  // Undo/Redoハンドラ
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setTimeSlots(history[historyIndex - 1]);
+    }
+  };
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setTimeSlots(history[historyIndex + 1]);
+    }
+  };
+
+  // 履歴インデックスが変わったらtimeSlotsを同期
+  useEffect(() => {
+    if (historyIndex >= 0 && historyIndex < history.length) {
+      setTimeSlots(history[historyIndex]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyIndex]);
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
         {t('schedule.title')}
       </Typography>
       <Divider sx={{ mb: 3 }} />
-      
       <Grid container spacing={3}>
         {/* 基本設定 */}
         <Grid item xs={12} md={6}>
@@ -449,7 +512,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               {t('schedule.basicSettings')}
             </Typography>
             <Divider sx={{ mb: 2 }} />
-            
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <TextField
@@ -560,7 +622,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             </Grid>
           </Paper>
         </Grid>
-        
         {/* 休憩設定 */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2, height: '100%' }}>
@@ -678,7 +739,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             </Box>
           </Paper>
         </Grid>
-        
         {/* アクション */}
         <Grid item xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, gap: 2 }}>
@@ -698,6 +758,25 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             >
               順番を維持してリスケ
             </Button>
+            {/* Undo/Redoボタン追加 */}
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={handleUndo}
+              disabled={historyIndex <= 0}
+              startIcon={<span style={{fontSize: '1.5em'}}>↩︎</span>}
+            >
+              戻す
+            </Button>
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={handleRedo}
+              disabled={historyIndex >= history.length - 1}
+              startIcon={<span style={{fontSize: '1.5em'}}>↪︎</span>}
+            >
+              進める
+            </Button>
             <Button
               variant="outlined"
               color="info"
@@ -712,17 +791,16 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             </Alert>
           )}
         </Grid>
-      {/* 手動エディタモーダル */}
-      <ManualScheduleEditor
-        open={manualEditorOpen}
-        onClose={() => setManualEditorOpen(false)}
-        timeSlots={timeSlots}
-        onChange={handleManualEditorChange}
-        courtNames={scheduleSettings.courtNames}
-        teams={sport.teams}
-      />
-        
-        {/* 確認ダイアログ */}
+        {/* ...existing code... */}
+        <ManualScheduleEditor
+          open={manualEditorOpen}
+          onClose={() => setManualEditorOpen(false)}
+          timeSlots={timeSlots}
+          onChange={handleManualEditorChange}
+          courtNames={scheduleSettings.courtNames}
+          teams={sport.teams}
+        />
+        {/* ...existing code... */}
         <Dialog
           open={openConfirmDialog}
           onClose={handleCloseDialog}
@@ -742,8 +820,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             </Button>
           </DialogActions>
         </Dialog>
-        
-        {/* スケジュール表示 */}
+        {/* ...existing code... */}
         <Grid item xs={12}>
           {timeSlots.length > 0 ? (
             <TimeSlotTable timeSlots={timeSlots} sport={sport} />
