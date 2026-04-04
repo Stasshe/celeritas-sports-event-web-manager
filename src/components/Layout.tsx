@@ -83,7 +83,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideHeader }) => {
           <Typography variant="body2" color="text.secondary" align="center">
             {`© Roughfts 2025 all rights reserved.`}
             <br />
-            Contact:  <a href="mailto:egnm9stasshe@gmail.com">eterynity2024workplace@gmail.com</a>
+            Contact:  <a href="mailto:eterynity2024workplace@gmail.com">eterynity2024workplace@gmail.com</a>
           </Typography>
         </Container>
       </Box>
