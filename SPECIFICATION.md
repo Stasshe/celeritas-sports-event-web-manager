@@ -49,21 +49,19 @@ Vite + React 18 SPA固定。Next.js移行禁止。`@g-loot/react-tournament-brac
 
 保存action Contextと保存表示state Contextを分離。編集componentはstatus変更を購読せず、header内の保存表示だけ更新する。保存feedbackに進捗intervalを使わない。
 
-### 手動保存policy
+### 保存表示policy
 
 `EventEditPage.tsx`、`SportEditPage.tsx`、`ScoringPage.tsx`のpage header保存button、置かない。autosaveと同じwriteの重複入口になるため。
 
-残すmanual affordance:
-
-- `AdminLayoutContext`のfloating「未保存の変更」button: 全scope共通fallback trigger
-- `AdminPage` dashboard、`AdminSettingsPage`: autosaveなしのpage
-- `BackupPanel`: page edit保存でなく独立したbackup作成action
+自動保存の未保存・保存中・保存済み・失敗表示は管理header右上だけに置く。floating通知は置かない。`AdminPage` dashboardと`AdminSettingsPage`はautosaveなし。`BackupPanel`はpage edit保存でなく独立したbackup作成action。
 
 ## Firebase write
 
 Firebase必須環境変数を起動時に検証する。設定不足またはSDK初期化失敗時、通常のrouteとdata hookを開始せず、原因を示す全画面エラーを表示する。render時の未処理例外もroot error boundaryで捕捉し、再読み込み可能なエラー画面へ切り替える。空白画面のまま停止させない。
 
 `src/hooks/useDatabase.ts`の更新、Firebase RTDB `update()`一回による複数fieldのatomic write。transaction、server-side version追跡、競合解決layerなし。複数client同一field編集、last-write-wins。
+
+競技編集画面にlocal/remote差分表示、リモート値採用操作、最終同期表示を持たない。保存状態は管理headerへ集約する。
 
 write中`isUpdatingRef`を立て、`onValue` snapshotによるin-flight optimistic state上書き防止。実際に起きた表示flicker・編集不安定を止めるguard。旧version-tracking/conflict-detection系、完成していたが呼ばれないparallel write pathだったため削除済み。復活禁止。multi-field atomic `update()` + in-flight guard、意図した最終設計。
 
