@@ -1,5 +1,6 @@
 import * as ExcelJS from 'exceljs';
-import { Sport, Match, Team } from '../../types';
+import { Sport, Match } from '../../types';
+import { getParticipantName, getTeamDisplayName } from '../match';
 
 /**
  * Excel ワークシートにトーナメントデータをエクスポート
@@ -168,8 +169,8 @@ const createImprovedVisualBracket = async (
       const matchCenterRow = matchPositions[round][i];
       
       // チーム名を取得
-      const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || 'TBD';
-      const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || 'TBD';
+      const team1 = getParticipantName(match, 'team1', sport);
+      const team2 = getParticipantName(match, 'team2', sport);
       
       // チーム1のセル
       const team1Cell = sheet.getCell(matchCenterRow - 1, col);
@@ -282,8 +283,8 @@ const createImprovedVisualBracket = async (
     );
     
     if (thirdPlaceMatch) {
-      const team1 = sport.teams.find(t => t.id === thirdPlaceMatch.team1Id)?.name || 'TBD';
-      const team2 = sport.teams.find(t => t.id === thirdPlaceMatch.team2Id)?.name || 'TBD';
+      const team1 = getParticipantName(thirdPlaceMatch, 'team1', sport);
+      const team2 = getParticipantName(thirdPlaceMatch, 'team2', sport);
       
       // チーム1情報
       const team1Cell = sheet.getCell(lastRow + 1, 1);
@@ -353,11 +354,10 @@ const createTournamentTable = async (
     const matches = matchesByRound[round] || [];
     
     for (const match of matches) {
-      const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || 'TBD';
-      const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || 'TBD';
-      const winner = match.winnerId 
-        ? sport.teams.find(t => t.id === match.winnerId)?.name 
-        : '未定';
+      const team1 = getParticipantName(match, 'team1', sport);
+      const team2 = getParticipantName(match, 'team2', sport);
+      const winnerTeam = sport.teams.find(team => team.id === match.winnerId);
+      const winner = winnerTeam ? getTeamDisplayName(winnerTeam) : '未定';
         
       // わかりやすいラウンド名を設定
       let roundName = `ラウンド ${round}`;
@@ -463,7 +463,7 @@ const addTeamsList = (
   // 各チームを追加
   sport.teams.forEach(team => {
     sheet.addRow([
-      team.name,
+      getTeamDisplayName(team),
       team.members?.join(', ') || ''
     ]);
     lastRow++;

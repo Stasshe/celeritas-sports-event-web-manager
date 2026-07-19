@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Match, Sport, Team } from '../types';
-import { getMatchContext, getMatchupLabel, getParticipantName } from './match';
+import { getMatchContext, getMatchupLabel, getParticipantName, getTeamDisplayName } from './match';
 
 const teams: Team[] = [
   { id: 'a', name: 'grade3-3-6' },
@@ -38,6 +38,16 @@ const createSport = (matches: Match[], type: Sport['type'] = 'tournament'): Spor
 });
 
 describe('match display resolution', () => {
+  it.each([
+    ['grade1-H', 'H'],
+    ['grade3-3-6', '3-6'],
+    ['grade4-M', 'grade4-M'],
+    ['upgrade1-H', 'upgrade1-H'],
+    ['', '']
+  ])('formats the team name %j as %j', (name, expected) => {
+    expect(getTeamDisplayName({ id: 'team', name })).toBe(expected);
+  });
+
   it('hides internal grade prefixes from team names', () => {
     const match = createMatch({ team1Id: 'a', team2Id: 'b' });
     expect(getMatchupLabel(match, createSport([match]))).toBe('3-6 vs 2-1');

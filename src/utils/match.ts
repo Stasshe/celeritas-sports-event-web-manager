@@ -1,4 +1,8 @@
-import { Match, MatchParticipantSource, Sport } from '../types';
+import { Match, MatchParticipantSource, Sport, Team } from '../types';
+
+export const getTeamDisplayName = (team: Team): string => {
+  return team.name.replace(/^grade[1-3]-/, '');
+};
 
 export const isThirdPlaceMatch = (match: Match): boolean => {
   return match.matchNumber === 0 || match.id.includes('third_place');
@@ -56,7 +60,7 @@ export const getParticipantName = (
 
   if (resolvedTeamId) {
     const team = sport.teams.find(candidate => candidate.id === resolvedTeamId);
-    if (team) return team.name.replace(/^grade[1-3]-/, '');
+    if (team) return getTeamDisplayName(team);
     return '不明なチーム';
   }
   if (source) return getSourceLabel(source, sport);
