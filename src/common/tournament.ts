@@ -3,6 +3,13 @@ import { TournamentStructureHelper } from './TournamentStructureHelper';
 
 const getDate = (): string => new Date().toISOString().split('T')[0];
 
+const resolveFirstRoundBye = (match: Match): string => {
+  if (match.round !== 1) return '';
+  if (match.team1Id && !match.team2Id && !match.team2Source) return match.team1Id;
+  if (match.team2Id && !match.team1Id && !match.team1Source) return match.team2Id;
+  return '';
+};
+
 const resolveSourceTeamId = (
   source: MatchParticipantSource,
   matchesById: Map<string, Match>
@@ -14,9 +21,7 @@ const resolveSourceTeamId = (
 
   if (source.type === 'winner') {
     if (previousMatch.winnerId) return previousMatch.winnerId;
-    const participants = [previousMatch.team1Id, previousMatch.team2Id].filter(Boolean);
-    if (participants.length === 1) return participants[0];
-    return '';
+    return resolveFirstRoundBye(previousMatch);
   }
 
   if (!previousMatch.winnerId) return '';

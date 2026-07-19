@@ -169,6 +169,35 @@ describe('resolveTournamentParticipants', () => {
 
     expect(actualTeamId).toBe(expectedTeamId);
   });
+
+  it('keeps a later-round winner unresolved until both participants are known', () => {
+    const matches = createTournamentMatches(createTeams(16), false);
+    const secondRoundMatch = matches.find(match => {
+      return match.round === 2 && match.matchNumber === 3;
+    });
+    const nextRoundMatch = matches.find(match => {
+      return match.round === 3 && match.matchNumber === 2;
+    });
+    if (!secondRoundMatch || !nextRoundMatch) throw new Error('Expected tournament matches');
+    if (secondRoundMatch.team1Source?.type !== 'winner') {
+      throw new Error('Expected a winner source');
+    }
+    const knownParticipantSourceId = secondRoundMatch.team1Source.matchId;
+    const knownParticipantSource = matches.find(match => {
+      return match.id === knownParticipantSourceId;
+    });
+    if (!knownParticipantSource) throw new Error('Expected a source match');
+
+    knownParticipantSource.winnerId = knownParticipantSource.team1Id;
+    secondRoundMatch.team2Id = '';
+    secondRoundMatch.winnerId = '';
+    nextRoundMatch.team1Id = knownParticipantSource.team1Id;
+
+    const resolved = resolveTournamentParticipants(matches);
+    const resolvedNextRound = resolved.find(match => match.id === nextRoundMatch.id);
+
+    expect(resolvedNextRound?.team1Id).toBe('');
+  });
 });
 
 describe('hasValidTournamentParticipants', () => {
