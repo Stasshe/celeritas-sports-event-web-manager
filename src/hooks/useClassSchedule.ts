@@ -13,22 +13,9 @@ import { timeToMinutes } from '../utils/scheduleGenerator';
 interface ScheduleCandidate {
   entry: ClassScheduleEntry;
   teamIds: Set<string>;
+  directTeamIds: Set<string>;
+  sport: Sport;
 }
-
-const getBlockTeamIds = (source: MatchParticipantSource, sport: Sport): Set<string> => {
-  if (source.type !== 'blockRank') return new Set();
-
-  const teamIds = new Set(
-    sport.matches
-      .filter(match => match.blockId === source.blockId)
-      .flatMap(match => [match.team1Id, match.team2Id])
-      .filter(Boolean)
-  );
-  sport.teams.forEach(team => {
-    if (team.blockId === source.blockId) teamIds.add(team.id);
-  });
-  return teamIds;
-};
 
 const getSourceTeamIds = (
   source: MatchParticipantSource | undefined,
@@ -36,7 +23,7 @@ const getSourceTeamIds = (
   path: Set<string>
 ): Set<string> => {
   if (!source) return new Set();
-  if (source.type === 'blockRank') return getBlockTeamIds(source, sport);
+  if (source.type === 'blockRank') return new Set();
   return getMatchTeamIds(source.matchId, sport, path);
 };
 
@@ -101,7 +88,9 @@ const createCandidate = (match: Match, sport: Sport): ScheduleCandidate | undefi
       courtId: slot.courtId,
       courtName: slot.courtId ? sport.scheduleSettings?.courtNames?.[slot.courtId] : undefined
     },
-    teamIds: getMatchTeamIds(match.id, sport, new Set())
+    teamIds: getMatchTeamIds(match.id, sport, new Set()),
+    directTeamIds: new Set([match.team1Id, match.team2Id].filter(Boolean)),
+    sport
   };
 };
 
@@ -113,7 +102,7 @@ export const buildClassSchedule = (
   if (sports.length === 0 || !activeEvent) return [];
 
   const selectedClassSet = new Set(selectedClasses);
-  const candidates = sports.flatMap(sport => {
+  const candidates = sports.filter(sport => sport.type === 'tournament').flatMap(sport => {
     return sport.matches.flatMap(match => {
       const candidate = createCandidate(match, sport);
       return candidate ? [candidate] : [];
@@ -122,14 +111,20 @@ export const buildClassSchedule = (
   const filteredCandidates = selectedClasses.length === 0
     ? candidates
     : candidates.filter(candidate => {
-        const sport = sports.find(item => item.id === candidate.entry.sportId);
-        return sport
-          ? matchesSelectedClass(candidate.teamIds, selectedClassSet, sport)
-          : false;
+        return matchesSelectedClass(candidate.teamIds, selectedClassSet, candidate.sport);
       });
 
   return filteredCandidates
-    .map(candidate => candidate.entry)
+    .map(candidate => {
+      if (selectedClasses.length === 0) return candidate.entry;
+      const isDirectParticipant = matchesSelectedClass(
+        candidate.directTeamIds,
+        selectedClassSet,
+        candidate.sport
+      );
+      if (isDirectParticipant) return candidate.entry;
+      return { ...candidate.entry, status: 'potential' as const };
+    })
     .sort((first, second) => {
       if (first.date && second.date && first.date !== second.date) {
         return first.date.localeCompare(second.date);

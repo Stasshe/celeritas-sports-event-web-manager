@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTournamentMatches } from '../common/tournament';
+import { createConsolationMatches, createTournamentMatches } from '../common/tournament';
 import { Event, ScheduleSettings, Sport, Team } from '../types';
 import { generateSchedule } from '../utils/scheduleGenerator';
 import { buildClassSchedule } from './useClassSchedule';
@@ -65,6 +65,48 @@ describe('buildClassSchedule', () => {
       'match_3',
       'third_place_match'
     ]));
+    expect(entries.find(entry => entry.matchId === teamFirstRoundMatch!.id)?.status).not.toBe('potential');
+    expect(entries.find(entry => entry.matchId === 'match_3')?.status).toBe('potential');
+    expect(entries.find(entry => entry.matchId === 'third_place_match')?.status).toBe('potential');
+  });
+
+  it('includes possible consolation matches and its third-place match', () => {
+    const teams: Team[] = Array.from({ length: 8 }, (_, index) => ({
+      id: `team_${index + 1}`,
+      name: `${index + 1}-A`
+    }));
+    const mainMatches = createTournamentMatches(teams, true, event.date);
+    const consolationMatches = createConsolationMatches(mainMatches, true, true, event.date);
+    const sport: Sport = {
+      id: 'tournament-with-consolation',
+      name: 'Tournament with consolation',
+      eventId: event.id,
+      type: 'tournament',
+      teams,
+      matches: [...mainMatches, ...consolationMatches],
+      leagueSettings: {
+        blockCount: 0,
+        advancingTeams: 0,
+        hasPlayoff: false,
+        hasThirdPlaceMatch: false
+      },
+      lastEditedBy: undefined
+    };
+    sport.scheduleSettings = {
+      ...settings,
+      timeSlots: generateSchedule(sport, settings, false)
+    };
+
+    const entries = buildClassSchedule([sport], event, ['1-A']);
+    const consolationEntries = entries.filter(entry => {
+      return sport.matches.find(match => match.id === entry.matchId)?.bracket === 'consolation';
+    });
+
+    expect(consolationEntries.length).toBeGreaterThan(0);
+    expect(consolationEntries.every(entry => entry.status === 'potential')).toBe(true);
+    expect(consolationEntries.some(entry => {
+      return entry.matchId === 'consolation_third_place_match';
+    })).toBe(true);
   });
 
   it('does not include an unrelated first-round branch', () => {
@@ -85,6 +127,13 @@ describe('buildClassSchedule', () => {
     }).length;
 
     expect(entries).toHaveLength(scheduledMatchCount || 0);
+  });
+
+  it('ignores non-tournament sports', () => {
+    const sport = createTournament();
+    sport.type = 'league';
+
+    expect(buildClassSchedule([sport], event, ['A'])).toEqual([]);
   });
 
   it('ignores a broken participant source without creating a phantom entry', () => {
