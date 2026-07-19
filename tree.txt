@@ -10,9 +10,11 @@
 ├── find_missing.sh
 ├── firebaseRules.json
 ├── git_log.txt
+├── index.html
 ├── missing_translations.txt
-├── package-lock.json
 ├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
 ├── public
 │   ├── _redirects
 │   ├── android-chrome-128x128.png
@@ -58,6 +60,7 @@
 │   │   ├── male-valleyball.jpeg
 │   │   ├── readme.md
 │   │   ├── soccer.jpeg
+│   │   ├── soft-ball.jpeg
 │   │   ├── temp.txt
 │   │   └── 騎馬戦.jpeg
 │   ├── icon-128x128.png
@@ -76,7 +79,6 @@
 │   ├── icon-512x512.png
 │   ├── icon-72x72.png
 │   ├── icon-96x96.png
-│   ├── index.html
 │   ├── manifest.json
 │   ├── site-tile-150x150.png
 │   ├── site-tile-310x150.png
@@ -85,24 +87,20 @@
 ├── render.yaml
 ├── src
 │   ├── App.tsx
-│   ├── components
-│   │   ├── DelaysTable.tsx
-│   │   ├── EventList.tsx
-│   │   ├── LanguageSelector.tsx
-│   │   ├── Layout.tsx
-│   │   ├── ProtectedRoute.tsx
-│   │   ├── admin
-│   │   │   ├── AdminDashboard.tsx
+│   ├── admin
+│   │   ├── components
+│   │   │   ├── AdminLayout.tsx
 │   │   │   ├── BackupPanel.tsx
 │   │   │   ├── ExportPanel.tsx
+│   │   │   ├── ProtectedRoute.tsx
 │   │   │   ├── RosterEditor.tsx
 │   │   │   ├── TabContent.tsx
-│   │   │   ├── TeamManagement.tsx
 │   │   │   ├── dialogs
 │   │   │   │   ├── CreateEventDialog.tsx
 │   │   │   │   ├── CreateSportDialog.tsx
 │   │   │   │   └── DeleteConfirmationDialog.tsx
 │   │   │   ├── scheduling
+│   │   │   │   ├── ManualScheduleEditor.tsx
 │   │   │   │   ├── ScheduleTab.tsx
 │   │   │   │   └── TimeSlotTable.tsx
 │   │   │   ├── scoreboard
@@ -111,37 +109,56 @@
 │   │   │       ├── LeagueScoring.tsx
 │   │   │       ├── RankingScoring.tsx
 │   │   │       ├── RoundRobinScoring.tsx
-│   │   │       ├── SportPointEditor.tsx
-│   │   │       ├── TournamentScoring.tsx
-│   │   │       ├── components
-│   │   │       │   ├── MatchCard.tsx
-│   │   │       │   ├── MatchEditDialog.tsx
-│   │   │       │   ├── TeamSelector.tsx
-│   │   │       │   ├── TournamentBuilder.tsx
-│   │   │       │   └── TournamentStructureHelper.ts
 │   │   │       └── helpers
 │   │   │           ├── LeagueMatchHelper.ts
 │   │   │           └── LeaguePlayoffHelper.ts
-│   │   ├── layout
-│   │   │   └── AdminLayout.tsx
-│   │   ├── schedule
-│   │   │   ├── ClassScheduleTimeline.tsx
-│   │   │   └── ClassSelector.tsx
-│   │   ├── scoreboard
-│   │   │   └── OverallScoreCard.tsx
-│   │   └── sports
-│   │       ├── CustomLayout.tsx
-│   │       ├── EventOverallTimeline.tsx
-│   │       ├── EventTimelineOverview.tsx
-│   │       ├── RoundRobinTable.tsx
-│   │       ├── RulesDisplay.tsx
-│   │       └── ScheduleTimeline.tsx
+│   │   ├── context
+│   │   │   └── AdminLayoutContext.tsx
+│   │   └── pages
+│   │       ├── AdminHelpPage.tsx
+│   │       ├── AdminPage.tsx
+│   │       ├── AdminSettingsPage.tsx
+│   │       ├── BackupPage.tsx
+│   │       ├── EventEditPage.tsx
+│   │       ├── ExportPage.tsx
+│   │       ├── ScoringPage.tsx
+│   │       └── SportEditPage.tsx
+│   ├── common
+│   │   ├── MatchCard.tsx
+│   │   ├── MatchEditDialog.tsx
+│   │   ├── TeamSelector.tsx
+│   │   ├── TournamentBuilder.tsx
+│   │   ├── TournamentScoring.tsx
+│   │   ├── TournamentStructureHelper.ts
+│   │   └── tournamentViewHelper.ts
 │   ├── config
 │   │   └── firebase.ts
 │   ├── contexts
-│   │   ├── AdminLayoutContext.tsx
 │   │   ├── AuthContext.tsx
 │   │   └── ThemeContext.tsx
+│   ├── general
+│   │   ├── components
+│   │   │   ├── DelaysTable.tsx
+│   │   │   ├── LanguageSelector.tsx
+│   │   │   ├── PublicLayout.tsx
+│   │   │   ├── schedule
+│   │   │   │   ├── ClassScheduleTimeline.tsx
+│   │   │   │   └── ClassSelector.tsx
+│   │   │   ├── scoreboard
+│   │   │   │   └── OverallScoreCard.tsx
+│   │   │   └── sports
+│   │   │       ├── EventOverallTimeline.tsx
+│   │   │       ├── EventTimelineOverview.tsx
+│   │   │       ├── RoundRobinTable.tsx
+│   │   │       ├── RulesDisplay.tsx
+│   │   │       └── ScheduleTimeline.tsx
+│   │   └── pages
+│   │       ├── ClassSchedulePage.tsx
+│   │       ├── HomePage.tsx
+│   │       ├── LoginPage.tsx
+│   │       ├── NotFoundPage.tsx
+│   │       ├── ScoreboardDetailsPage.tsx
+│   │       └── SportPage.tsx
 │   ├── hooks
 │   │   ├── useBackup.ts
 │   │   ├── useClassSchedule.ts
@@ -156,46 +173,29 @@
 │   │       └── zh.json
 │   ├── index.css
 │   ├── index.tsx
-│   ├── pages
-│   │   ├── ClassSchedulePage.tsx
-│   │   ├── HomePage.tsx
-│   │   ├── LoginPage.tsx
-│   │   ├── NotFoundPage.tsx
-│   │   ├── ScoreboardDetailsPage.tsx
-│   │   ├── SportDetailPage.tsx
-│   │   ├── SportPage.tsx
-│   │   └── admin
-│   │       ├── AdminHelpPage.tsx
-│   │       ├── AdminPage.tsx
-│   │       ├── AdminSettingsPage.tsx
-│   │       ├── BackupPage.tsx
-│   │       ├── EventEditPage.tsx
-│   │       ├── ExportPage.tsx
-│   │       ├── ScoringPage.tsx
-│   │       └── SportEditPage.tsx
-│   ├── reportWebVitals.ts
 │   ├── types
 │   │   ├── index.ts
 │   │   ├── react-color.d.ts
 │   │   └── tournament-brackets.d.ts
-│   └── utils
-│       ├── export
-│       │   ├── ExportManager.ts
-│       │   ├── LeagueExporter.ts
-│       │   ├── RankingExporter.ts
-│       │   ├── RoundRobinExporter.ts
-│       │   └── TournamentExporter.ts
-│       ├── scheduleGenerator.ts
-│       └── tournamentViewHelper.ts
+│   ├── utils
+│   │   ├── export
+│   │   │   ├── ExportManager.ts
+│   │   │   ├── LeagueExporter.ts
+│   │   │   ├── RankingExporter.ts
+│   │   │   ├── RoundRobinExporter.ts
+│   │   │   └── TournamentExporter.ts
+│   │   └── scheduleGenerator.ts
+│   └── vite-env.d.ts
 ├── start.sh
 ├── translation.txt
 ├── tree.sh
 ├── tree.txt
-└── tsconfig.json
+├── tsconfig.json
+└── vite.config.ts
 
-26 directories, 167 files
+29 directories, 165 files
 
 src/*.ts, *.tsx の統計:
-合計行数: 25516
-合計文字数: 807758
-合計ファイルサイズ(bytes): 866766
+合計行数: 24682
+合計文字数: 786378
+合計ファイルサイズ(bytes): 845383
