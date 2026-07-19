@@ -3,6 +3,13 @@ import { TournamentStructureHelper } from './TournamentStructureHelper';
 
 const getDate = (): string => new Date().toISOString().split('T')[0];
 
+const resolveFirstRoundBye = (match: Match): string => {
+  if (match.round !== 1) return '';
+  if (match.team1Id && !match.team2Id && !match.team2Source) return match.team1Id;
+  if (match.team2Id && !match.team1Id && !match.team1Source) return match.team2Id;
+  return '';
+};
+
 const resolveSourceTeamId = (
   source: MatchParticipantSource,
   matchesById: Map<string, Match>
@@ -14,9 +21,7 @@ const resolveSourceTeamId = (
 
   if (source.type === 'winner') {
     if (previousMatch.winnerId) return previousMatch.winnerId;
-    const participants = [previousMatch.team1Id, previousMatch.team2Id].filter(Boolean);
-    if (participants.length === 1) return participants[0];
-    return '';
+    return resolveFirstRoundBye(previousMatch);
   }
 
   if (!previousMatch.winnerId) return '';
@@ -43,18 +48,36 @@ export const resolveTournamentParticipants = (matches: Match[]): Match[] => {
   return resolvedMatches;
 };
 
+export const hasValidTournamentParticipants = (match: Match, teams: Team[]): boolean => {
+  if (match.matchNumber === 0 || match.id.includes('third_place')) return true;
+  const teamIds = new Set(teams.map(team => team.id));
+  const hasTeam1 = teamIds.has(match.team1Id);
+  const hasTeam2 = teamIds.has(match.team2Id);
+  if (match.round === 1) return hasTeam1 || hasTeam2;
+  return hasTeam1 && hasTeam2;
+};
+
 export const createThirdPlaceMatch = (
   matches: Match[],
-  date: string = getDate()
+  date: string = getDate(),
+  bracket: 'main' | 'consolation' = 'main'
 ): Match | undefined => {
   if (matches.length === 0) return undefined;
 
   const maxRound = Math.max(...matches.map(match => match.round));
   const semifinalMatches = matches.filter(match => match.round === maxRound - 1);
   if (semifinalMatches.length !== 2) return undefined;
+  const hasPlayableSemifinals = semifinalMatches.every(match => {
+    const hasTeam1 = Boolean(match.team1Id || match.team1Source);
+    const hasTeam2 = Boolean(match.team2Id || match.team2Source);
+    return hasTeam1 && hasTeam2;
+  });
+  if (!hasPlayableSemifinals) return undefined;
+  let id = 'third_place_match';
+  if (bracket === 'consolation') id = 'consolation_third_place_match';
 
   return {
-    id: 'third_place_match',
+    id,
     round: maxRound,
     matchNumber: 0,
     team1Id: '',
@@ -65,7 +88,8 @@ export const createThirdPlaceMatch = (
     date,
     previousMatches: semifinalMatches.map(match => match.id),
     team1Source: { type: 'loser', matchId: semifinalMatches[0].id },
-    team2Source: { type: 'loser', matchId: semifinalMatches[1].id }
+    team2Source: { type: 'loser', matchId: semifinalMatches[1].id },
+    bracket
   };
 };
 
@@ -137,4 +161,92 @@ export const createTournamentMatches = (
     if (thirdPlaceMatch) matches.push(thirdPlaceMatch);
   }
   return matches;
+};
+
+export const createConsolationMatches = (
+  mainMatches: Match[],
+  includeSecondRoundLosers: boolean,
+  hasThirdPlaceMatch: boolean,
+  date: string = getDate()
+): Match[] => {
+  const sourceRounds = includeSecondRoundLosers ? new Set([1, 2]) : new Set([1]);
+  const thirdPlaceSourceIds = new Set(
+    mainMatches
+      .filter(match => match.matchNumber === 0 || match.id.includes('third_place'))
+      .flatMap(match => [match.team1Source, match.team2Source])
+      .flatMap(source => {
+        if (source?.type === 'loser') return [source.matchId];
+        return [];
+      })
+  );
+  const sources = mainMatches.filter(match => {
+    if (match.bracket === 'consolation' || match.matchNumber === 0) return false;
+    if (thirdPlaceSourceIds.has(match.id)) return false;
+    if (!sourceRounds.has(match.round)) return false;
+    const hasTeam1 = Boolean(match.team1Id || match.team1Source);
+    const hasTeam2 = Boolean(match.team2Id || match.team2Source);
+    return hasTeam1 && hasTeam2;
+  });
+  if (sources.length < 2) return [];
+
+  const placeholders: Team[] = sources.map((source, index) => ({
+    id: `source_${index + 1}`,
+    name: source.id
+  }));
+  const sourceByPlaceholderId = new Map(
+    placeholders.map((placeholder, index) => [placeholder.id, sources[index]])
+  );
+  const structure = TournamentStructureHelper.generateInitialMatches(placeholders.length);
+  const placements = TournamentStructureHelper.calculateTeamPlacements(placeholders);
+  const getMatchId = (round: number, matchNumber: number): string => {
+    const index = structure.findIndex(match => {
+      return match.round === round && match.matchNumber === matchNumber;
+    });
+    return `consolation_match_${index + 1}`;
+  };
+
+  const consolationMatches = structure.map((match, index): Match => {
+    const createdMatch: Match = {
+      id: `consolation_match_${index + 1}`,
+      round: match.round,
+      matchNumber: match.matchNumber,
+      team1Id: '',
+      team2Id: '',
+      team1Score: 0,
+      team2Score: 0,
+      status: 'scheduled',
+      date,
+      bracket: 'consolation'
+    };
+    const matchPlacements = placements.filter(placement => {
+      return placement.round === match.round && placement.matchNumber === match.matchNumber;
+    });
+    const assignSource = (position: 'team1' | 'team2') => {
+      const placement = matchPlacements.find(candidate => candidate.position === position);
+      const sourceMatch = placement
+        ? sourceByPlaceholderId.get(placement.teamId)
+        : undefined;
+      if (sourceMatch) {
+        createdMatch[`${position}Source`] = { type: 'loser', matchId: sourceMatch.id };
+      }
+    };
+
+    if (match.round === 1) {
+      assignSource('team1');
+      assignSource('team2');
+    } else {
+      const firstPreviousId = getMatchId(match.round - 1, match.matchNumber * 2 - 1);
+      const secondPreviousId = getMatchId(match.round - 1, match.matchNumber * 2);
+      createdMatch.previousMatches = [firstPreviousId, secondPreviousId];
+      createdMatch.team1Source = { type: 'winner', matchId: firstPreviousId };
+      createdMatch.team2Source = { type: 'winner', matchId: secondPreviousId };
+    }
+    return createdMatch;
+  });
+
+  if (hasThirdPlaceMatch) {
+    const thirdPlaceMatch = createThirdPlaceMatch(consolationMatches, date, 'consolation');
+    if (thirdPlaceMatch) consolationMatches.push(thirdPlaceMatch);
+  }
+  return consolationMatches;
 };

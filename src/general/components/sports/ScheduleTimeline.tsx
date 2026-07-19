@@ -1,300 +1,133 @@
-import React, { useState, useMemo } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Chip,
-  Divider,
-  useMediaQuery,
-  useTheme,
-  Grid,
-  Alert,
-  Card,
-  CardContent,
-  Avatar
-} from '@mui/material';
-import {
-  ExpandMore as ExpandMoreIcon,
-  Schedule as ScheduleIcon,
-  SportsSoccer as SportsIcon,
-  Restaurant as LunchIcon,
-  Coffee as BreakIcon,
-  Place as PlaceIcon
-} from '@mui/icons-material';
+import React, { useMemo } from 'react';
+import { Alert, Box, Chip, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Schedule as ScheduleIcon, Place as PlaceIcon } from '@mui/icons-material';
 import { getScheduleTypeLabel } from '../../../utils/labels';
-import { Sport, TimeSlot, Match } from '../../../types';
-import { getMatchContext, getParticipantName } from '../../../utils/match';
+import { Sport, TimeSlot } from '../../../types';
+import { getMatchContext, getParticipantName, getTimeSlotLabel } from '../../../utils/match';
+import { groupTimeSlotsByBlock } from '../../../utils/timeSlotGrouping';
 
 interface ScheduleTimelineProps {
   sport: Sport;
 }
 
+const typeColor: Record<TimeSlot['type'], 'primary' | 'secondary' | 'warning' | 'default'> = {
+  match: 'primary',
+  break: 'secondary',
+  lunch: 'warning',
+  preparation: 'default',
+  cleanup: 'default'
+};
+
 const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [expanded, setExpanded] = useState<string | false>(false);
+  const timeSlots = sport.scheduleSettings?.timeSlots || [];
+  const courtCount = sport.scheduleSettings?.courtCount || 1;
+  const courtNames = sport.scheduleSettings?.courtNames;
+  const blocks = useMemo(() => groupTimeSlotsByBlock(timeSlots), [timeSlots]);
 
-  // アコーディオンの開閉を管理
-  const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpanded(isExpanded ? panel : false);
-  };
-
-  // タイムスロットを時間とコートでグループ化 - 必ず条件付きリターンの前に実行
-  const groupedSlots = useMemo(() => {
-    // スケジュール設定がない場合は空配列を返す
-    if (!sport.scheduleSettings?.timeSlots || sport.scheduleSettings.timeSlots.length === 0) {
-      return [];
-    }
-    
-    const byTime: { [key: string]: { 
-      startTime: string, 
-      endTime: string, 
-      slots: TimeSlot[] 
-    }} = {};
-    
-    // 時間でグループ化
-    sport.scheduleSettings.timeSlots.forEach(slot => {
-      if (!byTime[slot.startTime]) {
-        byTime[slot.startTime] = {
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-          slots: []
-        };
-      }
-      byTime[slot.startTime].slots.push(slot);
-    });
-    
-    // 時間順にソート
-    return Object.values(byTime).sort((a, b) => 
-      a.startTime.localeCompare(b.startTime)
-    );
-  }, [sport.scheduleSettings]);
-
-  // スケジュール設定がない場合の条件を移動
-  if (groupedSlots.length === 0) {
+  if (blocks.length === 0) {
     return (
       <Alert severity="info" sx={{ mt: 2 }}>
-        {"このスポーツにはスケジュールがありません"}
+        このスポーツにはスケジュールがありません
       </Alert>
     );
   }
 
-  // 試合情報を取得する関数
-  const getMatchInfo = (matchId: string): Match | undefined => {
-    return sport.matches?.find(m => m.id === matchId);
-  };
+  const courtColumns: Array<'court1' | 'court2'> = courtCount === 2 && !isMobile ? ['court1', 'court2'] : ['court1'];
+  const showCourtColumn = courtColumns.length > 1;
+  const gridTemplateColumns = `${isMobile ? 76 : 100}px repeat(${courtColumns.length}, 1fr)`;
 
-  // コート名を取得する関数
-  const getCourtName = (courtId?: 'court1' | 'court2'): string => {
-    if (!courtId) return '';
-    return sport.scheduleSettings?.courtNames?.[courtId] || 
-           (courtId === 'court1' ? '第1コート' : '第2コート');
-  };
+  const getCourtName = (court: 'court1' | 'court2') =>
+    courtNames?.[court] || (court === 'court1' ? '第1コート' : '第2コート');
 
-  // 時間枠の種類に応じたアイコンを取得
-  const getTypeIcon = (type: TimeSlot['type']) => {
-    switch (type) {
-      case 'match':
-        return <SportsIcon />;
-      case 'break':
-        return <BreakIcon />;
-      case 'lunch':
-        return <LunchIcon />;
-      default:
-        return <ScheduleIcon />;
-    }
-  };
+  const renderSlot = (slot: TimeSlot, showCourtChip: boolean) => {
+    const match = slot.type === 'match' && slot.matchId ? sport.matches?.find(m => m.id === slot.matchId) : undefined;
 
-  // 時間枠の種類に応じた色を取得
-  const getTypeColor = (type: TimeSlot['type']) => {
-    switch (type) {
-      case 'match':
-        return theme.palette.primary.main;
-      case 'break':
-        return theme.palette.secondary.main;
-      case 'lunch':
-        return theme.palette.warning.main;
-      case 'preparation':
-        return theme.palette.info.main;
-      case 'cleanup':
-        return theme.palette.error.main;
-      default:
-        return theme.palette.text.secondary;
-    }
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+          <Chip size="small" variant="outlined" color={typeColor[slot.type]} label={getScheduleTypeLabel(slot.type)} />
+          {showCourtChip && slot.courtId && (
+            <Chip size="small" variant="outlined" icon={<PlaceIcon fontSize="small" />} label={getCourtName(slot.courtId)} />
+          )}
+        </Box>
+        {match ? (
+          <>
+            <Typography variant="body1" fontWeight={700}>
+              {getParticipantName(match, 'team1', sport)} <Typography component="span" variant="body2" color="text.secondary">vs</Typography> {getParticipantName(match, 'team2', sport)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {getMatchContext(match, sport)}
+              {match.location ? ` ・ ${match.location}` : ''}
+            </Typography>
+          </>
+        ) : (
+          <Typography variant="body2">
+            {getTimeSlotLabel(slot, sport) || getScheduleTypeLabel(slot.type)}
+          </Typography>
+        )}
+      </Box>
+    );
   };
 
   return (
     <Box sx={{ mt: 2 }}>
-      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-        <ScheduleIcon sx={{ mr: 1 }} />
-        {"タイムライン"}
+      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <ScheduleIcon fontSize="small" />
+        タイムライン
       </Typography>
       <Typography variant="body2" color="text.secondary" gutterBottom>
-        {"開催時間"}: {sport.scheduleSettings?.startTime} - {sport.scheduleSettings?.endTime}
+        開催時間: {sport.scheduleSettings?.startTime} - {sport.scheduleSettings?.endTime}
       </Typography>
-      
-      <Divider sx={{ my: 2 }} />
-      
-      {/* スケジュールタイムライン - コート情報を含む新しいデザイン */}
-      <Box>
-        {groupedSlots.map((timeGroup, idx) => (
-          <Paper 
-            key={`time-${idx}`} 
-            elevation={1} 
-            sx={{ 
-              mb: 2, 
-              overflow: 'hidden',
-              border: '1px solid',
-              borderColor: 'divider'
-            }}
-          >
-            {/* 時間帯ヘッダー */}
-            <Box 
-              sx={{ 
-                p: 1.5, 
-                bgcolor: theme.palette.grey[100],
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-            >
-              <Typography variant="subtitle1" fontWeight="bold">
-                {timeGroup.startTime} - {timeGroup.endTime}
-              </Typography>
-              <Chip 
-                label={`${timeGroup.slots.length} ${"アクティビティ"}`} 
-                size="small" 
-                color="primary"
-              />
+
+      <Box sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+        {showCourtColumn && (
+          <Box sx={{ display: 'grid', gridTemplateColumns, bgcolor: 'action.hover', fontSize: '0.8rem', fontWeight: 600 }}>
+            <Box sx={{ p: 1 }}>時間</Box>
+            {courtColumns.map(court => (
+              <Box key={court} sx={{ p: 1, borderLeft: '1px solid', borderColor: 'divider' }}>
+                {getCourtName(court)}
+              </Box>
+            ))}
+          </Box>
+        )}
+
+        {blocks.map(block => {
+          const hasCourtContent = courtColumns.some(court => block.byCourt[court]);
+          return (
+            <Box key={block.key} sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
+              {block.shared.length > 0 && (
+                <Box sx={{ display: 'grid', gridTemplateColumns: `${isMobile ? 76 : 100}px 1fr` }}>
+                  <Box sx={{ p: 1, fontSize: '0.8rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                    {block.startTime}-{block.endTime}
+                  </Box>
+                  <Box sx={{ p: 1, borderLeft: '1px solid', borderColor: 'divider' }}>
+                    {block.shared.map((slot, i) => (
+                      <Box key={i}>{renderSlot(slot, false)}</Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+              {(hasCourtContent || block.shared.length === 0) && (
+                <Box sx={{ display: 'grid', gridTemplateColumns }}>
+                  <Box sx={{ p: 1, fontSize: '0.8rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                    {block.shared.length === 0 && `${block.startTime}-${block.endTime}`}
+                  </Box>
+                  {courtColumns.map(court => (
+                    <Box key={court} sx={{ p: 1, borderLeft: '1px solid', borderColor: 'divider', minHeight: 44 }}>
+                      {block.byCourt[court] ? (
+                        renderSlot(block.byCourt[court]!, !showCourtColumn)
+                      ) : (
+                        <Typography variant="caption" color="text.disabled">-</Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
-            
-            {/* 同時刻のアクティビティグリッド */}
-            <Box sx={{ p: 2 }}>
-              <Grid container spacing={2}>
-                {timeGroup.slots.map((slot, slotIdx) => {
-                  // 試合とその他（休憩など）で表示を分ける
-                  if (slot.type === 'match' && slot.matchId) {
-                    const match = getMatchInfo(slot.matchId);
-                    if (!match) return null;
-                    
-                    // 試合カード
-                    return (
-                      <Grid item xs={12} md={slot.courtId ? 6 : 12} key={`slot-${slotIdx}`}>
-                        <Card variant="outlined" sx={{ 
-                          height: '100%',
-                          borderLeft: `4px solid ${getTypeColor(slot.type)}`,
-                          position: 'relative'
-                        }}>
-                          {/* コート情報をカードの上部に表示 */}
-                          {slot.courtId && (
-                            <Box sx={{
-                              position: 'absolute',
-                              top: 8,
-                              right: 8,
-                              zIndex: 1
-                            }}>
-                              <Chip
-                                icon={<PlaceIcon />}
-                                label={getCourtName(slot.courtId)}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                              />
-                            </Box>
-                          )}
-                          
-                          <CardContent>
-                            {/* 対戦カード */}
-                            <Box sx={{ 
-                              display: 'flex', 
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              my: 1,
-                              flexWrap: 'wrap',
-                              gap: 1
-                            }}>
-                              <Typography 
-                                variant="body1" 
-                                fontWeight="bold"
-                                sx={{ flexGrow: 1, textAlign: 'right' }}
-                              >
-                                {getParticipantName(match, 'team1', sport)}
-                              </Typography>
-                              
-                              <Avatar sx={{ 
-                                bgcolor: theme.palette.secondary.main,
-                                color: theme.palette.primary.contrastText,
-                                width: 36,
-                                height: 36
-                              }}>
-                                VS
-                              </Avatar>
-                              
-                              <Typography 
-                                variant="body1" 
-                                fontWeight="bold"
-                                sx={{ flexGrow: 1 }}
-                              >
-                                {getParticipantName(match, 'team2', sport)}
-                              </Typography>
-                            </Box>
-                            
-                            {/* 試合状態や説明 */}
-                            <Box sx={{ mt: 1 }}>
-                              {match.location && (
-                                <Typography variant="body2" color="text.secondary">
-                                  {"場所"}: {match.location}
-                                </Typography>
-                              )}
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                {getMatchContext(match, sport)}
-                              </Typography>
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    );
-                  } else {
-                    // 休憩や昼食などのカード
-                    return (
-                      <Grid item xs={12} key={`slot-${slotIdx}`}>
-                        <Paper 
-                          variant="outlined" 
-                          sx={{ 
-                            p: 1.5,
-                            borderLeft: `4px solid ${getTypeColor(slot.type)}`,
-                            bgcolor: `${getTypeColor(slot.type)}10`,
-                            display: 'flex',
-                            alignItems: 'center'
-                          }}
-                        >
-                          <Box sx={{ mr: 1.5 }}>
-                            {getTypeIcon(slot.type)}
-                          </Box>
-                          <Box>
-                            <Typography variant="body1" fontWeight="medium">
-                              {slot.title || getScheduleTypeLabel(slot.type)}
-                            </Typography>
-                            {slot.description && (
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                {slot.description}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    );
-                  }
-                })}
-              </Grid>
-            </Box>
-          </Paper>
-        ))}
+          );
+        })}
       </Box>
     </Box>
   );

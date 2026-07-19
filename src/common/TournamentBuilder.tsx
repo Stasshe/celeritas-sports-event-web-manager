@@ -1,17 +1,10 @@
-import React, { useState, memo, useEffect } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import {
   Box,
   Typography,
   Paper,
   Button,
-  List,
-  ListItem,
-  ListItemText,
-  Collapse,
-  Chip,
-  IconButton,
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import { Match, Sport, Team } from '../types';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
 import { createTournamentMatches } from './tournament';
@@ -23,7 +16,6 @@ interface TournamentBuilderProps {
 
 export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBuilderProps) => {
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
-  const [teamsExpanded, setTeamsExpanded] = useState(false);
 
   // 名簿からチームを自動生成
   useEffect(() => {
@@ -69,10 +61,6 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
     onMatchesCreate(matches, selectedTeams);
   };
 
-  const toggleTeamsExpanded = () => {
-    setTeamsExpanded(!teamsExpanded);
-  };
-
   return (
     <Box sx={{ mb: 3 }}>
       <Paper sx={{ p: 2 }}>
@@ -81,39 +69,13 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
         </Typography>
 
         {selectedTeams.length > 0 ? (
-          <>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Chip 
-                label={`${selectedTeams.length}チーム選択中`} 
-                color="primary" 
-                sx={{ mr: 1 }}
-              />
-              <IconButton size="small" onClick={toggleTeamsExpanded} aria-expanded={teamsExpanded}>
-                {teamsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </IconButton>
-            </Box>
-
-            <Collapse in={teamsExpanded}>
-              <List sx={{ mb: 2, maxHeight: 200, overflow: 'auto' }}>
-                {selectedTeams.map((team, index) => (
-                  <ListItem key={team.id}>
-                    <ListItemText 
-                      primary={team.name}
-                      secondary={`${"参加者数"}: ${team.members?.length || 0}`}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </Collapse>
-
-            <Button
-              variant="contained"
-              onClick={generateTournament}
-              fullWidth
-            >
-              {"トーナメント表生成"}
-            </Button>
-          </>
+          <Button
+            variant="contained"
+            onClick={generateTournament}
+            fullWidth
+          >
+            {"トーナメント表生成"}
+          </Button>
         ) : (
           <Typography color="text.secondary" align="center">
             {"名簿がありません"}

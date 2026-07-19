@@ -36,7 +36,7 @@ import {
 } from '@mui/icons-material';
 import { getMatchStatusLabel, getScheduleTypeLabel } from '../../../utils/labels';
 import { timeToMinutes, minutesToTime } from '../../../utils/scheduleGenerator';
-import { getParticipantName } from '../../../utils/match';
+import { getParticipantName, getTimeSlotLabel } from '../../../utils/match';
 import { Sport, TimeSlot, Event, Match } from '../../../types';
 import { useNavigate } from 'react-router-dom';
 
@@ -50,6 +50,7 @@ interface TimelineEvent {
   sportName: string;
   timeSlot: TimeSlot;
   type: 'match' | 'break' | 'lunch' | 'preparation' | 'cleanup';
+  label: string;
   startMinutes: number;
   endMinutes: number;
   matchInfo?: {
@@ -151,6 +152,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
           sportName: sport.name,
           timeSlot: slot,
           type: slot.type,
+          label: getTimeSlotLabel(slot, sport) || getScheduleTypeLabel(slot.type),
           startMinutes,
           endMinutes,
           matchInfo
@@ -688,7 +690,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                           onClick={() => handleEventClick(event)}
                         >
                           {/* 試合の場合はチーム情報を表示、それ以外はアイコンのみ */}
-                          {event.type === 'match' && event.matchInfo ? (
+                          {event.type === 'match' && (
                             <Typography 
                               variant="caption" 
                               sx={{ 
@@ -701,12 +703,10 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                                 width: '100%'
                               }}
                             >
-                              {event.matchInfo.team1Name} vs {event.matchInfo.team2Name}
+                              {event.label}
                             </Typography>
-                          ) : (
-                            // 試合以外はアイコンのみ表示
-                            getTypeIcon(event.type)
                           )}
+                          {event.type !== 'match' && getTypeIcon(event.type)}
                         </Box>
                       );
                     })}
@@ -838,7 +838,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                 // 試合以外の時間枠
                 <Box sx={{ py: 2 }}>
                   <Typography variant="h6">
-                    {selectedEvent.timeSlot.title || getScheduleTypeLabel(selectedEvent.type)}
+                    {selectedEvent.label}
                   </Typography>
                   
                   {selectedEvent.timeSlot.description && (

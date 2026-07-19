@@ -2,13 +2,20 @@ import { Sport, Match, LeagueBlock } from '../types/index';
 import { Participant } from '@g-loot/react-tournament-brackets';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
 
-export const generateBracketMatches = (sport: Sport) => {
+export const generateBracketMatches = (
+  sport: Sport,
+  bracket: 'main' | 'consolation' = 'main'
+) => {
   if (!sport.teams || !sport.matches.length) return [];
 
   // リーグ戦の場合はプレーオフ用の試合だけを抽出
-  const matchesToUse = sport.type === 'league'
-    ? sport.matches.filter(m => !m.blockId) // プレーオフ試合はblockIdがない
+  const bracketMatches = sport.type === 'league'
+    ? sport.matches.filter(match => !match.blockId)
     : sport.matches;
+  const matchesToUse = bracketMatches.filter(match => {
+    if (bracket === 'consolation') return match.bracket === 'consolation';
+    return match.bracket !== 'consolation';
+  });
   
   if (matchesToUse.length === 0) return [];
 

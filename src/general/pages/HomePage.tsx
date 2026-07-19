@@ -125,7 +125,12 @@ const HomePage: React.FC = () => {
           {activeEvent ? activeEvent.name : "スポーツイベント"}
         </Typography>
         {activeEvent && (
-          <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+          <Typography
+            variant="subtitle1"
+            color="text.secondary"
+            gutterBottom
+            sx={{ whiteSpace: 'pre-line' }}
+          >
             {activeEvent.description}
           </Typography>
         )}

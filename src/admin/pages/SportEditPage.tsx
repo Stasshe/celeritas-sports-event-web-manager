@@ -30,7 +30,6 @@ import {
   Notes as NotesIcon,
   Settings as SettingsIcon,
   Schedule as ScheduleIcon,  // 追加
-  Sync as SyncIcon,
   Image as ImageIcon, // 画像アイコンを追加
   Leaderboard as LeaderboardIcon, // 追加
 } from '@mui/icons-material';
@@ -43,23 +42,11 @@ import RoundRobinScoring from '../components/scoring/RoundRobinScoring';
 import RosterEditor from '../components/RosterEditor';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import DeleteConfirmationDialog from '../components/dialogs/DeleteConfirmationDialog';
-import { useAdminLayout } from '../context/AdminLayoutContext';
+import { useAutoSave } from '../hooks/useAutoSave';
 import { useAuth } from '../../contexts/AuthContext';
 import { TabContent } from '../components/TabContent';
 import ScheduleTab from '../components/scheduling/ScheduleTab';  // 追加
 
-
-// フィールドとタブの関連付けを定義
-const fieldToTabMap: Record<keyof Sport, string> = {
-  name: 'details',
-  description: 'details',
-  operationsNote: 'note',
-  tournamentSettings: 'settings',
-  roundRobinSettings: 'settings',
-  roster: 'roster',
-  scheduleSettings: 'schedule',  // 追加
-  // ...他のフィールドも必要に応じて追加
-};
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -90,10 +77,6 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
 // タブの状態を管理するインターフェース
 interface TabState {
   isLoaded: boolean;
-  isDirty: boolean;
-  lastUpdated: number;
-  loading: boolean;
-  hasChanges: boolean;
 }
 
 interface TabStates {
@@ -105,9 +88,7 @@ const SportEditPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { alpha } = useThemeContext();
-  const { save, registerSaveHandler, unregisterSaveHandler, showSnackbar: showAdminSnackbar, setHasUnsavedChanges } = useAdminLayout();
   const isProcessingRef = useRef(false);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { currentUser } = useAuth();
   
   const { data: sport, loading: sportLoading, updateData, removeData } = useDatabase<Sport>(`/sports/${sportId}`);
@@ -117,24 +98,8 @@ const SportEditPage: React.FC = () => {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [localSport, setLocalSport] = useState<Sport | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false); // ダイアログの状態を追加
-
-  // 差分を管理
-  const [differences, setDifferences] = useState<{
-    [key: string]: {
-      local: any;
-      remote: any;
-    }
-  }>({});
-
-  // 最後の同期時刻
-  const [lastSynced, setLastSynced] = useState<Date>(new Date());
-
-  // 最後の更新者の情報
-  const [lastEditor, setLastEditor] = useState<string | null>(null);
 
   // 初期データロード
   useEffect(() => {
@@ -151,45 +116,12 @@ const SportEditPage: React.FC = () => {
     
     // タブの状態もリセット
     setTabStates({
-      details: { 
-        isLoaded: true, 
-        isDirty: false, 
-        lastUpdated: 0,
-        loading: false,
-        hasChanges: false 
-      },
-      roster: { 
-        isLoaded: false, 
-        isDirty: false, 
-        lastUpdated: 0,
-        loading: false,
-        hasChanges: false 
-      },
-      schedule: {
-        isLoaded: false, 
-        isDirty: false, 
-        lastUpdated: 0,
-        loading: false,
-        hasChanges: false 
-      },
-      note: { 
-        isLoaded: false, 
-        isDirty: false, 
-        lastUpdated: 0,
-        loading: false,
-        hasChanges: false 
-      },
-      settings: { 
-        isLoaded: false, 
-        isDirty: false, 
-        lastUpdated: 0,
-        loading: false,
-        hasChanges: false 
-      }
+      details: { isLoaded: true },
+      roster: { isLoaded: false },
+      schedule: { isLoaded: false },
+      note: { isLoaded: false },
+      settings: { isLoaded: false }
     });
-    
-    // 差分状態もリセット
-    setDifferences({});
     
     // sportがロードされたらlocalSportを設定
     if (sport) {
@@ -223,7 +155,6 @@ const SportEditPage: React.FC = () => {
     if (!localSport || isProcessingRef.current) return false;
 
     isProcessingRef.current = true;
-    setUpdating(true); // ローディング画面を表示しないフラグ
 
     try {
       return await updateData(localSport);
@@ -232,61 +163,18 @@ const SportEditPage: React.FC = () => {
       return false;
     } finally {
       isProcessingRef.current = false;
-      setUpdating(false);
     }
   }, [localSport, updateData]);
-
-  useEffect(() => {
-    registerSaveHandler(handleSave, `sport_${sportId}`);
-
-    return () => {
-      unregisterSaveHandler(`sport_${sportId}`);
-    };
-  }, [registerSaveHandler, unregisterSaveHandler, handleSave, sportId]);
+  const autoSave = useAutoSave(`sport_${sportId}`, handleSave);
 
   // タブの状態管理を改善
   const [tabStates, setTabStates] = useState<TabStates>({
-    details: { 
-      isLoaded: true, 
-      isDirty: false, 
-      lastUpdated: 0,
-      loading: false,
-      hasChanges: false 
-    },
-    roster: { 
-      isLoaded: true, 
-      isDirty: false, 
-      lastUpdated: 0,
-      loading: false,
-      hasChanges: false 
-    },
-    schedule: {  // 追加
-      isLoaded: true, 
-      isDirty: false, 
-      lastUpdated: 0,
-      loading: false,
-      hasChanges: false 
-    },
-    note: { 
-      isLoaded: true, 
-      isDirty: false, 
-      lastUpdated: 0,
-      loading: false,
-      hasChanges: false 
-    },
-    settings: { 
-      isLoaded: true, 
-      isDirty: false, 
-      lastUpdated: 0,
-      loading: false,
-      hasChanges: false 
-    }
+    details: { isLoaded: true },
+    roster: { isLoaded: true },
+    schedule: { isLoaded: true },
+    note: { isLoaded: true },
+    settings: { isLoaded: true }
   });
-
-  // フィールドからタブ名を取得する関数
-  const getTabNameForField = (field: keyof Sport): string => {
-    return fieldToTabMap[field] || 'details';
-  };
 
   // タブ切り替えハンドラ（保存は行わない。保存はデバウンス自動保存/保存ボタンに一本化）
   const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
@@ -302,29 +190,9 @@ const SportEditPage: React.FC = () => {
   }, [tabStates]);
 
   // デバウンス自動保存（全フィールド共通）
-  const scheduleAutoSave = useCallback((tabName?: string) => {
-    setHasUnsavedChanges(true);
-
-    if (tabName) {
-      setTabStates(prev => ({
-        ...prev,
-        [tabName]: { ...prev[tabName], isDirty: true, lastUpdated: Date.now() }
-      }));
-    }
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(async () => {
-      const success = await save(`sport_${sportId}`);
-      if (success && tabName) {
-        setTabStates(prev => ({
-          ...prev,
-          [tabName]: { ...prev[tabName], isDirty: false }
-        }));
-      }
-    }, 800);
-  }, [save, sportId, setHasUnsavedChanges]);
+  const scheduleAutoSave = useCallback(() => {
+    autoSave.schedule();
+  }, [autoSave]);
 
   // 単一フィールドの更新（楽観的UI更新 + デバウンス自動保存）
   const handlePartialUpdate = useCallback((field: keyof Sport, value: any) => {
@@ -337,15 +205,12 @@ const SportEditPage: React.FC = () => {
       lastEditedAt: new Date().toISOString()
     });
 
-    scheduleAutoSave(getTabNameForField(field));
+    scheduleAutoSave();
   }, [localSport, currentUser, scheduleAutoSave]);
 
   // クリーンアップ
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
       isProcessingRef.current = false;
     };
   }, []);
@@ -415,121 +280,6 @@ const SportEditPage: React.FC = () => {
     }
   };
 
-  // データの差分を検出する関数
-  const detectChanges = useCallback((local: Sport, remote: Sport) => {
-    const diffs: typeof differences = {};
-    
-    // 基本フィールドの比較
-    ['name', 'description', 'operationsNote'].forEach(field => {
-      if (local[field] !== remote[field]) {
-        diffs[field] = {
-          local: local[field],
-          remote: remote[field]
-        };
-      }
-    });
-    
-    // 設定の比較
-    if (JSON.stringify(local.tournamentSettings) !== JSON.stringify(remote.tournamentSettings)) {
-      diffs.tournamentSettings = {
-        local: local.tournamentSettings,
-        remote: remote.tournamentSettings
-      };
-    }
-    
-    setDifferences(diffs);
-    return Object.keys(diffs).length > 0;
-  }, []);
-
-  // リモートデータの変更を監視
-  useEffect(() => {
-    if (sport && localSport && !isProcessingRef.current) {
-      // 同じスポーツのデータを比較していることを確認
-      if (sport.id === localSport.id) {
-        const hasChanges = detectChanges(localSport, sport);
-        
-        if (hasChanges && sport.lastEditedBy !== currentUser?.email) {
-          setLastEditor(sport.lastEditedBy || 'unknown');
-          showAdminSnackbar(
-            "リモートの変更を検出しました",
-            'warning'
-          );
-        }
-      }
-    }
-  }, [sport, localSport, currentUser, showAdminSnackbar, detectChanges]);
-
-  // 全ての変更を同期する関数
-  const handleSync = async () => {
-    if (!sport || isProcessingRef.current) return;
-    
-    try {
-      // ロード画面を表示せず更新中フラグだけ設定
-      setUpdating(true);
-      const updatedSport: Sport = {
-        ...sport,
-        lastEditedBy: currentUser?.email || undefined,
-        lastEditedAt: new Date().toISOString()
-      };
-      
-      await updateData(updatedSport);
-      setLocalSport(updatedSport);
-      setDifferences({});
-      setLastSynced(new Date());
-      showAdminSnackbar("同期成功", 'success');
-      
-    } catch (error) {
-      console.error('Sync error:', error);
-      showAdminSnackbar("同期エラー", 'error');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  // 差分表示コンポーネントの改善
-  const DifferenceIndicator = ({ field }: { field: keyof Sport }) => {
-    if (!differences[field]) return null;
-    
-    const tabName = getTabNameForField(field);
-    const isDirty = tabStates[tabName].isDirty;
-    
-    // もし値がobjectの場合は文字列に変換する
-    const renderValue = (value: any) =>
-      typeof value === 'object' ? JSON.stringify(value) : value;
-    
-    // 保存後に差分表示を消すため、差分がなくなったらコンポーネントを表示しない
-    if (JSON.stringify(differences[field].remote) === JSON.stringify(differences[field].local)) {
-      return null;
-    }
-    
-    return (
-      <Box sx={{
-        mt: 1,
-        p: 1,
-        bgcolor: isDirty ? 'warning.light' : 'background.default',
-        borderRadius: 1,
-        border: '1px solid',
-        borderColor: isDirty ? 'warning.main' : 'divider',
-        transition: 'all 0.3s ease'
-      }}>
-        <Typography variant="caption" display="block">
-          {"リモートの値"}:
-        </Typography>
-        <Typography variant="body2">
-          {renderValue(differences[field].remote)}
-        </Typography>
-        <Button
-          size="small"
-          startIcon={<SyncIcon />}
-          onClick={() => handlePartialUpdate(field, differences[field].remote)}
-          sx={{ mt: 1 }}
-        >
-          {"リモートの値を使用"}
-        </Button>
-      </Box>
-    );
-  };
-
   // タブコンテンツのロード処理を修正 - 非同期処理を排除
   const loadTabContent = useCallback((tabName: string) => {
     if (tabStates[tabName].isLoaded) return;
@@ -539,8 +289,7 @@ const SportEditPage: React.FC = () => {
       ...prev,
       [tabName]: {
         ...prev[tabName],
-        isLoaded: true,
-        loading: false // 常にfalseに設定
+        isLoaded: true
       }
     }));
   }, [tabStates]);
@@ -573,13 +322,11 @@ const SportEditPage: React.FC = () => {
   }
 
   if (sportLoading || eventsLoading) {
-    if (!updating) {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-          <CircularProgress />
-        </Box>
-      );
-    }
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (!sport || !localSport) {
@@ -720,18 +467,14 @@ const SportEditPage: React.FC = () => {
                   label="遅延時間（分）"
                   value={localSport.delayMinutes ?? 0}
                   onChange={e => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
+                    const value = parseInt(e.target.value) || 0;
                     handlePartialUpdate('delayMinutes', value);
                   }}
-                  InputProps={{ inputProps: { min: 0 } }}
                   sx={{ width: 120 }}
                 />
                 <Typography variant="body2" color="text.secondary">
-                  分
+                  分（マイナスは前倒し）
                 </Typography>
-              </Box>
-              <Box sx={{ mt: 1 }}>
-                <DifferenceIndicator field="delayMinutes" />
               </Box>
             </Paper>
 
@@ -755,7 +498,6 @@ const SportEditPage: React.FC = () => {
                         onChange={handleInputChange}
                         InputLabelProps={{ shrink: true }}
                       />
-                      <DifferenceIndicator field="name" />
                     </Grid>
                     <Grid item xs={12}>
                       <TextField
@@ -779,7 +521,6 @@ const SportEditPage: React.FC = () => {
                         onChange={handleInputChange}
                         InputLabelProps={{ shrink: true }}
                       />
-                      <DifferenceIndicator field="description" />
                     </Grid>
                   </Grid>
                 </Paper>
@@ -825,7 +566,6 @@ const SportEditPage: React.FC = () => {
               variant="outlined"
               placeholder="運営に必要な情報を入力"
             />
-            <DifferenceIndicator field="operationsNote" />
           </Paper>
         </TabPanel>
 
@@ -874,7 +614,7 @@ const SportEditPage: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{"3位決定戦あり"}</InputLabel>
+                    <InputLabel>{"メイン3位決定戦あり"}</InputLabel>
                     <Select
                       value={localSport.tournamentSettings?.hasThirdPlaceMatch ? "true" : "false"}
                       onChange={(e) => handleSettingsChange('hasThirdPlaceMatch', e.target.value === 'true')}
@@ -1010,23 +750,6 @@ const SportEditPage: React.FC = () => {
           type="sport"
         />
 
-        {/* 最後の同期情報 */}
-        {lastEditor && (
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              position: 'fixed',
-              bottom: 16,
-              right: 16,
-              bgcolor: 'background.paper',
-              p: 1,
-              borderRadius: 1,
-              boxShadow: 1
-            }}
-          >
-            {"最終同期"}: {lastSynced.toLocaleTimeString()}
-          </Typography>
-        )}
     </Container>
   );
 };

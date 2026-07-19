@@ -28,7 +28,29 @@ const hasTeamConflict = (match: Match, teamIds: string[]): boolean => {
   return getKnownTeamIds(match).some(teamId => teamIds.includes(teamId));
 };
 
-const assertMatchesFinishBy = (timeSlots: TimeSlot[], endMinutes: number): void => {
+const getSchedulingRound = (
+  match: Match,
+  matchesById: Map<string, Match>,
+  path: Set<string> = new Set()
+): number => {
+  if (path.has(match.id)) return match.round;
+  const nextPath = new Set(path);
+  nextPath.add(match.id);
+  const dependencies = [match.team1Source, match.team2Source].flatMap(source => {
+    if (!source || source.type === 'blockRank') return [];
+    const previousMatch = matchesById.get(source.matchId);
+    return previousMatch ? [getSchedulingRound(previousMatch, matchesById, nextPath)] : [];
+  });
+  if (dependencies.length === 0) return match.round;
+  return Math.max(...dependencies) + 1;
+};
+
+const assertMatchesFinishBy = (
+  timeSlots: TimeSlot[],
+  endMinutes: number,
+  allowEndTimeOverrun: boolean
+): void => {
+  if (allowEndTimeOverrun) return;
   const exceedsEndTime = timeSlots.some(slot => {
     return slot.type === 'match' && timeToMinutes(slot.endTime) > endMinutes;
   });
@@ -194,7 +216,8 @@ const generateMatchBasedScheduleWithCourts = (
   matchOrder: string[] = []
 ): TimeSlot[] => {
   const timeSlots = [...initialTimeSlots];
-  const { matches } = sport;
+  const excludedMatchIds = new Set(settings.excludedMatchIds || []);
+  const matches = (sport.matches || []).filter(match => !excludedMatchIds.has(match.id));
   
   if (!matches || matches.length === 0) {
     throw new Error('スケジュール生成用の試合が見つかりません');
@@ -214,16 +237,20 @@ const generateMatchBasedScheduleWithCourts = (
   
   // トーナメントの場合はラウンド数の低い順にソートしてからランダム化
   let schedulableMatches: Match[] = [];
+  const schedulingRounds = new Map<string, number>();
   if (sport.type === 'tournament') {
     // ラウンド1のシード戦（不戦勝）のみ除外
     const nonSeededMatches = [...matches].filter(match => !isSeededMatch(match));
+    const matchesById = new Map(matches.map(match => [match.id, match]));
     // ラウンドごとにグループ化
     const roundGroups: { [round: number]: Match[] } = {};
     nonSeededMatches.forEach(match => {
-      if (!roundGroups[match.round]) {
-        roundGroups[match.round] = [];
+      const schedulingRound = getSchedulingRound(match, matchesById);
+      schedulingRounds.set(match.id, schedulingRound);
+      if (!roundGroups[schedulingRound]) {
+        roundGroups[schedulingRound] = [];
       }
-      roundGroups[match.round].push(match);
+      roundGroups[schedulingRound].push(match);
     });
     // 各ラウンド内でランダム化してから結合（ラウンド順は維持）
     const sortedRounds = Object.keys(roundGroups).map(Number).sort((a, b) => a - b);
@@ -265,6 +292,7 @@ const generateMatchBasedScheduleWithCourts = (
   let usedTeamIds: string[] = [];
   // すべての試合がスケジュールされるまでループ
   while (schedulableMatches.length > 0) {
+    const currentSchedulingRound = schedulingRounds.get(schedulableMatches[0].id);
     const availableCourts = courtCount === 1 ? ['court1'] : ['court1', 'court2'];
     let safetyCounter = 0;
     let adjustedTime = false;
@@ -301,7 +329,7 @@ const generateMatchBasedScheduleWithCourts = (
         currentMinutes += 5;
         adjustedTime = true;
       }
-      if (currentMinutes >= endMinutes) {
+      if (!settings.allowEndTimeOverrun && currentMinutes >= endMinutes) {
         throw new Error('休憩時間が多すぎるか、休憩時間設定に問題があります。スケジュールを生成できません。');
       }
     }
@@ -316,6 +344,7 @@ const generateMatchBasedScheduleWithCourts = (
       for (let c = 0; c < availableCourts.length; c++) {
         if (schedulableMatches.length === 0) break;
         const match = schedulableMatches[0];
+        if (schedulingRounds.get(match.id) !== currentSchedulingRound) break;
         // 既に使用されているチームがいるかチェック
         if (hasTeamConflict(match, usedTeamIds)) {
           // 既にこの枠で使われているチームがいれば、次のコートへ
@@ -357,6 +386,7 @@ const generateMatchBasedScheduleWithCourts = (
         let matchIndex = -1;
         for (let i = 0; i < schedulableMatches.length; i++) {
           const match = schedulableMatches[i];
+          if (schedulingRounds.get(match.id) !== currentSchedulingRound) continue;
           if (hasTeamConflict(match, usedTeamIds)) {
             continue;
           }
@@ -395,12 +425,12 @@ const generateMatchBasedScheduleWithCourts = (
       throw new Error('試合をコートへ割り当てられません');
     }
     currentMinutes += settings.matchDuration + settings.breakDuration;
-    if (currentMinutes >= endMinutes && schedulableMatches.length > 0) {
+    if (!settings.allowEndTimeOverrun && currentMinutes >= endMinutes && schedulableMatches.length > 0) {
       throw new Error('時間内にすべての試合をスケジュールできません');
     }
   }
   
-  assertMatchesFinishBy(timeSlots, endMinutes);
+  assertMatchesFinishBy(timeSlots, endMinutes, settings.allowEndTimeOverrun ?? false);
   return timeSlots.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 };
 
@@ -413,7 +443,8 @@ const generateLeagueScheduleWithCourts = (
   matchOrder: string[] = []
 ): TimeSlot[] => {
   const timeSlots = [...initialTimeSlots];
-  const { matches } = sport;
+  const excludedMatchIds = new Set(settings.excludedMatchIds || []);
+  const matches = (sport.matches || []).filter(match => !excludedMatchIds.has(match.id));
   
   if (!matches || matches.length === 0) {
     throw new Error('スケジュール生成用の試合が見つかりません');
@@ -559,7 +590,7 @@ const generateLeagueScheduleWithCourts = (
       }
       
       // 終了時間チェック
-      if (currentMinutes >= endMinutes) {
+      if (!settings.allowEndTimeOverrun && currentMinutes >= endMinutes) {
         throw new Error('休憩時間が多すぎるか、休憩時間設定に問題があります。スケジュールを生成できません。');
       }
     }
@@ -627,7 +658,7 @@ const generateLeagueScheduleWithCourts = (
     currentMinutes += groupStageDuration + settings.breakDuration;
     
     // 終了時間チェック
-    if (currentMinutes >= endMinutes && schedulableMatches.length > 0) {
+    if (!settings.allowEndTimeOverrun && currentMinutes >= endMinutes && schedulableMatches.length > 0) {
       throw new Error('時間内にすべての試合をスケジュールできません');
     }
   }
@@ -756,7 +787,7 @@ const generateLeagueScheduleWithCourts = (
         }
         
         // 終了時間チェック
-        if (currentMinutes >= endMinutes) {
+        if (!settings.allowEndTimeOverrun && currentMinutes >= endMinutes) {
           throw new Error('休憩時間が多すぎるか、休憩時間設定に問題があります。スケジュールを生成できません。');
         }
       }
@@ -864,7 +895,7 @@ const generateLeagueScheduleWithCourts = (
       }
       
       // 終了時間チェック
-      if (currentMinutes >= endMinutes && sortedPlayoffMatches.length > 0) {
+      if (!settings.allowEndTimeOverrun && currentMinutes >= endMinutes && sortedPlayoffMatches.length > 0) {
         throw new Error('時間内にすべての試合をスケジュールできません');
       }
     }
@@ -922,7 +953,7 @@ const generateLeagueScheduleWithCourts = (
       }
     }
     
-    assertMatchesFinishBy(timeSlots, endMinutes);
+    assertMatchesFinishBy(timeSlots, endMinutes, settings.allowEndTimeOverrun ?? false);
   }
   
   // 時間順にソート

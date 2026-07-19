@@ -54,6 +54,11 @@ export interface Sport {
   tournamentSettings?: {
     hasThirdPlaceMatch: boolean; // 3位決定戦の有無
     hasRepechage: boolean; // 敗者復活戦の有無
+    consolation?: {
+      enabled: boolean;
+      includeSecondRoundLosers: boolean;
+      hasThirdPlaceMatch?: boolean;
+    };
   };
   // 総当たり戦設定
   roundRobinSettings?: Partial<RoundRobinSettings>;
@@ -157,6 +162,7 @@ export interface Match {
   team1Source?: MatchParticipantSource;
   team2Source?: MatchParticipantSource;
   type?: "tournament" | "league" | "roundRobin"; // 試合のタイプを指定
+  bracket?: "main" | "consolation";
 }
 
 // カスタム形式のセル
@@ -223,6 +229,8 @@ export interface ScheduleSettings {
   } | null; // nullを許容するように変更
   breakTimes?: TimeSlot[] | null; // nullを許容
   timeSlots?: TimeSlot[] | null; // nullを許容
+  allowEndTimeOverrun?: boolean;
+  excludedMatchIds?: string[];
 }
 
 // リーグ戦特有のスケジュール設定

@@ -35,7 +35,12 @@ function App() {
     <CustomThemeProvider>
       <CssBaseline />
       <AuthProvider>
-        <Router>
+        <Router
+          future={{
+            v7_relativeSplatPath: true,
+            v7_startTransition: true
+          }}
+        >
           <Routes>
             <Route element={<PublicLayout />}>
               <Route index element={<HomePage />} />

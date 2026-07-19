@@ -26,43 +26,44 @@ Vite + React 18 SPA固定。Next.js移行禁止。`@g-loot/react-tournament-brac
 
 競技固有の運営情報は、管理画面だけに表示する`operationsNote`へ集約。公開画面へ表示しない。ルール、マニュアル、担当者の項目と専用画面は持たない。
 
+イベント説明は入力中の改行を公開トップで保持。進行差分数は正数を遅延、負数を前倒しとし、管理画面と公開表示で同じ値を使う。
+
 ## 管理保存
 
 ### 状態と実行経路
 
-`src/admin/context/AdminLayoutContext.tsx`、管理保存状態のsingle source of truth。`savingStatus`、`hasUnsavedChanges`、scope別handler、共通feedback所有。
+`src/admin/context/AdminLayoutContext.tsx`、管理保存coordinator。scope別handler、timer、revision、直列write、未保存状態、共通feedback所有。自動保存delayは800msで統一する。編集画面、モーダルから反映される編集、ともに同じdebounceを使う。作成、削除、同期は確定操作のため対象外。
 
 保存契約:
 
 1. pageがlocal edit state保持
-2. pageが変更検知。debounce、tab遷移、即時保存など画面操作に合う時点で`useAdminLayout()`の`save(scope)`呼出
-3. pageが`useEffect`内で`registerSaveHandler(handler, scope)`登録、cleanupで解除
-4. contextがscope対応handler実行
+2. `useAutoSave(scope, handler)`がhandler登録と解除を所有
+3. edit handlerがlocal state更新後に`schedule()`呼出
+4. coordinatorが同scopeのtimerを置換し、800ms後に最新handler実行
 5. handlerが`useDatabase`経由でwrite、成功可否を`boolean`返却
+6. 保存中の再編集はrevisionで識別。古いwrite完了ではdirtyを解除せず、scope内writeを直列化
 
-`EventEditPage.tsx`、local/remote差分を1秒debounce。`ScoringPage.tsx`、編集を2秒debounce。`SportEditPage.tsx`、同じscope handlerへtab遷移・離脱時保存、一部field編集は`updateData()`即時実行。trigger差あっても保存状態とfallback入口はcontextへ集約。
+`EventEditPage.tsx`、`SportEditPage.tsx`、`ScoringPage.tsx`は同一契約。page固有timerと即時writeを持たない。
 
 ### Background
 
-旧構造、各page独立autosave。context未登録だったため`AdminLayout.tsx` headerの未保存表示とglobal save経路、page実処理へ接続なし。`ScoringPage.tsx`には同一save function二重実装、競合するautosave timer二本存在。scope登録方式でglobal状態と実write接続、保存関数一系統化。
+保存action Contextと保存表示state Contextを分離。編集componentはstatus変更を購読せず、header内の保存表示だけ更新する。保存feedbackに進捗intervalを使わない。
 
-### 手動保存policy
+### 保存表示policy
 
 `EventEditPage.tsx`、`SportEditPage.tsx`、`ScoringPage.tsx`のpage header保存button、置かない。autosaveと同じwriteの重複入口になるため。
 
-残すmanual affordance:
-
-- `AdminLayoutContext`のfloating「未保存の変更」button: 全scope共通fallback trigger
-- `AdminPage` dashboard、`AdminSettingsPage`: autosaveなしのpage
-- `BackupPanel`: page edit保存でなく独立したbackup作成action
+自動保存の未保存・保存中・保存済み・失敗表示は管理header右上だけに置く。floating通知は置かない。`AdminPage` dashboardと`AdminSettingsPage`はautosaveなし。`BackupPanel`はpage edit保存でなく独立したbackup作成action。
 
 ## Firebase write
 
 Firebase必須環境変数を起動時に検証する。設定不足またはSDK初期化失敗時、通常のrouteとdata hookを開始せず、原因を示す全画面エラーを表示する。render時の未処理例外もroot error boundaryで捕捉し、再読み込み可能なエラー画面へ切り替える。空白画面のまま停止させない。
 
-`src/hooks/useDatabase.ts`の更新、Firebase RTDB `update()`によるfield-level write。transaction、version追跡、競合解決layerなし。複数client同一field編集、last-write-wins。
+`src/hooks/useDatabase.ts`の更新、Firebase RTDB `update()`一回による複数fieldのatomic write。transaction、server-side version追跡、競合解決layerなし。複数client同一field編集、last-write-wins。
 
-write中`isUpdatingRef`を立て、`onValue` snapshotによるin-flight optimistic state上書き防止。実際に起きた表示flicker・編集不安定を止めるguard。旧version-tracking/conflict-detection系、完成していたが呼ばれないparallel write pathだったため削除済み。復活禁止。field-level `update()` + in-flight guard、意図した最終設計。
+競技編集画面にlocal/remote差分表示、リモート値採用操作、最終同期表示を持たない。保存状態は管理headerへ集約する。
+
+write中`isUpdatingRef`を立て、`onValue` snapshotによるin-flight optimistic state上書き防止。実際に起きた表示flicker・編集不安定を止めるguard。旧version-tracking/conflict-detection系、完成していたが呼ばれないparallel write pathだったため削除済み。復活禁止。multi-field atomic `update()` + in-flight guard、意図した最終設計。
 
 ## UI言語
 
@@ -70,16 +71,20 @@ i18n廃止。全UI文字列、JSXへ日本語直接記述。`i18next`、`react-i
 
 ## 試合構造とスケジュール
 
-`Sport.matches`が対戦構造の正本。後続枠はチームらしき仮IDを保存せず、`team1Source`、`team2Source`へ前試合の勝者・敗者またはブロック順位を保存する。シードは片側にチームまたは参照がなく、反対側だけ存在する1回戦。不戦勝枠を実施スケジュールへ含めない。
+`Sport.matches`が対戦構造の正本。後続枠はチームらしき仮IDを保存せず、`team1Source`、`team2Source`へ前試合の勝者・敗者またはブロック順位を保存する。シードは片側にチームまたは参照がなく、反対側だけ存在する1回戦。不戦勝枠を実施スケジュールへ含めない。手動編集時、上段の候補はチームだけ、下段の空値候補は「シード」と表示する。
 
-3位決定戦は決勝と同じround、`matchNumber: 0`。両参加枠は2つの準決勝敗者参照。リーグのプレーオフ初戦は、未確定ならブロック順位参照、順位確定後に同じ試合へ実チームIDを反映する。
+3位決定戦は決勝と同じround、`matchNumber: 0`。メインと負け側で独立してON/OFFし、各ブラケットの準決勝敗者を参加元にする。メインは`third_place_match`、負け側は`consolation_third_place_match`と`bracket`で分離し、対応する表の直下へ表示する。メイン3位決定戦の参加元は負け側トーナメントへ重複参加させない。リーグのプレーオフ初戦は、未確定ならブロック順位参照、順位確定後に同じ試合へ実チームIDを反映する。
 
-`TimeSlot`は時刻、コート、`matchId`の割当を所有。対戦名は保存済みdescriptionを正本にせず、表示時に現在の`Sport.matches`から解決する。通常の再生成はラウンド制約内でシャッフル。「順番を維持してリスケ」は既存TimeSlotのmatchId順を入力順として時間設定だけ再適用する。
+負け側トーナメントは`bracket: "consolation"`でメイン表と分離。参加元は実施される1回戦の敗者参照、設定時は2回戦の敗者参照も含む。ただし3位決定戦の参加元は重複させない。以降は負け側前試合の勝者参照。未確定参加者を仮チームIDで保存しない。
 
-同時刻の複数コートへ同一チームを重複配置しない。直前枠への連続出場は許可し、開始時刻は試合時間と試合間休憩の一定刻みを保つ。予選後プレーオフを含め、生成対象試合を終了時刻不足で黙示的に欠落させず生成失敗として通知する。
+`TimeSlot`は時刻、コート、`matchId`の割当を所有。対戦名は保存済みdescriptionを正本にせず、対応試合があれば現在の`Sport.matches`から解決、手動追加など対応試合がなければTimeSlotの対戦名を表示する。通常の再生成はラウンド制約内でシャッフル。「順番を維持してリスケ」は既存TimeSlotのmatchId順を入力順として時間設定だけ再適用する。手動行入れ替えは、行と時刻を一緒に移動するモードと時刻を位置に残すモードを選択する。
 
-クラス別スケジュールは確定済み参加者だけでなく、前試合の勝者・敗者参照と未確定ブロック順位から到達可能なチームも抽出対象にする。保存済みTimeSlotのない試合時刻は推測しない。
+同時刻の複数コートへ同一チームを重複配置しない。直前枠への連続出場は許可し、開始時刻は試合時間と試合間休憩の一定刻みを保つ。負け側を含む後続試合は全参加元試合の後に配置する。
+
+`ScheduleSettings.excludedMatchIds`で生成対象外試合を指定。コート数は生成前に1または2から選択。終了時刻を超えるのに未生成試合が残る場合、通常は一部を黙示的に欠落させず生成失敗として通知。`allowEndTimeOverrun`時は全対象試合の配置完了まで生成を継続する。
+
+クラス別スケジュールはトーナメントだけを対象とする。メイン・負け側・各3位決定戦の勝者／敗者参照を再帰的に辿り、確定済み参加者は元の試合状態、到達可能な未確定参加者は`potential`で表示する。保存済みTimeSlotのない試合時刻は推測しない。
 
 ## 自動テスト
 
-Vitest、Node環境。生成規則はUIを介さない純粋関数を正本として検証し、component内へ同じ生成ロジックを複製しない。必須境界はチーム数1・2・2の累乗前後、シード進出先、3位決定戦の準決勝敗者参照、リーグ終了前後の順位参照、1/2コートの同時配置とチーム競合、ラウンド依存、休憩の半開区間境界、時間不足エラー、順序維持リスケ。
+Vitest、Node環境。生成規則はUIを介さない純粋関数を正本として検証し、component内へ同じ生成ロジックを複製しない。必須境界はチーム数1・2・2の累乗前後、シード進出先、3位決定戦の準決勝敗者参照、負け側の参加元と依存順、リーグ終了前後の順位参照、1/2コートの同時配置とチーム競合、ラウンド依存、休憩の半開区間境界、時間不足と超過許可、対象外試合、順序維持リスケ、行入れ替えの時刻保持。

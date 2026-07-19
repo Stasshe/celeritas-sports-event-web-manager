@@ -99,7 +99,12 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         // 初期値を設定
         tournamentSettings: newSport.tournamentSettings || {
           hasThirdPlaceMatch: true,
-          hasRepechage: false
+          hasRepechage: false,
+          consolation: {
+            enabled: false,
+            includeSecondRoundLosers: false,
+            hasThirdPlaceMatch: false
+          }
         },
         roundRobinSettings: newSport.roundRobinSettings || {
           winPoints: 3,

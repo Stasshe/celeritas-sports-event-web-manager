@@ -1,7 +1,10 @@
 .
+├── ADMIN_UI_INTENT.md
+├── CLAUDE.md
 ├── Development
 ├── LICENSE
 ├── README.md
+├── SPECIFICATION.md
 ├── build_result.txt
 ├── e.txt
 ├── firebaseRules.json
@@ -82,6 +85,8 @@
 ├── render.yaml
 ├── src
 │   ├── App.tsx
+│   ├── ErrorBoundary.tsx
+│   ├── ErrorScreen.tsx
 │   ├── admin
 │   │   ├── components
 │   │   │   ├── AdminLayout.tsx
@@ -96,6 +101,9 @@
 │   │   │   │   └── DeleteConfirmationDialog.tsx
 │   │   │   ├── scheduling
 │   │   │   │   ├── ManualScheduleEditor.tsx
+│   │   │   │   ├── ScheduleActionBar.tsx
+│   │   │   │   ├── ScheduleBasicSettingsCard.tsx
+│   │   │   │   ├── ScheduleBreakSettingsCard.tsx
 │   │   │   │   ├── ScheduleTab.tsx
 │   │   │   │   └── TimeSlotTable.tsx
 │   │   │   ├── scoreboard
@@ -106,11 +114,13 @@
 │   │   │       ├── RoundRobinScoring.tsx
 │   │   │       └── helpers
 │   │   │           ├── LeagueMatchHelper.ts
+│   │   │           ├── LeaguePlayoffHelper.test.ts
 │   │   │           └── LeaguePlayoffHelper.ts
 │   │   ├── context
 │   │   │   └── AdminLayoutContext.tsx
+│   │   ├── hooks
+│   │   │   └── useAutoSave.ts
 │   │   └── pages
-│   │       ├── AdminHelpPage.tsx
 │   │       ├── AdminPage.tsx
 │   │       ├── AdminSettingsPage.tsx
 │   │       ├── BackupPage.tsx
@@ -125,6 +135,8 @@
 │   │   ├── TournamentBuilder.tsx
 │   │   ├── TournamentScoring.tsx
 │   │   ├── TournamentStructureHelper.ts
+│   │   ├── tournament.test.ts
+│   │   ├── tournament.ts
 │   │   └── tournamentViewHelper.ts
 │   ├── config
 │   │   └── firebase.ts
@@ -144,7 +156,6 @@
 │   │   │       ├── EventOverallTimeline.tsx
 │   │   │       ├── EventTimelineOverview.tsx
 │   │   │       ├── RoundRobinTable.tsx
-│   │   │       ├── RulesDisplay.tsx
 │   │   │       └── ScheduleTimeline.tsx
 │   │   └── pages
 │   │       ├── ClassSchedulePage.tsx
@@ -155,8 +166,12 @@
 │   │       └── SportPage.tsx
 │   ├── hooks
 │   │   ├── useBackup.ts
+│   │   ├── useClassSchedule.test.ts
 │   │   ├── useClassSchedule.ts
-│   │   └── useDatabase.ts
+│   │   ├── useDatabase.ts
+│   │   ├── useManualScheduleRows.ts
+│   │   ├── useScheduleHistory.ts
+│   │   └── useScheduleSettingsForm.ts
 │   ├── i18n
 │   │   └── locales
 │   ├── index.css
@@ -171,9 +186,16 @@
 │   │   │   ├── LeagueExporter.ts
 │   │   │   ├── RankingExporter.ts
 │   │   │   ├── RoundRobinExporter.ts
+│   │   │   ├── TournamentExporter.test.ts
 │   │   │   └── TournamentExporter.ts
 │   │   ├── labels.ts
-│   │   └── scheduleGenerator.ts
+│   │   ├── match.test.ts
+│   │   ├── match.ts
+│   │   ├── scheduleEditor.test.ts
+│   │   ├── scheduleEditor.ts
+│   │   ├── scheduleGenerator.test.ts
+│   │   ├── scheduleGenerator.ts
+│   │   └── timeSlotGrouping.ts
 │   └── vite-env.d.ts
 ├── start.sh
 ├── tree.sh
@@ -181,9 +203,9 @@
 ├── tsconfig.json
 └── vite.config.ts
 
-29 directories, 153 files
+30 directories, 174 files
 
 src/*.ts, *.tsx の統計:
-合計行数: 24010
-合計文字数: 752694
-合計ファイルサイズ(bytes): 819256
+合計行数: 22952
+合計文字数: 728720
+合計ファイルサイズ(bytes): 780297
