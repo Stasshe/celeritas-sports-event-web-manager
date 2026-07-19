@@ -1,17 +1,12 @@
 .
 ├── Development
-│   ├── en_missing.json
-│   └── ja_missing.json
 ├── LICENSE
 ├── README.md
 ├── build_result.txt
 ├── e.txt
-├── extract_i18n.sh
-├── find_missing.sh
 ├── firebaseRules.json
 ├── git_log.txt
 ├── index.html
-├── missing_translations.txt
 ├── package.json
 ├── pnpm-lock.yaml
 ├── pnpm-workspace.yaml
@@ -139,7 +134,6 @@
 │   ├── general
 │   │   ├── components
 │   │   │   ├── DelaysTable.tsx
-│   │   │   ├── LanguageSelector.tsx
 │   │   │   ├── PublicLayout.tsx
 │   │   │   ├── schedule
 │   │   │   │   ├── ClassScheduleTimeline.tsx
@@ -164,13 +158,7 @@
 │   │   ├── useClassSchedule.ts
 │   │   └── useDatabase.ts
 │   ├── i18n
-│   │   ├── i18n.ts
 │   │   └── locales
-│   │       ├── de.json
-│   │       ├── en.json
-│   │       ├── fr.json
-│   │       ├── ja.json
-│   │       └── zh.json
 │   ├── index.css
 │   ├── index.tsx
 │   ├── types
@@ -184,18 +172,18 @@
 │   │   │   ├── RankingExporter.ts
 │   │   │   ├── RoundRobinExporter.ts
 │   │   │   └── TournamentExporter.ts
+│   │   ├── labels.ts
 │   │   └── scheduleGenerator.ts
 │   └── vite-env.d.ts
 ├── start.sh
-├── translation.txt
 ├── tree.sh
 ├── tree.txt
 ├── tsconfig.json
 └── vite.config.ts
 
-29 directories, 165 files
+29 directories, 153 files
 
 src/*.ts, *.tsx の統計:
-合計行数: 24682
-合計文字数: 786378
-合計ファイルサイズ(bytes): 845383
+合計行数: 24010
+合計文字数: 752694
+合計ファイルサイズ(bytes): 819256
