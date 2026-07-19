@@ -1,44 +1,59 @@
 # SPECIFICATION
 
-設計判断の記録。機能一覧はREADME参照、ここには実装の逐一は書かない。不変前提の文書、MVP時点の都合は書かない。
+## 実行基盤
 
-## なぜVite + React SPA(Next.js不採用)
+Vite + React 18 SPA固定。Next.js移行禁止。`@g-loot/react-tournament-brackets`のトーナメント表描画、Next.js環境と非互換。選好でなく制約。
 
-トーナメント表(`@g-loot/react-tournament-brackets`使用、`src/common/TournamentScoring.tsx`)がNext.js環境で正常動作しない。ハード制約であり好みではない。移行検討は不要、この前提のまま拡張すること。
+画面遷移、公開領域、管理領域ともReact Router v6管理。server rendering前提の構造へ寄せない。
 
-## ディレクトリ3分割の理由
+## Source ownership
 
-`src/general/` (一般ユーザー向け公開画面) / `src/admin/` (管理画面) / `src/common/` (両方から参照される共有機能) の3分割。
+- `src/general/`: 公開画面と公開専用component。閲覧者向け表示責務
+- `src/admin/`: 管理画面、管理専用component、管理保存状態。認証後の編集責務
+- `src/common/`: 公開・管理双方が実際にconsumeする機能だけ配置
+- `src/contexts/`: application全体の横断状態。`AuthContext`、`ThemeContext`のみ
+- `src/hooks/`, `src/utils/`, `src/config/`, `src/types/`: domain非依存の共有layer
 
-背景: 元は`components/`と`pages/`が admin配下とそれ以外で緩く分かれてるだけで、意図的境界なし。実害2つ:
-- `pages/SportPage.tsx`(公開)が`components/admin/scoring/TournamentScoring.tsx`を直接import。public→admin依存の逆転
-- admin専用state(`AdminLayoutContext`)が汎用`contexts/`に同居、境界不明瞭
+`src/common/`昇格条件、再利用可能そうかでなく公開・管理双方から現に使うか。現在対象、トーナメント表一式。`TournamentScoring.tsx`の`readOnly`で公開表示と管理編集切替。同じbracket model・描画を二重実装させない。
 
-`src/common/`に置く基準: **general/admin両方から実際に使われるもの**だけ。現状該当は トーナメント表機能一式(`TournamentScoring`/`TournamentBuilder`/`TournamentStructureHelper`/`MatchCard`/`MatchEditDialog`/`TeamSelector`/`tournamentViewHelper`)のみ。`TournamentScoring`は`readOnly` propで公開表示/admin編集を切替える設計、コンポーネント自体を分岐させる必要なし。
+背景、旧構造では公開`SportPage.tsx`が管理側のトーナメントcomponentをimportし、公開→管理の依存逆転発生。管理専用`AdminLayoutContext`も全体用`src/contexts/`に混在。3領域分割、依存方向とstate ownershipを一致させるため。
 
-`src/contexts/`(Auth, Theme)・`hooks/`・`utils/`・`types/`・`config/`は分割対象外。admin専用の`AdminLayoutContext`だけ`src/admin/context/`に個別配置。
+## 管理保存
 
-## 保存パイプライン
+### 状態と実行経路
 
-`src/admin/context/AdminLayoutContext.tsx`が admin全体の保存状態の唯一の管理者。
+`src/admin/context/AdminLayoutContext.tsx`、管理保存状態のsingle source of truth。`savingStatus`、`hasUnsavedChanges`、scope別handler、共通feedback所有。
 
-パターン: ページがローカル編集state保持 → リモートデータと乖離検知 → debounce → `useAdminLayout().save(scope)`呼び出し → contextが該当scopeで`registerSaveHandler(handler, scope)`済みのhandlerを実行 → handlerが`useDatabase`経由で実書き込み、成功/失敗をboolean返却。
+保存契約:
 
-背景: 以前は各adminページが独自に閉じたautosave実装持ち、`registerSaveHandler`を一切呼ばないページ(EventEditPage, SportEditPage)が存在した。結果、`AdminLayout.tsx`ヘッダーの手動保存ボタン/未保存インジケータがそのページの変更を検知も保存もできなかった。`ScoringPage.tsx`に至っては同一`handleSave`が2箇所コピペされ、2秒debounceと500msdebounceの2系統autosaveが並走(片方はcontext経由、片方は直接呼び出し)。「保存処理が2つ存在してどちらか機能してない」状態が実際に発生していた。
+1. pageがlocal edit state保持
+2. pageが変更検知。debounce、tab遷移、即時保存など画面操作に合う時点で`useAdminLayout()`の`save(scope)`呼出
+3. pageが`useEffect`内で`registerSaveHandler(handler, scope)`登録、cleanupで解除
+4. contextがscope対応handler実行
+5. handlerが`useDatabase`経由でwrite、成功可否を`boolean`返却
 
-手動保存ボタンの方針: ページヘッダーの「保存」ボタンはEventEditPage/SportEditPage/ScoringPageから削除済み。autosaveと機能重複するボタンは置かない。残すのは:
-- `AdminLayoutContext`のfloating「未保存の変更」ボタン — 唯一のグローバル手動trigger、autosave未発火時の保険
-- autosaveを持たないページの保存ボタン(AdminPageダッシュボード、AdminSettingsPage) — これが唯一のtriggerなので必要
-- モーダルを開くだけのボタン(BackupPanelの「今すぐバックアップ」) — 保存ボタンではなくアクション起動ボタン
+`EventEditPage.tsx`、local/remote差分を1秒debounce。`ScoringPage.tsx`、編集を2秒debounce。`SportEditPage.tsx`、同じscope handlerへtab遷移・離脱時保存、一部field編集は`updateData()`即時実行。trigger差あっても保存状態とfallback入口はcontextへ集約。
 
-新しくadmin編集ページを追加する時はこのパターンに従う。独自autosave書くな、`registerSaveHandler`+`save(scope)`を使え。
+### Background
 
-## `src/hooks/useDatabase.ts`の書き込み設計
+旧構造、各page独立autosave。context未登録だったため`AdminLayout.tsx` headerの未保存表示とglobal save経路、page実処理へ接続なし。`ScoringPage.tsx`には同一save function二重実装、競合するautosave timer二本存在。scope登録方式でglobal状態と実write接続、保存関数一系統化。
 
-フィールド単位で直接Firebase `update()`。書き込み中は`isUpdatingRef`でリアルタイム`onValue`リスナーからの上書きをブロックする(この guardが無いと書き込み中に飛んでくるsnapshotが楽観的UIを潰し、入力中のちらつき・不安定挙動を起こす — 実際に起きてたバグ)。
+### 手動保存policy
 
-過去、バージョン管理・競合検出つきの書き込みキュー(`setData_`/`processUpdateQueue`)が別に実装されてたが、どこからも呼ばれない完全なdead codeだった。削除済み。同種の仕組みを再実装するな — フィールド単位update + `isUpdatingRef`guardが最終形。競合解決の仕組みは意図的に持たない、最後の書き込みが勝つ。
+`EventEditPage.tsx`、`SportEditPage.tsx`、`ScoringPage.tsx`のpage header保存button、置かない。autosaveと同じwriteの重複入口になるため。
 
-## i18n
+残すmanual affordance:
 
-react-i18next/i18next 完全撤去済み。文言は全部JSX直書きの日本語。再導入の予定なし。新規コードも直書きでよい、i18nキー方式に戻すな。
+- `AdminLayoutContext`のfloating「未保存の変更」button: 全scope共通fallback trigger
+- `AdminPage` dashboard、`AdminSettingsPage`: autosaveなしのpage
+- `BackupPanel`: page edit保存でなく独立したbackup作成action
+
+## Firebase write
+
+`src/hooks/useDatabase.ts`の更新、Firebase RTDB `update()`によるfield-level write。transaction、version追跡、競合解決layerなし。複数client同一field編集、last-write-wins。
+
+write中`isUpdatingRef`を立て、`onValue` snapshotによるin-flight optimistic state上書き防止。実際に起きた表示flicker・編集不安定を止めるguard。旧version-tracking/conflict-detection系、完成していたが呼ばれないparallel write pathだったため削除済み。復活禁止。field-level `update()` + in-flight guard、意図した最終設計。
+
+## UI言語
+
+i18n廃止。全UI文字列、JSXへ日本語直接記述。`i18next`、`react-i18next`、翻訳resource、language selector再導入しない。
