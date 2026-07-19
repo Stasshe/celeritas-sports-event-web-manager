@@ -31,15 +31,15 @@ const ScoringPage: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [saveTimeout, setSaveTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   
   // 変更を自動保存するためのタイマーID
-  const [autoSaveTimerId, setAutoSaveTimerId] = useState<NodeJS.Timeout | null>(null);
+  const [autoSaveTimerId, setAutoSaveTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
   
   // スポーツデータのローカルコピー
   const [localSport, setLocalSport] = useState<Sport | null>(null);
 
-  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingUpdateRef = useRef<Sport | null>(null);
   const isProcessingRef = useRef(false);
 

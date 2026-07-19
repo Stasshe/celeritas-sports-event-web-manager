@@ -2,8 +2,8 @@ services:
   - type: web
     name: sports-event-web-manager
     env: static
-    buildCommand: npm run build
-    staticPublishPath: ./build
+    buildCommand: pnpm build
+    staticPublishPath: ./dist
     routes:
       - type: rewrite
         source: /*

@@ -114,7 +114,7 @@ const SportEditPage: React.FC = () => {
   const { alpha } = useThemeContext();
   const { setSavingStatus, showSnackbar: showAdminSnackbar } = useAdminLayout();
   const isProcessingRef = useRef(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { currentUser } = useAuth();
   
   const { data: sport, loading: sportLoading, updateData, removeData } = useDatabase<Sport>(`/sports/${sportId}`);
@@ -124,7 +124,7 @@ const SportEditPage: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [localSport, setLocalSport] = useState<Sport | null>(null);
-  const [autoSaveTimerId, setAutoSaveTimerId] = useState<NodeJS.Timeout | null>(null);
+  const [autoSaveTimerId, setAutoSaveTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [newOrganizer, setNewOrganizer] = useState<Organizer>({
     id: `org_${Date.now()}`,
     name: '',

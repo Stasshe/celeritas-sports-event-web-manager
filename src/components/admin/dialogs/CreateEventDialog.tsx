@@ -39,7 +39,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
   const { t } = useTranslation();
   const { pushData, updateData, data: allEventsData } = useDatabase<Record<string, Event>>('/events');
   const isSubmittingRef = useRef(false);
-  const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingEventRef = useRef<Event | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
