@@ -31,7 +31,7 @@ const AdminPage: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { alpha } = useThemeContext();
-  const { showSnackbar, registerSaveHandler, unregisterSaveHandler, save, setHasUnsavedChanges } = useAdminLayout();
+  const { showSnackbar, registerSaveHandler, unregisterSaveHandler, save } = useAdminLayout();
   const { 
     data: events, 
     loading: eventsLoading, 

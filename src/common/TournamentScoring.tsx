@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -102,8 +102,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   );
   const [isDialogProcessing, setIsDialogProcessing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [updateQueue, setUpdateQueue] = useState<Sport | null>(null);
 
   // チームデータの状態管理を追加
   const [teams, setTeams] = useState<Team[]>(sport.teams || []);
@@ -462,46 +460,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   }, [theme, readOnly, matches, handleEditMatch]);
   const nodeWidth = 200;
   const nodeHeight = 100;
-
-  const savingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingUpdateRef = useRef<Sport | null>(null);
-
-  // 更新を制御するためのデバウンス処理を改善
-  useEffect(() => {
-    if (!updateQueue || isSaving) return;
-
-    if (savingTimeoutRef.current) {
-      clearTimeout(savingTimeoutRef.current);
-    }
-
-    pendingUpdateRef.current = updateQueue;
-    setIsSaving(true);
-
-    savingTimeoutRef.current = setTimeout(async () => {
-      try {
-        await onUpdate(pendingUpdateRef.current!);
-        pendingUpdateRef.current = null;
-      } finally {
-        setIsSaving(false);
-        setUpdateQueue(null);
-      }
-    }, 100);
-
-    return () => {
-      if (savingTimeoutRef.current) {
-        clearTimeout(savingTimeoutRef.current);
-      }
-    };
-  }, [updateQueue, isSaving, onUpdate]);
-
-  // クリーンアップ
-  useEffect(() => {
-    return () => {
-      if (savingTimeoutRef.current) {
-        clearTimeout(savingTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // 3位決定戦の表示をより堅牢に
   const ThirdPlaceMatchCard = () => {

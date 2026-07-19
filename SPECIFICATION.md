@@ -32,21 +32,22 @@ Vite + React 18 SPA固定。Next.js移行禁止。`@g-loot/react-tournament-brac
 
 ### 状態と実行経路
 
-`src/admin/context/AdminLayoutContext.tsx`、管理保存状態のsingle source of truth。`savingStatus`、`hasUnsavedChanges`、scope別handler、共通feedback所有。
+`src/admin/context/AdminLayoutContext.tsx`、管理保存coordinator。scope別handler、timer、revision、直列write、未保存状態、共通feedback所有。自動保存delayは800msで統一する。編集画面、モーダルから反映される編集、ともに同じdebounceを使う。作成、削除、同期は確定操作のため対象外。
 
 保存契約:
 
 1. pageがlocal edit state保持
-2. pageが変更検知。debounce、tab遷移、即時保存など画面操作に合う時点で`useAdminLayout()`の`save(scope)`呼出
-3. pageが`useEffect`内で`registerSaveHandler(handler, scope)`登録、cleanupで解除
-4. contextがscope対応handler実行
+2. `useAutoSave(scope, handler)`がhandler登録と解除を所有
+3. edit handlerがlocal state更新後に`schedule()`呼出
+4. coordinatorが同scopeのtimerを置換し、800ms後に最新handler実行
 5. handlerが`useDatabase`経由でwrite、成功可否を`boolean`返却
+6. 保存中の再編集はrevisionで識別。古いwrite完了ではdirtyを解除せず、scope内writeを直列化
 
-`EventEditPage.tsx`、local/remote差分を1秒debounce。`ScoringPage.tsx`、編集を2秒debounce。`SportEditPage.tsx`、同じscope handlerへtab遷移・離脱時保存、一部field編集は`updateData()`即時実行。trigger差あっても保存状態とfallback入口はcontextへ集約。
+`EventEditPage.tsx`、`SportEditPage.tsx`、`ScoringPage.tsx`は同一契約。page固有timerと即時writeを持たない。
 
 ### Background
 
-旧構造、各page独立autosave。context未登録だったため`AdminLayout.tsx` headerの未保存表示とglobal save経路、page実処理へ接続なし。`ScoringPage.tsx`には同一save function二重実装、競合するautosave timer二本存在。scope登録方式でglobal状態と実write接続、保存関数一系統化。
+保存action Contextと保存表示state Contextを分離。編集componentはstatus変更を購読せず、header内の保存表示だけ更新する。保存feedbackに進捗intervalを使わない。
 
 ### 手動保存policy
 
@@ -62,7 +63,7 @@ Vite + React 18 SPA固定。Next.js移行禁止。`@g-loot/react-tournament-brac
 
 Firebase必須環境変数を起動時に検証する。設定不足またはSDK初期化失敗時、通常のrouteとdata hookを開始せず、原因を示す全画面エラーを表示する。render時の未処理例外もroot error boundaryで捕捉し、再読み込み可能なエラー画面へ切り替える。空白画面のまま停止させない。
 
-`src/hooks/useDatabase.ts`の更新、Firebase RTDB `update()`によるfield-level write。transaction、version追跡、競合解決layerなし。複数client同一field編集、last-write-wins。
+`src/hooks/useDatabase.ts`の更新、Firebase RTDB `update()`一回による複数fieldのatomic write。transaction、server-side version追跡、競合解決layerなし。複数client同一field編集、last-write-wins。
 
 write中`isUpdatingRef`を立て、`onValue` snapshotによるin-flight optimistic state上書き防止。実際に起きた表示flicker・編集不安定を止めるguard。旧version-tracking/conflict-detection系、完成していたが呼ばれないparallel write pathだったため削除済み。復活禁止。field-level `update()` + in-flight guard、意図した最終設計。
 

@@ -44,6 +44,7 @@ import RosterEditor from '../components/RosterEditor';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import DeleteConfirmationDialog from '../components/dialogs/DeleteConfirmationDialog';
 import { useAdminLayout } from '../context/AdminLayoutContext';
+import { useAutoSave } from '../hooks/useAutoSave';
 import { useAuth } from '../../contexts/AuthContext';
 import { TabContent } from '../components/TabContent';
 import ScheduleTab from '../components/scheduling/ScheduleTab';  // 追加
@@ -105,9 +106,8 @@ const SportEditPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { alpha } = useThemeContext();
-  const { save, registerSaveHandler, unregisterSaveHandler, showSnackbar: showAdminSnackbar, setHasUnsavedChanges } = useAdminLayout();
+  const { showSnackbar: showAdminSnackbar } = useAdminLayout();
   const isProcessingRef = useRef(false);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { currentUser } = useAuth();
   
   const { data: sport, loading: sportLoading, updateData, removeData } = useDatabase<Sport>(`/sports/${sportId}`);
@@ -117,9 +117,7 @@ const SportEditPage: React.FC = () => {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [localSport, setLocalSport] = useState<Sport | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false); // ダイアログの状態を追加
 
   // 差分を管理
@@ -223,7 +221,6 @@ const SportEditPage: React.FC = () => {
     if (!localSport || isProcessingRef.current) return false;
 
     isProcessingRef.current = true;
-    setUpdating(true); // ローディング画面を表示しないフラグ
 
     try {
       return await updateData(localSport);
@@ -232,17 +229,9 @@ const SportEditPage: React.FC = () => {
       return false;
     } finally {
       isProcessingRef.current = false;
-      setUpdating(false);
     }
   }, [localSport, updateData]);
-
-  useEffect(() => {
-    registerSaveHandler(handleSave, `sport_${sportId}`);
-
-    return () => {
-      unregisterSaveHandler(`sport_${sportId}`);
-    };
-  }, [registerSaveHandler, unregisterSaveHandler, handleSave, sportId]);
+  const autoSave = useAutoSave(`sport_${sportId}`, handleSave);
 
   // タブの状態管理を改善
   const [tabStates, setTabStates] = useState<TabStates>({
@@ -303,28 +292,14 @@ const SportEditPage: React.FC = () => {
 
   // デバウンス自動保存（全フィールド共通）
   const scheduleAutoSave = useCallback((tabName?: string) => {
-    setHasUnsavedChanges(true);
-
     if (tabName) {
       setTabStates(prev => ({
         ...prev,
         [tabName]: { ...prev[tabName], isDirty: true, lastUpdated: Date.now() }
       }));
     }
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(async () => {
-      const success = await save(`sport_${sportId}`);
-      if (success && tabName) {
-        setTabStates(prev => ({
-          ...prev,
-          [tabName]: { ...prev[tabName], isDirty: false }
-        }));
-      }
-    }, 800);
-  }, [save, sportId, setHasUnsavedChanges]);
+    autoSave.schedule();
+  }, [autoSave]);
 
   // 単一フィールドの更新（楽観的UI更新 + デバウンス自動保存）
   const handlePartialUpdate = useCallback((field: keyof Sport, value: any) => {
@@ -343,9 +318,6 @@ const SportEditPage: React.FC = () => {
   // クリーンアップ
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
       isProcessingRef.current = false;
     };
   }, []);
@@ -464,8 +436,6 @@ const SportEditPage: React.FC = () => {
     if (!sport || isProcessingRef.current) return;
     
     try {
-      // ロード画面を表示せず更新中フラグだけ設定
-      setUpdating(true);
       const updatedSport: Sport = {
         ...sport,
         lastEditedBy: currentUser?.email || undefined,
@@ -481,8 +451,6 @@ const SportEditPage: React.FC = () => {
     } catch (error) {
       console.error('Sync error:', error);
       showAdminSnackbar("同期エラー", 'error');
-    } finally {
-      setUpdating(false);
     }
   };
 
@@ -573,13 +541,11 @@ const SportEditPage: React.FC = () => {
   }
 
   if (sportLoading || eventsLoading) {
-    if (!updating) {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-          <CircularProgress />
-        </Box>
-      );
-    }
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (!sport || !localSport) {

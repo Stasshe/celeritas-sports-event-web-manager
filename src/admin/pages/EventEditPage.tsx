@@ -38,6 +38,7 @@ import { Event } from '../../types';
 import { motion } from 'framer-motion';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { useAdminLayout } from '../context/AdminLayoutContext';
+import { useAutoSave } from '../hooks/useAutoSave';
 import DeleteConfirmationDialog from '../components/dialogs/DeleteConfirmationDialog';
 import RosterEditor from '../components/RosterEditor';
 import OverallScoreTab from '../components/scoreboard/OverallScoreTab'; // 追加
@@ -72,13 +73,12 @@ const EventEditPage: React.FC = () => {
   const { eventId } = useParams<{ eventId?: string }>();
   const navigate = useNavigate();
   const { alpha } = useThemeContext();
-  const { showSnackbar, setSavingStatus, save, setHasUnsavedChanges, registerSaveHandler, unregisterSaveHandler } = useAdminLayout(); // AdminLayoutコンテキストを使用
+  const { showSnackbar, setSavingStatus } = useAdminLayout();
 
   const { data: event, loading: eventLoading, updateData: updateEvent, removeData } = useDatabase<Event>(`/events/${eventId}`);
 
   const [localEvent, setLocalEvent] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState(0);
-  const [autoSaveTimerId, setAutoSaveTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // クラステンプレートダイアログ用の状態
@@ -94,15 +94,16 @@ const EventEditPage: React.FC = () => {
     grade3: 7
   });
 
+  const handleSave = async (): Promise<boolean> => {
+    if (!localEvent) return false;
+    return updateEvent(localEvent);
+  };
+  const autoSave = useAutoSave(`event_${eventId}`, handleSave);
+
   // eventIdが変更されたときにlocalEventをリセットする
   useEffect(() => {
     // eventIdが変更されたらlocalEventをnullにリセット
     setLocalEvent(null);
-    
-    // 自動保存タイマーをクリアする
-    if (autoSaveTimerId) {
-      clearTimeout(autoSaveTimerId);
-    }
     
     // 保存状態をリセット
     setSavingStatus('idle');
@@ -120,34 +121,6 @@ const EventEditPage: React.FC = () => {
     }
   }, [event, localEvent]);
   
-  // データ変更時の自動保存設定
-  useEffect(() => {
-    if (!localEvent || !event) return;
-    
-    // データが変更されている場合
-    if (JSON.stringify(localEvent) !== JSON.stringify(event)) {
-      setHasUnsavedChanges(true);
-
-      // 既存のタイマーをクリア
-      if (autoSaveTimerId) {
-        clearTimeout(autoSaveTimerId);
-      }
-
-      // 新しいタイマーをセット
-      const timerId = setTimeout(() => {
-        save(`event_${eventId}`);
-      }, 1000); // 1秒後に保存
-
-      setAutoSaveTimerId(timerId);
-    }
-
-    return () => {
-      if (autoSaveTimerId) {
-        clearTimeout(autoSaveTimerId);
-      }
-    };
-  }, [localEvent]);
-
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
@@ -162,28 +135,8 @@ const EventEditPage: React.FC = () => {
     } else {
       setLocalEvent(prev => prev ? { ...prev, [name]: value } : null);
     }
+    autoSave.schedule();
   };
-
-  // 実際の書き込み処理。AdminLayoutContextにscope登録し、保存の唯一の実行経路にする
-  const handleSave = async (): Promise<boolean> => {
-    if (!localEvent) return false;
-
-    try {
-      await updateEvent(localEvent);
-      return true;
-    } catch (error) {
-      console.error('Error saving event data:', error);
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    registerSaveHandler(handleSave, `event_${eventId}`);
-
-    return () => {
-      unregisterSaveHandler(`event_${eventId}`);
-    };
-  }, [registerSaveHandler, unregisterSaveHandler, localEvent, eventId]);
 
 
   // クラステンプレートの生成処理
@@ -224,16 +177,7 @@ const EventEditPage: React.FC = () => {
     
     setLocalEvent(updatedEvent);
     setTemplateDialogOpen(false);
-    
-    // 保存
-    updateEvent(updatedEvent)
-      .then(() => {
-        showSnackbar("クラステンプレートを生成しました", 'success');
-      })
-      .catch(error => {
-        console.error('Error generating class template:', error);
-        showSnackbar("クラステンプレート生成エラー", 'error');
-      });
+    autoSave.schedule();
   };
 
   const handleDelete = async () => {
@@ -259,6 +203,7 @@ const EventEditPage: React.FC = () => {
         roster: updatedRoster
       };
     });
+    autoSave.schedule();
   };
   
   if (eventLoading) {
@@ -511,8 +456,7 @@ const EventEditPage: React.FC = () => {
                 // 更新されたイベントデータを設定
                 setLocalEvent(safeUpdatedEvent);
                 
-                // 総合成績タブでの変更は重要なので即時保存を実行
-                save(`event_${eventId}`);
+                autoSave.schedule();
               } catch (error) {
                 console.error("データの更新または検証中にエラーが発生:", error);
                 showSnackbar("データ検証エラー", 'error');

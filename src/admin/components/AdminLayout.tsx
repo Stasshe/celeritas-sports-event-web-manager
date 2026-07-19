@@ -41,12 +41,33 @@ import { useThemeContext } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
-import { useAdminLayout } from '../context/AdminLayoutContext';
+import { useAdminLayout, useAdminSaveState } from '../context/AdminLayoutContext';
 import CreateEventDialog from './dialogs/CreateEventDialog';
 import CreateSportDialog from './dialogs/CreateSportDialog';
 
 const drawerWidth = 256;
 const headerHeight = 56;
+
+const SaveStatus = () => {
+  const { savingStatus, hasUnsavedChanges, lastSaved } = useAdminSaveState();
+
+  return (
+    <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', mr: 0.5 }}>
+      {hasUnsavedChanges && <Chip label="未保存" color="warning" size="small" />}
+      {savingStatus === 'saving' && <CircularProgress size={18} sx={{ ml: 1 }} />}
+      {savingStatus === 'saved' && lastSaved && (
+        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+          {lastSaved.toLocaleTimeString()} 保存
+        </Typography>
+      )}
+      {savingStatus === 'error' && (
+        <Typography variant="caption" color="error" sx={{ ml: 1 }}>
+          保存失敗
+        </Typography>
+      )}
+    </Box>
+  );
+};
 
 const AdminLayout = () => {
   const theme = useTheme();
@@ -54,9 +75,7 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useAuth();
-  const { showSnackbar, savingStatus, setSavingStatus, save, hasUnsavedChanges, registerSaveHandler } = useAdminLayout(); // コンテキストから機能を取得
-  
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const { showSnackbar, setSavingStatus, hasUnsavedChanges: hasPendingChanges } = useAdminLayout();
   
   // メインコンテンツのローディング状態を管理
   const [contentLoading, setContentLoading] = useState(false);
@@ -115,33 +134,6 @@ const AdminLayout = () => {
     }
   }, [location.pathname, events, sports, isMobile]);
   
-  // レイアウト全体の保存ハンドラを登録
-  useEffect(() => {
-    // このコンポーネント固有の保存処理（必要に応じて実装）
-    const handleLayoutSave = async () => {
-      console.log('レイアウト設定の保存');
-      // 実際には何も保存しない
-      return true;
-    };
-    
-    registerSaveHandler(handleLayoutSave, 'layout');
-    
-    // クリーンアップ関数は不要（コンポーネントがアンマウントされないため）
-  }, [registerSaveHandler]);
-  
-  // 手動保存
-  const handleManualSave = async () => {
-    // 新しい保存メカニズムを使用
-    try {
-      await save();
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error('Manual save error:', error);
-    }
-  };
-  
-  
-
   const handleDrawerToggle = () => {
     setMobileOpen((open) => !open);
   };
@@ -150,7 +142,7 @@ const AdminLayout = () => {
     // 現在のパスがイベント編集ページで、かつ別のイベントを選択した場合
     if (location.pathname.includes('/admin/events/') && !location.pathname.includes(eventId)) {
       // 未保存の変更がある場合は確認
-      if (hasUnsavedChanges) {
+      if (hasPendingChanges()) {
         const confirmNavigation = window.confirm("保存されていない変更があります。移動しますか？");
         if (!confirmNavigation) {
           return; // ナビゲーションをキャンセル
@@ -195,7 +187,7 @@ const AdminLayout = () => {
     // 現在のパスと異なる場合のみナビゲーション
     if (location.pathname !== `/admin/sports/${sportId}`) {
       // 未保存の変更がある場合は確認
-      if (hasUnsavedChanges) {
+      if (hasPendingChanges()) {
         const confirmNavigation = window.confirm("保存されていない変更があります。移動しますか？");
         if (!confirmNavigation) {
           return; // ナビゲーションをキャンセル
@@ -571,20 +563,7 @@ const AdminLayout = () => {
             管理ワークスペース
           </Typography>
 
-          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', mr: 0.5 }}>
-            {hasUnsavedChanges && <Chip label="未保存" color="warning" size="small" />}
-            {savingStatus === 'saving' && <CircularProgress size={18} sx={{ ml: 1 }} />}
-            {savingStatus === 'saved' && lastSaved && (
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                {lastSaved.toLocaleTimeString()} 保存
-              </Typography>
-            )}
-            {savingStatus === 'error' && (
-              <Typography variant="caption" color="error" sx={{ ml: 1 }}>
-                保存失敗
-              </Typography>
-            )}
-          </Box>
+          <SaveStatus />
 
           <Tooltip title="公開画面に戻る">
             <IconButton color="inherit" onClick={() => navigate('/')}>

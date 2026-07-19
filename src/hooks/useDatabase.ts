@@ -67,14 +67,8 @@ export function useDatabase<T>(path: string, initialValue: T | null = null) {
 
     isUpdatingRef.current = true;
     try {
-      // 更新対象のパスのデータを個別に更新(undefinedをnullに変換して保存)
-      const updatePromises = Object.entries(updates).map(([key, value]) => {
-        const updatePath = `${path}/${key}`;
-        const normalizedValue = normalizeValue(value);
-        return update(ref(database), { [updatePath]: normalizedValue });
-      });
-
-      await Promise.all(updatePromises);
+      const normalizedUpdates = normalizeValue(updates);
+      await update(ref(database, path), normalizedUpdates);
 
       // 楽観的UI更新
       if (options.optimistic) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Container, 
@@ -8,8 +8,6 @@ import {
   Button, 
   CircularProgress, 
   IconButton,
-  Snackbar,
-  Alert,
   Divider
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
@@ -20,106 +18,32 @@ import TournamentScoring from '../../common/TournamentScoring';
 import RoundRobinScoring from '../components/scoring/RoundRobinScoring';
 import LeagueScoring from '../components/scoring/LeagueScoring';
 import RankingScoring from '../components/scoring/RankingScoring';
-import { useAdminLayout } from '../context/AdminLayoutContext';
+import { useAutoSave } from '../hooks/useAutoSave';
 
 
 const ScoringPage: React.FC = () => {
   const { sportId } = useParams<{ sportId: string }>();
   const navigate = useNavigate();
   const { data: sport, loading, updateData } = useDatabase<Sport>(`/sports/${sportId}`);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [showSnackbar, setShowSnackbar] = useState(false);
-
   // スポーツデータのローカルコピー
   const [localSport, setLocalSport] = useState<Sport | null>(null);
 
-  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingUpdateRef = useRef<Sport | null>(null);
-  const isProcessingRef = useRef(false);
-
-  const { registerSaveHandler, unregisterSaveHandler, save, setHasUnsavedChanges } = useAdminLayout();
+  const handleSave = useCallback(async () => {
+    if (!localSport) return false;
+    return updateData(localSport);
+  }, [localSport, updateData]);
+  const autoSave = useAutoSave(`scoring_${sportId}`, handleSave);
 
   const handleSportUpdate = useCallback(async (updatedSport: Sport) => {
-    if (isProcessingRef.current) return;
-    
-    // 変更があることを通知
-    setHasUnsavedChanges(true);
-
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-    }
-
-    pendingUpdateRef.current = updatedSport;
     setLocalSport(updatedSport);
-
-    updateTimeoutRef.current = setTimeout(async () => {
-      if (!pendingUpdateRef.current) return;
-      
-      // 自動保存を修正
-      await save(`scoring_${sportId}`);
-    }, 2000);
-  }, [updateData, save, sportId, setHasUnsavedChanges]);
+    autoSave.schedule();
+  }, [autoSave]);
 
   useEffect(() => {
     if (sport && !localSport) {
       setLocalSport(JSON.parse(JSON.stringify(sport)));
     }
   }, [sport, localSport]);
-
-  const handleSave = async () => {
-    if (!localSport || isProcessingRef.current) return false;
-
-    try {
-      isProcessingRef.current = true;
-      setSaveStatus('saving');
-      
-      // ローカルの変更を保存
-      const result = await updateData(localSport);
-      
-      if (result) {
-        setSaveStatus('saved');
-        setShowSnackbar(true);
-        return true;
-      } else {
-        setSaveStatus('error');
-        setShowSnackbar(true);
-        return false;
-      }
-    } catch (error) {
-      console.error('Save error:', error);
-      setSaveStatus('error');
-      setShowSnackbar(true);
-      return false;
-    } finally {
-      isProcessingRef.current = false;
-    }
-  };
-
-  const handleSnackbarClose = () => {
-    setShowSnackbar(false);
-  };
-
-  
-
-  // クリーンアップ
-  useEffect(() => {
-    return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-      isProcessingRef.current = false;
-      pendingUpdateRef.current = null;
-    };
-  }, []);
-
-  // 保存ハンドラを登録(グローバル保存ボタン/未保存インジケータと連動)
-  useEffect(() => {
-    registerSaveHandler(handleSave, `scoring_${sportId}`);
-
-    return () => {
-      unregisterSaveHandler(`scoring_${sportId}`);
-    };
-  }, [registerSaveHandler, unregisterSaveHandler, handleSave, sportId]);
 
   if (loading) {
     return (
@@ -173,17 +97,6 @@ const ScoringPage: React.FC = () => {
           <RankingScoring sport={localSport} onUpdate={handleSportUpdate} />
         )}
       </Paper>
-
-      {/* 保存状態通知 */}
-      <Snackbar open={showSnackbar} autoHideDuration={4000} onClose={handleSnackbarClose}>
-        <Alert 
-          onClose={handleSnackbarClose} 
-          severity={saveStatus === 'saved' ? 'success' : 'error'} 
-          sx={{ width: '100%' }}
-        >
-          {saveStatus === 'saved' ? "保存しました" : "保存に失敗しました"}
-        </Alert>
-      </Snackbar>
     </Container>
   );
 };
