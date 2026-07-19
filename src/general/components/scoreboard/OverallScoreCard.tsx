@@ -21,7 +21,6 @@ import {
   Looks3 as ThreeIcon,
   Launch as LaunchIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { Event, Sport, OverallScoreEntry } from '../../../types';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -34,7 +33,6 @@ const MotionCard = motion(Card);
 
 
 const OverallScoreCard: React.FC<OverallScoreCardProps> = ({ event, sports = [] }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const navigate = useNavigate();
   
@@ -83,25 +81,25 @@ const OverallScoreCard: React.FC<OverallScoreCardProps> = ({ event, sports = [] 
         return {
           color: '#FFD700', // gold
           icon: <OneIcon fontSize="large" />,
-          label: t('scoreboard.firstPlace')
+          label: "優勝"
         };
       case 2:
         return {
           color: '#C0C0C0', // silver
           icon: <TwoIcon fontSize="large" />,
-          label: t('scoreboard.secondPlace')
+          label: "準優勝"
         };
       case 3:
         return {
           color: '#CD7F32', // bronze
           icon: <ThreeIcon fontSize="large" />,
-          label: t('scoreboard.thirdPlace')
+          label: "第3位"
         };
       default:
         return {
           color: theme.palette.grey[500],
           icon: null,
-          label: `${rank}${t('scoreboard.placePostfix')}`
+          label: `${rank}${"位"}`
         };
     }
   };
@@ -120,7 +118,7 @@ const OverallScoreCard: React.FC<OverallScoreCardProps> = ({ event, sports = [] 
       }}
     >
       <CardHeader
-        title={t('scoreboard.overallStandings')}
+        title={"総合順位"}
         subheader={event.name}
         avatar={<Avatar sx={{ bgcolor: theme.palette.primary.main }}><LeaderboardIcon /></Avatar>}
         action={
@@ -136,7 +134,7 @@ const OverallScoreCard: React.FC<OverallScoreCardProps> = ({ event, sports = [] 
                 },
               }}
               >
-              {t('scoreboard.viewDetails')}
+              {"詳細を見る"}
             </Button>
         }
         sx={{ 
@@ -201,7 +199,7 @@ const OverallScoreCard: React.FC<OverallScoreCardProps> = ({ event, sports = [] 
             
             <Chip
             icon={<TrophyIcon />}
-            label={`${formatPoints(entry.totalPoints)}${t('scoreboard.points')}`}
+            label={`${formatPoints(entry.totalPoints)}${"ポイント"}`}
             sx={{ 
               fontSize: '1.2rem', 
               py: 2, 

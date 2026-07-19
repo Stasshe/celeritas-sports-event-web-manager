@@ -1,6 +1,5 @@
 import { Match, Team, LeagueBlock } from '../../../../types';
 import { TournamentStructureHelper } from '../../../../common/TournamentStructureHelper';
-import { TFunction } from 'i18next';
 import { LeagueMatchHelper } from './LeagueMatchHelper';
 
 interface PlayoffGenerationResult {
@@ -24,8 +23,7 @@ export class LeaguePlayoffHelper {
     blocks: LeagueBlock[],
     teams: Team[],
     advancingTeams: number,
-    hasThirdPlaceMatch: boolean,
-    t: TFunction
+    hasThirdPlaceMatch: boolean
   ): PlayoffGenerationResult {
     try {
       // 各ブロックの成績計算
@@ -60,7 +58,7 @@ export class LeaguePlayoffHelper {
       if (advancingTeamIds.length === 0 && incompleteBlocks.length === 0) {
         return {
           success: false,
-          message: t('tournament.needAtLeastTwoTeams'),
+          message: "最低2チーム必要です",
           matches: []
         };
       }
@@ -81,7 +79,7 @@ export class LeaguePlayoffHelper {
       for (let i = 0; i < expectedTeamsFromIncompleteBlocks; i++) {
         const tbdTeam: Team = {
           id: `tbd_${i}`,
-          name: `TBD (${t('tournament.pendingCompletion')})`,
+          name: 'TBD (完了待ち)',
           color: '#CCCCCC'
         } as Team;
         
@@ -194,7 +192,7 @@ export class LeaguePlayoffHelper {
       console.error("Error generating playoff tournament:", error);
       return {
         success: false,
-        message: t('tournament.errorGenerating'),
+        message: "トーナメント生成エラー",
         matches: []
       };
     }

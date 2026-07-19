@@ -24,7 +24,7 @@ import {
   Coffee as BreakIcon,
   Place as PlaceIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { getScheduleTypeLabel } from '../../../utils/labels';
 import { Sport, TimeSlot, Match } from '../../../types';
 
 interface ScheduleTimelineProps {
@@ -32,7 +32,6 @@ interface ScheduleTimelineProps {
 }
 
 const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [expanded, setExpanded] = useState<string | false>(false);
@@ -77,7 +76,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
   if (groupedSlots.length === 0) {
     return (
       <Alert severity="info" sx={{ mt: 2 }}>
-        {t('schedule.noScheduleAvailable')}
+        {"このスポーツにはスケジュールがありません"}
       </Alert>
     );
   }
@@ -85,7 +84,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
   // チーム名を取得する関数
   const getTeamName = (teamId: string): string => {
     const team = sport.teams?.find(t => t.id === teamId);
-    return team ? team.name : t('schedule.unknownTeam');
+    return team ? team.name : "不明なチーム";
   };
 
   // 試合情報を取得する関数
@@ -136,10 +135,10 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
     <Box sx={{ mt: 2 }}>
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
         <ScheduleIcon sx={{ mr: 1 }} />
-        {t('schedule.timeline')}
+        {"タイムライン"}
       </Typography>
       <Typography variant="body2" color="text.secondary" gutterBottom>
-        {t('schedule.timeRange')}: {sport.scheduleSettings?.startTime} - {sport.scheduleSettings?.endTime}
+        {"開催時間"}: {sport.scheduleSettings?.startTime} - {sport.scheduleSettings?.endTime}
       </Typography>
       
       <Divider sx={{ my: 2 }} />
@@ -173,7 +172,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
                 {timeGroup.startTime} - {timeGroup.endTime}
               </Typography>
               <Chip 
-                label={`${timeGroup.slots.length} ${t('schedule.activities')}`} 
+                label={`${timeGroup.slots.length} ${"アクティビティ"}`} 
                 size="small" 
                 color="primary"
               />
@@ -254,7 +253,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
                             <Box sx={{ mt: 1 }}>
                               {match.location && (
                                 <Typography variant="body2" color="text.secondary">
-                                  {t('schedule.location')}: {match.location}
+                                  {"場所"}: {match.location}
                                 </Typography>
                               )}
                               {slot.description && (
@@ -286,7 +285,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
                           </Box>
                           <Box>
                             <Typography variant="body1" fontWeight="medium">
-                              {slot.title || t(`schedule.${slot.type}`)}
+                              {slot.title || getScheduleTypeLabel(slot.type)}
                             </Typography>
                             {slot.description && (
                               <Typography variant="caption" color="text.secondary" display="block">

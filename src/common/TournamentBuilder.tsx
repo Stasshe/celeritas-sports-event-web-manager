@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import { Match, Sport, Team } from '../types';
-import { useTranslation } from 'react-i18next';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
 
 interface TournamentBuilderProps {
@@ -22,7 +21,6 @@ interface TournamentBuilderProps {
 }
 
 export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBuilderProps) => {
-  const { t } = useTranslation();
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
   const [teamsExpanded, setTeamsExpanded] = useState(false);
 
@@ -57,7 +55,7 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
 
     // 既存の得点があるか確認
     if (sport.matches && TournamentStructureHelper.hasExistingScores(sport.matches)) {
-      if (!window.confirm(t('tournament.confirmReset'))) {
+      if (!window.confirm("トーナメント表をリセットしますか？")) {
         return;
       }
     }
@@ -117,14 +115,14 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
     <Box sx={{ mb: 3 }}>
       <Paper sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
-          {t('tournament.builder')}
+          {"トーナメント作成"}
         </Typography>
 
         {selectedTeams.length > 0 ? (
           <>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <Chip 
-                label={t('tournament.teamsSelected', { count: selectedTeams.length })} 
+                label={`${selectedTeams.length}チーム選択中`} 
                 color="primary" 
                 sx={{ mr: 1 }}
               />
@@ -139,7 +137,7 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
                   <ListItem key={team.id}>
                     <ListItemText 
                       primary={team.name}
-                      secondary={`${t('tournament.members')}: ${team.members?.length || 0}`}
+                      secondary={`${"参加者数"}: ${team.members?.length || 0}`}
                     />
                   </ListItem>
                 ))}
@@ -151,12 +149,12 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
               onClick={generateTournament}
               fullWidth
             >
-              {t('tournament.generate')}
+              {"トーナメント表生成"}
             </Button>
           </>
         ) : (
           <Typography color="text.secondary" align="center">
-            {t('tournament.noRoster')}
+            {"名簿がありません"}
           </Typography>
         )}
       </Paper>

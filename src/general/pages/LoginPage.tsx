@@ -12,13 +12,11 @@ import {
 } from '@mui/material';
 import { LockOutlined } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 
 const MotionPaper = motion(Paper);
 
 const LoginPage: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
@@ -35,7 +33,7 @@ const LoginPage: React.FC = () => {
     setError('');
 
     if (!email || !password) {
-      setError(t('login.fillAllFields') || 'すべての項目を入力してください。');
+      setError("すべての項目を入力してください");
       return;
     }
 
@@ -47,16 +45,16 @@ const LoginPage: React.FC = () => {
       if (error instanceof Error) {
         switch (error.message) {
           case 'auth/invalid-credential':
-            setError(t('login.invalidCredentials') || 'メールアドレスまたはパスワードが間違っています。');
+            setError("認証情報が無効です");
             break;
           case 'auth/user-not-found':
-            setError(t('login.userNotFound') || 'ユーザーが見つかりません。');
+            setError("ユーザーが見つかりません");
             break;
           case 'auth/wrong-password':
-            setError(t('login.wrongPassword') || 'パスワードが間違っています。');
+            setError("パスワードが間違っています");
             break;
           default:
-            setError(t('login.unknownError') || '認証エラーが発生しました。');
+            setError("不明なエラーが発生しました");
         }
       }
     } finally {
@@ -77,7 +75,7 @@ const LoginPage: React.FC = () => {
           <LockOutlined />
         </Avatar>
         <Typography component="h1" variant="h5">
-          {t('common.login')}
+          {"ログイン"}
         </Typography>
         
         {error && (
@@ -92,7 +90,7 @@ const LoginPage: React.FC = () => {
             required
             fullWidth
             id="email"
-            label={t('login.email')}
+            label={"メールアドレス"}
             name="email"
             autoComplete="email"
             autoFocus
@@ -104,7 +102,7 @@ const LoginPage: React.FC = () => {
             required
             fullWidth
             name="password"
-            label={t('login.password')}
+            label={"パスワード"}
             type="password"
             id="password"
             autoComplete="current-password"
@@ -118,7 +116,7 @@ const LoginPage: React.FC = () => {
             sx={{ mt: 3, mb: 2 }}
             disabled={loading}
           >
-            {loading ? t('common.loading') : t('common.login')}
+            {loading ? "読み込み中..." : "ログイン"}
           </Button>
         </Box>
       </MotionPaper>

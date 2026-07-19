@@ -24,7 +24,6 @@ import {
   CheckCircle as ConfirmedIcon,
   Help as PotentialIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { timeToMinutes } from '../../../utils/scheduleGenerator';
 import { ClassScheduleEntry } from '../../../types';
 import { useNavigate } from 'react-router-dom';
@@ -53,7 +52,6 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
   scheduleEntries,
   selectedClasses
 }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -67,7 +65,7 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
 
     // 日付でのグループ化
     scheduleEntries.forEach(entry => {
-      const dateKey = entry.date || t('classSchedule.undefinedDate');
+      const dateKey = entry.date || "日付未定";
       if (!byDate[dateKey]) {
         byDate[dateKey] = {
           date: entry.date || '',
@@ -96,7 +94,7 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
 
       return {
         date: dateKey,
-        formattedDate: dateGroup.date ? new Date(dateGroup.date).toLocaleDateString() : t('classSchedule.undefinedDate'),
+        formattedDate: dateGroup.date ? new Date(dateGroup.date).toLocaleDateString() : "日付未定",
         timeSlots: sortedTimes.map(time => ({
           time,
           entries: byTime[time].sort((a, b) => {
@@ -115,11 +113,11 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
 
     // 日付順にソート
     return result.sort((a, b) => {
-      if (a.date === t('classSchedule.undefinedDate')) return 1;
-      if (b.date === t('classSchedule.undefinedDate')) return -1;
+      if (a.date === "日付未定") return 1;
+      if (b.date === "日付未定") return -1;
       return a.date.localeCompare(b.date);
     });
-  }, [scheduleEntries, t]);
+  }, [scheduleEntries]);
 
   // エントリがない場合
   if (scheduleEntries.length === 0) {
@@ -133,7 +131,7 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
         }}
       >
         <Typography variant="h6" color="text.secondary">
-          {t('classSchedule.noSchedule')}
+          {"スケジュールが見つかりません"}
         </Typography>
       </Paper>
     );
@@ -237,12 +235,12 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                               {/* 確定/可能性の表示 */}
                               <Tooltip title={
                                 entry.status === 'potential' 
-                                  ? t('classSchedule.potentialMatch') 
-                                  : t('classSchedule.confirmedMatch')
+                                  ? "出場の可能性がある試合" 
+                                  : "出場が確定している試合"
                               }>
                                 <Chip
                                   icon={entry.status === 'potential' ? <PotentialIcon fontSize="small" /> : <ConfirmedIcon fontSize="small" />}
-                                  label={t(`classSchedule.${entry.status === 'potential' ? 'potential' : 'confirmed'}`)}
+                                  label={entry.status === 'potential' ? '可能性' : '確定'}
                                   size="small"
                                   color={entry.status === 'potential' ? "warning" : "success"}
                                   variant="outlined"
@@ -266,7 +264,7 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
                                 gap: 0.5
                               }}>
                                 <Typography variant="caption" sx={{ fontSize: { xs: '0.8rem', sm: '0.7rem' } }}>
-                                  {t('classSchedule.certainty')}:
+                                  {"確率"}:
                                 </Typography>
                                 <Box 
                                   sx={{ 

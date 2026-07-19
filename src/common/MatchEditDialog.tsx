@@ -21,7 +21,6 @@ import {
 import { Edit as EditIcon } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { Match, Sport } from '../types';
-import { useTranslation } from 'react-i18next';
 import TeamSelector from './TeamSelector';
 
 interface MatchEditDialogProps {
@@ -43,7 +42,6 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
   onSave,
   disabled = false // デフォルト値を設定
 }) => {
-  const { t } = useTranslation();
   const [editedMatch, setEditedMatch] = useState<Match | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingTeamChange, setPendingTeamChange] = useState<{
@@ -142,21 +140,21 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
         <DialogTitle>
           {match && (
             match.round === maxRound && match.matchNumber === 1 
-              ? t('tournament.final')
+              ? "決勝"
               : match.matchNumber === 0 
-              ? t('tournament.thirdPlace')
-              : t('tournament.round', { round: `${match.round}-${match.matchNumber}` })
+              ? "3位決定戦"
+              : `${match.round}-${match.matchNumber}回戦`
           )}
         </DialogTitle>
         <DialogContent dividers>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            {t('match.warningTeamChange')}
+            {"チーム選択は試合結果の入力後に変更すると、トーナメントの整合性が損なわれる可能性があります"}
           </Alert>
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
-                  {t('match.team1')}
+                  {"チーム1"}
                 </Typography>
                 
                 {/* チーム表示エリア */}
@@ -189,18 +187,18 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                           onClick={handleCancelEdit}
                           color="inherit"
                         >
-                          {t('common.cancel')}
+                          {"キャンセル"}
                         </Button>
                       </Box>
                     ) : (
                       <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-                        {sport.teams.find(t => t.id === editedMatch.team1Id)?.name || t('tournament.tbd')}
+                        {sport.teams.find(t => t.id === editedMatch.team1Id)?.name || "未定"}
                       </Typography>
                     )}
                   </Box>
                   
                   {editingTeam !== 'team1' && (
-                    <Tooltip title={editedMatch.round === 1 ? t('match.editTeam') : t('match.cannotEditTeam')}>
+                    <Tooltip title={editedMatch.round === 1 ? 'チームを編集' : '2回戦以降のチームは編集できません'}>
                       <span>
                         <IconButton
                           size="small"
@@ -230,7 +228,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                 )}
               </Box>
               <TextField
-                label={t('match.score')}
+                label={"スコア"}
                 type="number"
                 fullWidth
                 value={editedMatch.team1Score}
@@ -242,7 +240,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
             <Grid item xs={12}>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
-                  {t('match.team2')}
+                  {"チーム2"}
                 </Typography>
                 
                 {/* チーム表示エリア */}
@@ -275,18 +273,18 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                           onClick={handleCancelEdit}
                           color="inherit"
                         >
-                          {t('common.cancel')}
+                          {"キャンセル"}
                         </Button>
                       </Box>
                     ) : (
                       <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-                        {sport.teams.find(t => t.id === editedMatch.team2Id)?.name || t('tournament.tbd')}
+                        {sport.teams.find(t => t.id === editedMatch.team2Id)?.name || "未定"}
                       </Typography>
                     )}
                   </Box>
                   
                   {editingTeam !== 'team2' && (
-                    <Tooltip title={editedMatch.round === 1 ? t('match.editTeam') : t('match.cannotEditTeam')}>
+                    <Tooltip title={editedMatch.round === 1 ? 'チームを編集' : '2回戦以降のチームは編集できません'}>
                       <span>
                         <IconButton
                           size="small"
@@ -316,7 +314,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                 )}
               </Box>
               <TextField
-                label={t('match.score')}
+                label={"スコア"}
                 type="number"
                 fullWidth
                 value={editedMatch.team2Score}
@@ -328,7 +326,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
             <Grid item xs={12}>
               <TextField
                 name="date"
-                label={t('match.date')}
+                label={"日付"}
                 type="date"
                 fullWidth
                 value={editedMatch.date || ''}
@@ -340,7 +338,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
             <Grid item xs={12}>
               <TextField
                 name="notes"
-                label={t('match.notes')}
+                label={"メモ"}
                 multiline
                 rows={2}
                 fullWidth
@@ -352,7 +350,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose} disabled={disabled}>
-            {t('common.cancel')}
+            {"キャンセル"}
           </Button>
           <Button 
             variant="contained" 
@@ -360,7 +358,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
             onClick={handleSave}
             disabled={disabled}
           >
-            {t('common.save')}
+            {"保存"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -369,22 +367,22 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
         open={confirmDialogOpen}
         onClose={handleCancelTeamChange}
       >
-        <DialogTitle>{t('match.confirmTeamChangeTitle')}</DialogTitle>
+        <DialogTitle>{"チーム変更の確認"}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {t('match.confirmTeamChangeMessage')}
+            {"チームを変更しますか？トーナメントが壊れる可能性があります。壊れた場合は生成し直してください。"}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCancelTeamChange}>
-            {t('common.cancel')}
+            {"キャンセル"}
           </Button>
           <Button 
             onClick={handleConfirmTeamChange} 
             color="error"
             variant="contained"
           >
-            {t('match.confirmTeamChange')}
+            {"変更する"}
           </Button>
         </DialogActions>
       </Dialog>

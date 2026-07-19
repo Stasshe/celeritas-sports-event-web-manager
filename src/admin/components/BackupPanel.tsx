@@ -38,7 +38,6 @@ import {
   Backup as BackupIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useBackup, BackupType, BackupEntry } from '../../hooks/useBackup';
 import { useAdminLayout } from '../context/AdminLayoutContext';
@@ -48,7 +47,6 @@ import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
 import { ja } from 'date-fns/locale/ja';
 
 const BackupPanel: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
   const { alpha } = useThemeContext();
@@ -85,13 +83,13 @@ const BackupPanel: React.FC = () => {
     try {
       const result = await createBackup('manual', backupDescription);
       if (result) {
-        showSnackbar(t('backup.createSuccess'), 'success');
+        showSnackbar("バックアップ作成に成功しました", 'success');
         setCreateDialogOpen(false);
         setBackupDescription('');
       }
     } catch (error) {
       console.error('バックアップ作成エラー:', error);
-      showSnackbar(t('backup.createError'), 'error');
+      showSnackbar("バックアップ作成に失敗しました", 'error');
     }
   };
   
@@ -107,15 +105,15 @@ const BackupPanel: React.FC = () => {
     try {
       const success = await restoreBackup(restoreTarget.type, restoreTarget.id);
       if (success) {
-        showSnackbar(t('backup.restoreSuccess'), 'success');
+        showSnackbar("復元に成功しました", 'success');
         setRestoreDialogOpen(false);
         setRestoreTarget(null);
       } else {
-        showSnackbar(t('backup.restoreError'), 'error');
+        showSnackbar("復元に失敗しました", 'error');
       }
     } catch (error) {
       console.error('バックアップ復元エラー:', error);
-      showSnackbar(t('backup.restoreError'), 'error');
+      showSnackbar("復元に失敗しました", 'error');
     }
   };
   
@@ -133,7 +131,7 @@ const BackupPanel: React.FC = () => {
       setDiffData(diff);
     } catch (error) {
       console.error('差分取得エラー:', error);
-      showSnackbar(t('backup.diffError'), 'error');
+      showSnackbar("差分取得エラー", 'error');
     } finally {
       setDiffLoading(false);
     }
@@ -168,14 +166,14 @@ const BackupPanel: React.FC = () => {
           onClick={() => navigate('/admin')}
           sx={{ mb: 2 }}
         >
-          {t('common.back')}
+          {"戻る"}
         </Button>
         
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <BackupIcon sx={{ mr: 1, fontSize: 28 }} />
             <Typography variant="h4">
-              {t('backup.title')}
+              {"バックアップ"}
             </Typography>
           </Box>
           
@@ -186,15 +184,15 @@ const BackupPanel: React.FC = () => {
             onClick={() => setCreateDialogOpen(true)}
             disabled={backupLoading}
           >
-            {t('backup.createNow')}
+            {"今すぐ作成"}
           </Button>
         </Box>
         
         <Paper sx={{ mb: 4 }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
-              <Tab label={t('backup.automatic')} value="auto" />
-              <Tab label={t('backup.manual')} value="manual" />
+              <Tab label={"自動"} value="auto" />
+              <Tab label={"手動"} value="manual" />
             </Tabs>
           </Box>
           
@@ -209,14 +207,14 @@ const BackupPanel: React.FC = () => {
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} sm={6}>
                       <Typography variant="subtitle1">
-                        {activeTab === 'auto' ? t('backup.autoDescription') : t('backup.manualDescription')}
+                        {activeTab === 'auto' ? "自動バックアップの説明" : "手動バックアップの説明"}
                       </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6} sx={{ textAlign: 'right' }}>
                       {selectedBackup && (
                         <Box>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            {t('backup.compareWith')}:
+                            {"比較する"}:
                           </Typography>
                           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                             <Button 
@@ -224,7 +222,7 @@ const BackupPanel: React.FC = () => {
                               variant={compareBackup === 'current' ? "contained" : "outlined"}
                               onClick={() => setCompareBackup('current')}
                             >
-                              {t('backup.current')}
+                              {"現在のバックアップ"}
                             </Button>
                             {currentBackups.map((backup, index) => {
                               if (backup.id === selectedBackup) return null;
@@ -235,7 +233,7 @@ const BackupPanel: React.FC = () => {
                                   variant={compareBackup === backup.id ? "contained" : "outlined"} 
                                   onClick={() => handleSelectCompare(backup.id)}
                                 >
-                                  {t('backup.version')} {currentBackups.length - index}
+                                  {"バージョン"} {currentBackups.length - index}
                                 </Button>
                               );
                             })}
@@ -272,7 +270,7 @@ const BackupPanel: React.FC = () => {
                           primary={
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                               <Typography variant="subtitle1">
-                                {t('backup.version')} {currentBackups.length - index}
+                                {"バージョン"} {currentBackups.length - index}
                               </Typography>
                               <Chip 
                                 size="small" 
@@ -299,7 +297,7 @@ const BackupPanel: React.FC = () => {
                         <ListItemSecondaryAction>
                           <Box sx={{ display: 'flex' }}>
                             {selectedBackup === backup.id && compareBackup && (
-                              <Tooltip title={t('backup.showDiff')}>
+                              <Tooltip title={"差分を表示"}>
                                 <IconButton
                                   edge="end"
                                   color="primary"
@@ -313,7 +311,7 @@ const BackupPanel: React.FC = () => {
                                 </IconButton>
                               </Tooltip>
                             )}
-                            <Tooltip title={t('backup.restore')}>
+                            <Tooltip title={"復元"}>
                               <IconButton
                                 edge="end"
                                 color="warning"
@@ -331,7 +329,7 @@ const BackupPanel: React.FC = () => {
               </>
             ) : (
               <Alert severity="info">
-                {activeTab === 'auto' ? t('backup.noAutoBackups') : t('backup.noManualBackups')}
+                {activeTab === 'auto' ? "自動バックアップがありません" : "手動バックアップがありません"}
               </Alert>
             )}
           </Box>
@@ -340,12 +338,12 @@ const BackupPanel: React.FC = () => {
       
       {/* 手動バックアップ作成ダイアログ */}
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)}>
-        <DialogTitle>{t('backup.createBackup')}</DialogTitle>
+        <DialogTitle>{"バックアップを作成"}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            label={t('backup.description')}
+            label={"バックアップの説明"}
             type="text"
             fullWidth
             multiline
@@ -356,7 +354,7 @@ const BackupPanel: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCreateDialogOpen(false)}>
-            {t('common.cancel')}
+            {"キャンセル"}
           </Button>
           <Button 
             onClick={handleCreateBackup}
@@ -365,25 +363,25 @@ const BackupPanel: React.FC = () => {
             disabled={backupLoading}
             startIcon={backupLoading ? <CircularProgress size={20} /> : <SaveIcon />}
           >
-            {t('backup.create')}
+            {"バックアップ作成"}
           </Button>
         </DialogActions>
       </Dialog>
       
       {/* バックアップ復元確認ダイアログ */}
       <Dialog open={restoreDialogOpen} onClose={() => setRestoreDialogOpen(false)}>
-        <DialogTitle>{t('backup.confirmRestore')}</DialogTitle>
+        <DialogTitle>{"復元を確認"}</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            {t('backup.restoreWarning')}
+            {"復元の警告"}
           </Alert>
           <Typography>
-            {t('backup.restoreConfirmation')}
+            {"復元しますか？"}
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRestoreDialogOpen(false)}>
-            {t('common.cancel')}
+            {"キャンセル"}
           </Button>
           <Button 
             onClick={handleRestoreBackup}
@@ -392,7 +390,7 @@ const BackupPanel: React.FC = () => {
             disabled={backupLoading}
             startIcon={backupLoading ? <CircularProgress size={20} /> : <RestoreIcon />}
           >
-            {t('backup.restore')}
+            {"復元"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -404,7 +402,7 @@ const BackupPanel: React.FC = () => {
         maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>{t('backup.diffTitle')}</DialogTitle>
+        <DialogTitle>{"差分"}</DialogTitle>
         <DialogContent>
           {diffLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -414,7 +412,7 @@ const BackupPanel: React.FC = () => {
             <Box sx={{ mt: 2 }}>
               {/* イベントの差分 */}
               <Typography variant="h6" gutterBottom>
-                {t('backup.eventChanges')}
+                {"イベントの変更"}
               </Typography>
               {Object.keys(diffData.events).length > 0 ? (
                 <Grid container spacing={2}>
@@ -424,11 +422,11 @@ const BackupPanel: React.FC = () => {
                         <CardContent sx={{ pb: 1 }}>
                           <Typography variant="subtitle1" gutterBottom>
                             {value.added ? (
-                              <Chip size="small" label={t('backup.added')} color="success" sx={{ mr: 1 }} />
+                              <Chip size="small" label={"追加済み"} color="success" sx={{ mr: 1 }} />
                             ) : value.removed ? (
-                              <Chip size="small" label={t('backup.removed')} color="error" sx={{ mr: 1 }} />
+                              <Chip size="small" label={"削除済み"} color="error" sx={{ mr: 1 }} />
                             ) : (
-                              <Chip size="small" label={t('backup.modified')} color="primary" sx={{ mr: 1 }} />
+                              <Chip size="small" label={"変更済み"} color="primary" sx={{ mr: 1 }} />
                             )}
                             {value?.oldValue?.name || value?.newValue?.name || key}
                           </Typography>
@@ -439,7 +437,7 @@ const BackupPanel: React.FC = () => {
                               <Grid container spacing={2}>
                                 <Grid item xs={12} md={6}>
                                   <Typography variant="caption" color="text.secondary">
-                                    {t('backup.oldValue')}:
+                                    {"古い値"}:
                                   </Typography>
                                   <Paper
                                     variant="outlined"
@@ -452,7 +450,7 @@ const BackupPanel: React.FC = () => {
                                 </Grid>
                                 <Grid item xs={12} md={6}>
                                   <Typography variant="caption" color="text.secondary">
-                                    {t('backup.newValue')}:
+                                    {"新しい値"}:
                                   </Typography>
                                   <Paper
                                     variant="outlined"
@@ -473,7 +471,7 @@ const BackupPanel: React.FC = () => {
                 </Grid>
               ) : (
                 <Alert severity="info">
-                  {t('backup.noEventChanges')}
+                  {"イベントの変更がありません"}
                 </Alert>
               )}
               
@@ -481,7 +479,7 @@ const BackupPanel: React.FC = () => {
               
               {/* スポーツの差分 */}
               <Typography variant="h6" gutterBottom>
-                {t('backup.sportChanges')}
+                {"競技の変更"}
               </Typography>
               {Object.keys(diffData.sports).length > 0 ? (
                 <Grid container spacing={2}>
@@ -491,11 +489,11 @@ const BackupPanel: React.FC = () => {
                         <CardContent sx={{ pb: 1 }}>
                           <Typography variant="subtitle1" gutterBottom>
                             {value.added ? (
-                              <Chip size="small" label={t('backup.added')} color="success" sx={{ mr: 1 }} />
+                              <Chip size="small" label={"追加済み"} color="success" sx={{ mr: 1 }} />
                             ) : value.removed ? (
-                              <Chip size="small" label={t('backup.removed')} color="error" sx={{ mr: 1 }} />
+                              <Chip size="small" label={"削除済み"} color="error" sx={{ mr: 1 }} />
                             ) : (
-                              <Chip size="small" label={t('backup.modified')} color="primary" sx={{ mr: 1 }} />
+                              <Chip size="small" label={"変更済み"} color="primary" sx={{ mr: 1 }} />
                             )}
                             {value?.oldValue?.name || value?.newValue?.name || key}
                           </Typography>
@@ -506,7 +504,7 @@ const BackupPanel: React.FC = () => {
                               <Grid container spacing={2}>
                                 <Grid item xs={12} md={6}>
                                   <Typography variant="caption" color="text.secondary">
-                                    {t('backup.oldValue')}:
+                                    {"古い値"}:
                                   </Typography>
                                   <Paper
                                     variant="outlined"
@@ -519,7 +517,7 @@ const BackupPanel: React.FC = () => {
                                 </Grid>
                                 <Grid item xs={12} md={6}>
                                   <Typography variant="caption" color="text.secondary">
-                                    {t('backup.newValue')}:
+                                    {"新しい値"}:
                                   </Typography>
                                   <Paper
                                     variant="outlined"
@@ -540,19 +538,19 @@ const BackupPanel: React.FC = () => {
                 </Grid>
               ) : (
                 <Alert severity="info">
-                  {t('backup.noSportChanges')}
+                  {"競技の変更がありません"}
                 </Alert>
               )}
             </Box>
           ) : (
             <Alert severity="warning">
-              {t('backup.noDiffData')}
+              {"差分データがありません"}
             </Alert>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDiffDialog}>
-            {t('common.close')}
+            {"閉じる"}
           </Button>
         </DialogActions>
       </Dialog>

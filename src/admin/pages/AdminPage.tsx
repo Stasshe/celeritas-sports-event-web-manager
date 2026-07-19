@@ -31,7 +31,7 @@ import {
   Info as InfoIcon,
   Help as HelpIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { getSportTypeDescription, getSportTypeLabel } from '../../utils/labels';
 import { useNavigate } from 'react-router-dom';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
@@ -45,7 +45,6 @@ const MotionPaper = motion(Paper);
 const MotionCard = motion(Card);
 
 const AdminPage: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { alpha } = useThemeContext();
   const { showSnackbar, registerSaveHandler, unregisterSaveHandler, save, setHasUnsavedChanges } = useAdminLayout();
@@ -148,7 +147,7 @@ const AdminPage: React.FC = () => {
       
       // バックエンド更新
       await updateEvents(updates);
-      showSnackbar(t('admin.activeEventUpdated'), 'success');
+      showSnackbar("アクティブイベントが更新されました", 'success');
       
     } catch (error) {
       // エラー時にローカル状態を元に戻す
@@ -156,9 +155,9 @@ const AdminPage: React.FC = () => {
         setLocalEventState(events);
       }
       console.error('Error setting active event:', error);
-      showSnackbar(t('admin.error'), 'error');
+      showSnackbar("エラーが発生しました", 'error');
     }
-  }, [events, updateEvents, showSnackbar, t]);
+  }, [events, updateEvents, showSnackbar]);
 
   const handleCreateDialog = {
     event: () => {
@@ -221,7 +220,7 @@ const AdminPage: React.FC = () => {
           <Grid item>
             <Typography variant="h4" component="h1">
               <DashboardIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              {t('admin.dashboard')}
+              {"ダッシュボード"}
             </Typography>
           </Grid>
           <Grid item>
@@ -231,28 +230,28 @@ const AdminPage: React.FC = () => {
                 startIcon={<HelpIcon />}
                 onClick={handleGoToHelp}
               >
-                {t('admin.help')}
+                {"ヘルプ"}
               </Button>
               <Button
                 variant="outlined"
                 startIcon={<SettingsIcon />}
                 onClick={handleGoToSettings}
               >
-                {t('admin.settings')}
+                {"設定"}
               </Button>
               <Button
                 variant="contained"
                 startIcon={<SaveIcon />}
                 onClick={() => save('adminDashboard')}
               >
-                {t('admin.save')}
+                {"変更を保存"}
               </Button>
             </Box>
           </Grid>
         </Grid>
         
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          {t('admin.dashboardDescription')}
+          {"このダッシュボードからスポーツイベントを管理できます"}
           ご迷惑をおかけしましてすいません。メンテナです。
           現在すべてのデバッグ作業にとりかかっています。
           eterynity2024workspace@gmail.comにまで連絡があればお願いします。
@@ -268,13 +267,13 @@ const AdminPage: React.FC = () => {
         sx={{ p: 3, mb: 4 }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">{t('admin.activeEvent')}</Typography>
+          <Typography variant="h6">{"現在のイベント"}</Typography>
           <Button
             variant="outlined"
             startIcon={<EventIcon />}
             onClick={handleOpenCreateEventDialog}
           >
-            {t('admin.createEvent')}
+            {"イベント作成"}
           </Button>
         </Box>
         
@@ -286,7 +285,7 @@ const AdminPage: React.FC = () => {
                   <Typography variant="h5">{activeEvent.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     {new Date(activeEvent.date).toLocaleDateString()}
-                    {activeEvent.alternativeDate && ` (${t('event.alternativeDate')}: ${new Date(activeEvent.alternativeDate).toLocaleDateString()})`}
+                    {activeEvent.alternativeDate && ` (${"予備日"}: ${new Date(activeEvent.alternativeDate).toLocaleDateString()})`}
                   </Typography>
                   {activeEvent.description && (
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -294,14 +293,14 @@ const AdminPage: React.FC = () => {
                     </Typography>
                   )}
                 </Box>
-                <Chip color="success" label={t('event.active')} />
+                <Chip color="success" label={"アクティブ"} />
               </Box>
             </CardContent>
           </Card>
         ) : (
           <Box sx={{ textAlign: 'center', py: 3, bgcolor: alpha('#f5f5f5', 0.5) }}>
             <Typography color="text.secondary">
-              {t('admin.noActiveEvent')}
+              {"アクティブなイベントがありません"}
             </Typography>
             <Button 
               variant="outlined" 
@@ -309,7 +308,7 @@ const AdminPage: React.FC = () => {
               onClick={handleOpenCreateEventDialog}
               sx={{ mt: 2 }}
             >
-              {t('admin.createFirstEvent')}
+              {"最初のイベントを作成"}
             </Button>
           </Box>
         )}
@@ -327,10 +326,10 @@ const AdminPage: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Box>
               <Typography variant="h6">
-                {selectedEvent.name} - {t('admin.sports')}
+                {selectedEvent.name} - {"競技管理"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {t('admin.sportsCount', { count: eventSports.length })}
+                競技数: {eventSports.length}
               </Typography>
             </Box>
             <Box>
@@ -340,14 +339,14 @@ const AdminPage: React.FC = () => {
                 onClick={() => navigate(`/admin/events/${selectedEvent.id}`)}
                 sx={{ mr: 1 }}
               >
-                {t('admin.editEvent')}
+                {"イベント編集"}
               </Button>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={() => handleOpenCreateSportDialog(selectedEvent.id)}
               >
-                {t('admin.createSport')}
+                {"競技作成"}
               </Button>
             </Box>
           </Box>
@@ -372,22 +371,22 @@ const AdminPage: React.FC = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                           <Typography variant="h6" noWrap>{sport.name}</Typography>
                           <Chip 
-                            label={t(`sport.${sport.type}`)} 
+                            label={getSportTypeLabel(sport.type)} 
                             color={sport.type === 'tournament' ? 'primary' : sport.type === 'roundRobin' ? 'secondary' : 'default'}
                             size="small" 
                           />
                         </Box>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                          {sport.description || t(`sport.${sport.type}Description`) || ''}
+                          {sport.description || getSportTypeDescription(sport.type)}
                         </Typography>
                         
                         <Grid container spacing={1}>
                           <Grid item xs={6}>
-                            <Typography variant="caption" display="block">{t('sport.teams')}</Typography>
+                            <Typography variant="caption" display="block">{"チーム"}</Typography>
                             <Typography variant="body2">{sport.teams?.length || 0}</Typography>
                           </Grid>
                           <Grid item xs={6}>
-                            <Typography variant="caption" display="block">{t('sport.matches')}</Typography>
+                            <Typography variant="caption" display="block">{"試合数"}</Typography>
                             <Typography variant="body2">{sport.matches?.length || 0}</Typography>
                           </Grid>
                         </Grid>
@@ -398,7 +397,7 @@ const AdminPage: React.FC = () => {
                           onClick={() => handleEditSport(sport.id)}
                           fullWidth
                         >
-                          {t('admin.manageSport')}
+                          {"競技を管理"}
                         </Button>
                       </CardActions>
                     </MotionCard>
@@ -408,14 +407,14 @@ const AdminPage: React.FC = () => {
                 <Grid item xs={12}>
                   <Box sx={{ textAlign: 'center', py: 4, bgcolor: alpha('#f5f5f5', 0.5) }}>
                     <Typography color="text.secondary" paragraph>
-                      {t('admin.noSportsInEvent')}
+                      {"このイベントには競技がありません"}
                     </Typography>
                     <Button
                       variant="outlined"
                       startIcon={<AddIcon />}
                       onClick={() => handleOpenCreateSportDialog(selectedEvent.id)}
                     >
-                      {t('admin.createFirstSport')}
+                      {"最初の競技を作成"}
                     </Button>
                   </Box>
                 </Grid>
@@ -431,7 +430,7 @@ const AdminPage: React.FC = () => {
                 onClick={() => handleSetActiveEvent(selectedEvent.id)}
                 startIcon={<EventIcon />}
               >
-                {t('admin.setEventActive')}
+                {"このイベントをアクティブにする"}
               </Button>
             </Box>
           )}
@@ -444,7 +443,7 @@ const AdminPage: React.FC = () => {
         onClose={() => setCreateEventDialogOpen(false)}
         onSuccess={() => {
           setCreateEventDialogOpen(false);
-          showSnackbar(t('admin.eventCreated') || 'イベントが作成されました', 'success');
+          showSnackbar("イベントが作成されました", 'success');
         }}
       />
       
@@ -453,7 +452,7 @@ const AdminPage: React.FC = () => {
         onClose={() => setCreateSportDialogOpen(false)}
         onSuccess={(sportId: string) => {
           setCreateSportDialogOpen(false);
-          showSnackbar(t('admin.sportCreated') || '競技が作成されました', 'success');
+          showSnackbar("競技が作成されました", 'success');
           // 作成された競技の編集ページにリダイレクト
           navigate(`/admin/sports/${sportId}`);
         }}

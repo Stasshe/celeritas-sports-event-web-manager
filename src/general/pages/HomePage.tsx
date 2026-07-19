@@ -27,7 +27,7 @@ import {
   Leaderboard as LeaderboardIcon,
   CalendarMonth as CalendarIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { getSportTypeLabel } from '../../utils/labels';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 import { motion } from 'framer-motion';
@@ -41,7 +41,6 @@ const MotionCard = motion(Card);
 const MotionFab = motion(Fab);
 
 const HomePage: React.FC = () => {
-  const { t } = useTranslation();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
@@ -123,7 +122,7 @@ const HomePage: React.FC = () => {
       </Box>
       <Box sx={{ mb: 4, textAlign: 'center' }}>
         <Typography variant="h3" component="h1" gutterBottom>
-          {activeEvent ? activeEvent.name : t('home.title')}
+          {activeEvent ? activeEvent.name : "スポーツイベント"}
         </Typography>
         {activeEvent && (
           <Typography variant="subtitle1" color="text.secondary" gutterBottom>
@@ -166,7 +165,7 @@ const HomePage: React.FC = () => {
             },
           }}
         >
-          {t('classSchedule.viewClassSchedule')}
+          {"クラスごとのスケジュールを表示"}
         </Button>
       </Box>
 
@@ -194,19 +193,19 @@ const HomePage: React.FC = () => {
             >
               <Tab 
                 icon={<GridViewIcon />} 
-                label={t('home.gridView')} 
+                label={"グリッド表示"} 
                 value="grid"
                 iconPosition="start"
               />
               <Tab 
                 icon={<ScheduleIcon />} 
-                label={t('home.scheduleView')} 
+                label={"スケジュール表示"} 
                 value="timeline"
                 iconPosition="start"
               />
               <Tab 
                 icon={<TimelineIcon />} 
-                label={t('home.overallTimelineView')} 
+                label={"総合タイムライン"} 
                 value="overall-timeline"
                 iconPosition="start"
               />
@@ -234,7 +233,7 @@ const HomePage: React.FC = () => {
                           {sport.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {sport.description || t(`sports.${sport.type}`)}
+                          {sport.description || getSportTypeLabel(sport.type)}
                         </Typography>
                       </CardContent>
                     </CardActionArea>
@@ -267,10 +266,10 @@ const HomePage: React.FC = () => {
       >
         <Box sx={{ mb: { xs: 2, sm: 0 } }}>
           <Typography variant="h6" gutterBottom>
-            {t('classSchedule.quickAccess')}
+            {"クイックアクセス"}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {t('classSchedule.accessDescription')}
+            {"クラスのスケジュールに簡単にアクセス"}
           </Typography>
         </Box>
         <Button
@@ -281,14 +280,14 @@ const HomePage: React.FC = () => {
           startIcon={<CalendarIcon />}
           sx={{ minWidth: 200 }}
         >
-          {t('classSchedule.viewSchedule')}
+          {"スケジュールを表示"}
         </Button>
       </Paper>
 
       {activeSports.length === 0 && (
         <Box sx={{ textAlign: 'center', my: 8 }}>
           <Typography variant="h5" color="text.secondary">
-            {t('sports.noSports')}
+            {"競技がありません"}
           </Typography>
         </Box>
       )}

@@ -1,14 +1,12 @@
 import React from 'react';
 import { Paper, Typography, Box, useTheme } from '@mui/material';
 import { Sport } from '../../types';
-import { useTranslation } from 'react-i18next';
 
 interface DelaysTableProps {
   sports: Sport[];
 }
 
 const DelaysTable: React.FC<DelaysTableProps> = ({ sports }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
 
   if (sports.length === 0) return null;
@@ -16,7 +14,7 @@ const DelaysTable: React.FC<DelaysTableProps> = ({ sports }) => {
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h6" gutterBottom>
-        {t('sport.delayTimeOverview', { defaultValue: '競技ごとの遅延時間一覧' })}
+        競技ごとの遅延時間一覧
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         遅延時間はこの表にしか反映されません。スケジュールタブなど、他のフィールドには、予定の時間が表示されます。
@@ -62,7 +60,7 @@ const DelaysTable: React.FC<DelaysTableProps> = ({ sports }) => {
                 {typeof sport.delayMinutes === 'number' ? sport.delayMinutes : 0}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {t('sport.delayMinutesUnit', { defaultValue: '分' })}
+                分
               </Typography>
             </Box>
           ))}

@@ -36,7 +36,7 @@ import {
   Image as ImageIcon, // 画像アイコンを追加
   Leaderboard as LeaderboardIcon, // 追加
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { getSportTypeLabel } from '../../utils/labels';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Sport, Team, Event, Organizer } from '../../types';
 import TournamentScoring from '../../common/TournamentScoring';
@@ -106,7 +106,6 @@ interface TabStates {
 
 const SportEditPage: React.FC = () => {
   const { sportId } = useParams<{ sportId?: string }>();
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
   const { alpha } = useThemeContext();
@@ -394,10 +393,10 @@ const SportEditPage: React.FC = () => {
         }
       }));
 
-      showAdminSnackbar(t('sport.fieldUpdateSuccess'), 'success');
+      showAdminSnackbar("フィールドを更新しました", 'success');
     } catch (error) {
       console.error(`Error updating ${field}:`, error);
-      showAdminSnackbar(t('sport.fieldUpdateError'), 'error');
+      showAdminSnackbar("フィールド更新エラー", 'error');
       
       // エラー時にローカル状態を元に戻す
       if (sport) {
@@ -416,7 +415,7 @@ const SportEditPage: React.FC = () => {
         }
       }));
     }
-  }, [localSport, currentUser, updateData, showAdminSnackbar, t, sport]);
+  }, [localSport, currentUser, updateData, showAdminSnackbar, sport]);
 
   // クリーンアップ
   useEffect(() => {
@@ -521,17 +520,17 @@ const SportEditPage: React.FC = () => {
 
   // イベント名を取得する関数
   const getEventName = (eventId: string) => {
-    return events && events[eventId] ? events[eventId].name : t('sport.unknownEvent');
+    return events && events[eventId] ? events[eventId].name : "不明なイベント";
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'leader':
-        return t('sport.roleLeader');
+        return "リーダー";
       case 'member':
-        return t('sport.roleMember');
+        return "メンバー";
       case 'teacher': 
-        return t('sport.roleTeacher');
+        return "教員";
       default:
         return role;
     }
@@ -638,13 +637,13 @@ const SportEditPage: React.FC = () => {
         if (hasChanges && sport.lastEditedBy !== currentUser?.email) {
           setLastEditor(sport.lastEditedBy || 'unknown');
           showAdminSnackbar(
-            t('sport.remoteChangesDetected'),
+            "リモートの変更を検出しました",
             'warning'
           );
         }
       }
     }
-  }, [sport, localSport, currentUser, showAdminSnackbar, t, detectChanges]);
+  }, [sport, localSport, currentUser, showAdminSnackbar, detectChanges]);
 
   // 全ての変更を同期する関数
   const handleSync = async () => {
@@ -663,11 +662,11 @@ const SportEditPage: React.FC = () => {
       setLocalSport(updatedSport);
       setDifferences({});
       setLastSynced(new Date());
-      showAdminSnackbar(t('sport.syncSuccess'), 'success');
+      showAdminSnackbar("同期成功", 'success');
       
     } catch (error) {
       console.error('Sync error:', error);
-      showAdminSnackbar(t('sport.syncError'), 'error');
+      showAdminSnackbar("同期エラー", 'error');
     } finally {
       setUpdating(false);
     }
@@ -700,7 +699,7 @@ const SportEditPage: React.FC = () => {
         transition: 'all 0.3s ease'
       }}>
         <Typography variant="caption" display="block">
-          {t('sport.remoteValue')}:
+          {"リモートの値"}:
         </Typography>
         <Typography variant="body2">
           {renderValue(differences[field].remote)}
@@ -711,7 +710,7 @@ const SportEditPage: React.FC = () => {
           onClick={() => handlePartialUpdate(field, differences[field].remote)}
           sx={{ mt: 1 }}
         >
-          {t('sport.useRemoteValue')}
+          {"リモートの値を使用"}
         </Button>
       </Box>
     );
@@ -753,7 +752,7 @@ const SportEditPage: React.FC = () => {
       }}>
         <CircularProgress />
         <Typography variant="h6" sx={{ mt: 2 }}>
-          {t('sport.loading')}
+          {"競技の編集ページを読み込み中..."}
         </Typography>
       </Box>
     );
@@ -773,10 +772,10 @@ const SportEditPage: React.FC = () => {
     return (
       <Box sx={{ textAlign: 'center', my: 8 }}>
         <Typography variant="h5">
-          {t('sport.notFound')}
+          {"競技が見つかりません"}
         </Typography>
         <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/admin')}>
-          {t('common.backToAdmin')}
+          {"管理画面に戻る"}
         </Button>
       </Box>
     );
@@ -787,7 +786,6 @@ const SportEditPage: React.FC = () => {
     value: string;
     onChange: (value: string) => void;
   }> = ({ value, onChange }) => {
-    const { t } = useTranslation();
     const [images, setImages] = useState<string[]>([
       '/assets/dodge-ball.png',
       '/assets/female-badminton.jpeg',
@@ -810,7 +808,7 @@ const SportEditPage: React.FC = () => {
     return (
       <Box sx={{ width: '100%' }}>
         <FormControl fullWidth>
-          <InputLabel>{t('sport.coverImage')}</InputLabel>
+          <InputLabel>{"カバー画像"}</InputLabel>
           <Select
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
@@ -822,7 +820,7 @@ const SportEditPage: React.FC = () => {
             )}
           >
             <MenuItem value="">
-              <em>{t('common.none')}</em>
+              <em>{"なし"}</em>
             </MenuItem>
             {images.map((image) => (
               <MenuItem key={image} value={image}>
@@ -852,7 +850,7 @@ const SportEditPage: React.FC = () => {
             {localSport.name}
           </Typography>
           <Chip
-            label={t(`sport.${localSport.type}`)}
+            label={getSportTypeLabel(localSport.type)}
             color="primary"
             size="small"
             sx={{ ml: 2 }}
@@ -867,12 +865,12 @@ const SportEditPage: React.FC = () => {
             scrollButtons="auto"
             aria-label="sport management tabs"
           >
-            <Tab icon={<SportIcon />} label={t('sport.tabs.home')} />
-            <Tab icon={<ScheduleIcon />} label={t('sport.tabs.schedule')} />  {/* 追加 */}
-            <Tab icon={<PeopleIcon />} label={t('sport.tabs.roster')} />
-            <Tab icon={<RulesIcon />} label={t('sport.tabs.rules')} />
-            <Tab icon={<ManualIcon />} label={t('sport.tabs.manual')} />
-            <Tab icon={<SettingsIcon />} label={t('sport.tabs.settings')} />
+            <Tab icon={<SportIcon />} label={"ホーム"} />
+            <Tab icon={<ScheduleIcon />} label={"スケジュール"} />  {/* 追加 */}
+            <Tab icon={<PeopleIcon />} label={"名簿"} />
+            <Tab icon={<RulesIcon />} label={"ルール"} />
+            <Tab icon={<ManualIcon />} label={"マニュアル"} />
+            <Tab icon={<SettingsIcon />} label={"設定"} />
           </Tabs>
         </Paper>
 
@@ -883,7 +881,7 @@ const SportEditPage: React.FC = () => {
             <Paper sx={{ p: 2, mb: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h6">
-                  {t('sport.scoreManagement')}
+                  {"スコア管理"}
                 </Typography>
                 <Button
                   variant="contained"
@@ -892,7 +890,7 @@ const SportEditPage: React.FC = () => {
                   startIcon={<SportIcon />}
                   size="large"
                 >
-                  {t('sport.manageScores')}
+                  {"スコア管理"}
                 </Button>
               </Box>
             </Paper>
@@ -901,12 +899,12 @@ const SportEditPage: React.FC = () => {
             <Paper sx={{ p: 2, mb: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Typography variant="h6">
-                  {t('sport.delayTime')}
+                  遅延時間
                 </Typography>
                 <TextField
                   type="number"
                   name="delayMinutes"
-                  label={t('sport.delayMinutesLabel')}
+                  label="遅延時間（分）"
                   value={localSport.delayMinutes ?? 0}
                   onChange={e => {
                     const value = Math.max(0, parseInt(e.target.value) || 0);
@@ -916,7 +914,7 @@ const SportEditPage: React.FC = () => {
                   sx={{ width: 120 }}
                 />
                 <Typography variant="body2" color="text.secondary">
-                  {t('sport.delayMinutesUnit', { defaultValue: '分' })}
+                  分
                 </Typography>
               </Box>
               <Box sx={{ mt: 1 }}>
@@ -929,7 +927,7 @@ const SportEditPage: React.FC = () => {
               <Grid item xs={12} md={6}>
                 <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
                   <Typography variant="h6" gutterBottom>
-                    {t('sport.details')}
+                    {"基本情報"}
                   </Typography>
                   <Divider sx={{ mb: 3 }} />
                   
@@ -937,7 +935,7 @@ const SportEditPage: React.FC = () => {
                     <Grid item xs={12}>
                       <TextField
                         name="name"
-                        label={t('sport.name')}
+                        label={"競技名"}
                         fullWidth
                         margin="normal"
                         value={localSport.name}
@@ -948,7 +946,7 @@ const SportEditPage: React.FC = () => {
                     </Grid>
                     <Grid item xs={12}>
                       <TextField
-                        label={t('sport.event')}
+                        label={"この競技の行事"}
                         fullWidth
                         margin="normal"
                         value={getEventName(localSport.eventId)}
@@ -959,7 +957,7 @@ const SportEditPage: React.FC = () => {
                     <Grid item xs={12}>
                       <TextField
                         name="description"
-                        label={t('sport.description')}
+                        label={"説明"}
                         fullWidth
                         multiline
                         rows={3}
@@ -978,7 +976,7 @@ const SportEditPage: React.FC = () => {
               <Grid item xs={12} md={6}>
                 <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
                   <Typography variant="h6" gutterBottom>
-                    {t('sport.organizers')}
+                    {"担当者"}
                   </Typography>
                   <Divider sx={{ mb: 3 }} />
                   
@@ -986,7 +984,7 @@ const SportEditPage: React.FC = () => {
                     <Grid item xs={12} sm={4}>
                       <TextField
                         name="name"
-                        label={t('sport.organizerName')}
+                        label={"担当者名"}
                         fullWidth
                         value={newOrganizer.name}
                         onChange={handleOrganizerChange}
@@ -994,29 +992,29 @@ const SportEditPage: React.FC = () => {
                     </Grid>
                     <Grid item xs={12} sm={3}>
                       <FormControl fullWidth>
-                        <InputLabel>{t('sport.role')}</InputLabel>
+                        <InputLabel>{"役割"}</InputLabel>
                         <Select
                           name="role"
                           value={newOrganizer.role}
                           onChange={handleOrganizerChange as any}
                         >
-                          <MenuItem value="leader">{t('sport.roleLeader')}</MenuItem>
-                          <MenuItem value="member">{t('sport.roleMember')}</MenuItem>
-                          <MenuItem value="teacher">{t('sport.roleTeacher')}</MenuItem>
+                          <MenuItem value="leader">{"リーダー"}</MenuItem>
+                          <MenuItem value="member">{"メンバー"}</MenuItem>
+                          <MenuItem value="teacher">{"教員"}</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>
                     <Grid item xs={12} sm={3}>
                       <FormControl fullWidth>
-                        <InputLabel>{t('sport.grade')}</InputLabel>
+                        <InputLabel>{"学年"}</InputLabel>
                         <Select
                           name="grade"
                           value={newOrganizer.grade}
                           onChange={handleOrganizerChange as any}
                         >
-                          <MenuItem value={1}>{t('sport.grade1')}</MenuItem>
-                          <MenuItem value={2}>{t('sport.grade2')}</MenuItem>
-                          <MenuItem value={3}>{t('sport.grade3')}</MenuItem>
+                          <MenuItem value={1}>{"1年生"}</MenuItem>
+                          <MenuItem value={2}>{"2年生"}</MenuItem>
+                          <MenuItem value={3}>{"3年生"}</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>
@@ -1029,7 +1027,7 @@ const SportEditPage: React.FC = () => {
                         onClick={addOrganizer}
                         disabled={!newOrganizer.name}
                       >
-                        {t('common.add')}
+                        {"追加"}
                       </Button>
                     </Grid>
                   </Grid>
@@ -1039,14 +1037,14 @@ const SportEditPage: React.FC = () => {
                     {(localSport.organizers || []).map(org => (
                       <Chip
                         key={org.id}
-                        label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${t('sport.gradeUnit')})`}
+                        label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${"年"})`}
                         onDelete={() => removeOrganizer(org.id)}
                         color={org.role === 'leader' ? 'primary' : 'default'}
                       />
                     ))}
                     {(!localSport.organizers || localSport.organizers.length === 0) && (
                       <Typography variant="body2" color="text.secondary">
-                        {t('sport.noOrganizers')}
+                        {"担当者がいません"}
                       </Typography>
                     )}
                   </Box>
@@ -1079,26 +1077,26 @@ const SportEditPage: React.FC = () => {
         <TabPanel value={activeTab} index={3}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              {t('sport.tabs.rules')}
+              {"ルール"}
             </Typography>
             <Divider sx={{ mb: 3 }} />
             
             <TextField
               name="rules"
-              label={t('sport.rulesContent')}
+              label={"ルール内容"}
               fullWidth
               multiline
               rows={12}
               value={localSport.rules || ''}
               onChange={handleInputChange}
               variant="outlined"
-              placeholder={t('sport.rulesPlaceholder') || 'この競技のルールを入力してください...'}
+              placeholder="ルールを入力"
             />
             <DifferenceIndicator field="rules" />
             
             <Box sx={{ mt: 3, color: 'text.secondary' }}>
               <Typography variant="caption">
-                {t('sport.rulesHelp')}
+                {"競技のルールを記入してください"}
               </Typography>
             </Box>
           </Paper>
@@ -1108,26 +1106,26 @@ const SportEditPage: React.FC = () => {
         <TabPanel value={activeTab} index={4}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              {t('sport.tabs.manual')}
+              {"マニュアル"}
             </Typography>
             <Divider sx={{ mb: 3 }} />
             
             <TextField
               name="manual"
-              label={t('sport.manualContent')}
+              label={"マニュアル内容"}
               fullWidth
               multiline
               rows={12}
               value={localSport.manual || ''}
               onChange={handleInputChange}
               variant="outlined"
-              placeholder={t('sport.manualPlaceholder') || 'この競技の実施マニュアルを入力してください...'}
+              placeholder="マニュアルを入力"
             />
             <DifferenceIndicator field="manual" />
             
             <Box sx={{ mt: 3, color: 'text.secondary' }}>
               <Typography variant="caption">
-                {t('sport.manualHelp')}
+                {"競技の進行マニュアルを記入してください"}
               </Typography>
             </Box>
           </Paper>
@@ -1137,7 +1135,7 @@ const SportEditPage: React.FC = () => {
         <TabPanel value={activeTab} index={5}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              {t('sport.tabs.settings')}
+              {"設定"}
             </Typography>
             <Divider sx={{ mb: 3 }} />
             
@@ -1145,7 +1143,7 @@ const SportEditPage: React.FC = () => {
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Typography variant="subtitle1" gutterBottom>
-                  {t('sport.displaySettings')}
+                  {"表示設定"}
                 </Typography>
                 <SportImageSelector
                   value={localSport.coverImageUrl || ''}
@@ -1159,7 +1157,7 @@ const SportEditPage: React.FC = () => {
                 {localSport.coverImageUrl && (
                   <Box sx={{ mt: 2, p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                     <Typography variant="caption" display="block" gutterBottom>
-                      {t('sport.preview')}:
+                      {"プレビュー"}:
                     </Typography>
                     <Box
                       component="img"
@@ -1183,25 +1181,25 @@ const SportEditPage: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('tournament.hasThirdPlaceMatch')}</InputLabel>
+                    <InputLabel>{"3位決定戦あり"}</InputLabel>
                     <Select
                       value={localSport.tournamentSettings?.hasThirdPlaceMatch ? "true" : "false"}
                       onChange={(e) => handleSettingsChange('hasThirdPlaceMatch', e.target.value === 'true')}
                     >
-                      <MenuItem value="true">{t('common.yes')}</MenuItem>
-                      <MenuItem value="false">{t('common.no')}</MenuItem>
+                      <MenuItem value="true">{"はい"}</MenuItem>
+                      <MenuItem value="false">{"いいえ"}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('tournament.hasRepechage')}</InputLabel>
+                    <InputLabel>{"敗者復活戦あり"}</InputLabel>
                     <Select
                       value={localSport.tournamentSettings?.hasRepechage ? "true" : "false"}
                       onChange={(e) => handleSettingsChange('hasRepechage', e.target.value === 'true')}
                     >
-                      <MenuItem value="true">{t('common.yes')}</MenuItem>
-                      <MenuItem value="false">{t('common.no')}</MenuItem>
+                      <MenuItem value="true">{"はい"}</MenuItem>
+                      <MenuItem value="false">{"いいえ"}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -1212,7 +1210,7 @@ const SportEditPage: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label={t('roundRobin.winPoints')}
+                    label={"勝利ポイント"}
                     type="number"
                     fullWidth
                     value={localSport.roundRobinSettings?.winPoints ?? 3}
@@ -1222,7 +1220,7 @@ const SportEditPage: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label={t('roundRobin.drawPoints')}
+                    label={"引き分けポイント"}
                     type="number"
                     fullWidth
                     value={localSport.roundRobinSettings?.drawPoints ?? 1}
@@ -1232,7 +1230,7 @@ const SportEditPage: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label={t('roundRobin.losePoints')}
+                    label={"敗戦ポイント"}
                     type="number"
                     fullWidth
                     value={localSport.roundRobinSettings?.losePoints ?? 0}
@@ -1242,33 +1240,33 @@ const SportEditPage: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('roundRobin.considerLosePoints')}</InputLabel>
+                    <InputLabel>{"敗戦ポイントを考慮"}</InputLabel>
                     <Select
                       value={localSport.roundRobinSettings?.considerLosePoints ?? false}
                       onChange={(e) => handleRoundRobinSettingsUpdate('considerLosePoints', e.target.value === 'true')}
                     >
-                      <MenuItem value="true">{t('common.yes')}</MenuItem>
-                      <MenuItem value="false">{t('common.no')}</MenuItem>
+                      <MenuItem value="true">{"はい"}</MenuItem>
+                      <MenuItem value="false">{"いいえ"}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{t('roundRobin.rankingMethod')}</InputLabel>
+                    <InputLabel>{"順位決定方式"}</InputLabel>
                     <Select
                       value={localSport.roundRobinSettings?.rankingMethod || 'points'}
                       onChange={(e) => handleRoundRobinSettingsUpdate('rankingMethod', e.target.value as 'points' | 'goalDifference' | 'goals')}
                     >
-                      <MenuItem value="points">{t('roundRobin.rankByPoints')}</MenuItem>
-                      <MenuItem value="goalDifference">{t('roundRobin.rankByGoalDiff')}</MenuItem>
-                      <MenuItem value="goals">{t('roundRobin.rankByGoals')}</MenuItem>
+                      <MenuItem value="points">{"勝ち点方式"}</MenuItem>
+                      <MenuItem value="goalDifference">{"得失点差方式"}</MenuItem>
+                      <MenuItem value="goals">{"得点方式"}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
 
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label={t('roundRobin.displayRankCount')}
+                    label={"表示順位数"}
                     type="number"
                     fullWidth
                     value={localSport.roundRobinSettings?.displayRankCount || 3}
@@ -1291,23 +1289,23 @@ const SportEditPage: React.FC = () => {
 
             <Box sx={{ mt: 4 }}>
               <Typography variant="h6" color="error" gutterBottom>
-                {t('sport.dangerZone')}
+                {"危険な操作"}
               </Typography>
               <Divider sx={{ mb: 3 }} />
               
               <Box sx={{ bgcolor: alpha('#f44336', 0.05), p: 3, borderRadius: 1 }}>
                 <Typography variant="subtitle1" gutterBottom>
-                  {t('sport.deleteSport')}
+                  {"競技を削除"}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {t('sport.deleteSportWarning')}
+                  {"この操作は取り消せません"}
                 </Typography>
                 <Button
                   variant="outlined"
                   color="error"
                   onClick={() => setDeleteDialogOpen(true)}
                 >
-                  {t('sport.deleteSportButton')}
+                  {"競技を完全に削除"}
                 </Button>
               </Box>
             </Box>
@@ -1320,7 +1318,7 @@ const SportEditPage: React.FC = () => {
           open={deleteDialogOpen}
           onClose={() => setDeleteDialogOpen(false)}
           onConfirm={handleDelete}
-          title={t('sport.deleteConfirmTitle')}
+          title={"競技の削除確認"}
           itemName={localSport?.name || ''}
           type="sport"
         />
@@ -1339,7 +1337,7 @@ const SportEditPage: React.FC = () => {
               boxShadow: 1
             }}
           >
-            {t('sport.lastSync')}: {lastSynced.toLocaleTimeString()}
+            {"最終同期"}: {lastSynced.toLocaleTimeString()}
           </Typography>
         )}
     </Container>

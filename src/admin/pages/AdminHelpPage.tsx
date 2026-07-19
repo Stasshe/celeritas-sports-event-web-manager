@@ -31,11 +31,9 @@ import {
   SportsScore as SportsScoreIcon,
   Schedule as ScheduleIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 const AdminHelpPage: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
   const [expanded, setExpanded] = useState<string | false>('panel1');
@@ -51,7 +49,7 @@ const AdminHelpPage: React.FC = () => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" component="h1">
-          {t('adminHelp.title')}
+          {"管理者ヘルプ"}
         </Typography>
       </Box>
 
@@ -60,7 +58,7 @@ const AdminHelpPage: React.FC = () => {
         <Grid item xs={12} md={3}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
-              {t('adminHelp.contents')}
+              {"目次"}
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <List dense>
@@ -68,34 +66,34 @@ const AdminHelpPage: React.FC = () => {
                 <ListItemIcon>
                   <CheckCircleIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary={t('adminHelp.gettingStarted')} />
+                <ListItemText primary={"はじめに"} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel2')}>
                 <ListItemIcon>
                   <SettingsIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary={t('adminHelp.eventManagement')} />
+                <ListItemText primary={"イベント管理"} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel3')}>
                 <ListItemIcon>
                   <GroupsIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary={t('adminHelp.sportManagement')} />
+                <ListItemText primary={"競技管理"} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel4')}>
                 <ListItemIcon>
                   <SportsScoreIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary={t('adminHelp.leagueFormat')} />
+                <ListItemText primary={"リーグ形式"} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel5')}>
                 <ListItemIcon>
                   <ScheduleIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary={t('adminHelp.scheduling')} />
+                <ListItemText primary={"スケジューリング"} />
               </ListItem>
               <ListItem button onClick={() => setExpanded('panel6')}>
-                <ListItemText primary={t('adminHelp.faq')} />
+                <ListItemText primary={"よくある質問"} />
               </ListItem>
             </List>
           </Paper>
@@ -109,7 +107,7 @@ const AdminHelpPage: React.FC = () => {
               onChange={handleAccordionChange('panel1')}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">{t('adminHelp.gettingStarted')}</Typography>
+                <Typography variant="h6">{"はじめに"}</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Typography variant="h6" gutterBottom>
@@ -194,7 +192,7 @@ const AdminHelpPage: React.FC = () => {
               onChange={handleAccordionChange('panel2')}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">{t('adminHelp.eventManagement')}</Typography>
+                <Typography variant="h6">{"イベント管理"}</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Typography paragraph>
@@ -243,7 +241,7 @@ const AdminHelpPage: React.FC = () => {
               onChange={handleAccordionChange('panel3')}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">{t('adminHelp.sportManagement')}</Typography>
+                <Typography variant="h6">{"競技管理"}</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Typography paragraph>
@@ -306,7 +304,7 @@ const AdminHelpPage: React.FC = () => {
               onChange={handleAccordionChange('panel4')}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">{t('adminHelp.leagueFormat')}</Typography>
+                <Typography variant="h6">{"リーグ形式"}</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Typography variant="h6" gutterBottom>
@@ -353,7 +351,7 @@ const AdminHelpPage: React.FC = () => {
               onChange={handleAccordionChange('panel5')}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">{t('adminHelp.scheduling')}</Typography>
+                <Typography variant="h6">{"スケジューリング"}</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Typography variant="h6" gutterBottom>
@@ -391,7 +389,7 @@ const AdminHelpPage: React.FC = () => {
               onChange={handleAccordionChange('panel6')}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="h6">{t('adminHelp.faq')}</Typography>
+                <Typography variant="h6">{"よくある質問"}</Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Typography variant="subtitle1" gutterBottom fontWeight="bold">

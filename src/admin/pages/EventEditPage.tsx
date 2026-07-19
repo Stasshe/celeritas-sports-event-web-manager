@@ -46,7 +46,6 @@ import {
   EmojiEvents as EmojiEventsIcon,
   Leaderboard as LeaderboardIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Organizer } from '../../types';
@@ -85,7 +84,6 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
 
 const EventEditPage: React.FC = () => {
   const { eventId } = useParams<{ eventId?: string }>();
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { alpha } = useThemeContext();
   const { showSnackbar, setSavingStatus, save, setHasUnsavedChanges, registerSaveHandler, unregisterSaveHandler } = useAdminLayout(); // AdminLayoutコンテキストを使用
@@ -252,9 +250,9 @@ const EventEditPage: React.FC = () => {
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'leader':
-        return t('event.roleLeader');
+        return "リーダー";
       case 'member':
-        return t('event.roleMember');
+        return "メンバー";
       default:
         return role;
     }
@@ -302,11 +300,11 @@ const EventEditPage: React.FC = () => {
     // 保存
     updateEvent(updatedEvent)
       .then(() => {
-        showSnackbar(t('event.classTemplateGenerated'), 'success');
+        showSnackbar("クラステンプレートを生成しました", 'success');
       })
       .catch(error => {
         console.error('Error generating class template:', error);
-        showSnackbar(t('event.classTemplateError'), 'error');
+        showSnackbar("クラステンプレート生成エラー", 'error');
       });
   };
 
@@ -315,10 +313,10 @@ const EventEditPage: React.FC = () => {
     
     try {
       await removeData();
-      showSnackbar(t('event.deleteSuccess'), 'success');
+      showSnackbar("削除しました", 'success');
       navigate('/admin');
     } catch (error) {
-      showSnackbar(t('event.deleteError'), 'error');
+      showSnackbar("削除に失敗しました", 'error');
     }
   };
   
@@ -347,10 +345,10 @@ const EventEditPage: React.FC = () => {
     return (
       <Box sx={{ textAlign: 'center', my: 8 }}>
         <Typography variant="h5">
-          {t('event.notFound')}
+          {"イベントが見つかりません"}
         </Typography>
         <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/admin')}>
-          {t('common.backToAdmin')}
+          {"管理画面に戻る"}
         </Button>
       </Box>
     );
@@ -367,7 +365,7 @@ const EventEditPage: React.FC = () => {
           </Typography>
           {localEvent.isActive && (
             <Chip
-              label={t('event.active')}
+              label={"アクティブ"}
               color="success"
               size="small"
               sx={{ ml: 2 }}
@@ -383,11 +381,11 @@ const EventEditPage: React.FC = () => {
             scrollButtons="auto"
             aria-label="event management tabs"
           >
-            <Tab label={t('event.tabs.details')} />
-            <Tab label={t('event.tabs.organizers')} />
-            <Tab label={t('event.tabs.roster')} />
-            <Tab label={t('event.tabs.scoreboard')} icon={<LeaderboardIcon />} iconPosition="start" /> {/* 追加 */}
-            <Tab label={t('event.tabs.settings')} />
+            <Tab label={"基本情報"} />
+            <Tab label={"担当者"} />
+            <Tab label={"名簿"} />
+            <Tab label={"スコアボード"} icon={<LeaderboardIcon />} iconPosition="start" /> {/* 追加 */}
+            <Tab label={"設定"} />
           </Tabs>
         </Paper>
         
@@ -397,7 +395,7 @@ const EventEditPage: React.FC = () => {
             <Grid item xs={12}>
               <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
-            {t('event.details')}
+            {"詳細"}
           </Typography>
           <Divider sx={{ mb: 3 }} />
           
@@ -405,7 +403,7 @@ const EventEditPage: React.FC = () => {
             <Grid item xs={12} md={6}>
                     <TextField
                       name="name"
-                      label={t('event.name')}
+                      label={"イベント名"}
                       fullWidth
                       margin="normal"
                       value={localEvent.name}
@@ -417,7 +415,7 @@ const EventEditPage: React.FC = () => {
                       <Grid item xs={12} sm={6}>
                         <TextField
                           name="date"
-                          label={t('event.date')}
+                          label={"日付"}
                           type="date"
                           fullWidth
                           margin="normal"
@@ -429,21 +427,21 @@ const EventEditPage: React.FC = () => {
                       <Grid item xs={12} sm={6}>
                         <TextField
                           name="alternativeDate"
-                          label={t('event.alternativeDate')}
+                          label={"予備日"}
                           type="date"
                           fullWidth
                           margin="normal"
                           value={localEvent.alternativeDate || ''}
                           onChange={handleInputChange}
                           InputLabelProps={{ shrink: true }}
-                          helperText={t('event.alternativeDateHelp')}
+                          helperText={"予備日を設定できます"}
                         />
                       </Grid>
                     </Grid>
                     
                     <TextField
                       name="description"
-                      label={t('event.description')}
+                      label={"説明"}
                       fullWidth
                       multiline
                       rows={4}
@@ -462,13 +460,13 @@ const EventEditPage: React.FC = () => {
                           color="primary"
                         />
                       }
-                      label={t('event.setActive')}
+                      label={"アクティブに設定"}
                     />
                   </Grid>
                   
                   <Grid item xs={12} md={6}>
                     <Typography variant="h6" gutterBottom>
-                      {t('event.stats')}
+                      {"統計"}
                     </Typography>
                     <Divider sx={{ mb: 3 }} />
                     
@@ -479,7 +477,7 @@ const EventEditPage: React.FC = () => {
                       <Grid container spacing={2}>
                         <Grid item xs={6}>
                           <Typography variant="body2" color="text.secondary">
-                            {t('event.sportsCount')}
+                            {"競技数"}
                           </Typography>
                           <Typography variant="h6">
                             {localEvent.sports ? localEvent.sports.length : 0}
@@ -487,7 +485,7 @@ const EventEditPage: React.FC = () => {
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="body2" color="text.secondary">
-                            {t('event.organizersCount')}
+                            {"担当者数"}
                           </Typography>
                           <Typography variant="h6">
                             {localEvent.organizers ? localEvent.organizers.length : 0}
@@ -495,7 +493,7 @@ const EventEditPage: React.FC = () => {
                         </Grid>
                         <Grid item xs={12}>
                           <Typography variant="body2" color="text.secondary">
-                            {t('event.created')}
+                            {"作成日時"}
                           </Typography>
                           <Typography variant="body1">
                             {/* createdAtがない場合は日時情報を表示しない */}
@@ -509,7 +507,7 @@ const EventEditPage: React.FC = () => {
                     </Paper>
                     
                     <Typography variant="subtitle2" gutterBottom>
-                      {t('event.manageSports')}
+                      {"競技の管理"}
                     </Typography>
                     <Button
                       variant="outlined"
@@ -517,7 +515,7 @@ const EventEditPage: React.FC = () => {
                       onClick={() => navigate('/admin')}
                       startIcon={<ArrowBackIcon />}
                     >
-                      {t('event.backToSportsManagement')}
+                      {"競技管理に戻る"}
                     </Button>
                   </Grid>
                 </Grid>
@@ -530,7 +528,7 @@ const EventEditPage: React.FC = () => {
         <TabPanel value={activeTab} index={1}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              {t('event.manageOrganizers')}
+              {"担当者管理"}
             </Typography>
             <Divider sx={{ mb: 3 }} />
             
@@ -538,7 +536,7 @@ const EventEditPage: React.FC = () => {
               <Grid item xs={12} sm={4}>
                 <TextField
                   name="name"
-                  label={t('event.organizerName')}
+                  label={"担当者名"}
                   fullWidth
                   value={newOrganizer.name}
                   onChange={handleOrganizerChange}
@@ -546,28 +544,28 @@ const EventEditPage: React.FC = () => {
               </Grid>
               <Grid item xs={12} sm={3}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('event.role')}</InputLabel>
+                  <InputLabel>{"役割"}</InputLabel>
                   <Select
                     name="role"
                     value={newOrganizer.role}
                     onChange={handleOrganizerChange as any}
                   >
-                    <MenuItem value="leader">{t('event.roleLeader')}</MenuItem>
-                    <MenuItem value="member">{t('event.roleMember')}</MenuItem>
+                    <MenuItem value="leader">{"リーダー"}</MenuItem>
+                    <MenuItem value="member">{"メンバー"}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={3}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('event.grade')}</InputLabel>
+                  <InputLabel>{"学年"}</InputLabel>
                   <Select
                     name="grade"
                     value={newOrganizer.grade}
                     onChange={handleOrganizerChange as any}
                   >
-                    <MenuItem value={1}>{t('event.grade1')}</MenuItem>
-                    <MenuItem value={2}>{t('event.grade2')}</MenuItem>
-                    <MenuItem value={3}>{t('event.grade3')}</MenuItem>
+                    <MenuItem value={1}>{"1年生"}</MenuItem>
+                    <MenuItem value={2}>{"2年生"}</MenuItem>
+                    <MenuItem value={3}>{"3年生"}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -580,7 +578,7 @@ const EventEditPage: React.FC = () => {
                   onClick={addOrganizer}
                   disabled={!newOrganizer.name}
                 >
-                  {t('common.add')}
+                  {"追加"}
                 </Button>
               </Grid>
             </Grid>
@@ -588,7 +586,7 @@ const EventEditPage: React.FC = () => {
             <Divider sx={{ mb: 3 }} />
             
             <Typography variant="subtitle1" gutterBottom>
-              {t('event.organizersList')}
+              {"担当者一覧"}
             </Typography>
             
             <Paper variant="outlined" sx={{ mb: 2 }}>
@@ -619,7 +617,7 @@ const EventEditPage: React.FC = () => {
                           <Chip
                             size="small"
                             icon={<GradeIcon sx={{ fontSize: '0.875rem !important' }} />}
-                            label={`${organizer.grade}${t('event.gradeUnit')}`}
+                            label={`${organizer.grade}${"年"}`}
                             sx={{ fontSize: '0.75rem' }}
                           />
                         </>
@@ -641,7 +639,7 @@ const EventEditPage: React.FC = () => {
                 {(!localEvent.organizers || localEvent.organizers.length === 0) && (
                   <ListItem>
                     <ListItemText
-                      primary={t('event.noOrganizers')}
+                      primary={"担当者がいません"}
                       primaryTypographyProps={{ color: 'text.secondary', align: 'center' }}
                     />
                   </ListItem>
@@ -651,7 +649,7 @@ const EventEditPage: React.FC = () => {
             
             <Box sx={{ mt: 2, color: 'text.secondary' }}>
               <Typography variant="caption">
-                {t('event.organizersHelp')}
+                {"担当者はイベントの管理・運営を行うメンバーです"}
               </Typography>
             </Box>
           </Paper>
@@ -662,7 +660,7 @@ const EventEditPage: React.FC = () => {
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6">
-                {t('event.manageClasses')}
+                {"クラス管理"}
               </Typography>
               <Button
                 variant="contained"
@@ -670,7 +668,7 @@ const EventEditPage: React.FC = () => {
                 startIcon={<ClassIcon />}
                 onClick={() => setTemplateDialogOpen(true)}
               >
-                {t('event.generateClassTemplate')}
+                {"クラステンプレートを生成"}
               </Button>
             </Box>
             <Divider sx={{ mb: 3 }} />
@@ -684,7 +682,7 @@ const EventEditPage: React.FC = () => {
             ) : (
               <Box sx={{ textAlign: 'center', py: 4 }}>
                 <Typography variant="body1" gutterBottom>
-                  {t('event.noClassesYet')}
+                  {"クラスがまだありません"}
                 </Typography>
                 <Button
                   variant="contained"
@@ -692,7 +690,7 @@ const EventEditPage: React.FC = () => {
                   onClick={() => setTemplateDialogOpen(true)}
                   sx={{ mt: 2 }}
                 >
-                  {t('event.generateClassTemplate')}
+                  {"クラステンプレートを生成"}
                 </Button>
               </Box>
             )}
@@ -729,7 +727,7 @@ const EventEditPage: React.FC = () => {
                 save(`event_${eventId}`);
               } catch (error) {
                 console.error("データの更新または検証中にエラーが発生:", error);
-                showSnackbar(t('event.dataValidationError'), 'error');
+                showSnackbar("データ検証エラー", 'error');
               }
             }} 
           />
@@ -739,16 +737,16 @@ const EventEditPage: React.FC = () => {
         <TabPanel value={activeTab} index={4}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom color="error">
-              {t('event.dangerZone')}
+              {"危険な操作"}
             </Typography>
             <Divider sx={{ mb: 3 }} />
             
             <Box sx={{ bgcolor: 'error.main', color: 'error.contrastText', p: 2, borderRadius: 1 }}>
               <Typography variant="subtitle1" gutterBottom>
-                {t('event.deleteEvent')}
+                {"イベント削除"}
               </Typography>
               <Typography variant="body2" sx={{ mb: 2 }}>
-                {t('event.deleteEventWarning')}
+                {"イベント削除の警告"}
               </Typography>
               <Button
                 variant="contained"
@@ -760,7 +758,7 @@ const EventEditPage: React.FC = () => {
                   '&:hover': { bgcolor: 'error.dark' }
                 }}
               >
-                {t('common.delete')}
+                {"削除"}
               </Button>
             </Box>
           </Paper>
@@ -768,14 +766,14 @@ const EventEditPage: React.FC = () => {
         
         {/* クラステンプレート生成ダイアログ */}
         <Dialog open={templateDialogOpen} onClose={() => setTemplateDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>{t('event.generateClassTemplate')}</DialogTitle>
+          <DialogTitle>{"クラステンプレートを生成"}</DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ mb: 3 }}>
-              {t('event.classTemplateDescription')}
+              {"クラステンプレートの説明"}
             </DialogContentText>
             
             <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
-              {t('event.gradeParticipation')}
+              {"学年参加"}
             </Typography>
             
             <Box sx={{ mb: 3 }}>
@@ -789,7 +787,7 @@ const EventEditPage: React.FC = () => {
                     })}
                   />
                 }
-                label={t('event.grade1')}
+                label={"1年生"}
               />
               <FormControlLabel
                 control={
@@ -801,7 +799,7 @@ const EventEditPage: React.FC = () => {
                     })}
                   />
                 }
-                label={t('event.grade2')}
+                label={"2年生"}
               />
               <FormControlLabel
                 control={
@@ -813,19 +811,19 @@ const EventEditPage: React.FC = () => {
                     })}
                   />
                 }
-                label={t('event.grade3')}
+                label={"3年生"}
               />
             </Box>
             
             <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
-              {t('event.classCount')}
+              {"クラス数"}
             </Typography>
             
             <Grid container spacing={2}>
               {gradeParticipation.grade1 && (
                 <Grid item xs={12} sm={4}>
                   <TextField
-                    label={`${t('event.grade1')}${t('event.classCount')}`}
+                    label={`${"1年生"}${"クラス数"}`}
                     type="number"
                     value={classCount.grade1}
                     onChange={(e) => setClassCount({
@@ -841,7 +839,7 @@ const EventEditPage: React.FC = () => {
               {gradeParticipation.grade2 && (
                 <Grid item xs={12} sm={4}>
                   <TextField
-                    label={`${t('event.grade2')}${t('event.classCount')}`}
+                    label={`${"2年生"}${"クラス数"}`}
                     type="number"
                     value={classCount.grade2}
                     onChange={(e) => setClassCount({
@@ -857,7 +855,7 @@ const EventEditPage: React.FC = () => {
               {gradeParticipation.grade3 && (
                 <Grid item xs={12} sm={4}>
                   <TextField
-                    label={`${t('event.grade3')}${t('event.classCount')}`}
+                    label={`${"3年生"}${"クラス数"}`}
                     type="number"
                     value={classCount.grade3}
                     onChange={(e) => setClassCount({
@@ -873,13 +871,13 @@ const EventEditPage: React.FC = () => {
             
             <Box sx={{ mt: 3, color: 'text.secondary' }}>
               <Typography variant="caption">
-                {t('event.classTemplateWarning')}
+                {"クラステンプレート警告"}
               </Typography>
             </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setTemplateDialogOpen(false)}>
-              {t('common.cancel')}
+              {"キャンセル"}
             </Button>
             <Button 
               variant="contained" 
@@ -891,7 +889,7 @@ const EventEditPage: React.FC = () => {
                 !gradeParticipation.grade3
               }
             >
-              {t('common.generate')}
+              {"生成"}
             </Button>
           </DialogActions>
         </Dialog>
@@ -901,7 +899,7 @@ const EventEditPage: React.FC = () => {
           open={deleteDialogOpen}
           onClose={() => setDeleteDialogOpen(false)}
           onConfirm={handleDelete}
-          title={t('event.deleteConfirmTitle')}
+          title={"イベントの削除"}
           itemName={localEvent?.name || ''}
           type="event"
         />

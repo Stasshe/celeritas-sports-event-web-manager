@@ -12,7 +12,7 @@ import {
   SportsSoccer as MatchIcon
 } from '@mui/icons-material';
 import { Match, Sport } from '../types';
-import { useTranslation } from 'react-i18next';
+import { getMatchStatusLabel } from '../utils/labels';
 import { useThemeContext } from '../contexts/ThemeContext';
 
 interface MatchCardProps {
@@ -22,12 +22,11 @@ interface MatchCardProps {
 }
 
 const MatchCard: React.FC<MatchCardProps> = ({ match, sport, onEdit }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const { alpha } = useThemeContext();
 
   const getTeamName = (teamId: string) => {
-    if (!teamId) return t('tournament.tbd');
+    if (!teamId) return "未定";
     if (!sport?.teams) return teamId;
     
     const team = sport.teams.find(t => t.id === teamId);
@@ -51,12 +50,12 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, sport, onEdit }) => {
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <MatchIcon sx={{ mr: 1, color: 'text.secondary' }} />
           <Typography variant="subtitle2">
-            {t('match.number', { number: match.matchNumber })}
+            試合{match.matchNumber}
           </Typography>
         </Box>
         <Box>
           <Chip
-            label={t(`match.${match.status}`)}
+            label={getMatchStatusLabel(match.status)}
             size="small"
             sx={{
               backgroundColor: getStatusColor(match.status),
@@ -64,7 +63,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, sport, onEdit }) => {
               mr: 1
             }}
           />
-          <Tooltip title={t('match.edit')}>
+          <Tooltip title={"試合編集"}>
             <IconButton size="small" onClick={onEdit}>
               <EditIcon fontSize="small" />
             </IconButton>

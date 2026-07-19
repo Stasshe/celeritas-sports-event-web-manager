@@ -3,7 +3,6 @@ import { CssBaseline } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { CustomThemeProvider } from './contexts/ThemeContext';
 import { AdminLayoutProvider } from './admin/context/AdminLayoutContext';
-import './i18n/i18n';
 
 // Pages
 import HomePage from './general/pages/HomePage';

@@ -42,7 +42,6 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Sport, Team, RankingEntry } from '../../../types';
-import { useTranslation } from 'react-i18next';
 
 // ソート可能な行コンポーネント
 interface SortableItemProps {
@@ -148,7 +147,6 @@ interface RankingScoringProps {
 }
 
 const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOnly = false }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:600px)');
   
@@ -193,7 +191,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
         
         // グレード名を取得（例: grade1 → 1年）
         const gradeNumber = gradeKey.replace('grade', '');
-        const gradeName = t(`roster.grade${gradeNumber}`);
+        const gradeName = `${gradeNumber}年生`;
         
         // チームIDをクラス名と学年から生成
         const teamId = `${gradeKey}_${className}`;
@@ -208,7 +206,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
     });
     
     return generatedTeams;
-  }, [sport.roster, t]);
+  }, [sport.roster]);
 
   // 初期ランキングデータとチームデータをロード
   useEffect(() => {
@@ -251,7 +249,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
   // チーム名を取得
   const getTeamName = (teamId: string) => {
     const team = teams.find(t => t.id === teamId);
-    return team ? team.name : t('ranking.unknownTeam');
+    return team ? team.name : "不明なチーム";
   };
 
   // Firebase用に undefined を null に変換する関数
@@ -414,26 +412,26 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
       {!readOnly && (
         <Paper sx={{ p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">{t('ranking.settings')}</Typography>
+            <Typography variant="h6">{"ランキング設定"}</Typography>
             <Button 
               variant="outlined" 
               color="primary" 
               onClick={() => setSettingsDialogOpen(true)}
             >
-              {t('ranking.editSettings')}
+              {"設定を編集"}
             </Button>
           </Box>
           
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <Typography variant="body1">
-                {t('ranking.criteriaName')}: <strong>{criteriaName}</strong>
+                {"基準名"}: <strong>{criteriaName}</strong>
               </Typography>
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="body1">
-                {t('ranking.sortOrder')}: <strong>
-                  {isAscending ? t('ranking.ascending') : t('ranking.descending')}
+                {"ソート順"}: <strong>
+                  {isAscending ? "昇順" : "降順"}
                 </strong>
               </Typography>
             </Grid>
@@ -448,7 +446,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
               onClick={handleAddAllTeams}
               disabled={teams.length === 0}
             >
-              {t('ranking.addAllTeams')}
+              {"全チームを追加"}
             </Button>
           </Box>
         </Paper>
@@ -461,14 +459,14 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
           sx={{ mb: 2 }}
           onClose={handleDismissMobileHelp}
         >
-          {t('ranking.mobileHelp', 'ドラッグアイコンを長押ししてから上下に動かすことでランキングの順位を変更できます')}
+          ドラッグアイコンを長押ししてから上下に動かすことでランキングの順位を変更できます
         </Alert>
       )}
       
       {/* ランキング一覧 */}
       <Paper sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
-          {t('ranking.title')}
+          {"ランキング"}
         </Typography>
         
         {rankings.length > 0 ? (
@@ -479,23 +477,23 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
                   {!readOnly && (
                     <TableCell width={isMobile ? "10%" : "5%"}></TableCell>
                   )}
-                  <TableCell width="10%">{t('ranking.rank')}</TableCell>
-                  <TableCell width={isMobile ? "30%" : "40%"}>{t('ranking.team')}</TableCell>
+                  <TableCell width="10%">{"順位"}</TableCell>
+                  <TableCell width={isMobile ? "30%" : "40%"}>{"チーム"}</TableCell>
                   <TableCell width="20%" align="right">
                     {criteriaName}
                     <Tooltip title={
                       isAscending 
-                        ? t('ranking.ascendingTooltip')
-                        : t('ranking.descendingTooltip')
+                        ? "昇順で並び替え"
+                        : "降順で並び替え"
                     }>
                       <IconButton size="small">
                         {isAscending ? <ArrowUpIcon fontSize="small" /> : <ArrowDownIcon fontSize="small" />}
                       </IconButton>
                     </Tooltip>
                   </TableCell>
-                  <TableCell width="15%">{t('ranking.notes')}</TableCell>
+                  <TableCell width="15%">{"メモ"}</TableCell>
                   {!readOnly && (
-                    <TableCell width={isMobile ? "15%" : "10%"} align="right">{t('ranking.actions')}</TableCell>
+                    <TableCell width={isMobile ? "15%" : "10%"} align="right">{"操作"}</TableCell>
                   )}
                 </TableRow>
               </TableHead>
@@ -530,7 +528,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
           </TableContainer>
         ) : (
           <Alert severity="info" sx={{ mt: 2 }}>
-            {t('ranking.noEntries')}
+            {"エントリーがありません"}
           </Alert>
         )}
       </Paper>
@@ -543,13 +541,13 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
         fullWidth
       >
         <DialogTitle>
-          {editMode === 'add' ? t('ranking.addEntry') : t('ranking.editEntry')}
+          {editMode === 'add' ? "エントリーを追加" : "エントリーを編集"}
         </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>{t('ranking.team')}</InputLabel>
+                <InputLabel>{"チーム"}</InputLabel>
                 <Select
                   value={selectedEntry?.teamId || ''}
                   onChange={(e) => setSelectedEntry(prev => 
@@ -565,7 +563,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label={t('ranking.rank')}
+                label={"順位"}
                 type="number"
                 value={selectedEntry?.rank || 1}
                 onChange={(e) => setSelectedEntry(prev => 
@@ -589,32 +587,32 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
                     } : null
                   );
                 }}
-                placeholder={t('ranking.optional')}
+                placeholder={"任意"}
                 helperText={
                   isAscending 
-                    ? t('ranking.ascendingHelp') 
-                    : t('ranking.descendingHelp')
+                    ? "低い値から高い値の順" 
+                    : "高い値から低い値の順"
                 }
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label={t('ranking.notes')}
+                label={"メモ"}
                 multiline
                 rows={2}
                 value={selectedEntry?.notes || ''}
                 onChange={(e) => setSelectedEntry(prev => 
                   prev ? { ...prev, notes: e.target.value } : null
                 )}
-                placeholder={t('ranking.notesPlaceholder')}
+                placeholder={"メモを入力"}
               />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>
-            {t('common.cancel')}
+            {"キャンセル"}
           </Button>
           <Button 
             variant="contained" 
@@ -622,7 +620,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
             onClick={handleSaveEntry}
             disabled={!selectedEntry?.teamId}
           >
-            {t('common.save')}
+            {"保存"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -635,22 +633,22 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
         fullWidth
       >
         <DialogTitle>
-          {t('ranking.rankingSettings')}
+          {"ランキング設定"}
         </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label={t('ranking.criteriaName')}
+                label={"基準名"}
                 value={criteriaName}
                 onChange={(e) => setCriteriaName(e.target.value)}
-                helperText={t('ranking.criteriaNameHelp')}
+                helperText={"ランキングの基準となる項目名"}
               />
             </Grid>
             <Grid item xs={12}>
               <Typography variant="body2" gutterBottom>
-                {t('ranking.sortOrder')}
+                {"ソート順"}
               </Typography>
               <ToggleButtonGroup
                 value={isAscending ? 'asc' : 'desc'}
@@ -662,17 +660,17 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
               >
                 <ToggleButton value="asc">
                   <ArrowUpIcon sx={{ mr: 1 }} />
-                  {t('ranking.ascending')}
+                  {"昇順"}
                 </ToggleButton>
                 <ToggleButton value="desc">
                   <ArrowDownIcon sx={{ mr: 1 }} />
-                  {t('ranking.descending')}
+                  {"降順"}
                 </ToggleButton>
               </ToggleButtonGroup>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                 {isAscending 
-                  ? t('ranking.ascendingDescription')
-                  : t('ranking.descendingDescription')
+                  ? "昇順の説明"
+                  : "降順の説明"
                 }
               </Typography>
             </Grid>
@@ -680,14 +678,14 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSettingsDialogOpen(false)}>
-            {t('common.cancel')}
+            {"キャンセル"}
           </Button>
           <Button 
             variant="contained" 
             color="primary"
             onClick={handleSaveSettings}
           >
-            {t('common.save')}
+            {"保存"}
           </Button>
         </DialogActions>
       </Dialog>

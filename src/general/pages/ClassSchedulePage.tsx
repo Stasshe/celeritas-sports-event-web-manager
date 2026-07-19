@@ -26,7 +26,6 @@ import {
   StarBorder as FavoriteIcon,
   Help as HelpIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
@@ -35,7 +34,6 @@ import ClassScheduleTimeline from '../components/schedule/ClassScheduleTimeline'
 import { useClassSchedule } from '../../hooks/useClassSchedule';
 
 const ClassSchedulePage: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -167,14 +165,14 @@ const ClassSchedulePage: React.FC = () => {
       
       if (navigator.share) {
         await navigator.share({
-          title: t('classSchedule.shareTitle'),
+          title: "クラス別スケジュール",
           text: url.toString(),
           url: url.toString()
         });
       } else {
         // クリップボードにコピー
         await navigator.clipboard.writeText(url.toString());
-        alert(t('common.copiedToClipboard'));
+        alert("クリップボードにコピーしました");
       }
     } catch (error) {
       console.error('共有エラー:', error);
@@ -198,7 +196,7 @@ const ClassSchedulePage: React.FC = () => {
     return (
       <Container maxWidth="lg">
         <Alert severity="info" sx={{ mt: 4 }}>
-          {t('classSchedule.noActiveEvent')}
+          {"現在アクティブな行事がありません"}
         </Alert>
       </Container>
     );
@@ -215,18 +213,18 @@ const ClassSchedulePage: React.FC = () => {
           sx={{ display: 'flex', alignItems: 'center' }}
         >
           <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
-          {t('common.home')}
+          {"ホーム"}
         </Link>
         <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
           <ScheduleIcon sx={{ mr: 0.5 }} fontSize="small" />
-          {t('classSchedule.title')}
+          {"クラス別スケジュール"}
         </Typography>
       </Breadcrumbs>
 
       {/* ページタイトル */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          {t('classSchedule.title')}
+          {"クラス別スケジュール"}
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
           {activeEvent.name}
@@ -247,7 +245,7 @@ const ClassSchedulePage: React.FC = () => {
             onClick={() => navigate('/')}
             sx={{ minWidth: '120px' }}
           >
-            {t('common.back')}
+            {"戻る"}
           </Button>
           
           <Button
@@ -256,7 +254,7 @@ const ClassSchedulePage: React.FC = () => {
             color="primary"
             sx={{ minWidth: '120px' }}
           >
-            {t('common.share')}
+            {"共有"}
           </Button>
           
           <Button
@@ -264,7 +262,7 @@ const ClassSchedulePage: React.FC = () => {
             onClick={handlePrint}
             sx={{ minWidth: '120px' }}
           >
-            {t('common.print')}
+            {"プリント"}
           </Button>
           
           <Button
@@ -272,7 +270,7 @@ const ClassSchedulePage: React.FC = () => {
             onClick={() => window.location.reload()}
             sx={{ minWidth: '120px' }}
           >
-            {t('common.refresh')}
+            {"リフレッシュ"}
           </Button>
         </Stack>
       </Paper>
@@ -295,13 +293,13 @@ const ClassSchedulePage: React.FC = () => {
           <HelpIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" gutterBottom>
             {selectedClasses.length > 0 
-              ? t('classSchedule.noMatchingSchedule') 
-              : t('classSchedule.selectClassesToView')}
+              ? "該当するスケジュールが見つかりません" 
+              : "表示するクラスを選択してください"}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {selectedClasses.length > 0 
-              ? t('classSchedule.trySelectingDifferentClasses')
-              : t('classSchedule.classSelectionHint')}
+              ? "他のクラスを選択してみてください"
+              : "上記のクラス選択から、表示したいクラスを選んでください"}
           </Typography>
           
           {/* デバッグ情報（開発時のみ表示） */}
@@ -323,13 +321,13 @@ const ClassSchedulePage: React.FC = () => {
       {/* 注意書き */}
       <Paper sx={{ p: 2, mt: 4, bgcolor: theme.palette.grey[50] }}>
         <Typography variant="subtitle2" gutterBottom>
-          {t('classSchedule.notes')}
+          {"注意事項"}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {t('classSchedule.scheduleMayChange')}
+          {"スケジュールは変更される場合があります。最新情報をご確認ください。"}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          {t('classSchedule.potentialMatchExplanation')}
+          {"※「可能性」と表示されている試合は、組み合わせによって出場する可能性のある試合です。"}
         </Typography>
       </Paper>
     </Container>

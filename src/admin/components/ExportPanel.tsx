@@ -32,14 +32,13 @@ import {
   ContentCopy as ContentCopyIcon,
   BugReport as BugReportIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { getSportTypeLabel } from '../../utils/labels';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 import { exportToExcel, ExportError, ERROR_CODES } from '../../utils/export/ExportManager';
 import { useThemeContext } from '../../contexts/ThemeContext';
 
 const ExportPanel: React.FC = () => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const { alpha } = useThemeContext();
   
@@ -239,7 +238,7 @@ const ExportPanel: React.FC = () => {
       
       setExportStatus({
         status: 'success',
-        message: t('export.successMessage')
+        message: "エクスポート成功"
       });
       
       // Reset status after a delay
@@ -338,16 +337,16 @@ const ExportPanel: React.FC = () => {
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h4" gutterBottom>
-        {t('export.title')}
+        {"エクスポート"}
       </Typography>
       
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            {t('export.instructions')}
+            {"手順"}
           </Typography>
           <Typography variant="body2" color="text.secondary" paragraph>
-            {t('export.exportInstructions')}
+            {"エクスポート手順"}
           </Typography>
           
           {exportStatus.status === 'success' && (
@@ -459,14 +458,14 @@ const ExportPanel: React.FC = () => {
           <Divider sx={{ my: 2 }} />
           
           <Typography variant="h6" gutterBottom>
-            {t('export.exportOptions')}
+            {"エクスポートオプション"}
           </Typography>
           
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 2, mb: 2 }}>
                 <Typography variant="subtitle1" gutterBottom>
-                  {t('export.contentOptions')}
+                  {"コンテンツオプション"}
                 </Typography>
                 
                 <FormControlLabel
@@ -476,7 +475,7 @@ const ExportPanel: React.FC = () => {
                       onChange={(e) => handleOptionChange(e, 'includeOverallWinners')}
                     />
                   }
-                  label={t('export.includeOverallWinners')}
+                  label={"総合優勝者を含める"}
                 />
                 
                 <FormControlLabel
@@ -486,19 +485,19 @@ const ExportPanel: React.FC = () => {
                       onChange={(e) => handleOptionChange(e, 'includeIndividualEvents')}
                     />
                   }
-                  label={t('export.includeIndividualEvents')}
+                  label={"個別イベントを含める"}
                 />
                 
                 <Box sx={{ mt: 2 }}>
                   <TextField
-                    label={t('export.customFileName')}
+                    label={"カスタムファイル名"}
                     value={exportOptions.customFileName}
                     onChange={(e) => handleOptionChange(e as any, 'customFileName')}
                     fullWidth
                     placeholder="sports-results.xlsx"
                     variant="outlined"
                     size="small"
-                    helperText={t('export.fileNameHelp')}
+                    helperText={"ファイル名のヘルプ"}
                   />
                 </Box>
               </Paper>
@@ -507,7 +506,7 @@ const ExportPanel: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 2, mb: 2 }}>
                 <Typography variant="subtitle1" gutterBottom>
-                  {t('export.exportScope')}
+                  {"エクスポート範囲"}
                 </Typography>
                 
                 <FormControl component="fieldset">
@@ -518,17 +517,17 @@ const ExportPanel: React.FC = () => {
                     <FormControlLabel
                       value="all"
                       control={<Radio />}
-                      label={t('export.allEvents')}
+                      label={"すべてのイベント"}
                     />
                     <FormControlLabel
                       value="selectedEvents"
                       control={<Radio />}
-                      label={t('export.selectedEvents')}
+                      label={"選択されたイベント"}
                     />
                     <FormControlLabel
                       value="selectedSports"
                       control={<Radio />}
-                      label={t('export.selectedSports')}
+                      label={"選択された競技"}
                     />
                   </RadioGroup>
                 </FormControl>
@@ -540,7 +539,7 @@ const ExportPanel: React.FC = () => {
             <Paper sx={{ p: 2, mb: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="subtitle1">
-                  {t('export.selectEvents')}
+                  {"イベントを選択"}
                 </Typography>
                 
                 <FormControlLabel
@@ -550,7 +549,7 @@ const ExportPanel: React.FC = () => {
                       onChange={(e) => handleSelectAllEvents(e.target.checked)}
                     />
                   }
-                  label={t('export.selectAll')}
+                  label={"すべて選択"}
                 />
               </Box>
               
@@ -589,7 +588,7 @@ const ExportPanel: React.FC = () => {
                 </Grid>
               ) : (
                 <Typography variant="body2" color="text.secondary">
-                  {t('export.noEvents')}
+                  {"イベントがありません"}
                 </Typography>
               )}
             </Paper>
@@ -599,7 +598,7 @@ const ExportPanel: React.FC = () => {
             <Paper sx={{ p: 2, mb: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="subtitle1">
-                  {t('export.selectSports')}
+                  {"競技を選択"}
                 </Typography>
                 
                 <FormControlLabel
@@ -609,7 +608,7 @@ const ExportPanel: React.FC = () => {
                       onChange={(e) => handleSelectAllSports(e.target.checked)}
                     />
                   }
-                  label={t('export.selectAll')}
+                  label={"すべて選択"}
                 />
               </Box>
               
@@ -662,7 +661,7 @@ const ExportPanel: React.FC = () => {
                                   <div>
                                     <Typography variant="body1">{sport.name}</Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                      {t(`sports.${sport.type}`)}
+                                      {getSportTypeLabel(sport.type)}
                                     </Typography>
                                   </div>
                                 </Box>
@@ -676,7 +675,7 @@ const ExportPanel: React.FC = () => {
                 </>
               ) : (
                 <Typography variant="body2" color="text.secondary">
-                  {t('export.noSports')}
+                  {"競技がありません"}
                 </Typography>
               )}
             </Paper>
@@ -691,7 +690,7 @@ const ExportPanel: React.FC = () => {
               disabled={isLoading}
               size="large"
             >
-              {isLoading ? t('export.exporting') : t('export.exportToExcel')}
+              {isLoading ? "エクスポート中..." : "Excelにエクスポート"}
             </Button>
           </Box>
         </CardContent>

@@ -14,7 +14,6 @@ import {
   Grid
 } from '@mui/material';
 import { Sport, Team, Match } from '../../../types';
-import { useTranslation } from 'react-i18next';
 
 interface RoundRobinTableProps {
   sport: Sport;
@@ -33,7 +32,6 @@ interface TeamStats {
 }
 
 const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
 
   // チームの統計情報を計算
@@ -176,7 +174,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
     return (
       <Box sx={{ textAlign: 'center', my: 4 }}>
         <Typography variant="h6" color="text.secondary">
-          {t('roundRobin.noTeams')}
+          {"チームがありません"}
         </Typography>
       </Box>
     );
@@ -193,7 +191,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
       {/* 上位チーム表示 */}
       <Paper sx={{ p: 2, mb: 4, bgcolor: theme.palette.primary.light }}>
         <Typography variant="h6" gutterBottom color="primary.contrastText">
-          {t('roundRobin.topTeams')}
+          {"順位"}
         </Typography>
         <Grid container spacing={2}>
           {topTeams.map((team, index) => (
@@ -206,13 +204,13 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
                   <Typography variant="h6">{team.teamName}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2">{t('roundRobin.points')}: {team.points}</Typography>
+                  <Typography variant="body2">{"勝ち点"}: {team.points}</Typography>
                   <Typography variant="body2">
-                    {t('roundRobin.record')}: {team.won}-{team.drawn}-{team.lost}
+                    {"成績"}: {team.won}-{team.drawn}-{team.lost}
                   </Typography>
                 </Box>
                 <Typography variant="body2">
-                  {t('roundRobin.goalRecord')}: {team.goalsFor}-{team.goalsAgainst} 
+                  {"得失点"}: {team.goalsFor}-{team.goalsAgainst} 
                   ({team.goalsFor - team.goalsAgainst > 0 ? '+' : ''}{team.goalsFor - team.goalsAgainst})
                 </Typography>
               </Paper>
@@ -223,22 +221,22 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
 
       {/* 成績表 */}
       <Typography variant="h6" gutterBottom>
-        {t('roundRobin.standings')}
+        {"一覧"}
       </Typography>
       <TableContainer component={Paper} sx={{ mb: 4 }}>
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: theme.palette.primary.light }}>
-              <TableCell>{t('roundRobin.rank')}</TableCell>
-              <TableCell>{t('roundRobin.team')}</TableCell>
-              <TableCell align="center">{t('roundRobin.played')}</TableCell>
-              <TableCell align="center">{t('roundRobin.won')}</TableCell>
-              <TableCell align="center">{t('roundRobin.drawn')}</TableCell>
-              <TableCell align="center">{t('roundRobin.lost')}</TableCell>
-              <TableCell align="center">{t('roundRobin.goalsFor')}</TableCell>
-              <TableCell align="center">{t('roundRobin.goalsAgainst')}</TableCell>
-              <TableCell align="center">{t('roundRobin.goalDiff')}</TableCell>
-              <TableCell align="center">{t('roundRobin.points')}</TableCell>
+              <TableCell>{"順位"}</TableCell>
+              <TableCell>{"チーム"}</TableCell>
+              <TableCell align="center">{"試合数"}</TableCell>
+              <TableCell align="center">{"勝"}</TableCell>
+              <TableCell align="center">{"分"}</TableCell>
+              <TableCell align="center">{"敗"}</TableCell>
+              <TableCell align="center">{"得点"}</TableCell>
+              <TableCell align="center">{"失点"}</TableCell>
+              <TableCell align="center">{"得失点差"}</TableCell>
+              <TableCell align="center">{"勝ち点"}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -262,7 +260,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
 
       {/* 対戦表 */}
       <Typography variant="h6" gutterBottom>
-        {t('roundRobin.matchups')}
+        {"総当たり表"}
       </Typography>
       <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
         <Table>
@@ -328,7 +326,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
                         </Tooltip>
                       ) : (
                         <Typography variant="caption" color="text.secondary">
-                          {t('roundRobin.notPlayed')}
+                          {"未実施"}
                         </Typography>
                       )}
                     </TableCell>

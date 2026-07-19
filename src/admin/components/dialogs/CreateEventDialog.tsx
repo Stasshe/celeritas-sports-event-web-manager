@@ -24,7 +24,6 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { Event, Organizer } from '../../../types/index';
 import { useDatabase } from '../../../hooks/useDatabase';
 
@@ -36,7 +35,6 @@ interface CreateEventDialogProps {
 }
 
 const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, onSuccess, event }) => {
-  const { t } = useTranslation();
   const { pushData, updateData, data: allEventsData } = useDatabase<Record<string, Event>>('/events');
   const isSubmittingRef = useRef(false);
   const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -209,9 +207,9 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'leader':
-        return t('event.roleLeader');
+        return "リーダー";
       case 'member':
-        return t('event.roleMember');
+        return "メンバー";
       default:
         return role;
     }
@@ -241,7 +239,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
       }}
     >
       <DialogTitle>
-        {event ? t('event.edit') : t('event.create')}
+        {event ? "編集" : "イベント作成"}
       </DialogTitle>
       
       <DialogContent dividers>
@@ -249,7 +247,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
           <Grid item xs={12} sm={6}>
             <TextField
               name="name"
-              label={t('event.name')}
+              label={"イベント名"}
               fullWidth
               margin="normal"
               value={newEvent.name}
@@ -260,7 +258,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
           <Grid item xs={12} sm={6}>
             <TextField
               name="date"
-              label={t('event.date')}
+              label={"日付"}
               type="date"
               fullWidth
               margin="normal"
@@ -272,14 +270,14 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
           <Grid item xs={12} sm={6}>
             <TextField
               name="alternativeDate"
-              label={t('event.alternativeDate')}
+              label={"予備日"}
               type="date"
               fullWidth
               margin="normal"
               value={newEvent.alternativeDate || ''}
               onChange={handleInputChange}
               InputLabelProps={{ shrink: true }}
-              helperText={t('event.alternativeDateHelp')}
+              helperText={"予備日を設定できます"}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -292,13 +290,13 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
                   color="primary"
                 />
               }
-              label={t('event.setAsActive')}
+              label={"アクティブに設定"}
             />
           </Grid>
           <Grid item xs={12}>
             <TextField
               name="description"
-              label={t('event.description')}
+              label={"説明"}
               fullWidth
               multiline
               rows={3}
@@ -311,7 +309,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
         
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6" gutterBottom>
-            {t('event.organizers')}
+            {"担当者"}
           </Typography>
           <Divider sx={{ mb: 2 }} />
           
@@ -319,7 +317,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
             <Grid item xs={12} sm={4}>
               <TextField
                 name="name"
-                label={t('event.organizerName')}
+                label={"担当者名"}
                 fullWidth
                 value={newOrganizer.name}
                 onChange={handleOrganizerChange}
@@ -327,29 +325,29 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
             </Grid>
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth>
-                <InputLabel>{t('event.role')}</InputLabel>
+                <InputLabel>{"役割"}</InputLabel>
                 <Select
                   name="role"
                   value={newOrganizer.role}
                   onChange={handleOrganizerChange as any}
                 >
-                  <MenuItem value="leader">{t('event.roleLeader')}</MenuItem>
-                  <MenuItem value="member">{t('event.roleMember')}</MenuItem>
-                  <MenuItem value="custom">{t('event.roleCustom')}</MenuItem>
+                  <MenuItem value="leader">{"リーダー"}</MenuItem>
+                  <MenuItem value="member">{"メンバー"}</MenuItem>
+                  <MenuItem value="custom">{"カスタム"}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth>
-                <InputLabel>{t('event.grade')}</InputLabel>
+                <InputLabel>{"学年"}</InputLabel>
                 <Select
                   name="grade"
                   value={newOrganizer.grade}
                   onChange={handleOrganizerChange as any}
                 >
-                  <MenuItem value={1}>{t('event.grade1')}</MenuItem>
-                  <MenuItem value={2}>{t('event.grade2')}</MenuItem>
-                  <MenuItem value={3}>{t('event.grade3')}</MenuItem>
+                  <MenuItem value={1}>{"1年生"}</MenuItem>
+                  <MenuItem value={2}>{"2年生"}</MenuItem>
+                  <MenuItem value={3}>{"3年生"}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -362,7 +360,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
                 onClick={addOrganizer}
                 disabled={!newOrganizer.name}
               >
-                {t('common.add')}
+                {"追加"}
               </Button>
             </Grid>
           </Grid>
@@ -372,14 +370,14 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
             {newEvent.organizers.map(org => (
               <Chip
                 key={org.id}
-                label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${t('event.gradeUnit')})`}
+                label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${"年"})`}
                 onDelete={() => removeOrganizer(org.id)}
                 color={org.role === 'leader' ? 'primary' : 'default'}
               />
             ))}
             {newEvent.organizers.length === 0 && (
               <Typography variant="body2" color="text.secondary">
-                {t('event.noOrganizers')}
+                {"担当者がいません"}
               </Typography>
             )}
           </Box>
@@ -388,7 +386,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
       
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>
-          {t('common.cancel')}
+          {"キャンセル"}
         </Button>
         <Button 
           onClick={handleSubmit} 
@@ -399,9 +397,9 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
           {isSubmitting ? (
             <CircularProgress size={24} color="inherit" />
           ) : event ? (
-            t('common.save')
+            "保存"
           ) : (
-            t('common.create')
+            "作成"
           )}
         </Button>
       </DialogActions>

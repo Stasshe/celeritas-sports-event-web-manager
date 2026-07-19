@@ -10,7 +10,6 @@ import {
   Stack,
   useTheme
 } from '@mui/material';
-import { useTranslation } from 'react-i18next';
 import { Event } from '../../../types';
 import { Grade } from '@mui/icons-material';
 
@@ -28,7 +27,6 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({
   selectedClasses, 
   onClassSelect 
 }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const [gradeTab, setGradeTab] = useState<GradeTabValue>('all');
 
@@ -131,16 +129,16 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({
     <Paper elevation={2} sx={{ mb: 3, overflow: 'hidden' }}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
-          {t('classSchedule.selectClasses')}
+          {"クラスを選択"}
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          {t('classSchedule.selectClassesHint')}
+          {"表示したいクラスを選択してください"}
         </Typography>
         
         {/* 全クラス選択/解除チップ */}
         <Box sx={{ mb: 2 }}>
           <Chip
-            label={allSelected ? t('classSchedule.clearAll') : t('classSchedule.selectAll')}
+            label={allSelected ? "選択解除" : "すべて選択"}
             color={allSelected ? "secondary" : "primary"}
             onClick={handleSelectAll}
             variant={allSelected ? "filled" : "outlined"}
@@ -158,11 +156,11 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({
           sx={{ mb: 2 }}
         >
           <Tab 
-            label={t('classSchedule.allGrades')} 
+            label={"全学年"} 
             value="all" 
           />
           <Tab 
-            label={`${t('classSchedule.grade')}1`} 
+            label={`${"学年"}1`} 
             value="1" 
             disabled={classGroups.grade1.length === 0}
             icon={
@@ -180,7 +178,7 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({
             iconPosition="end"
           />
           <Tab 
-            label={`${t('classSchedule.grade')}2`} 
+            label={`${"学年"}2`} 
             value="2" 
             disabled={classGroups.grade2.length === 0}
             icon={
@@ -198,7 +196,7 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({
             iconPosition="end"
           />
           <Tab 
-            label={`${t('classSchedule.grade')}3`} 
+            label={`${"学年"}3`} 
             value="3" 
             disabled={classGroups.grade3.length === 0}
             icon={
@@ -241,7 +239,7 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({
         
         {visibleClasses.length === 0 && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            {t('classSchedule.noClassesInGrade')}
+            {"この学年にクラスがありません"}
           </Typography>
         )}
       </Box>
@@ -254,7 +252,7 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({
           borderTop: `1px solid ${theme.palette.divider}`
         }}>
           <Typography variant="subtitle2" gutterBottom>
-            {t('classSchedule.selectedClasses')}:
+            {"選択中のクラス"}:
           </Typography>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             {selectedClasses.map(classId => {

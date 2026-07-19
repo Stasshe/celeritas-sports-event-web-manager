@@ -2,11 +2,9 @@ import React from 'react';
 import { Container, Typography, Box, Paper, IconButton, Breadcrumbs, Link } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Home as HomeIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import ExportPanel from '../components/ExportPanel';
 
 const ExportPage: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -17,7 +15,7 @@ const ExportPage: React.FC = () => {
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h4" component="h1">
-            {t('export.pageTitle')}
+            {"エクスポートページ"}
           </Typography>
         </Box>
         
@@ -29,9 +27,9 @@ const ExportPage: React.FC = () => {
             sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
           >
             <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
-            {t('admin.dashboard')}
+            {"ダッシュボード"}
           </Link>
-          <Typography color="text.primary">{t('export.pageTitle')}</Typography>
+          <Typography color="text.primary">{"エクスポートページ"}</Typography>
         </Breadcrumbs>
       </Box>
 

@@ -9,7 +9,6 @@ import {
   Typography
 } from '@mui/material';
 import { Team } from '../types';
-import { useTranslation } from 'react-i18next';
 
 interface TeamSelectorProps {
   selectedTeamId: string;
@@ -28,7 +27,6 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
   disabled = false,
   compact = false
 }) => {
-  const { t } = useTranslation();
 
   return (
     <Box sx={{ flex: compact ? 1 : 'auto' }}>
@@ -41,7 +39,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
           size={compact ? "small" : "medium"}
         >
           <MenuItem value="">
-            <em>{t('tournament.selectTeam')}</em>
+            <em>{"チームを選択"}</em>
           </MenuItem>
           {teams.map(team => (
             <MenuItem key={team.id} value={team.id}>

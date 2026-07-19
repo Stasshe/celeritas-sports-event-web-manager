@@ -33,7 +33,6 @@ import {
   SportsCricket as Court1Icon,
   SportsVolleyball as Court2Icon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { Sport, ScheduleSettings, TimeSlot, Match, LeagueScheduleSettings } from '../../../types';
 
 import TimeSlotTable from './TimeSlotTable';
@@ -47,7 +46,6 @@ interface ScheduleTabProps {
 }
 
 const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
-  const { t } = useTranslation();
   // 現在のスポーツIDを保持
   const sportIdRef = useRef(sport.id);
 
@@ -412,7 +410,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
           <Grid item xs={12} sm={8} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
             <TextField
               fullWidth
-              label={t('schedule.playoffDuration')}
+              label={"プレーオフの試合時間 (分)"}
               name="playoffDuration"
               type="number"
               value={leagueSettings.playoffDuration}
@@ -445,10 +443,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-              {t('schedule.rankingInfo')}
+              {"ランキング情報"}
             </Typography>
             <Alert severity="info">
-              {t('schedule.rankingScheduleInfo')}
+              {"ランキングスケジュール情報"}
             </Alert>
           </Grid>
         </Grid>
@@ -461,11 +459,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <Typography variant="subtitle1" gutterBottom>
-              {t('schedule.matchCount')}: {sport.matches?.length || 0}
+              {"試合数"}: {sport.matches?.length || 0}
             </Typography>
             {(!sport.matches || sport.matches.length === 0) && (
               <Alert severity="warning">
-                {t('schedule.noMatchesWarning')}
+                {"試合がありません"}
               </Alert>
             )}
           </Grid>
@@ -501,7 +499,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        {t('schedule.title')}
+        {"スケジュール"}
       </Typography>
       <Divider sx={{ mb: 3 }} />
       <Grid container spacing={3}>
@@ -509,14 +507,14 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2, height: '100%' }}>
             <Typography variant="subtitle1" gutterBottom>
-              {t('schedule.basicSettings')}
+              {"基本設定"}
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={t('schedule.startTime')}
+                  label={"開始時間"}
                   name="startTime"
                   type="time"
                   value={scheduleSettings.startTime}
@@ -528,7 +526,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={t('schedule.endTime')}
+                  label={"終了時間"}
                   name="endTime"
                   type="time"
                   value={scheduleSettings.endTime}
@@ -543,7 +541,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
-                      label={t('schedule.matchDuration')}
+                      label={"1試合の所要時間 (分)"}
                       name="matchDuration"
                       type="number"
                       value={scheduleSettings.matchDuration}
@@ -555,7 +553,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                   <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
-                      label={t('schedule.breakDuration')}
+                      label={"試合間の休憩時間 (分)"}
                       name="breakDuration"
                       type="number"
                       value={scheduleSettings.breakDuration}
@@ -570,11 +568,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               {/* コート設定の追加 */}
               <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-                  {t('schedule.courtSettings')}
+                  {"コート設定"}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <Typography variant="body2" sx={{ mr: 2 }}>
-                    {t('schedule.courtCount')}:
+                    {"コート数"}:
                   </Typography>
                   <ToggleButtonGroup
                     value={scheduleSettings.courtCount}
@@ -585,11 +583,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                   >
                     <ToggleButton value={1} aria-label="1 court">
                       <Court1Icon sx={{ mr: 1 }} />
-                      1 {t('schedule.court')}
+                      1 {"コート"}
                     </ToggleButton>
                     <ToggleButton value={2} aria-label="2 courts">
                       <Court2Icon sx={{ mr: 1 }} />
-                      2 {t('schedule.courts')}
+                      2 {"コート"}
                     </ToggleButton>
                   </ToggleButtonGroup>
                 </Box>
@@ -598,7 +596,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={t('schedule.court1Name')}
+                  label={"コート1名"}
                   value={scheduleSettings.courtNames?.court1 || '第1コート'}
                   onChange={(e) => handleCourtNameChange('court1', e.target.value)}
                   margin="normal"
@@ -609,7 +607,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t('schedule.court2Name')}
+                    label={"コート2名"}
                     value={scheduleSettings.courtNames?.court2 || '第2コート'}
                     onChange={(e) => handleCourtNameChange('court2', e.target.value)}
                     margin="normal"
@@ -626,7 +624,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2, height: '100%' }}>
             <Typography variant="subtitle1" gutterBottom>
-              {t('schedule.breakSettings')}
+              {"休憩設定"}
             </Typography>
             <Divider sx={{ mb: 2 }} />
             
@@ -637,7 +635,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                   onChange={handleLunchBreakToggle}
                 />
               }
-              label={t('schedule.includeLunchBreak')}
+              label={"昼休みを含める"}
             />
             
             {hasLunchBreak && (
@@ -645,7 +643,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t('schedule.lunchStartTime')}
+                    label={"昼休み開始時間"}
                     name="startTime"
                     type="time"
                     value={scheduleSettings.lunchBreak?.startTime || '12:00'}
@@ -656,7 +654,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label={t('schedule.lunchEndTime')}
+                    label={"昼休み終了時間"}
                     name="endTime"
                     type="time"
                     value={scheduleSettings.lunchBreak?.endTime || '13:00'}
@@ -668,14 +666,14 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             )}
             
             <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
-              {t('schedule.additionalBreaks')}
+              {"追加の休憩"}
             </Typography>
             
             <Grid container spacing={2}>
               <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
-                  label={t('schedule.breakStartTime')}
+                  label={"休憩開始時間"}
                   name="startTime"
                   type="time"
                   value={newBreakTime.startTime}
@@ -687,7 +685,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
-                  label={t('schedule.breakEndTime')}
+                  label={"休憩終了時間"}
                   name="endTime"
                   type="time"
                   value={newBreakTime.endTime}
@@ -699,7 +697,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               <Grid item xs={12} sm={3}>
                 <TextField
                   fullWidth
-                  label={t('schedule.breakTitle')}
+                  label={"休憩タイトル"}
                   name="title"
                   value={newBreakTime.title || ''}
                   onChange={handleNewBreakTimeChange}
@@ -724,7 +722,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               {(scheduleSettings.breakTimes || []).map((breakTime, index) => (
                 <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <Chip 
-                    label={`${breakTime.title || t('schedule.break')}: ${breakTime.startTime} - ${breakTime.endTime}`}
+                    label={`${breakTime.title || "休憩"}: ${breakTime.startTime} - ${breakTime.endTime}`}
                     onDelete={() => handleRemoveBreakTime(index)}
                     color="secondary"
                     variant="outlined"
@@ -733,7 +731,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               ))}
               {(scheduleSettings.breakTimes || []).length === 0 && (
                 <Typography variant="body2" color="text.secondary">
-                  {t('schedule.noBreaks')}
+                  {"追加の休憩はありません"}
                 </Typography>
               )}
             </Box>
@@ -748,7 +746,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               onClick={handleGenerateClick}
               startIcon={<ScheduleIcon />}
             >
-              {t('schedule.generateSchedule')}
+              {"スケジュール生成"}
             </Button>
             <Button
               variant="outlined"
@@ -805,7 +803,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
           open={openConfirmDialog}
           onClose={handleCloseDialog}
         >
-          <DialogTitle>{t('schedule.confirmRegenerate')}</DialogTitle>
+          <DialogTitle>スケジュール再生成の確認</DialogTitle>
           <DialogContent>
             <DialogContentText>
               本当にスケジュールを再生成しますか？試合の順番はシャッフルされます。
@@ -813,10 +811,10 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog}>
-              {t('common.cancel')}
+              {"キャンセル"}
             </Button>
             <Button onClick={handleConfirmGenerate} color="primary">
-              {t('common.confirm')}
+              確認
             </Button>
           </DialogActions>
         </Dialog>
@@ -827,7 +825,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
           ) : (
             <Paper sx={{ p: 3, textAlign: 'center' }}>
               <Typography variant="body1" color="text.secondary">
-                {t('schedule.noScheduleGenerated')}
+                {"スケジュールはまだ生成されていません"}
               </Typography>
             </Paper>
           )}

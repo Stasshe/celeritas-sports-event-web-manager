@@ -13,7 +13,7 @@ import {
   Divider
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { getSportTypeLabel } from '../../utils/labels';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Sport } from '../../types';
 import TournamentScoring from '../../common/TournamentScoring';
@@ -25,7 +25,6 @@ import { useAdminLayout } from '../context/AdminLayoutContext';
 
 const ScoringPage: React.FC = () => {
   const { sportId } = useParams<{ sportId: string }>();
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: sport, loading, updateData } = useDatabase<Sport>(`/sports/${sportId}`);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -134,10 +133,10 @@ const ScoringPage: React.FC = () => {
     return (
       <Box sx={{ textAlign: 'center', my: 8 }}>
         <Typography variant="h5">
-          {t('sports.notFound')}
+          {"競技が見つかりません"}
         </Typography>
         <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/admin')}>
-          {t('common.backToAdmin')}
+          {"管理画面に戻る"}
         </Button>
       </Box>
     );
@@ -150,13 +149,13 @@ const ScoringPage: React.FC = () => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" component="h1">
-          {t('scoring.title', { name: localSport.name })}
+          {localSport.name}のスコア管理
         </Typography>
       </Box>
 
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>
-          {t(`sports.${localSport.type}`)} - {t('scoring.updateScores')}
+          {getSportTypeLabel(localSport.type)} - {"スコアを更新"}
         </Typography>
         <Divider sx={{ my: 2 }} />
 
@@ -182,7 +181,7 @@ const ScoringPage: React.FC = () => {
           severity={saveStatus === 'saved' ? 'success' : 'error'} 
           sx={{ width: '100%' }}
         >
-          {saveStatus === 'saved' ? t('common.savedSuccess') : t('common.savedError')}
+          {saveStatus === 'saved' ? "保存しました" : "保存に失敗しました"}
         </Alert>
       </Snackbar>
     </Container>

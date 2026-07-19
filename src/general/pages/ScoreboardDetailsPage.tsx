@@ -19,13 +19,11 @@ import {
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 
 const ScoreboardDetailsPage: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>();
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: event, loading: eventLoading } = useDatabase<Event>(`/events/${eventId}`);
   const { data: allSports } = useDatabase<Record<string, Sport>>('/sports');
@@ -47,7 +45,7 @@ const ScoreboardDetailsPage: React.FC = () => {
   const PointSettingsSection = () => (
     <Paper sx={{ p: 3, mb: 3 }}>
       <Typography variant="h6" gutterBottom>
-        {t('scoreboard.pointSettings')}
+        {"競技別ポイント設定"}
       </Typography>
       <Divider sx={{ mb: 2 }} />
       
@@ -55,9 +53,9 @@ const ScoreboardDetailsPage: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>{t('scoreboard.sportName')}</TableCell>
-              <TableCell>{t('scoreboard.pointDistribution')}</TableCell>
-              <TableCell>{t('scoreboard.weight')}</TableCell>
+              <TableCell>{"競技名"}</TableCell>
+              <TableCell>{"ポイント配分"}</TableCell>
+              <TableCell>{"重み付け"}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -98,7 +96,7 @@ const ScoreboardDetailsPage: React.FC = () => {
     return (
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          {t('scoreboard.detailedScores')}
+          {"競技別獲得ポイント"}
         </Typography>
         <Divider sx={{ mb: 2 }} />
         
@@ -106,9 +104,9 @@ const ScoreboardDetailsPage: React.FC = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>{t('scoreboard.rank')}</TableCell>
-                <TableCell>{t('scoreboard.team')}</TableCell>
-                <TableCell align="right">{t('scoreboard.totalPoints')}</TableCell>
+                <TableCell>{"順位"}</TableCell>
+                <TableCell>{"チーム"}</TableCell>
+                <TableCell align="right">{"合計ポイント"}</TableCell>
                 {eventSports?.map(sport => (
                   <TableCell key={sport.id} align="right">{sport.name}</TableCell>
                 ))}
@@ -144,7 +142,7 @@ const ScoreboardDetailsPage: React.FC = () => {
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" component="h1">
-          {event.name} - {t('scoreboard.details')}
+          {event.name} - {"総合成績詳細"}
         </Typography>
       </Box>
 

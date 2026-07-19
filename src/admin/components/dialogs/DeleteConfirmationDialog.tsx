@@ -10,7 +10,6 @@ import {
   Alert
 } from '@mui/material';
 import { Warning as WarningIcon } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 
 interface DeleteConfirmationDialogProps {
   open: boolean;
@@ -29,7 +28,6 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
   itemName,
   type
 }) => {
-  const { t } = useTranslation();
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -39,27 +37,27 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
       </DialogTitle>
       <DialogContent>
         <Alert severity="warning" sx={{ mb: 2 }}>
-          {t(`admin.delete${type}Warning`)}
+          {{ event: 'イベントを削除します。', sport: '競技を削除します。' }[type]}
         </Alert>
         <Typography>
-          {t('admin.deleteConfirmation', { name: itemName })}
+          {itemName}を削除しますか？
         </Typography>
         <Box sx={{ mt: 2, bgcolor: 'error.main', color: 'error.contrastText', p: 2, borderRadius: 1 }}>
           <Typography variant="body2">
-            {t('admin.deleteConfirmationDetails')}
+            {"この操作は取り消せません"}
           </Typography>
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>
-          {t('common.cancel')}
+          {"キャンセル"}
         </Button>
         <Button
           variant="contained"
           color="error"
           onClick={onConfirm}
         >
-          {t('common.delete')}
+          {"削除"}
         </Button>
       </DialogActions>
     </Dialog>

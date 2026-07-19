@@ -1,10 +1,8 @@
 import { Sport, Match, LeagueBlock } from '../types/index';
 import { Participant } from '@g-loot/react-tournament-brackets';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
-import { TFunction } from 'i18next'; // i18nextの型定義を追加
 
-// t関数の型を正しく定義
-export const generateBracketMatches = (sport: Sport, t: TFunction) => {
+export const generateBracketMatches = (sport: Sport) => {
   if (!sport.teams || !sport.matches.length) return [];
 
   // リーグ戦の場合はプレーオフ用の試合だけを抽出
@@ -20,11 +18,11 @@ export const generateBracketMatches = (sport: Sport, t: TFunction) => {
     if (!teamId) {
       const otherTeamId = position === 'team1' ? match.team2Id : match.team1Id;
       if (otherTeamId && TournamentStructureHelper.isNoTeam(otherTeamId, match, matchesToUse)) {
-        return t('tournament.seed');
+        return "シード";
       }
-      return t('tournament.tbd');
+      return "未定";
     }
-    return sport.teams.find(t => t.id === teamId)?.name || t('tournament.tbd');
+    return sport.teams.find(t => t.id === teamId)?.name || "未定";
   };
 
   // 明示的な型定義を追加
@@ -51,12 +49,10 @@ export const generateBracketMatches = (sport: Sport, t: TFunction) => {
     .map(match => ({
       id: match.id,
       name: match.matchNumber === 0 || match.id.includes('third_place')
-        ? t('tournament.thirdPlace')
+        ? "3位決定戦"
         : match.round === maxRound && match.matchNumber === 1
-        ? t('tournament.final')
-        : t('tournament.round', { 
-            round: `${match.round}-${match.matchNumber}` 
-          }),
+        ? "決勝"
+        : `${match.round}-${match.matchNumber}回戦`,
       nextMatchId: match.matchNumber === 0 || match.id.includes('third_place') ? null :
         matchesToUse.find(m =>
           m.round === match.round + 1 &&

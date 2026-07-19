@@ -15,7 +15,7 @@ import {
   Tab
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Schedule as ScheduleIcon, MenuBook as RulesIcon } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { getSportTypeLabel } from '../../utils/labels';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Sport, Team, Match } from '../../types';
 import TournamentScoring from '../../common/TournamentScoring';
@@ -36,7 +36,6 @@ interface SportTab {
 
 const SportPage: React.FC = () => {
   const { sportId } = useParams<{ sportId: string }>();
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: sport, loading, updateData } = useDatabase<Sport>(`/sports/${sportId}`);
   const [tabValue, setTabValue] = useState(0);
@@ -67,10 +66,10 @@ const SportPage: React.FC = () => {
     return (
       <Box sx={{ textAlign: 'center', my: 8 }}>
         <Typography variant="h5">
-          {t('sports.notFound')}
+          {"競技が見つかりません"}
         </Typography>
         <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate('/')}>
-          {t('common.backToHome')}
+          {"ホームに戻る"}
         </Button>
       </Box>
     );
@@ -79,11 +78,11 @@ const SportPage: React.FC = () => {
   // タブのリストを動的に生成
   const tabs: SportTab[] = [
     { 
-      label: t('sport.tabs.matches'), 
+      label: "試合", 
       value: 0 
     },
     { 
-      label: t('sport.tabs.schedule'), 
+      label: "スケジュール", 
       icon: <ScheduleIcon />, 
       iconPosition: "start",
       value: 1,
@@ -94,7 +93,7 @@ const SportPage: React.FC = () => {
   // ルールタブを追加（ルールがある場合のみ）
   if (sport.rules) {
     tabs.push({
-      label: t('sport.tabs.rules'),
+      label: "ルール",
       icon: <RulesIcon />,
       iconPosition: "start",
       value: tabs.length
@@ -114,7 +113,7 @@ const SportPage: React.FC = () => {
               {sport.name}
             </Typography>
             <Chip 
-              label={t(`sports.${sport.type}`)} 
+              label={getSportTypeLabel(sport.type)} 
               color="primary" 
               size="small" 
               sx={{ mr: 1 }} 

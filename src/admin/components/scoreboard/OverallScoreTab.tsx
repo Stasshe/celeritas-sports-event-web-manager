@@ -38,7 +38,6 @@ import {
   EmojiEvents as MedalIcon,
   Info as InfoIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../../../hooks/useDatabase';
 import { Event, Sport, OverallScoreEntry } from '../../../types';
 import { alpha } from '@mui/material/styles';
@@ -51,7 +50,6 @@ interface OverallScoreTabProps {
 }
 
 const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) => {
-  const { t } = useTranslation();
   const { data: allSports } = useDatabase<Record<string, Sport>>('/sports');
   const navigate = useNavigate();
   const { showSnackbar } = useAdminLayout();
@@ -162,10 +160,10 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
       onUpdate(updatedEvent);
       
       // 成功メッセージ
-      showSnackbar(t('scoreboard.settingsSaved'), 'success');
+      showSnackbar("総合成績ボード設定を保存しました", 'success');
     } catch (error) {
       console.error('Error saving scoreboard settings:', error);
-      showSnackbar(t('scoreboard.settingsError'), 'error');
+      showSnackbar("設定の保存中にエラーが発生しました", 'error');
     } finally {
       setLoading(false);
     }
@@ -196,7 +194,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
     onUpdate(updatedEvent);
     
     // 保存成功メッセージ
-    showSnackbar(t('scoreboard.settingsUpdated'), 'success');
+    showSnackbar("設定を更新しました", 'success');
   };
   
   // カスタムチームの追加
@@ -356,11 +354,11 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
       
       // 成功したら再計算を促すメッセージを表示
       if (calculatedScores.length > 0) {
-        showSnackbar(t('scoreboard.recalculatePrompt'), 'info');
+        showSnackbar("設定を更新しました。「成績を計算する」をクリックして再計算してください", 'info');
       }
     } catch (error) {
       console.error('Error updating sport points:', error);
-      showSnackbar(t('scoreboard.updatePointsError'), 'error');
+      showSnackbar("ポイント設定の更新に失敗しました", 'error');
     }
   };
 
@@ -375,7 +373,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
     <Box>
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          {t('scoreboard.settings')}
+          {"総合成績ボード設定"}
         </Typography>
         <Divider sx={{ mb: 2 }} />
         
@@ -388,7 +386,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   onChange={(e) => handleEnabledToggle(e.target.checked)}
                 />
               }
-              label={t('scoreboard.enableOverallScoreboard')}
+              label={"総合成績ボードを有効にする"}
             />
           </Grid>
           
@@ -406,7 +404,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                       })}
                     />
                   }
-                  label={t('scoreboard.displayOnHome')}
+                  label={"ホームページに表示する"}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -420,13 +418,13 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                       })}
                     />
                   }
-                  label={t('scoreboard.displayDetailedScores')}
+                  label={"詳細スコアを表示する"}
                 />
               </Grid>
               
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" gutterBottom>
-                  {t('scoreboard.displayRankCount')}
+                  {"表示順位数"}
                 </Typography>
                 <Slider
                   value={settings.displayRank}
@@ -444,18 +442,18 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
               
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('scoreboard.teamType')}</InputLabel>
+                  <InputLabel>{"チーム種別"}</InputLabel>
                   <Select
                     value={settings.teamType}
                     onChange={(e) => setSettings({
                       ...settings,
                       teamType: e.target.value as 'class' | 'grade' | 'custom'
                     })}
-                    label={t('scoreboard.teamType')}
+                    label={"チーム種別"}
                   >
-                    <MenuItem value="class">{t('scoreboard.teamTypeClass')}</MenuItem>
-                    <MenuItem value="grade">{t('scoreboard.teamTypeGrade')}</MenuItem>
-                    <MenuItem value="custom">{t('scoreboard.teamTypeCustom')}</MenuItem>
+                    <MenuItem value="class">{"クラス単位"}</MenuItem>
+                    <MenuItem value="grade">{"学年単位"}</MenuItem>
+                    <MenuItem value="custom">{"カスタム"}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -464,14 +462,14 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                 <Grid item xs={12}>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="subtitle2" gutterBottom>
-                      {t('scoreboard.customTeams')}
+                      {"カスタムチーム"}
                     </Typography>
                     <Box sx={{ display: 'flex', mb: 2 }}>
                       <TextField
                         fullWidth
                         value={newTeam}
                         onChange={(e) => setNewTeam(e.target.value)}
-                        label={t('scoreboard.newTeam')}
+                        label={"新しいチーム名"}
                         size="small"
                       />
                       <Button
@@ -481,7 +479,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                         disabled={!newTeam.trim()}
                         sx={{ ml: 1 }}
                       >
-                        {t('common.add')}
+                        {"追加"}
                       </Button>
                     </Box>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -494,7 +492,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                       ))}
                       {settings.customTeams.length === 0 && (
                         <Typography variant="body2" color="text.secondary">
-                          {t('scoreboard.noCustomTeams')}
+                          {"カスタムチームが登録されていません"}
                         </Typography>
                       )}
                     </Box>
@@ -510,7 +508,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   onClick={saveSettings}
                   disabled={loading}
                 >
-                  {loading ? t('common.saving') : t('common.saveSettings')}
+                  {loading ? "保存中..." : "設定を保存"}
                 </Button>
               </Grid>
             </>
@@ -523,7 +521,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
           <Paper sx={{ p: 3, mb: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6">
-                {t('scoreboard.sportPointSettings')}
+                {"競技ポイント設定"}
               </Typography>
               <Button
                 variant="contained"
@@ -534,7 +532,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                 {calculating ? (
                   <CircularProgress size={24} />
                 ) : (
-                  t('scoreboard.calculateScores')
+                  "成績を計算する"
                 )}
               </Button>
             </Box>
@@ -544,10 +542,10 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>{t('scoreboard.sportName')}</TableCell>
-                    <TableCell>{t('scoreboard.includeInOverallScore')}</TableCell>
-                    <TableCell>{t('scoreboard.pointDistribution')}</TableCell>
-                    <TableCell>{t('scoreboard.weight')}</TableCell>
+                    <TableCell>{"競技名"}</TableCell>
+                    <TableCell>{"総合成績に含める"}</TableCell>
+                    <TableCell>{"ポイント配分"}</TableCell>
+                    <TableCell>{"重み付け"}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -576,7 +574,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                                 variant={i === 0 ? "filled" : "outlined"}
                               />
                             ))}
-                            <Tooltip title={t('scoreboard.editPointsHint')}>
+                            <Tooltip title={"ポイント設定を編集"}>
                               <IconButton
                                 size="small"
                                 onClick={() => navigate(`/admin/sport/${sport.id}?tab=points`)}
@@ -605,7 +603,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                               }}
                               sx={{ width: 80 }}
                             />
-                            <Tooltip title={t('scoreboard.weightHint')}>
+                            <Tooltip title={"重み付け係数の説明"}>
                               <IconButton size="small">
                                 <InfoIcon fontSize="small" />
                               </IconButton>
@@ -619,7 +617,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   {eventSports.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} align="center">
-                        {t('scoreboard.noSportsFound')}
+                        {"競技が見つかりません"}
                       </TableCell>
                     </TableRow>
                   )}
@@ -630,7 +628,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
           
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              {t('scoreboard.currentStandings')}
+              {"現在の順位"}
             </Typography>
             <Divider sx={{ mb: 3 }} />
             
@@ -669,9 +667,9 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <TableCell>{t('scoreboard.rank')}</TableCell>
-                        <TableCell>{t('scoreboard.team')}</TableCell>
-                        <TableCell align="right">{t('scoreboard.totalPoints')}</TableCell>
+                        <TableCell>{"順位"}</TableCell>
+                        <TableCell>{"チーム"}</TableCell>
+                        <TableCell align="right">{"合計ポイント"}</TableCell>
                         {settings.displayScores && eventSports.map(sport => (
                           <TableCell key={sport.id} align="right">{sport.name}</TableCell>
                         ))}
@@ -710,7 +708,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
             ) : (
               <Box sx={{ textAlign: 'center', py: 3 }}>
                 <Typography variant="body1" gutterBottom>
-                  {t('scoreboard.noScoresCalculated')}
+                  {"まだ成績が計算されていません"}
                 </Typography>
                 <Button
                   variant="contained"
@@ -718,7 +716,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   startIcon={<RefreshIcon />}
                   sx={{ mt: 2 }}
                 >
-                  {t('scoreboard.calculateScores')}
+                  {"成績を計算する"}
                 </Button>
               </Box>
             )}

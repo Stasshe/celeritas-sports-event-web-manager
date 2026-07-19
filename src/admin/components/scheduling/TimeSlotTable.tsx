@@ -11,7 +11,7 @@ import {
   Chip,
   Box
 } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { getScheduleTypeLabel } from '../../../utils/labels';
 import { TimeSlot, Sport } from '../../../types';
 
 interface TimeSlotTableProps {
@@ -20,7 +20,6 @@ interface TimeSlotTableProps {
 }
 
 const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
-  const { t } = useTranslation();
   
   // タイムスロットを時間順にソート
   const sortedTimeSlots = [...timeSlots].sort((a, b) => {
@@ -39,9 +38,9 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
   
   // チーム名を取得する関数
   const getTeamName = (teamId?: string): string => {
-    if (!teamId) return t('schedule.undetermined');
+    if (!teamId) return "未定";
     const team = sport.teams.find(t => t.id === teamId);
-    return team?.name || t('schedule.unknownTeam');
+    return team?.name || "不明なチーム";
   };
   
   // 試合の説明を取得する関数
@@ -71,10 +70,10 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
       <Table sx={{ minWidth: 650 }} size="small">
         <TableHead>
           <TableRow>
-            <TableCell>{t('schedule.time')}</TableCell>
-            <TableCell>{t('schedule.type')}</TableCell>
-            <TableCell>{t('schedule.court')}</TableCell>
-            <TableCell>{t('schedule.details')}</TableCell>
+            <TableCell>{"時間"}</TableCell>
+            <TableCell>{"タイプ"}</TableCell>
+            <TableCell>{"コート"}</TableCell>
+            <TableCell>{"詳細"}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -90,7 +89,7 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
                   <TableCell>
                     <Chip 
                       size="small"
-                      label={t(`schedule.${slot.type}`)}
+                      label={getScheduleTypeLabel(slot.type)}
                       color={
                         slot.type === 'match' ? 'primary' :
                         slot.type === 'break' ? 'secondary' :
@@ -109,7 +108,7 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
                       getMatchInfo(slot)
                     ) : (
                       <Typography variant="body2">
-                        {slot.title || t(`schedule.${slot.type}`)}
+                        {slot.title || getScheduleTypeLabel(slot.type)}
                         {slot.description && (
                           <Typography variant="caption" display="block" color="text.secondary">
                             {slot.description}

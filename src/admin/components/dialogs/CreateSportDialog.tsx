@@ -22,7 +22,6 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { Sport, Organizer, Event } from '../../../types/index';
 import { useDatabase } from '../../../hooks/useDatabase';
 
@@ -41,7 +40,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   eventId, 
   sport 
 }) => {
-  const { t } = useTranslation();
   const { pushData, updateData } = useDatabase<Record<string, Sport>>('/sports');
   const { data: events, updateData: updateEvent } = useDatabase<Record<string, Event>>('/events');
   
@@ -233,9 +231,9 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'leader':
-        return t('sport.roleLeader');
+        return "リーダー";
       case 'member':
-        return t('sport.roleMember');
+        return "メンバー";
       default:
         return role;
     }
@@ -244,13 +242,13 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   const getTypeDescription = (type: string) => {
     switch (type) {
       case 'tournament':
-        return t('sport.tournamentDescription');
+        return "トーナメント形式で試合を行います";
       case 'roundRobin':
-        return t('sport.roundRobinDescription');
+        return "総当たり戦で試合を行います";
       case 'league':
-        return t('sport.leagueDescription');
+        return "リーグ戦形式で試合を行います";
       case 'ranking':
-        return t('sport.rankingDescription');
+        return "ランキング形式で順位を決定します";
       default:
         return '';
     }
@@ -280,7 +278,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
       }}
     >
       <DialogTitle>
-        {sport ? t('sport.edit') : t('sport.create')}
+        {sport ? "競技編集" : "競技作成"}
       </DialogTitle>
       
       <DialogContent dividers>
@@ -288,7 +286,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           <Grid item xs={12} sm={6}>
             <TextField
               name="name"
-              label={t('sport.name')}
+              label={"競技名"}
               fullWidth
               margin="normal"
               value={newSport.name || ''}
@@ -299,17 +297,17 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth margin="normal" required>
-              <InputLabel>{t('sport.type')}</InputLabel>
+              <InputLabel>{"タイプ"}</InputLabel>
               <Select
                 name="type"
                 value={newSport.type || 'tournament'}
                 onChange={handleInputChange as any}
                 disabled={!!sport} // 既存競技の場合は変更不可
               >
-                <MenuItem value="tournament">{t('sport.tournament')}</MenuItem>
-                <MenuItem value="roundRobin">{t('sport.roundRobin')}</MenuItem>
-                <MenuItem value="league">{t('sport.league')}</MenuItem>
-                <MenuItem value="ranking">{t('sport.ranking')}</MenuItem>
+                <MenuItem value="tournament">{"トーナメント"}</MenuItem>
+                <MenuItem value="roundRobin">{"総当たり戦"}</MenuItem>
+                <MenuItem value="league">{"リーグ"}</MenuItem>
+                <MenuItem value="ranking">{"ランキング"}</MenuItem>
               </Select>
               <FormHelperText>
                 {getTypeDescription(newSport.type || 'tournament')}
@@ -320,7 +318,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           <Grid item xs={12}>
             <TextField
               name="description"
-              label={t('sport.description')}
+              label={"説明"}
               fullWidth
               multiline
               rows={3}
@@ -333,35 +331,35 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           <Grid item xs={12}>
             <TextField
               name="rules"
-              label={t('sport.rules')}
+              label={"ルール"}
               fullWidth
               multiline
               rows={2}
               margin="normal"
               value={newSport.rules || ''}
               onChange={handleInputChange}
-              helperText={t('sport.rulesHelp')}
+              helperText={"競技のルールを記入してください"}
             />
           </Grid>
           
           <Grid item xs={12}>
             <TextField
               name="manual"
-              label={t('sport.manual')}
+              label={"マニュアル"}
               fullWidth
               multiline
               rows={2}
               margin="normal"
               value={newSport.manual || ''}
               onChange={handleInputChange}
-              helperText={t('sport.manualHelp')}
+              helperText={"競技の進行マニュアルを記入してください"}
             />
           </Grid>
         </Grid>
         
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6" gutterBottom>
-            {t('sport.organizers')}
+            {"担当者"}
           </Typography>
           <Divider sx={{ mb: 2 }} />
           
@@ -369,7 +367,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
             <Grid item xs={12} sm={4}>
               <TextField
                 name="name"
-                label={t('sport.organizerName')}
+                label={"担当者名"}
                 fullWidth
                 value={newOrganizer.name}
                 onChange={handleOrganizerChange}
@@ -377,29 +375,29 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
             </Grid>
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth>
-                <InputLabel>{t('sport.role')}</InputLabel>
+                <InputLabel>{"役割"}</InputLabel>
                 <Select
                   name="role"
                   value={newOrganizer.role}
                   onChange={handleOrganizerChange as any}
                 >
-                  <MenuItem value="leader">{t('sport.roleLeader')}</MenuItem>
-                  <MenuItem value="member">{t('sport.roleMember')}</MenuItem>
+                  <MenuItem value="leader">{"リーダー"}</MenuItem>
+                  <MenuItem value="member">{"メンバー"}</MenuItem>
                   
                 </Select>
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth>
-                <InputLabel>{t('sport.grade')}</InputLabel>
+                <InputLabel>{"学年"}</InputLabel>
                 <Select
                   name="grade"
                   value={newOrganizer.grade}
                   onChange={handleOrganizerChange as any}
                 >
-                  <MenuItem value={1}>{t('sport.grade1')}</MenuItem>
-                  <MenuItem value={2}>{t('sport.grade2')}</MenuItem>
-                  <MenuItem value={3}>{t('sport.grade3')}</MenuItem>
+                  <MenuItem value={1}>{"1年生"}</MenuItem>
+                  <MenuItem value={2}>{"2年生"}</MenuItem>
+                  <MenuItem value={3}>{"3年生"}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -412,7 +410,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
                 onClick={addOrganizer}
                 disabled={!newOrganizer.name}
               >
-                {t('common.add')}
+                {"追加"}
               </Button>
             </Grid>
           </Grid>
@@ -422,14 +420,14 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
             {(newSport.organizers || []).map(org => (
               <Chip
                 key={org.id}
-                label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${t('sport.gradeUnit')})`}
+                label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${"年"})`}
                 onDelete={() => removeOrganizer(org.id)}
                 color={org.role === 'leader' ? 'primary' : 'default'}
               />
             ))}
             {(!newSport.organizers || newSport.organizers.length === 0) && (
               <Typography variant="body2" color="text.secondary">
-                {t('sport.noOrganizers')}
+                {"担当者がいません"}
               </Typography>
             )}
           </Box>
@@ -438,7 +436,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
       
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>
-          {t('common.cancel')}
+          {"キャンセル"}
         </Button>
         <Button 
           onClick={handleSubmit} 
@@ -449,9 +447,9 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           {isSubmitting ? (
             <CircularProgress size={24} color="inherit" />
           ) : sport ? (
-            t('common.save')
+            "保存"
           ) : (
-            t('common.create')
+            "作成"
           )}
         </Button>
       </DialogActions>

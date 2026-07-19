@@ -24,7 +24,6 @@ import {
   useTheme
 } from '@mui/material';
 import { Sport, Match, Team } from '../../../types';
-import { useTranslation } from 'react-i18next';
 import RoundRobinTable from '../../../general/components/sports/RoundRobinTable';
 import { Replay as AddIcon, Info as InfoIcon } from '@mui/icons-material';
 
@@ -34,7 +33,6 @@ interface RoundRobinScoringProps {
 }
 
 const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const [teams, setTeams] = useState<Team[]>(sport.teams || []);
   const [matches, setMatches] = useState<Match[]>(sport.matches || []);
@@ -322,15 +320,15 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
           startIcon={<AddIcon />}
           onClick={handleGenerateClick}
         >
-          {t('roundRobin.generateTeams')}
+          {"チームを生成"}
         </Button>
       </Box>
 
       <Typography variant="h6" gutterBottom>
-        {t('roundRobin.matchTable') || '対戦表'}
+        対戦表
         <p>
           <InfoIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
-          {t('roundRobin.clickMatchToAddScore') || '対戦表の、それぞれの試合をクリックしてスコアを変更できます。'}
+          試合をクリックしてスコアを追加
         </p>
       </Typography>
       
@@ -338,7 +336,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>{t('roundRobin.team') || 'チーム'}</TableCell>
+              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>チーム</TableCell>
               {teams.map(team => (
                 <TableCell 
                   key={team.id} 
@@ -394,9 +392,9 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
                           <Chip 
                             size="small" 
                             label={
-                              match.status === 'completed' ? (t('match.completed') || '完了') : 
-                              match.status === 'inProgress' ? (t('match.inProgress') || '進行中') : 
-                              (t('match.scheduled') || '予定')
+                              match.status === 'completed' ? "完了" : 
+                              match.status === 'inProgress' ? "進行中" : 
+                              "予定"
                             }
                             color={
                               match.status === 'completed' ? 'success' : 
@@ -413,7 +411,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
                           color="primary"
                           sx={{ minWidth: 'auto', p: '2px 8px' }}
                         >
-                          {t('roundRobin.addScore') || '記録'}
+                          スコア追加
                         </Button>
                       )}
                     </TableCell>
@@ -428,7 +426,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
       {/* 閲覧用テーブルの追加 */}
       <Box sx={{ mt: 4 }}>
         <Typography variant="h6" gutterBottom>
-          {t('roundRobin.currentStandings')}
+          {"現在の順位表"}
         </Typography>
         <RoundRobinTable sport={sport} />
       </Box>
@@ -436,7 +434,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
       {/* スコア入力ダイアログ */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {t('roundRobin.matchDetails') || '試合詳細'}
+          試合詳細
         </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={3}>
@@ -463,7 +461,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
                 <Grid item xs={5}>
                   <TextField
                     fullWidth
-                    label={t('roundRobin.score') || 'スコア'}
+                    label="スコア"
                     type="number"
                     value={selectedMatch?.team1Score || 0}
                     onChange={(e) => handleScoreChange('team1Score', e.target.value)}
@@ -477,7 +475,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
                 <Grid item xs={5}>
                   <TextField
                     fullWidth
-                    label={t('roundRobin.score') || 'スコア'}
+                    label="スコア"
                     type="number"
                     value={selectedMatch?.team2Score || 0}
                     onChange={(e) => handleScoreChange('team2Score', e.target.value)}
@@ -490,14 +488,14 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
 
             <Grid item xs={12} sx={{ mt: 2 }}>
               <FormControl fullWidth>
-                <InputLabel>{t('roundRobin.status') || '状態'}</InputLabel>
+                <InputLabel>状態</InputLabel>
                 <Select
                   value={selectedMatch?.status || 'scheduled'}
                   onChange={(e) => handleStatusChange(e.target.value as "scheduled" | "inProgress" | "completed")}
                 >
-                  <MenuItem value="scheduled">{t('match.scheduled') || '予定'}</MenuItem>
-                  <MenuItem value="inProgress">{t('match.inProgress') || '進行中'}</MenuItem>
-                  <MenuItem value="completed">{t('match.completed') || '完了'}</MenuItem>
+                  <MenuItem value="scheduled">予定</MenuItem>
+                  <MenuItem value="inProgress">進行中</MenuItem>
+                  <MenuItem value="completed">完了</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -505,7 +503,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
             <Grid item xs={12} sx={{ mt: 1 }}>
               <TextField
                 fullWidth
-                label={t('roundRobin.notes') || 'メモ'}
+                label="メモ"
                 multiline
                 rows={2}
                 value={selectedMatch?.notes || ''}
@@ -515,13 +513,13 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>{t('common.cancel') || 'キャンセル'}</Button>
+          <Button onClick={handleCloseDialog}>キャンセル</Button>
           <Button 
             onClick={handleSaveMatch} 
             variant="contained" 
             color="primary"
           >
-            {t('common.save') || '保存'}
+            保存
           </Button>
         </DialogActions>
       </Dialog>
@@ -532,29 +530,29 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
         onClose={() => setShowResetConfirm(false)}
       >
         <DialogTitle>
-          {t('roundRobin.confirmReset')}
+          {"スコアリセット確認"}
         </DialogTitle>
         <DialogContent>
           <Typography>
-            {t('roundRobin.resetScoresConfirm')}
+            {"既存の試合スコアがあります。チームを更新する際にスコアをリセットしますか？"}
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowResetConfirm(false)}>
-            {t('common.cancel')}
+            {"キャンセル"}
           </Button>
           <Button
             onClick={() => handleGenerateTeams(pendingTeams, false)}
             color="primary"
           >
-            {t('roundRobin.keepScores')}
+            {"スコアを保持"}
           </Button>
           <Button
             onClick={() => handleGenerateTeams(pendingTeams, true)}
             color="error"
             variant="contained"
           >
-            {t('roundRobin.resetScores')}
+            {"スコアをリセット"}
           </Button>
         </DialogActions>
       </Dialog>

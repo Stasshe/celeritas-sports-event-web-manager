@@ -45,7 +45,6 @@ import {
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useThemeContext } from '../../contexts/ThemeContext';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
@@ -58,7 +57,6 @@ const drawerWidth = 240;
 const collapsedDrawerWidth = 72; // 収納時の幅を少し広げる
 
 const AdminLayout = () => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const { mode, toggleColorMode, alpha } = useThemeContext();
   const navigate = useNavigate();
@@ -173,7 +171,7 @@ const AdminLayout = () => {
     if (location.pathname.includes('/admin/events/') && !location.pathname.includes(eventId)) {
       // 未保存の変更がある場合は確認
       if (hasUnsavedChanges) {
-        const confirmNavigation = window.confirm(t('admin.unsavedChangesWarning'));
+        const confirmNavigation = window.confirm("保存されていない変更があります。移動しますか？");
         if (!confirmNavigation) {
           return; // ナビゲーションをキャンセル
         }
@@ -217,7 +215,7 @@ const AdminLayout = () => {
     if (location.pathname !== `/admin/sports/${sportId}`) {
       // 未保存の変更がある場合は確認
       if (hasUnsavedChanges) {
-        const confirmNavigation = window.confirm(t('admin.unsavedChangesWarning'));
+        const confirmNavigation = window.confirm("保存されていない変更があります。移動しますか？");
         if (!confirmNavigation) {
           return; // ナビゲーションをキャンセル
         }
@@ -293,12 +291,12 @@ const AdminLayout = () => {
   // 成功時のハンドラー
   const handleEventSuccess = () => {
     setEventDialogOpen(false);
-    showSnackbar(t('admin.eventCreated'), 'success');
+    showSnackbar("イベントが作成されました", 'success');
   };
 
   const handleSportSuccess = (sportId: string) => {
     setSportDialogOpen(false);
-    showSnackbar(t('admin.sportCreated'), 'success');
+    showSnackbar("競技が作成されました", 'success');
     navigate(`/admin/sports/${sportId}`);
   };
 
@@ -393,7 +391,7 @@ const AdminLayout = () => {
             <ListItemIcon>
               <DashboardIcon />
             </ListItemIcon>
-            <ListItemText primary={t('admin.dashboard')} />
+            <ListItemText primary={"ダッシュボード"} />
           </ListItemButton>
         </ListItem>
       </List>
@@ -408,7 +406,7 @@ const AdminLayout = () => {
             <ListItemIcon>
               <ExportIcon />
             </ListItemIcon>
-            <ListItemText primary={t('admin.export')} />
+            <ListItemText primary={"データエクスポート"} />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
@@ -419,7 +417,7 @@ const AdminLayout = () => {
             <ListItemIcon>
               <BackupIcon />
             </ListItemIcon>
-            <ListItemText primary={t('admin.backup')} />
+            <ListItemText primary={"バックアップ"} />
           </ListItemButton>
         </ListItem>
       </List>
@@ -430,7 +428,7 @@ const AdminLayout = () => {
         subheader={
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1, borderRadius: 0 }}>
             <Typography variant="subtitle2" className="item-label">
-              {t('admin.events')}
+              {"イベント管理"}
             </Typography>
             <Button
               size="small"
@@ -441,7 +439,7 @@ const AdminLayout = () => {
               }}
             >
               <AddIcon />
-              <span className="create-button-text">{t('admin.create')}</span>
+              <span className="create-button-text">{"作成"}</span>
             </Button>
           </Box>
         }
@@ -497,7 +495,7 @@ const AdminLayout = () => {
                           <AddIcon fontSize="small" />
                         </ListItemIcon>
                         <ListItemText 
-                          primary={t('admin.createSport')}
+                          primary={"競技作成"}
                           primaryTypographyProps={{ variant: 'body2' }}
                         />
                       </ListItemButton>
@@ -527,7 +525,7 @@ const AdminLayout = () => {
                     {getSportsByEventId(event.id).length === 0 && (
                       <ListItem sx={{ pl: 4 }}>
                         <ListItemText 
-                          secondary={t('admin.noSportsInEvent')}
+                          secondary={"このイベントには競技がありません"}
                           secondaryTypographyProps={{ variant: 'body2' }}
                           className="item-label"
                         />
@@ -540,7 +538,7 @@ const AdminLayout = () => {
           })
         ) : (
           <ListItem sx={{ pl: 2 }}>
-            <ListItemText secondary={t('admin.noEvents')} className="item-label" />
+            <ListItemText secondary={"イベントがありません"} className="item-label" />
           </ListItem>
         )}
       </List>
@@ -583,14 +581,14 @@ const AdminLayout = () => {
           </IconButton>
 
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {t('admin.title')}
+            {"管理パネル"}
           </Typography>
           
           {/* 保存状態表示 */}
           <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
             {hasUnsavedChanges && (
               <Chip 
-                label={t('admin.unsavedChanges')} 
+                label={"未保存の変更があります"} 
                 color="warning" 
                 size="small" 
                 sx={{ mr: 1 }}
@@ -599,31 +597,31 @@ const AdminLayout = () => {
             {savingStatus === 'saving' ? (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <CircularProgress size={16} sx={{ mr: 1 }} />
-                <Typography variant="body2">{t('admin.saving')}</Typography>
+                <Typography variant="body2">{"保存中..."}</Typography>
               </Box>
             ) : savingStatus === 'saved' ? (
               <Typography variant="body2" color="text.secondary">
-                {lastSaved && t('admin.lastSaved', { time: lastSaved.toLocaleTimeString() })}
+                {lastSaved && `最終保存: ${lastSaved.toLocaleTimeString()}`}
               </Typography>
             ) : savingStatus === 'error' ? (
               <Typography variant="body2" color="error">
-                {t('admin.saveError')}
+                {"保存に失敗しました"}
               </Typography>
             ) : null}
           </Box>
           
           {/* アクションボタン群 */}
-          <Tooltip title={t('admin.home')}>
+          <Tooltip title={"ホームに戻る"}>
             <IconButton color="inherit" onClick={() => navigate('/')}>
               <HomeIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title={t('admin.settings')}>
+          <Tooltip title={"設定"}>
             <IconButton color="inherit" onClick={() => navigate('/admin/settings')}>
               <SettingsIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title={t('admin.help')}>
+          <Tooltip title={"ヘルプ"}>
             <IconButton color="inherit" onClick={() => navigate('/admin/help')}>
               <HelpIcon />
             </IconButton>
@@ -664,7 +662,7 @@ const AdminLayout = () => {
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleLogout}>
-              {t('auth.logout')}
+              {"ログアウト"}
             </MenuItem>
           </Menu>
         </Toolbar>

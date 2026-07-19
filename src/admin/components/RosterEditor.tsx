@@ -33,7 +33,6 @@ import {
   Sync as SyncIcon
 } from '@mui/icons-material';
 import { Sport, Event } from '../../types';
-import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../../hooks/useDatabase';
 
 // onUpdateの型を修正: EventもしくはSportのrosterを更新する関数
@@ -66,7 +65,6 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
 };
 
 const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   
   // 競技を編集する場合は関連するイベントのデータを取得
@@ -299,7 +297,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
     <Box>
       {showEventRosterAlert && (
         <Alert severity="info" sx={{ mb: 3 }}>
-          {t('roster.eventRosterAlert')}
+          {"イベント名簿アラート"}
           <Button 
             size="small" 
             startIcon={<SyncIcon />} 
@@ -315,29 +313,29 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
             }}
             sx={{ ml: 2 }}
           >
-            {t('roster.syncFromEvent')}
+            {"イベントから同期"}
           </Button>
         </Alert>
       )}
       
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={selectedGrade} onChange={handleGradeChange} aria-label="grade tabs">
-          <Tab label={t('roster.grade1')} />
-          <Tab label={t('roster.grade2')} />
-          <Tab label={t('roster.grade3')} />
+          <Tab label={"1年生"} />
+          <Tab label={"2年生"} />
+          <Tab label={"3年生"} />
         </Tabs>
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">
-          {t('roster.classList')}
+          {"クラス一覧"}
         </Typography>
         <Button
           variant="outlined"
           startIcon={<AddIcon />}
           onClick={() => openClassDialog()}
         >
-          {t('roster.addClass')}
+          {"クラスを追加"}
         </Button>
       </Box>
       
@@ -362,12 +360,12 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
                   {className}
                 </Typography>
                 <Box>
-                  <Tooltip title={t('roster.edit')}>
+                  <Tooltip title={"編集"}>
                     <IconButton size="small" onClick={() => openClassDialog(className)}>
                       <EditIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title={t('roster.delete')}>
+                  <Tooltip title={"削除"}>
                     <IconButton size="small" color="error" onClick={() => handleDeleteClass(className)}>
                       <DeleteIcon fontSize="small" />
                     </IconButton>
@@ -375,11 +373,11 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
                 </Box>
               </Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {t('roster.memberCount', { count: getMembersCount(className) })}
+                メンバー数: {getMembersCount(className)}
               </Typography>
               <Box sx={{ flexGrow: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                  {t('roster.memberList')}:
+                  {"メンバー一覧"}:
                 </Typography>
                 <Box sx={{ maxHeight: 150, overflowY: 'auto' }}>
                   {getCurrentGradeData()[className]?.map((member, index) => (
@@ -393,7 +391,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
                    (getCurrentGradeData()[className].length === 1 && 
                     getCurrentGradeData()[className][0] === 'none') ? (
                     <Typography variant="body2" color="text.secondary">
-                      {t('roster.noMembers')}
+                      {"メンバーがいません"}
                     </Typography>
                   ) : null}
                 </Box>
@@ -405,7 +403,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
                   fullWidth
                   onClick={() => openClassDialog(className)}
                 >
-                  {t('roster.viewEdit')}
+                  {"表示・編集"}
                 </Button>
               </Box>
             </Paper>
@@ -416,14 +414,14 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
           <Grid item xs={12}>
             <Paper sx={{ p: 3, textAlign: 'center' }}>
               <Typography color="text.secondary">
-                {t('roster.noClasses')}
+                {"クラスがありません"}
               </Typography>
               <Button 
                 startIcon={<AddIcon />}
                 onClick={() => openClassDialog()}
                 sx={{ mt: 2 }}
               >
-                {t('roster.addClass')}
+                {"クラスを追加"}
               </Button>
             </Paper>
           </Grid>
@@ -433,11 +431,11 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
       {/* クラス編集ダイアログ */}
       <Dialog open={dialogOpen} onClose={closeClassDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {isNewClass ? t('roster.addClass') : t('roster.editClass')}
+          {isNewClass ? "クラスを追加" : "クラスを編集"}
         </DialogTitle>
         <DialogContent dividers>
           <TextField
-            label={t('roster.className')}
+            label={"クラス名"}
             fullWidth
             value={newClassName}
             onChange={(e) => setNewClassName(e.target.value)}
@@ -447,11 +445,11 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
           
           <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle1" gutterBottom>
-              {t('roster.memberList')}
+              {"メンバー一覧"}
             </Typography>
             <Box sx={{ display: 'flex', mb: 2 }}>
               <TextField
-                label={t('roster.newMember')}
+                label={"新規メンバー"}
                 fullWidth
                 value={newMember}
                 onChange={(e) => setNewMember(e.target.value)}
@@ -493,7 +491,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
                 </Table>
               ) : (
                 <Typography color="text.secondary" align="center" sx={{ py: 3 }}>
-                  {t('roster.noMembers')}
+                  {"メンバーがいません"}
                 </Typography>
               )}
             </Paper>
@@ -501,7 +499,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
         </DialogContent>
         <DialogActions>
           <Button onClick={closeClassDialog}>
-            {t('common.cancel')}
+            {"キャンセル"}
           </Button>
           <Button 
             onClick={handleSaveClass} 
@@ -509,7 +507,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
             color="primary"
             disabled={!newClassName.trim()}
           >
-            {t('common.save')}
+            {"保存"}
           </Button>
         </DialogActions>
       </Dialog>

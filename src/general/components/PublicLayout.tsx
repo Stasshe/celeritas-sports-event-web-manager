@@ -7,10 +7,9 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { Brightness4, Brightness7, Translate } from '@mui/icons-material';
+import { Brightness4, Brightness7 } from '@mui/icons-material';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useThemeContext } from '../../contexts/ThemeContext';
-import LanguageSelector from './LanguageSelector';
 
 const PublicLayout = () => {
   const theme = useTheme();
@@ -43,11 +42,6 @@ const PublicLayout = () => {
           >
             CELERITAS
           </Typography>
-
-          <IconButton size="large" color="inherit" aria-label="language selector">
-            <Translate />
-            <LanguageSelector />
-          </IconButton>
 
           <IconButton
             size="large"

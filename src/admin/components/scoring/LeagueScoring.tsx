@@ -35,7 +35,7 @@ import {
   Save as SaveIcon,
   Shuffle as ShuffleIcon,
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { getMatchStatusLabel } from '../../../utils/labels';
 import { Sport, Match, Team, LeagueBlock } from '../../../types';
 import RoundRobinTable from '../../../general/components/sports/RoundRobinTable';
 import TournamentScoring from '../../../common/TournamentScoring';
@@ -75,7 +75,6 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
 };
 
 const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly = false }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   
   const [activeTab, setActiveTab] = useState(0);
@@ -111,7 +110,6 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
               const teamId = `${gradeKey}_${className}`;
               
               // チーム名を作成（例: 1年2組）
-              //const gradeName = t(`roster.${gradeKey}`);
               const teamName = `${className}`;
               
               // 既存のチームと重複しないよう確認
@@ -142,7 +140,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
         }
       }
     }
-  }, [sport.roster, useRosterTeams, t, onUpdate, sport]);
+  }, [sport.roster, useRosterTeams, onUpdate, sport]);
 
   // ブロックごとのチームと試合を抽出
   useEffect(() => {
@@ -213,11 +211,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
         // 超過分のブロックを削除する実装
         // 削除前にユーザーに警告を表示
         const shouldRemove = window.confirm(
-          t('league.confirmRemoveBlocks', { 
-            count: existingBlocks.length - targetBlockCount,
-            total: existingBlocks.length,
-            target: targetBlockCount
-          })
+          `${existingBlocks.length - targetBlockCount}個のブロック(${targetBlockCount})を削除しますか？合計${existingBlocks.length}です。`
         );
         
         if (shouldRemove) {
@@ -281,7 +275,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
       setShowPlayoff(true);
     }
     
-  }, [sport.id, onUpdate, sport, t]); // tを依存配列に追加
+  }, [sport.id, onUpdate, sport]);
 
   // チームをブロックに分配 - 完全に再構築するように修正
   const distributeTeams = useCallback(() => {
@@ -289,7 +283,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
     
     // 既存のスコアデータが消えることを警告
     if (blocks.some(block => block.matches.some(m => m.team1Score > 0 || m.team2Score > 0))) {
-      if (!window.confirm(t('league.confirmResetScores'))) {
+      if (!window.confirm("スコアをリセットしますか？")) {
         return;
       }
     }
@@ -318,7 +312,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
       }
     });
     
-  }, [teams, blockCount, advancingTeams, blocks, hasThirdPlaceMatch, onUpdate, sport, t]);
+  }, [teams, blockCount, advancingTeams, blocks, hasThirdPlaceMatch, onUpdate, sport]);
 
   // 試合の編集
   const handleEditMatch = (match: Match) => {
@@ -387,13 +381,13 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
     try {
       // ユーザーに確認（既存のプレーオフがある場合）
       if (playoffMatches.length > 0) {
-        const confirmReset = window.confirm(t('league.confirmResetPlayoff'));
+        const confirmReset = window.confirm("プレーオフをリセットしますか？");
         if (!confirmReset) return;
       }
       
       // LeaguePlayoffHelperを使用して処理を実行
       const result = LeaguePlayoffHelper.generatePlayoffTournament(
-        blocks, teams, advancingTeams, hasThirdPlaceMatch, t
+        blocks, teams, advancingTeams, hasThirdPlaceMatch
       );
       
       if (!result.success) {
@@ -426,7 +420,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
       
     } catch (error) {
       console.error("Error generating playoff tournament:", error);
-      alert(t('tournament.errorGenerating'));
+      alert("トーナメント生成エラー");
     }
   };
 
@@ -597,30 +591,30 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
       {!readOnly && (
         <Paper sx={{ p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6">{t('league.settings')}</Typography>
+            <Typography variant="h6">{"リーグ設定"}</Typography>
             <Button 
               variant="outlined" 
               color="primary" 
               onClick={openSettingsDialog}
             >
-              {t('league.editSettings')}
+              {"設定を編集"}
             </Button>
           </Box>
           
           <Grid container spacing={2}>
             <Grid item xs={12} sm={4}>
               <Typography variant="body1">
-                {t('league.blocks')}: <strong>{blockCount}</strong>
+                {"ブロック"}: <strong>{blockCount}</strong>
               </Typography>
             </Grid>
             <Grid item xs={12} sm={4}>
               <Typography variant="body1">
-                {t('league.advancingTeams')}: <strong>{advancingTeams}</strong>
+                {"進出チーム数"}: <strong>{advancingTeams}</strong>
               </Typography>
             </Grid>
             <Grid item xs={12} sm={4}>
               <Typography variant="body1">
-                {t('league.hasThirdPlace')}: <strong>{hasThirdPlaceMatch ? t('common.yes') : t('common.no')}</strong>
+                {"3位決定戦を実施"}: <strong>{hasThirdPlaceMatch ? "はい" : "いいえ"}</strong>
               </Typography>
             </Grid>
             <Grid item xs={12}>
@@ -631,7 +625,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                 disabled={teams.length === 0 || blocks.length === 0}
                 sx={{ mt: 1 }}
               >
-                {t('league.editBlockAssignment') || 'ブロック分けを編集'}
+                ブロック分けを編集
               </Button>
             </Grid>
           </Grid>
@@ -642,9 +636,9 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
             <Grid item xs={12}>
               <Alert severity="info" sx={{ mb: 2 }}>
                 {teams.length > 0 ? (
-                  <>{t('league.usingRosterTeams', { count: teams.length })}</>
+                  <>登録チーム数: {teams.length}</>
                 ) : (
-                  <>{t('league.noTeamsFound')}</>
+                  <>{"チームが見つかりません"}</>
                 )}
               </Alert>
             </Grid>
@@ -657,7 +651,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                 onClick={distributeTeams}
                 disabled={teams.length === 0}
               >
-                {t('league.distributeTeams')}
+                {"チームを振り分け"}
               </Button>
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -668,7 +662,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                 onClick={generatePlayoffTournament}
                 disabled={blocks.length === 0 || teams.length < 2}
               >
-                {t('league.generatePlayoff')}
+                {"プレーオフを生成"}
               </Button>
             </Grid>
           </Grid>
@@ -678,8 +672,8 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
       {/* チームがない場合の警告表示 */}
       {teams.length === 0 && (
         <Alert severity="warning" sx={{ mb: 3 }}>
-          <AlertTitle>{t('league.noTeams')}</AlertTitle>
-          {t('league.pleaseAddTeamsFromRoster')}
+          <AlertTitle>{"チームがありません"}</AlertTitle>
+          {"名簿からチームを追加してください"}
         </Alert>
       )}
       
@@ -694,10 +688,10 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
               scrollButtons="auto"
             >
               {blocks.map((block, index) => (
-                <Tab key={block.id} label={`${t('league.block')} ${getBlockLetter(index)}`} />
+                <Tab key={block.id} label={`${"ブロック"} ${getBlockLetter(index)}`} />
               ))}
               {showPlayoff && (
-                <Tab label={t('league.playoff')} />
+                <Tab label={"プレーオフ"} />
               )}
             </Tabs>
           </Paper>
@@ -707,7 +701,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
             <TabPanel key={block.id} value={activeTab} index={index}>
               <Paper sx={{ p: 2, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  {`${t('league.block')} ${getBlockLetter(index)} ${t('league.teams')}`}
+                  {`${"ブロック"} ${getBlockLetter(index)} ${"チーム"}`}
                 </Typography>
                 <Grid container spacing={1}>
                   {block.teamIds.map(teamId => (
@@ -718,7 +712,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                   {block.teamIds.length === 0 && (
                     <Grid item xs={12}>
                       <Typography color="text.secondary">
-                        {t('league.noTeams')}
+                        {"チームがありません"}
                       </Typography>
                     </Grid>
                   )}
@@ -728,19 +722,19 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                 {block.matches.length > 0 ? (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="h6" gutterBottom>
-                      {t('league.matches')}
+                      {"試合"}
                     </Typography>
                     <TableContainer>
                       <Table size="small">
                         <TableHead>
                           <TableRow>
-                            <TableCell>{t('league.match')}</TableCell>
-                            <TableCell>{t('league.team1')}</TableCell>
-                            <TableCell align="center">{t('league.score')}</TableCell>
-                            <TableCell>{t('league.team2')}</TableCell>
-                            <TableCell align="center">{t('league.status')}</TableCell>
+                            <TableCell>{"試合"}</TableCell>
+                            <TableCell>{"チーム1"}</TableCell>
+                            <TableCell align="center">{"スコア"}</TableCell>
+                            <TableCell>{"チーム2"}</TableCell>
+                            <TableCell align="center">{"状態"}</TableCell>
                             {!readOnly && (
-                              <TableCell align="center">{t('league.actions')}</TableCell>
+                              <TableCell align="center">{"操作"}</TableCell>
                             )}
                           </TableRow>
                         </TableHead>
@@ -757,7 +751,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                                 <Chip 
                                   size="small" 
                                   color={match.status === 'completed' ? 'success' : 'default'}
-                                  label={t(`match.${match.status}`)}
+                                  label={getMatchStatusLabel(match.status)}
                                 />
                               </TableCell>
                               {!readOnly && (
@@ -779,7 +773,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                   </Box>
                 ) : (
                   <Alert severity="info" sx={{ mt: 2 }}>
-                    {t('league.noMatches')}
+                    {"試合がありません"}
                   </Alert>
                 )}
                 
@@ -787,7 +781,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                 {block.matches.length > 0 && (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="h6" gutterBottom>
-                      {t('league.standings')}
+                      {"順位表"}
                     </Typography>
                     
                     {/* 既存のRoundRobinTableを再利用 */}
@@ -809,7 +803,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
             <TabPanel value={activeTab} index={blocks.length}>
               <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
-                  {t('league.playoffTournament')}
+                  {"プレーオフトーナメント"}
                 </Typography>
                 
                 {playoffMatches.length > 0 ? (
@@ -825,7 +819,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                   />
                 ) : (
                   <Alert severity="info" sx={{ mt: 2 }}>
-                    {t('league.noPlayoffYet')}
+                    {"プレーオフはまだ生成されていません"}
                   </Alert>
                 )}
               </Paper>
@@ -834,7 +828,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
         </Box>
       ) : (
         <Alert severity="info" sx={{ mb: 3 }}>
-          {t('league.noBlocksYet')}
+          {"ブロックがまだ作成されていません"}
         </Alert>
       )}
       
@@ -847,7 +841,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
           fullWidth
         >
           <DialogTitle>
-            {t('league.editMatch')}
+            {"試合を編集"}
           </DialogTitle>
           <DialogContent dividers>
             <Grid container spacing={2}>
@@ -874,7 +868,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                   <Grid item xs={5}>
                     <TextField
                       fullWidth
-                      label={t('league.score')}
+                      label={"スコア"}
                       type="number"
                       value={selectedMatch.team1Score}
                       onChange={(e) => setSelectedMatch({
@@ -890,7 +884,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                   <Grid item xs={5}>
                     <TextField
                       fullWidth
-                      label={t('league.score')}
+                      label={"スコア"}
                       type="number"
                       value={selectedMatch.team2Score}
                       onChange={(e) => setSelectedMatch({
@@ -905,7 +899,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
               
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>{t('league.status')}</InputLabel>
+                  <InputLabel>{"状態"}</InputLabel>
                   <Select
                     value={selectedMatch.status}
                     onChange={(e) => setSelectedMatch({
@@ -913,9 +907,9 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
                       status: e.target.value as 'scheduled' | 'inProgress' | 'completed'
                     })}
                   >
-                    <MenuItem value="scheduled">{t('match.scheduled')}</MenuItem>
-                    <MenuItem value="inProgress">{t('match.inProgress')}</MenuItem>
-                    <MenuItem value="completed">{t('match.completed')}</MenuItem>
+                    <MenuItem value="scheduled">{"予定"}</MenuItem>
+                    <MenuItem value="inProgress">{"進行中"}</MenuItem>
+                    <MenuItem value="completed">{"完了"}</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -923,14 +917,14 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setMatchDialogOpen(false)}>
-              {t('common.cancel')}
+              {"キャンセル"}
             </Button>
             <Button 
               variant="contained" 
               color="primary"
               onClick={() => handleMatchUpdate(selectedMatch)}
             >
-              {t('common.save')}
+              {"保存"}
             </Button>
           </DialogActions>
         </Dialog>
@@ -944,50 +938,50 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
         fullWidth
       >
         <DialogTitle>
-          {t('league.leagueSettings')}
+          {"リーグ設定"}
         </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label={t('league.blockCount')}
+                label={"ブロック数"}
                 type="number"
                 value={tempBlockCount || ''} // 0の場合は空文字列を表示
                 onChange={handleBlockCountChange}
-                helperText={t('league.blockCountHelp')}
+                helperText={"チームを分けるブロックの数"}
                 inputProps={{ min: 1, max: Math.max(1, Math.floor(teams.length / 2)) }}
               />
               {teams.length > 0 && (
                 <Typography variant="caption" color="text.secondary">
-                  {t('league.maxBlocks', { max: Math.max(1, Math.floor(teams.length / 2)) })}
+                  最大{Math.max(1, Math.floor(teams.length / 2))}ブロック
                 </Typography>
               )}
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label={t('league.advancingTeams')}
+                label={"進出チーム数"}
                 type="number"
                 value={tempAdvancingTeams || ''} // 0の場合は空文字列を表示
                 onChange={handleAdvancingTeamsChange}
-                helperText={t('league.advancingTeamsHelp')}
+                helperText={"各ブロックから進出するチーム数"}
                 inputProps={{ min: 1 }}
               />
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel id="third-place-match-label">{t('league.hasThirdPlace')}</InputLabel>
+                <InputLabel id="third-place-match-label">{"3位決定戦を実施"}</InputLabel>
                 <Select
                   labelId="third-place-match-label"
                   value={tempHasThirdPlaceMatch ? "true" : "false"}
                   onChange={(e) => {
                     setTempHasThirdPlaceMatch(e.target.value === "true" ? true : false);
                   }}
-                  label={t('league.hasThirdPlace')}
+                  label={"3位決定戦を実施"}
                 >
-                  <MenuItem value="true">{t('common.yes')}</MenuItem>
-                  <MenuItem value="false">{t('common.no')}</MenuItem>
+                  <MenuItem value="true">{"はい"}</MenuItem>
+                  <MenuItem value="false">{"いいえ"}</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -998,7 +992,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
             onClick={() => setSettingsDialogOpen(false)}
             color="inherit"
           >
-            {t('common.cancel')}
+            {"キャンセル"}
           </Button>
           <Button 
             variant="contained" 
@@ -1007,7 +1001,7 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
             // 両方の値が0より大きい場合のみ保存を許可
             disabled={tempBlockCount <= 0 || tempAdvancingTeams <= 0}
           >
-            {t('common.save')}
+            {"保存"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1019,16 +1013,16 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>{t('league.editBlockAssignment') || 'ブロック分けを編集'}</DialogTitle>
+        <DialogTitle>ブロック分けを編集</DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={2}>
             {blocks.map((block, idx) => (
               <Grid item xs={12} key={block.id}>
                 <Typography variant="subtitle1" gutterBottom>
-                  {`${t('league.block')} ${getBlockLetter(idx)}`}
+                  {`${"ブロック"} ${getBlockLetter(idx)}`}
                 </Typography>
                 <FormControl fullWidth>
-                  <InputLabel>{t('league.teams')}</InputLabel>
+                  <InputLabel>{"チーム"}</InputLabel>
                   <Select
                     multiple
                     value={manualBlockTeams[idx] || []}
@@ -1047,8 +1041,8 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setBlockEditDialogOpen(false)}>{t('common.cancel')}</Button>
-          <Button variant="contained" color="primary" onClick={handleSaveBlockEdit}>{t('common.save')}</Button>
+          <Button onClick={() => setBlockEditDialogOpen(false)}>{"キャンセル"}</Button>
+          <Button variant="contained" color="primary" onClick={handleSaveBlockEdit}>{"保存"}</Button>
         </DialogActions>
       </Dialog>
     </Box>

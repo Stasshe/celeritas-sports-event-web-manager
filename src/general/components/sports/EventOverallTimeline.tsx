@@ -34,7 +34,7 @@ import {
   Add as AddIcon,
   Remove as RemoveIcon
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { getMatchStatusLabel, getScheduleTypeLabel } from '../../../utils/labels';
 import { timeToMinutes, minutesToTime } from '../../../utils/scheduleGenerator';
 import { Sport, TimeSlot, Event, Match } from '../../../types';
 import { useNavigate } from 'react-router-dom';
@@ -72,7 +72,6 @@ const generateTimeRanges = (startHour: number, endHour: number): string[] => {
 };
 
 const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, activeEvent }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -117,9 +116,9 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
 
       // チーム名を取得する関数
       const getTeamName = (teamId?: string): string => {
-        if (!teamId) return t('schedule.undetermined');
+        if (!teamId) return "未定";
         const team = sport.teams.find(t => t.id === teamId);
-        return team?.name || t('schedule.unknownTeam');
+        return team?.name || "不明なチーム";
       };
 
       // コート名を取得する関数
@@ -176,7 +175,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
       minTime: minTimeMinutes,
       maxTime: maxTimeMinutes
     };
-  }, [sports, t]);
+  }, [sports]);
 
   // スポーツごとにイベントをグループ化し、重なりを計算
   const sportGroupedEvents = useMemo(() => {
@@ -293,7 +292,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
   if (Object.keys(sportGroupedEvents).length === 0) {
     return (
       <Alert severity="info" sx={{ my: 2 }}>
-        {t('schedule.noSportsWithSchedule')}
+        {"スケジュールのある競技がありません"}
       </Alert>
     );
   }
@@ -345,7 +344,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
           <ScheduleIcon sx={{ mr: 1 }} />
-          {t('schedule.overallTimeline')}
+          {"総合タイムスケジュール"}
         </Typography>
         
         <Box sx={{ mt: { xs: 1, sm: 0 } }}>
@@ -353,7 +352,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
           {currentTimePosition > 0 && (
             <Chip 
               icon={<TimeIcon fontSize="small" />}
-              label={`${t('schedule.currentTime')}: ${minutesToTime(currentTime)}`}
+              label={`${"現在時刻"}: ${minutesToTime(currentTime)}`}
               size="small"
               color="primary"
               sx={{ mr: 1 }}
@@ -365,7 +364,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
       {/* スケール調整コントロールをスライダーからボタンに変更 */}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
         <Typography variant="body2" sx={{ mr: 2 }}>
-          {t('schedule.timelineScale')}:
+          {"タイムライン縮尺"}:
         </Typography>
         
         <ButtonGroup size="small" sx={{ mr: 2 }}>
@@ -374,14 +373,14 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
             disabled={scale <= 1}
             startIcon={<RemoveIcon />}
           >
-            {t('common.smaller')}
+            {"小さくする"}
           </Button>
           <Button 
             onClick={handleZoomIn}
             disabled={scale >= 10}
             startIcon={<AddIcon />}
           >
-            {t('common.larger')}
+            {"大きくする"}
           </Button>
         </ButtonGroup>
         
@@ -398,18 +397,18 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
           ))}
         </ButtonGroup>
         
-        <Tooltip title={t('schedule.resetScale')}>
+        <Tooltip title={"縮尺をリセット"}>
           <Button 
             size="small" 
             onClick={() => setScale(isMobile ? 3 : isTablet ? 4 : 5)}
             variant="outlined"
           >
-            {t('schedule.reset')}
+            {"リセット"}
           </Button>
         </Tooltip>
         
         <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
-          {t('schedule.currentScale')}: {scale}x
+          {"現在の縮尺"}: {scale}x
         </Typography>
       </Box>
 
@@ -444,7 +443,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
             left: 0,
           }}>
             <Typography variant="subtitle2" align="center">
-              {t('schedule.sports')}
+              {"競技"}
             </Typography>
           </Box>
 
@@ -543,7 +542,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                   }}
                   onClick={() => navigate(`/sport/${sportId}`)}
                 >
-                  <Tooltip title={t('schedule.clickToView')}>
+                  <Tooltip title={"クリックして詳細を表示"}>
                     <Typography 
                       variant="body2" 
                       sx={{ 
@@ -727,10 +726,10 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
       
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
         <Typography variant="caption" color="text.secondary">
-          {t('schedule.timelineHint')}
+          {"タイムラインヒント"}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          ({t('schedule.currentScale')}: {scale}x)
+          ({"現在の縮尺"}: {scale}x)
         </Typography>
       </Stack>
 
@@ -758,7 +757,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                 </Typography>
               </Box>
               <Chip 
-                label={t(`schedule.${selectedEvent.type}`)}
+                label={getScheduleTypeLabel(selectedEvent.type)}
                 color={selectedEvent.type === 'match' ? 'primary' : 'default'}
                 size="small"
               />
@@ -787,7 +786,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                   {selectedMatch && (
                     <Box sx={{ mt: 3 }}>
                       <Typography variant="subtitle1" gutterBottom>
-                        {t('schedule.matchDetails')}
+                        {"試合詳細"}
                       </Typography>
                       <Divider sx={{ mb: 2 }} />
 
@@ -795,10 +794,10 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                         {selectedMatch.status && (
                           <Grid item xs={12} sm={6}>
                             <Typography variant="body2" color="text.secondary">
-                              {t('schedule.status')}
+                              {"状態"}
                             </Typography>
                             <Typography variant="body1">
-                              {t(`match.${selectedMatch.status}`)}
+                              {getMatchStatusLabel(selectedMatch.status)}
                             </Typography>
                           </Grid>
                         )}
@@ -806,7 +805,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                         {selectedEvent.matchInfo.courtName && (
                           <Grid item xs={12} sm={6}>
                             <Typography variant="body2" color="text.secondary">
-                              {t('schedule.location')}
+                              {"場所"}
                             </Typography>
                             <Typography variant="body1">
                               {selectedEvent.matchInfo.courtName}
@@ -819,10 +818,10 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                         {selectedMatch.blockId && (
                           <Grid item xs={12} sm={6}>
                             <Typography variant="body2" color="text.secondary">
-                              {t('schedule.block')}
+                              {"ブロック"}
                             </Typography>
                             <Typography variant="body1">
-                              {`${t('league.block')} ${selectedMatch.blockId.replace('block_', '')}`}
+                              {`${"ブロック"} ${selectedMatch.blockId.replace('block_', '')}`}
                             </Typography>
                           </Grid>
                         )}
@@ -830,7 +829,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                         {selectedMatch.notes && (
                           <Grid item xs={12}>
                             <Typography variant="body2" color="text.secondary">
-                              {t('schedule.notes')}
+                              {"備考"}
                             </Typography>
                             <Typography variant="body1">
                               {selectedMatch.notes}
@@ -845,7 +844,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                 // 試合以外の時間枠
                 <Box sx={{ py: 2 }}>
                   <Typography variant="h6">
-                    {selectedEvent.timeSlot.title || t(`schedule.${selectedEvent.type}`)}
+                    {selectedEvent.timeSlot.title || getScheduleTypeLabel(selectedEvent.type)}
                   </Typography>
                   
                   {selectedEvent.timeSlot.description && (
@@ -859,14 +858,14 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
 
             <DialogActions>
               <Button onClick={handleCloseDialog} color="inherit">
-                {t('common.close')}
+                {"閉じる"}
               </Button>
               <Button 
                 onClick={handleViewDetails} 
                 variant="contained" 
                 color="primary"
               >
-                {t('schedule.viewDetails')}
+                {"詳細を表示"}
               </Button>
             </DialogActions>
           </>
