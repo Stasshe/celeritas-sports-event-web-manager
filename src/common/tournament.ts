@@ -59,16 +59,25 @@ export const hasValidTournamentParticipants = (match: Match, teams: Team[]): boo
 
 export const createThirdPlaceMatch = (
   matches: Match[],
-  date: string = getDate()
+  date: string = getDate(),
+  bracket: 'main' | 'consolation' = 'main'
 ): Match | undefined => {
   if (matches.length === 0) return undefined;
 
   const maxRound = Math.max(...matches.map(match => match.round));
   const semifinalMatches = matches.filter(match => match.round === maxRound - 1);
   if (semifinalMatches.length !== 2) return undefined;
+  const hasPlayableSemifinals = semifinalMatches.every(match => {
+    const hasTeam1 = Boolean(match.team1Id || match.team1Source);
+    const hasTeam2 = Boolean(match.team2Id || match.team2Source);
+    return hasTeam1 && hasTeam2;
+  });
+  if (!hasPlayableSemifinals) return undefined;
+  let id = 'third_place_match';
+  if (bracket === 'consolation') id = 'consolation_third_place_match';
 
   return {
-    id: 'third_place_match',
+    id,
     round: maxRound,
     matchNumber: 0,
     team1Id: '',
@@ -79,7 +88,8 @@ export const createThirdPlaceMatch = (
     date,
     previousMatches: semifinalMatches.map(match => match.id),
     team1Source: { type: 'loser', matchId: semifinalMatches[0].id },
-    team2Source: { type: 'loser', matchId: semifinalMatches[1].id }
+    team2Source: { type: 'loser', matchId: semifinalMatches[1].id },
+    bracket
   };
 };
 
@@ -156,6 +166,7 @@ export const createTournamentMatches = (
 export const createConsolationMatches = (
   mainMatches: Match[],
   includeSecondRoundLosers: boolean,
+  hasThirdPlaceMatch: boolean,
   date: string = getDate()
 ): Match[] => {
   const sourceRounds = includeSecondRoundLosers ? new Set([1, 2]) : new Set([1]);
@@ -194,7 +205,7 @@ export const createConsolationMatches = (
     return `consolation_match_${index + 1}`;
   };
 
-  return structure.map((match, index): Match => {
+  const consolationMatches = structure.map((match, index): Match => {
     const createdMatch: Match = {
       id: `consolation_match_${index + 1}`,
       round: match.round,
@@ -232,4 +243,10 @@ export const createConsolationMatches = (
     }
     return createdMatch;
   });
+
+  if (hasThirdPlaceMatch) {
+    const thirdPlaceMatch = createThirdPlaceMatch(consolationMatches, date, 'consolation');
+    if (thirdPlaceMatch) consolationMatches.push(thirdPlaceMatch);
+  }
+  return consolationMatches;
 };

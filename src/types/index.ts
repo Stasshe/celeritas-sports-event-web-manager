@@ -57,6 +57,7 @@ export interface Sport {
     consolation?: {
       enabled: boolean;
       includeSecondRoundLosers: boolean;
+      hasThirdPlaceMatch?: boolean;
     };
   };
   // 総当たり戦設定

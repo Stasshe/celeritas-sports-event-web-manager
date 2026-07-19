@@ -100,6 +100,9 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   const [includeSecondRoundLosers, setIncludeSecondRoundLosers] = useState(
     sport.tournamentSettings?.consolation?.includeSecondRoundLosers ?? false
   );
+  const [hasConsolationThirdPlace, setHasConsolationThirdPlace] = useState(
+    sport.tournamentSettings?.consolation?.hasThirdPlaceMatch ?? false
+  );
   const [isDialogProcessing, setIsDialogProcessing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -111,80 +114,22 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
 
 
   // トーナメント表示用のデータ - メインブラケットと3位決定戦ブラケットを分離
-  const { mainBracketMatches, consolationBracketMatches, thirdPlaceMatch } = useMemo(() => {
+  const { mainBracketMatches, consolationBracketMatches } = useMemo(() => {
     const currentSport = { ...sport, matches };
     const formattedMatches = generateBracketMatches(currentSport);
     const consolationMatches = generateBracketMatches(currentSport, 'consolation');
-    
-    // 3位決定戦の試合を抽出（matchNumber === 0 または名前が3位決定戦）
-    const thirdPlaceMatches = formattedMatches.filter(match => {
-      // matchの名前が "tournament.thirdPlace" に対応する翻訳文字列と一致するか
-      const isThirdPlaceByName = typeof match.name === 'string' && 
-                                match.name === "3位決定戦";
-      
-      // IDが"third_place"を含むか
-      const isThirdPlaceById = match.id.includes('third_place');
-      
-      return isThirdPlaceByName || isThirdPlaceById;
-    });
-    
-    // メインブラケットの試合（3位決定戦以外）
-    const mainMatches = formattedMatches.filter(match => {
-      const isThirdPlaceByName = typeof match.name === 'string' && 
-                                match.name === "3位決定戦";
-      const isThirdPlaceById = match.id.includes('third_place');
-      
-      return !(isThirdPlaceByName || isThirdPlaceById);
-    }).map(match => ({
+    const isThirdPlace = (match: typeof formattedMatches[number]) => {
+      return match.name === "3位決定戦" || match.id.includes('third_place');
+    };
+    const mainMatches = formattedMatches.filter(match => !isThirdPlace(match)).map(match => ({
       ...match,
       name: typeof match.name === 'object' ? 
         `${match.tournamentRoundText}回戦` :
         match.name
     }));
-    
-    // 実際の試合データから3位決定戦を探す（バックアップとして）
-    let thirdPlaceMatchData = thirdPlaceMatches.length > 0 
-      ? thirdPlaceMatches[0] 
-      : null;
-    
-    // 3位決定戦が見つからなければ、matchNumber === 0 の試合を探す
-    if (!thirdPlaceMatchData) {
-      const matchNumberZero = matches.find(m => m.matchNumber === 0);
-      if (matchNumberZero) {
-        // 3位決定戦の試合データを手動で作成
-        const team1 = sport.teams.find(t => t.id === matchNumberZero.team1Id);
-        const team2 = sport.teams.find(t => t.id === matchNumberZero.team2Id);
-        
-        thirdPlaceMatchData = {
-          id: matchNumberZero.id,
-          name: "3位決定戦",
-          nextMatchId: null,
-          tournamentRoundText: "Final",
-          startTime: matchNumberZero.date || new Date().toISOString(),
-          state: matchNumberZero.status === 'completed' ? 'DONE' : 
-                 matchNumberZero.status === 'inProgress' ? 'PLAYING' : 'SCHEDULED',
-          participants: [
-            {
-              id: matchNumberZero.team1Id || 'team1',
-              name: team1?.name || "未定",
-              score: matchNumberZero.team1Score,
-              isWinner: matchNumberZero.winnerId === matchNumberZero.team1Id
-            },
-            {
-              id: matchNumberZero.team2Id || 'team2',
-              name: team2?.name || "未定",
-              score: matchNumberZero.team2Score,
-              isWinner: matchNumberZero.winnerId === matchNumberZero.team2Id
-            }
-          ]
-        };
-      }
-    }
-    
     return { 
       mainBracketMatches: mainMatches,
-      consolationBracketMatches: consolationMatches,
-      thirdPlaceMatch: thirdPlaceMatchData
+      consolationBracketMatches: consolationMatches.filter(match => !isThirdPlace(match))
     };
   }, [sport, matches]);
   
@@ -258,7 +203,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   const handleMatchesCreate = (newMatches: Match[], selectedTeams: Team[]) => {
     if (readOnly) return;
     const consolationMatches = hasConsolation
-      ? createConsolationMatches(newMatches, includeSecondRoundLosers)
+      ? createConsolationMatches(newMatches, includeSecondRoundLosers, hasConsolationThirdPlace)
       : [];
     const allMatches = [...newMatches, ...consolationMatches];
 
@@ -289,7 +234,11 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       if (thirdPlaceMatch) mainMatches = [...mainMatches, thirdPlaceMatch];
     }
     const consolationMatches = hasConsolation
-      ? createConsolationMatches(mainMatches, includeSecondRoundLosers)
+      ? createConsolationMatches(
+          mainMatches,
+          includeSecondRoundLosers,
+          hasConsolationThirdPlace
+        )
       : [];
     const updatedMatches = [...mainMatches, ...consolationMatches];
 
@@ -300,17 +249,26 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       tournamentSettings: {
         hasThirdPlaceMatch: checked,
         hasRepechage: sport.tournamentSettings?.hasRepechage ?? false,
-        consolation: sport.tournamentSettings?.consolation
+        consolation: {
+          enabled: hasConsolation,
+          includeSecondRoundLosers,
+          hasThirdPlaceMatch: hasConsolationThirdPlace
+        }
       }
     });
   };
 
-  const updateConsolation = (enabled: boolean, includeSecondRound: boolean) => {
+  const updateConsolation = (
+    enabled: boolean,
+    includeSecondRound: boolean,
+    hasThirdPlaceMatch: boolean
+  ) => {
     setHasConsolation(enabled);
     setIncludeSecondRoundLosers(includeSecondRound);
+    setHasConsolationThirdPlace(hasThirdPlaceMatch);
     const mainMatches = matches.filter(match => match.bracket !== 'consolation');
     const consolationMatches = enabled
-      ? createConsolationMatches(mainMatches, includeSecondRound)
+      ? createConsolationMatches(mainMatches, includeSecondRound, hasThirdPlaceMatch)
       : [];
     const updatedMatches = [...mainMatches, ...consolationMatches];
     setMatches(updatedMatches);
@@ -318,11 +276,12 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       ...sport,
       matches: updatedMatches,
       tournamentSettings: {
-        hasThirdPlaceMatch: sport.tournamentSettings?.hasThirdPlaceMatch ?? false,
+        hasThirdPlaceMatch: hasThirdPlace,
         hasRepechage: sport.tournamentSettings?.hasRepechage ?? false,
         consolation: {
           enabled,
-          includeSecondRoundLosers: includeSecondRound
+          includeSecondRoundLosers: includeSecondRound,
+          hasThirdPlaceMatch
         }
       }
     });
@@ -465,25 +424,27 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   const nodeWidth = 200;
   const nodeHeight = 100;
 
-  // 3位決定戦の表示をより堅牢に
-  const ThirdPlaceMatchCard = () => {
-    // 3位決定戦の試合データを直接取得
-    const thirdPlaceMatchData = matches.find(m => 
-      m.matchNumber === 0 || m.id.includes('third_place')
-    );
+  const ThirdPlaceMatchCard = ({ bracket }: { bracket: 'main' | 'consolation' }) => {
+    const thirdPlaceMatchData = matches.find(match => {
+      const isThirdPlace = match.matchNumber === 0 || match.id.includes('third_place');
+      if (!isThirdPlace) return false;
+      if (bracket === 'consolation') return match.bracket === 'consolation';
+      return match.bracket !== 'consolation';
+    });
 
     if (!thirdPlaceMatchData) {
       return null;
     }
 
-    // チーム情報を取得
     const team1 = sport.teams.find(t => t.id === thirdPlaceMatchData.team1Id);
     const team2 = sport.teams.find(t => t.id === thirdPlaceMatchData.team2Id);
+    let title = 'メイン3位決定戦';
+    if (bracket === 'consolation') title = '負け側3位決定戦';
 
     return (
       <Paper sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          {"3位決定戦"}
+          {title}
         </Typography>
         <Box 
           sx={{ 
@@ -509,7 +470,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <Typography variant="subtitle1" align="center" gutterBottom>
-                {"3位決定戦"}
+                {title}
               </Typography>
             </Grid>
             
@@ -566,25 +527,32 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
             <Typography variant="h6">
               {"トーナメント設定"}
             </Typography>
+          </Box>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            useFlexGap
+            sx={{ flexWrap: 'wrap' }}
+          >
             <FormControlLabel
-              control={
+              control={(
                 <Switch
                   checked={hasThirdPlace}
-                  onChange={(e) => {
-                    handleThirdPlaceChange(e.target.checked);
-                  }}
+                  onChange={event => handleThirdPlaceChange(event.target.checked)}
                 />
-              }
-              label={"3位決定戦を実施"}
+              )}
+              label="メイン3位決定戦を実施"
             />
-          </Box>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <FormControlLabel
               control={(
                 <Switch
                   checked={hasConsolation}
                   onChange={event => {
-                    updateConsolation(event.target.checked, includeSecondRoundLosers);
+                    updateConsolation(
+                      event.target.checked,
+                      includeSecondRoundLosers,
+                      hasConsolationThirdPlace
+                    );
                   }}
                 />
               )}
@@ -595,10 +563,24 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
                 <Switch
                   checked={includeSecondRoundLosers}
                   disabled={!hasConsolation}
-                  onChange={event => updateConsolation(true, event.target.checked)}
+                  onChange={event => {
+                    updateConsolation(true, event.target.checked, hasConsolationThirdPlace);
+                  }}
                 />
               )}
               label="2回戦敗者も参加"
+            />
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={hasConsolationThirdPlace}
+                  disabled={!hasConsolation}
+                  onChange={event => {
+                    updateConsolation(true, includeSecondRoundLosers, event.target.checked);
+                  }}
+                />
+              )}
+              label="負け側3位決定戦を実施"
             />
           </Stack>
         </Paper>
@@ -650,9 +632,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
             </Box>
           </Paper>
 
-          {matches.some(m => m.matchNumber === 0 || m.id.includes('third_place')) && (
-            <ThirdPlaceMatchCard />
-          )}
+          <ThirdPlaceMatchCard bracket="main" />
 
           {consolationBracketMatches.length > 0 && (
             <Paper sx={{ p: 2, mb: 3 }}>
@@ -678,6 +658,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               </Box>
             </Paper>
           )}
+
+          <ThirdPlaceMatchCard bracket="consolation" />
         </>
       ) : (
         <Paper sx={{ p: 3, textAlign: 'center' }}>

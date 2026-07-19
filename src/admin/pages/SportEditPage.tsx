@@ -614,7 +614,7 @@ const SportEditPage: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth>
-                    <InputLabel>{"3位決定戦あり"}</InputLabel>
+                    <InputLabel>{"メイン3位決定戦あり"}</InputLabel>
                     <Select
                       value={localSport.tournamentSettings?.hasThirdPlaceMatch ? "true" : "false"}
                       onChange={(e) => handleSettingsChange('hasThirdPlaceMatch', e.target.value === 'true')}

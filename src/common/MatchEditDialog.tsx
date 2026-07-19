@@ -133,18 +133,19 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
   };
 
   const maxRound = Math.max(...sport.matches.map(m => m.round));
+  const getMatchTitle = (): string => {
+    if (!match) return '';
+    if (match.round === maxRound && match.matchNumber === 1) return '決勝';
+    if (match.matchNumber !== 0) return `${match.round}-${match.matchNumber}回戦`;
+    if (match.bracket === 'consolation') return '負け側3位決定戦';
+    return 'メイン3位決定戦';
+  };
 
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
         <DialogTitle>
-          {match && (
-            match.round === maxRound && match.matchNumber === 1 
-              ? "決勝"
-              : match.matchNumber === 0 
-              ? "3位決定戦"
-              : `${match.round}-${match.matchNumber}回戦`
-          )}
+          {getMatchTitle()}
         </DialogTitle>
         <DialogContent dividers>
           <Alert severity="warning" sx={{ mb: 2 }}>
