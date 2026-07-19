@@ -39,7 +39,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   const pendingSportRef = useRef<Sport | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newSport, setNewSport] = useState<Partial<Sport> & Pick<Sport, 'organizers'>>(
+  const [newSport, setNewSport] = useState<Partial<Sport>>(
     sport 
       ? { ...sport } 
       : {
@@ -47,7 +47,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           eventId,
           type: 'tournament',
           description: '',
-          organizers: [],
           teams: [],
           matches: []
         }
@@ -64,7 +63,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           eventId,
           type: 'tournament',
           description: '',
-          organizers: [],
           teams: [],
           matches: []
         });
@@ -97,11 +95,9 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         eventId: newSport.eventId,
         type: newSport.type || 'tournament',
         description: newSport.description || '',
-        organizers: newSport.organizers || [],
         teams: newSport.teams || [],
         matches: newSport.matches || [],
-        rules: newSport.rules || '',
-        manual: newSport.manual || '',
+        operationsNote: newSport.operationsNote || '',
         // 初期値を設定
         tournamentSettings: newSport.tournamentSettings || {
           hasThirdPlaceMatch: true,
@@ -189,7 +185,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
               eventId,
               type: 'tournament',
               description: '',
-              organizers: [],
               teams: [],
               matches: []
             });

@@ -27,18 +27,16 @@ import {
   ArrowBack as ArrowBackIcon,
   SportsSoccer as SportIcon,
   People as PeopleIcon,
-  EmojiEvents as RulesIcon,
-  MenuBook as ManualIcon,
+  Notes as NotesIcon,
   Settings as SettingsIcon,
   Schedule as ScheduleIcon,  // 追加
-  Add as AddIcon,
   Sync as SyncIcon,
   Image as ImageIcon, // 画像アイコンを追加
   Leaderboard as LeaderboardIcon, // 追加
 } from '@mui/icons-material';
 import { getSportTypeLabel } from '../../utils/labels';
 import { useDatabase } from '../../hooks/useDatabase';
-import { Sport, Team, Event, Organizer } from '../../types';
+import { Sport, Team, Event } from '../../types';
 import TournamentScoring from '../../common/TournamentScoring';
 import RoundRobinScoring from '../components/scoring/RoundRobinScoring';
 //import CustomScoring from '../../components/admin/scoring/CustomScoring';
@@ -55,11 +53,9 @@ import ScheduleTab from '../components/scheduling/ScheduleTab';  // 追加
 const fieldToTabMap: Record<keyof Sport, string> = {
   name: 'details',
   description: 'details',
-  rules: 'rules',
-  manual: 'manual',
+  operationsNote: 'note',
   tournamentSettings: 'settings',
   roundRobinSettings: 'settings',
-  organizers: 'roster',
   roster: 'roster',
   scheduleSettings: 'schedule',  // 追加
   // ...他のフィールドも必要に応じて追加
@@ -120,12 +116,6 @@ const SportEditPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [localSport, setLocalSport] = useState<Sport | null>(null);
-  const [newOrganizer, setNewOrganizer] = useState<Organizer>({
-    id: `org_${Date.now()}`,
-    name: '',
-    role: 'member',
-    grade: 2
-  });
   const [initialLoading, setInitialLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -136,8 +126,7 @@ const SportEditPage: React.FC = () => {
   const [tabLoadingStates, setTabLoadingStates] = useState({
     details: false,
     roster: false,
-    rules: false,
-    manual: false,
+    note: false,
     settings: false
   });
   
@@ -191,14 +180,7 @@ const SportEditPage: React.FC = () => {
         loading: false,
         hasChanges: false 
       },
-      rules: { 
-        isLoaded: false, 
-        isDirty: false, 
-        lastUpdated: 0,
-        loading: false,
-        hasChanges: false 
-      },
-      manual: { 
+      note: { 
         isLoaded: false, 
         isDirty: false, 
         lastUpdated: 0,
@@ -307,14 +289,7 @@ const SportEditPage: React.FC = () => {
       loading: false,
       hasChanges: false 
     },
-    rules: { 
-      isLoaded: true, 
-      isDirty: false, 
-      lastUpdated: 0,
-      loading: false,
-      hasChanges: false 
-    },
-    manual: { 
+    note: { 
       isLoaded: true, 
       isDirty: false, 
       lastUpdated: 0,
@@ -342,7 +317,7 @@ const SportEditPage: React.FC = () => {
       await save(`sport_${sportId}`);
     }
 
-    const tabName = ['details','schedule', 'roster', 'rules', 'manual', 'settings'][newValue];
+    const tabName = ['details', 'schedule', 'roster', 'note', 'settings'][newValue];
     setActiveTab(newValue);
 
     if (!tabStates[tabName].isLoaded) {
@@ -443,97 +418,9 @@ const SportEditPage: React.FC = () => {
     }
   };
 
-  const handleOrganizerChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
-    const { name, value } = e.target;
-    if (name) {
-      setNewOrganizer(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const addOrganizer = () => {
-    if (!newOrganizer.name || !sport) return;
-    
-    // 有効なIDを持つ新しいオーガナイザーを作成
-    const newOrganizerWithId = {
-      ...newOrganizer,
-      id: `org_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-    };
-    
-    // スポーツのオーガナイザーリストを更新
-    const updatedOrganizers = [...(sport.organizers || []), newOrganizerWithId];
-    
-    // スポーツオブジェクトを更新
-    const updatedSport = {
-      ...sport,
-      organizers: updatedOrganizers
-    };
-    
-    // 親コンポーネントに通知
-    handleSportUpdate(updatedSport);
-    
-    // 該当タブの状態を更新
-    const tabName = getTabNameForField('organizers');
-    setTabStates(prev => ({
-      ...prev,
-      [tabName]: {
-        ...prev[tabName],
-        isDirty: true,
-        hasChanges: true
-      }
-    }));
-    
-    // 新規オーガナイザー入力をリセット
-    setNewOrganizer({
-      id: `org_${Date.now()}`,
-      name: '',
-      role: 'member',
-      grade: 2
-    });
-  };
-
-  const removeOrganizer = (id: string) => {
-    if (!sport) return;
-    
-    // 指定されたIDを持つオーガナイザーを除外
-    const updatedOrganizers = (sport.organizers || []).filter(org => org.id !== id);
-    
-    // スポーツオブジェクトを更新
-    const updatedSport = {
-      ...sport,
-      organizers: updatedOrganizers
-    };
-    
-    // 親コンポーネントに通知
-    handleSportUpdate(updatedSport);
-    
-    // 該当タブの状態を更新
-    const tabName = getTabNameForField('organizers');
-    setTabStates(prev => ({
-      ...prev,
-      [tabName]: {
-        ...prev[tabName],
-        isDirty: true,
-        hasChanges: true
-      }
-    }));
-  };
-
   // イベント名を取得する関数
   const getEventName = (eventId: string) => {
     return events && events[eventId] ? events[eventId].name : "不明なイベント";
-  };
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'leader':
-        return "リーダー";
-      case 'member':
-        return "メンバー";
-      case 'teacher': 
-        return "教員";
-      default:
-        return role;
-    }
   };
 
   // tournamentSettingsの型エラーを修正
@@ -598,7 +485,7 @@ const SportEditPage: React.FC = () => {
     const diffs: typeof differences = {};
     
     // 基本フィールドの比較
-    ['name', 'description', 'rules', 'manual'].forEach(field => {
+    ['name', 'description', 'operationsNote'].forEach(field => {
       if (local[field] !== remote[field]) {
         diffs[field] = {
           local: local[field],
@@ -606,14 +493,6 @@ const SportEditPage: React.FC = () => {
         };
       }
     });
-    
-    // 主催者リストの比較
-    if (JSON.stringify(local.organizers) !== JSON.stringify(remote.organizers)) {
-      diffs.organizers = {
-        local: local.organizers,
-        remote: remote.organizers
-      };
-    }
     
     // 設定の比較
     if (JSON.stringify(local.tournamentSettings) !== JSON.stringify(remote.tournamentSettings)) {
@@ -868,8 +747,7 @@ const SportEditPage: React.FC = () => {
             <Tab icon={<SportIcon />} label={"ホーム"} />
             <Tab icon={<ScheduleIcon />} label={"スケジュール"} />  {/* 追加 */}
             <Tab icon={<PeopleIcon />} label={"名簿"} />
-            <Tab icon={<RulesIcon />} label={"ルール"} />
-            <Tab icon={<ManualIcon />} label={"マニュアル"} />
+            <Tab icon={<NotesIcon />} label={"運営側メモ"} />
             <Tab icon={<SettingsIcon />} label={"設定"} />
           </Tabs>
         </Paper>
@@ -924,7 +802,7 @@ const SportEditPage: React.FC = () => {
 
             <Grid container spacing={2}>
               {/* 既存の詳細情報セクション */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12}>
                 <Paper sx={{ p: 2, mb: 2, height: '100%' }}>
                   <Typography variant="h6" gutterBottom>
                     {"基本情報"}
@@ -971,86 +849,6 @@ const SportEditPage: React.FC = () => {
                   </Grid>
                 </Paper>
               </Grid>
-              
-              {/* 既存の主催者セクション */}
-              <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 2, mb: 2, height: '100%' }}>
-                  <Typography variant="h6" gutterBottom>
-                    {"担当者"}
-                  </Typography>
-                  <Divider sx={{ mb: 3 }} />
-                  
-                  <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-end">
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        name="name"
-                        label={"担当者名"}
-                        fullWidth
-                        value={newOrganizer.name}
-                        onChange={handleOrganizerChange}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
-                      <FormControl fullWidth>
-                        <InputLabel>{"役割"}</InputLabel>
-                        <Select
-                          name="role"
-                          value={newOrganizer.role}
-                          onChange={handleOrganizerChange as any}
-                        >
-                          <MenuItem value="leader">{"リーダー"}</MenuItem>
-                          <MenuItem value="member">{"メンバー"}</MenuItem>
-                          <MenuItem value="teacher">{"教員"}</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
-                      <FormControl fullWidth>
-                        <InputLabel>{"学年"}</InputLabel>
-                        <Select
-                          name="grade"
-                          value={newOrganizer.grade}
-                          onChange={handleOrganizerChange as any}
-                        >
-                          <MenuItem value={1}>{"1年生"}</MenuItem>
-                          <MenuItem value={2}>{"2年生"}</MenuItem>
-                          <MenuItem value={3}>{"3年生"}</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} sm={2}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        fullWidth
-                        startIcon={<AddIcon />}
-                        onClick={addOrganizer}
-                        disabled={!newOrganizer.name}
-                      >
-                        {"追加"}
-                      </Button>
-                    </Grid>
-                  </Grid>
-                  
-                  {/* 担当者リスト */}
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {(localSport.organizers || []).map(org => (
-                      <Chip
-                        key={org.id}
-                        label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${"年"})`}
-                        onDelete={() => removeOrganizer(org.id)}
-                        color={org.role === 'leader' ? 'primary' : 'default'}
-                      />
-                    ))}
-                    {(!localSport.organizers || localSport.organizers.length === 0) && (
-                      <Typography variant="body2" color="text.secondary">
-                        {"担当者がいません"}
-                      </Typography>
-                    )}
-                  </Box>
-                  <DifferenceIndicator field="organizers" />
-                </Paper>
-              </Grid>
             </Grid>
           </Box>
         </TabPanel>
@@ -1073,66 +871,31 @@ const SportEditPage: React.FC = () => {
           </Paper>
         </TabPanel>
 
-        {/* ルールタブ */}
+        {/* 運営側メモタブ */}
         <TabPanel value={activeTab} index={3}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              {"ルール"}
+              {"運営側メモ"}
             </Typography>
             <Divider sx={{ mb: 3 }} />
             
             <TextField
-              name="rules"
-              label={"ルール内容"}
+              name="operationsNote"
+              label={"運営側メモ"}
               fullWidth
               multiline
               rows={12}
-              value={localSport.rules || ''}
+              value={localSport.operationsNote || ''}
               onChange={handleInputChange}
               variant="outlined"
-              placeholder="ルールを入力"
+              placeholder="運営に必要な情報を入力"
             />
-            <DifferenceIndicator field="rules" />
-            
-            <Box sx={{ mt: 3, color: 'text.secondary' }}>
-              <Typography variant="caption">
-                {"競技のルールを記入してください"}
-              </Typography>
-            </Box>
-          </Paper>
-        </TabPanel>
-
-        {/* マニュアルタブ */}
-        <TabPanel value={activeTab} index={4}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              {"マニュアル"}
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
-            
-            <TextField
-              name="manual"
-              label={"マニュアル内容"}
-              fullWidth
-              multiline
-              rows={12}
-              value={localSport.manual || ''}
-              onChange={handleInputChange}
-              variant="outlined"
-              placeholder="マニュアルを入力"
-            />
-            <DifferenceIndicator field="manual" />
-            
-            <Box sx={{ mt: 3, color: 'text.secondary' }}>
-              <Typography variant="caption">
-                {"競技の進行マニュアルを記入してください"}
-              </Typography>
-            </Box>
+            <DifferenceIndicator field="operationsNote" />
           </Paper>
         </TabPanel>
 
         {/* 設定タブ */}
-        <TabPanel value={activeTab} index={5}>
+        <TabPanel value={activeTab} index={4}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               {"設定"}

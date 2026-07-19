@@ -17,17 +17,6 @@ import {
   Alert,
   FormControlLabel,
   Switch,
-  Tooltip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemSecondaryAction,
-  Avatar,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   SelectChangeEvent,
   Dialog,
   DialogTitle,
@@ -38,17 +27,14 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  Add as AddIcon,
   Delete as DeleteIcon,
-  Person as PersonIcon,
-  School as GradeIcon,
   Class as ClassIcon,
   EmojiEvents as EmojiEventsIcon,
   Leaderboard as LeaderboardIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDatabase } from '../../hooks/useDatabase';
-import { Event, Organizer } from '../../types';
+import { Event } from '../../types';
 import { motion } from 'framer-motion';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { useAdminLayout } from '../context/AdminLayoutContext';
@@ -95,14 +81,6 @@ const EventEditPage: React.FC = () => {
   const [autoSaveTimerId, setAutoSaveTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // 新規担当者ための状態
-  const [newOrganizer, setNewOrganizer] = useState<Organizer>({
-    id: `org_${Date.now()}`,
-    name: '',
-    role: 'member',
-    grade: 2
-  });
-  
   // クラステンプレートダイアログ用の状態
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [gradeParticipation, setGradeParticipation] = useState({
@@ -207,56 +185,6 @@ const EventEditPage: React.FC = () => {
     };
   }, [registerSaveHandler, unregisterSaveHandler, localEvent, eventId]);
 
-
-  const handleOrganizerChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
-    const { name, value } = e.target;
-    if (name) {
-      setNewOrganizer(prev => ({ ...prev, [name]: value }));
-    }
-  };
-  
-  const addOrganizer = () => {
-    if (newOrganizer.name && localEvent) {
-      setLocalEvent(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          organizers: [...(prev.organizers || []), { ...newOrganizer, id: `org_${Date.now()}` }]
-        };
-      });
-      
-      // リセット
-      setNewOrganizer({
-        id: `org_${Date.now()}`,
-        name: '',
-        role: 'member',
-        grade: 2
-      });
-    }
-  };
-  
-  const removeOrganizer = (id: string) => {
-    if (localEvent) {
-      setLocalEvent(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          organizers: (prev.organizers || []).filter(org => org.id !== id)
-        };
-      });
-    }
-  };
-  
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'leader':
-        return "リーダー";
-      case 'member':
-        return "メンバー";
-      default:
-        return role;
-    }
-  };
 
   // クラステンプレートの生成処理
   const generateClassTemplate = () => {
@@ -382,7 +310,6 @@ const EventEditPage: React.FC = () => {
             aria-label="event management tabs"
           >
             <Tab label={"基本情報"} />
-            <Tab label={"担当者"} />
             <Tab label={"名簿"} />
             <Tab label={"スコアボード"} icon={<LeaderboardIcon />} iconPosition="start" /> {/* 追加 */}
             <Tab label={"設定"} />
@@ -485,14 +412,6 @@ const EventEditPage: React.FC = () => {
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="body2" color="text.secondary">
-                            {"担当者数"}
-                          </Typography>
-                          <Typography variant="h6">
-                            {localEvent.organizers ? localEvent.organizers.length : 0}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="body2" color="text.secondary">
                             {"作成日時"}
                           </Typography>
                           <Typography variant="body1">
@@ -524,139 +443,8 @@ const EventEditPage: React.FC = () => {
           </Grid>
         </TabPanel>
         
-        {/* 担当者タブ */}
-        <TabPanel value={activeTab} index={1}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              {"担当者管理"}
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
-            
-            <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-end">
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  name="name"
-                  label={"担当者名"}
-                  fullWidth
-                  value={newOrganizer.name}
-                  onChange={handleOrganizerChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <FormControl fullWidth>
-                  <InputLabel>{"役割"}</InputLabel>
-                  <Select
-                    name="role"
-                    value={newOrganizer.role}
-                    onChange={handleOrganizerChange as any}
-                  >
-                    <MenuItem value="leader">{"リーダー"}</MenuItem>
-                    <MenuItem value="member">{"メンバー"}</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <FormControl fullWidth>
-                  <InputLabel>{"学年"}</InputLabel>
-                  <Select
-                    name="grade"
-                    value={newOrganizer.grade}
-                    onChange={handleOrganizerChange as any}
-                  >
-                    <MenuItem value={1}>{"1年生"}</MenuItem>
-                    <MenuItem value={2}>{"2年生"}</MenuItem>
-                    <MenuItem value={3}>{"3年生"}</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={2}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  startIcon={<AddIcon />}
-                  onClick={addOrganizer}
-                  disabled={!newOrganizer.name}
-                >
-                  {"追加"}
-                </Button>
-              </Grid>
-            </Grid>
-            
-            <Divider sx={{ mb: 3 }} />
-            
-            <Typography variant="subtitle1" gutterBottom>
-              {"担当者一覧"}
-            </Typography>
-            
-            <Paper variant="outlined" sx={{ mb: 2 }}>
-              <List dense>
-                {localEvent.organizers?.map((organizer) => (
-                  <ListItem key={organizer.id} divider>
-                    <ListItemIcon>
-                      <Avatar sx={{ 
-                        bgcolor: organizer.role === 'leader' 
-                          ? 'primary.main' 
-                          : 'grey.400',
-                        width: 32,
-                        height: 32
-                      }}>
-                        <PersonIcon />
-                      </Avatar>
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={organizer.name}
-                      secondary={
-                        <>
-                          <Chip
-                            size="small"
-                            label={getRoleLabel(organizer.role)}
-                            color={organizer.role === 'leader' ? 'primary' : 'default'}
-                            sx={{ mr: 1, fontSize: '0.75rem' }}
-                          />
-                          <Chip
-                            size="small"
-                            icon={<GradeIcon sx={{ fontSize: '0.875rem !important' }} />}
-                            label={`${organizer.grade}${"年"}`}
-                            sx={{ fontSize: '0.75rem' }}
-                          />
-                        </>
-                      }
-                    />
-                    <ListItemSecondaryAction>
-                      <IconButton 
-                        edge="end" 
-                        aria-label="delete" 
-                        size="small"
-                        color="error"
-                        onClick={() => removeOrganizer(organizer.id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                ))}
-                {(!localEvent.organizers || localEvent.organizers.length === 0) && (
-                  <ListItem>
-                    <ListItemText
-                      primary={"担当者がいません"}
-                      primaryTypographyProps={{ color: 'text.secondary', align: 'center' }}
-                    />
-                  </ListItem>
-                )}
-              </List>
-            </Paper>
-            
-            <Box sx={{ mt: 2, color: 'text.secondary' }}>
-              <Typography variant="caption">
-                {"担当者はイベントの管理・運営を行うメンバーです"}
-              </Typography>
-            </Box>
-          </Paper>
-        </TabPanel>
-        
         {/* 名簿タブ (新規追加) */}
-        <TabPanel value={activeTab} index={2}>
+        <TabPanel value={activeTab} index={1}>
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6">
@@ -698,7 +486,7 @@ const EventEditPage: React.FC = () => {
         </TabPanel>
         
         {/* 総合成績タブ (新規追加) */}
-        <TabPanel value={activeTab} index={3}>
+        <TabPanel value={activeTab} index={2}>
           <OverallScoreTab 
             event={localEvent} 
             onUpdate={(updatedEvent) => {
@@ -733,8 +521,8 @@ const EventEditPage: React.FC = () => {
           />
         </TabPanel>
         
-        {/* 設定タブ - インデックスを4に変更 */}
-        <TabPanel value={activeTab} index={4}>
+        {/* 設定タブ */}
+        <TabPanel value={activeTab} index={3}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom color="error">
               {"危険な操作"}

@@ -385,18 +385,6 @@ const addEventInfoSheet = (
   sheet.addRow(['Date:', new Date(event.date).toLocaleDateString()]);
   sheet.addRow(['Description:', event.description]);
   
-  // Add organizers
-  sheet.addRow(['']);
-  sheet.addRow(['Organizers:']);
-  // Check if organizers array exists before iterating
-  if (event.organizers && Array.isArray(event.organizers) && event.organizers.length > 0) {
-    event.organizers.forEach(org => {
-      sheet.addRow([org.name, org.role, `Grade: ${org.grade}`]);
-    });
-  } else {
-    sheet.addRow(['No organizers assigned']);
-  }
-  
   // Sports list
   sheet.addRow(['']);
   sheet.addRow(['Sports:']);

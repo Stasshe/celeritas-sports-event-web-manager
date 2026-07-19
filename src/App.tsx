@@ -11,7 +11,6 @@ import AdminPage from './admin/pages/AdminPage';
 import EventEditPage from './admin/pages/EventEditPage';
 import SportEditPage from './admin/pages/SportEditPage';
 import ScoringPage from './admin/pages/ScoringPage';
-import AdminHelpPage from './admin/pages/AdminHelpPage';
 import AdminSettingsPage from './admin/pages/AdminSettingsPage';
 import ExportPage from './admin/pages/ExportPage';
 import BackupPage from './admin/pages/BackupPage';
@@ -56,7 +55,6 @@ function App() {
                 <Route path="export" element={<ExportPage />} />
                 <Route path="backup" element={<BackupPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
-                <Route path="help" element={<AdminHelpPage />} />
               </Route>
             </Route>
           </Routes>

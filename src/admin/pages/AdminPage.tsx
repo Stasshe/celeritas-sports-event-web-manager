@@ -16,7 +16,6 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Save as SaveIcon,
-  Help as HelpIcon,
   ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 import { getSportTypeDescription, getSportTypeLabel } from '../../utils/labels';
@@ -168,11 +167,6 @@ const AdminPage: React.FC = () => {
     navigate('/admin/settings');
   };
 
-  // ヘルプページに移動
-  const handleGoToHelp = () => {
-    navigate('/admin/help');
-  };
-
   // イベントごとの競技を取得
   const getSportsForEvent = (eventId: string): Sport[] => {
     if (!sports) return [];
@@ -225,13 +219,6 @@ const AdminPage: React.FC = () => {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              <Button
-                variant="outlined"
-                startIcon={<HelpIcon />}
-                onClick={handleGoToHelp}
-              >
-                {"ヘルプ"}
-              </Button>
               <Button
                 variant="outlined"
                 startIcon={<SettingsIcon />}

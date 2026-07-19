@@ -14,7 +14,7 @@ import {
   Tabs,
   Tab
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Schedule as ScheduleIcon, MenuBook as RulesIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Schedule as ScheduleIcon } from '@mui/icons-material';
 import { getSportTypeLabel } from '../../utils/labels';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Sport, Team, Match } from '../../types';
@@ -23,7 +23,6 @@ import RoundRobinTable from '../components/sports/RoundRobinTable';
 import RankingScoring from '../../admin/components/scoring/RankingScoring';
 import LeagueScoring from '../../admin/components/scoring/LeagueScoring';
 import ScheduleTimeline from '../components/sports/ScheduleTimeline';
-import RulesDisplay from '../components/sports/RulesDisplay';
 
 // タブの型定義を追加
 interface SportTab {
@@ -90,16 +89,6 @@ const SportPage: React.FC = () => {
     }
   ];
   
-  // ルールタブを追加（ルールがある場合のみ）
-  if (sport.rules) {
-    tabs.push({
-      label: "ルール",
-      icon: <RulesIcon />,
-      iconPosition: "start",
-      value: tabs.length
-    });
-  }
-
   return (
     <Container maxWidth="lg">
       <Box sx={{ mb: 4 }}>
@@ -203,13 +192,6 @@ const SportPage: React.FC = () => {
         </Paper>
       </Box>
       
-      {sport.rules && (
-        <Box sx={{ mt: 4, display: tabValue === 2 ? 'block' : 'none' }}>
-          <Paper sx={{ p: 3 }}>
-            <RulesDisplay rules={sport.rules} />
-          </Paper>
-        </Box>
-      )}
     </Container>
   );
 };

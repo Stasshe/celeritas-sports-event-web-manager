@@ -32,7 +32,6 @@ import {
   ExpandLess,
   ExpandMore,
   Add as AddIcon,
-  Help as HelpIcon,
   Home as HomeIcon,
   FileDownload as ExportIcon,
   Backup as BackupIcon
@@ -343,17 +342,6 @@ const AdminLayout = () => {
               <SettingsIcon />
             </ListItemIcon>
             <ListItemText primary={"設定"} />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton
-            selected={location.pathname === '/admin/help'}
-            onClick={() => handleNavigate('/admin/help')}
-          >
-            <ListItemIcon>
-              <HelpIcon />
-            </ListItemIcon>
-            <ListItemText primary={"ヘルプ"} />
           </ListItemButton>
         </ListItem>
       </List>
