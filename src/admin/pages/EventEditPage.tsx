@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Box,
@@ -38,7 +38,6 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  Save as SaveIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
@@ -89,12 +88,11 @@ const EventEditPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { alpha } = useThemeContext();
-  const { showSnackbar, setSavingStatus } = useAdminLayout(); // AdminLayoutコンテキストを使用
-  
+  const { showSnackbar, setSavingStatus, save, setHasUnsavedChanges, registerSaveHandler, unregisterSaveHandler } = useAdminLayout(); // AdminLayoutコンテキストを使用
+
   const { data: event, loading: eventLoading, updateData: updateEvent, removeData } = useDatabase<Event>(`/events/${eventId}`);
-  
+
   const [localEvent, setLocalEvent] = useState<Event | null>(null);
-  const [saveStatus, setSaveStatusLocal] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [activeTab, setActiveTab] = useState(0);
   const [autoSaveTimerId, setAutoSaveTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -131,7 +129,6 @@ const EventEditPage: React.FC = () => {
     }
     
     // 保存状態をリセット
-    setSaveStatusLocal('idle');
     setSavingStatus('idle');
   }, [eventId]);
   
@@ -153,53 +150,27 @@ const EventEditPage: React.FC = () => {
     
     // データが変更されている場合
     if (JSON.stringify(localEvent) !== JSON.stringify(event)) {
-      console.log('データ変更を検知 - 自動保存をスケジュール:', new Date().toISOString());
-      
+      setHasUnsavedChanges(true);
+
       // 既存のタイマーをクリア
       if (autoSaveTimerId) {
         clearTimeout(autoSaveTimerId);
       }
-      
+
       // 新しいタイマーをセット
       const timerId = setTimeout(() => {
-        console.log('自動保存実行:', new Date().toISOString());
-        handleSave();
+        save(`event_${eventId}`);
       }, 1000); // 1秒後に保存
-      
+
       setAutoSaveTimerId(timerId);
     }
-    
+
     return () => {
       if (autoSaveTimerId) {
         clearTimeout(autoSaveTimerId);
       }
     };
   }, [localEvent]);
-
-  // 即時保存用のヘルパー関数を追加
-  const saveImmediately = useCallback(async () => {
-    if (!localEvent) return;
-    
-    console.log('即時保存開始:', new Date().toISOString());
-    setSavingStatus('saving');
-    setSaveStatusLocal('saving');
-    
-    try {
-      await updateEvent(localEvent);
-      setSavingStatus('saved');
-      setSaveStatusLocal('saved');
-      showSnackbar(t('event.saveSuccess'), 'success');
-      
-      console.log('即時保存完了:', new Date().toISOString());
-      return true;
-    } catch (error) {
-      console.error('Error saving event data:', error);
-      setSavingStatus('error');
-      setSaveStatusLocal('error');
-      showSnackbar(t('event.saveError'), 'error');
-      return false;
-    }
-  }, [localEvent, updateEvent, setSavingStatus, showSnackbar, t]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -217,24 +188,28 @@ const EventEditPage: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
-    if (!localEvent) return;
-    
-    setSavingStatus('saving');
-    setSaveStatusLocal('saving');
+  // 実際の書き込み処理。AdminLayoutContextにscope登録し、保存の唯一の実行経路にする
+  const handleSave = async (): Promise<boolean> => {
+    if (!localEvent) return false;
+
     try {
       await updateEvent(localEvent);
-      setSavingStatus('saved');
-      setSaveStatusLocal('saved');
-      showSnackbar(t('event.saveSuccess'), 'success');
+      return true;
     } catch (error) {
       console.error('Error saving event data:', error);
-      setSavingStatus('error');
-      setSaveStatusLocal('error');
-      showSnackbar(t('event.saveError'), 'error');
+      return false;
     }
   };
-  
+
+  useEffect(() => {
+    registerSaveHandler(handleSave, `event_${eventId}`);
+
+    return () => {
+      unregisterSaveHandler(`event_${eventId}`);
+    };
+  }, [registerSaveHandler, unregisterSaveHandler, localEvent, eventId]);
+
+
   const handleOrganizerChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
     if (name) {
@@ -383,34 +358,21 @@ const EventEditPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography variant="h5" component="h1">
-              {localEvent.name}
-            </Typography>
-            {localEvent.isActive && (
-              <Chip 
-                label={t('event.active')} 
-                color="success" 
-                size="small" 
-                sx={{ ml: 2 }} 
-              />
-            )}
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              disabled={saveStatus === 'saving'}
-            >
-              {saveStatus === 'saving' ? t('common.saving') : t('common.save')}
-            </Button>
-          </Box>
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+          <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h5" component="h1">
+            {localEvent.name}
+          </Typography>
+          {localEvent.isActive && (
+            <Chip
+              label={t('event.active')}
+              color="success"
+              size="small"
+              sx={{ ml: 2 }}
+            />
+          )}
         </Box>
         
         <Paper sx={{ mb: 2 }}>
@@ -764,7 +726,7 @@ const EventEditPage: React.FC = () => {
                 setLocalEvent(safeUpdatedEvent);
                 
                 // 総合成績タブでの変更は重要なので即時保存を実行
-                saveImmediately();
+                save(`event_${eventId}`);
               } catch (error) {
                 console.error("データの更新または検証中にエラーが発生:", error);
                 showSnackbar(t('event.dataValidationError'), 'error');

@@ -294,7 +294,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const value: AdminLayoutContextType = {
     showSnackbar,
     setSavingStatus: updateSavingStatus,
-    savingStatus: savingStatusRef.current,
+    savingStatus,
     registerSaveHandler,
     unregisterSaveHandler,
     save,

@@ -12,7 +12,7 @@ import {
   Alert,
   Divider
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Save as SaveIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Sport } from '../../types';
@@ -30,12 +30,7 @@ const ScoringPage: React.FC = () => {
   const { data: sport, loading, updateData } = useDatabase<Sport>(`/sports/${sportId}`);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showSnackbar, setShowSnackbar] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [saveTimeout, setSaveTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
-  
-  // 変更を自動保存するためのタイマーID
-  const [autoSaveTimerId, setAutoSaveTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
-  
+
   // スポーツデータのローカルコピー
   const [localSport, setLocalSport] = useState<Sport | null>(null);
 
@@ -71,32 +66,6 @@ const ScoringPage: React.FC = () => {
       setLocalSport(JSON.parse(JSON.stringify(sport)));
     }
   }, [sport, localSport]);
-
-  // スポーツデータが変更されたときの自動保存制御を改善
-  useEffect(() => {
-    if (!localSport || !sport || isProcessing) return;
-
-    if (JSON.stringify(localSport) !== JSON.stringify(sport)) {
-      if (autoSaveTimerId) {
-        clearTimeout(autoSaveTimerId);
-      }
-      
-      const timerId = setTimeout(() => {
-        // ダイアログが開いていないことを確認してから自動保存
-        const dialogs = document.querySelectorAll('[role="dialog"]');
-        if (dialogs.length === 0) {
-          handleSave();
-        }
-      }, 500);
-      setAutoSaveTimerId(timerId);
-    }
-
-    return () => {
-      if (autoSaveTimerId) {
-        clearTimeout(autoSaveTimerId);
-      }
-    };
-  }, [localSport, isProcessing]);
 
   const handleSave = async () => {
     if (!localSport || isProcessingRef.current) return false;
@@ -136,57 +105,22 @@ const ScoringPage: React.FC = () => {
   // クリーンアップ
   useEffect(() => {
     return () => {
-      if (saveTimeout) {
-        clearTimeout(saveTimeout);
-      }
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
       isProcessingRef.current = false;
       pendingUpdateRef.current = null;
     };
-  }, [saveTimeout]);
+  }, []);
 
-  // 初期マウント時にSaveHandlerを登録
+  // 保存ハンドラを登録(グローバル保存ボタン/未保存インジケータと連動)
   useEffect(() => {
-    // このページの保存ハンドラを登録
-    const handleSave = async () => {
-      if (!localSport || isProcessingRef.current) return false;
-      
-      try {
-        isProcessingRef.current = true;
-        setSaveStatus('saving');
-        
-        // ローカルの変更を保存
-        const result = await updateData(localSport);
-        
-        if (result) {
-          setSaveStatus('saved');
-          setShowSnackbar(true);
-          return true;
-        } else {
-          setSaveStatus('error');
-          setShowSnackbar(true);
-          return false;
-        }
-      } catch (error) {
-        console.error('Save error:', error);
-        setSaveStatus('error');
-        setShowSnackbar(true);
-        return false;
-      } finally {
-        isProcessingRef.current = false;
-      }
-    };
-    
-    // スコープ名を一意にして登録
     registerSaveHandler(handleSave, `scoring_${sportId}`);
-    
+
     return () => {
-      // アンマウント時に登録解除
       unregisterSaveHandler(`scoring_${sportId}`);
     };
-  }, [registerSaveHandler, unregisterSaveHandler, localSport, updateData, sportId]);
+  }, [registerSaveHandler, unregisterSaveHandler, handleSave, sportId]);
 
   if (loading) {
     return (
@@ -211,24 +145,13 @@ const ScoringPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton onClick={() => navigate(`/admin/sports/${sportId}`)} aria-label="back" sx={{ mr: 1 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h4" component="h1">
-            {t('scoring.title', { name: localSport.name })}
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<SaveIcon />}
-          onClick={handleSave}
-          disabled={saveStatus === 'saving'}
-        >
-          {saveStatus === 'saving' ? t('common.saving') : t('common.save')}
-        </Button>
+      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+        <IconButton onClick={() => navigate(`/admin/sports/${sportId}`)} aria-label="back" sx={{ mr: 1 }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h4" component="h1">
+          {t('scoring.title', { name: localSport.name })}
+        </Typography>
       </Box>
 
       <Paper sx={{ p: 3, mb: 4 }}>

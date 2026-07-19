@@ -25,7 +25,6 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  Save as SaveIcon,
   SportsSoccer as SportIcon,
   People as PeopleIcon,
   EmojiEvents as RulesIcon,
@@ -111,7 +110,7 @@ const SportEditPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { alpha } = useThemeContext();
-  const { setSavingStatus, showSnackbar: showAdminSnackbar } = useAdminLayout();
+  const { save, registerSaveHandler, unregisterSaveHandler, showSnackbar: showAdminSnackbar } = useAdminLayout();
   const isProcessingRef = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { currentUser } = useAuth();
@@ -120,10 +119,8 @@ const SportEditPage: React.FC = () => {
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
   
   const [activeTab, setActiveTab] = useState(0);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [localSport, setLocalSport] = useState<Sport | null>(null);
-  const [autoSaveTimerId, setAutoSaveTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [newOrganizer, setNewOrganizer] = useState<Organizer>({
     id: `org_${Date.now()}`,
     name: '',
@@ -248,36 +245,37 @@ const SportEditPage: React.FC = () => {
     }
   }, [sportId, sport]);
 
-  // handleSave関数を完全に書き換え
-  const handleSave = useCallback(async () => {
-    if (!localSport || isProcessingRef.current) return;
+  // 実際の書き込み処理。AdminLayoutContextにscope登録し、保存の唯一の実行経路にする
+  const handleSave = useCallback(async (): Promise<boolean> => {
+    if (!localSport || isProcessingRef.current) return false;
 
     isProcessingRef.current = true;
-    setSavingStatus('saving');
     setUpdating(true); // ローディング画面を表示しないフラグ
 
     try {
-      const result = await updateData(localSport);
-      if (result) {
-        setSavingStatus('saved');
-      } else {
-        setSavingStatus('error');
-      }
+      return await updateData(localSport);
     } catch (error) {
       console.error('Error saving sport:', error);
-      setSavingStatus('error');
+      return false;
     } finally {
       isProcessingRef.current = false;
       setUpdating(false);
     }
-  }, [localSport, updateData, setSavingStatus]);
+  }, [localSport, updateData]);
 
-  
+  useEffect(() => {
+    registerSaveHandler(handleSave, `sport_${sportId}`);
+
+    return () => {
+      unregisterSaveHandler(`sport_${sportId}`);
+    };
+  }, [registerSaveHandler, unregisterSaveHandler, handleSave, sportId]);
+
   // データ変更時の自動保存設定を改善
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (localSport && sport && JSON.stringify(localSport) !== JSON.stringify(sport)) {
-        handleSave();
+        save(`sport_${sportId}`);
       }
     };
 
@@ -285,7 +283,7 @@ const SportEditPage: React.FC = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [localSport, sport, handleSave]);
+  }, [localSport, sport, save, sportId]);
 
   // タブの状態管理を改善
   const [tabStates, setTabStates] = useState<TabStates>({
@@ -342,7 +340,7 @@ const SportEditPage: React.FC = () => {
   const handleTabChange = useCallback(async (event: React.SyntheticEvent, newValue: number) => {
     // 現在のタブのデータに変更があれば保存
     if (localSport && sport && JSON.stringify(localSport) !== JSON.stringify(sport) && localSport.id === sport.id) {
-      await handleSave();
+      await save(`sport_${sportId}`);
     }
 
     const tabName = ['details','schedule', 'roster', 'rules', 'manual', 'settings'][newValue];
@@ -354,7 +352,7 @@ const SportEditPage: React.FC = () => {
         [tabName]: { ...prev[tabName], isLoaded: true }
       }));
     }
-  }, [tabStates, localSport, sport, handleSave]);
+  }, [tabStates, localSport, sport, save, sportId]);
 
   // 部分更新の統合されたハンドラを改善
   const handlePartialUpdate = useCallback(async (field: keyof Sport, value: any) => {
@@ -846,30 +844,19 @@ const SportEditPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography variant="h5" component="h1">
-              {localSport.name}
-            </Typography>
-            <Chip 
-              label={t(`sport.${localSport.type}`)} 
-              color="primary" 
-              size="small" 
-              sx={{ ml: 2 }} 
-            />
-          </Box>
-          <Button
-            variant="contained"
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+          <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h5" component="h1">
+            {localSport.name}
+          </Typography>
+          <Chip
+            label={t(`sport.${localSport.type}`)}
             color="primary"
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={saveStatus === 'saving'}
-          >
-            {saveStatus === 'saving' ? t('common.saving') : t('common.save')}
-          </Button>
+            size="small"
+            sx={{ ml: 2 }}
+          />
         </Box>
 
         <Paper sx={{ mb: 2 }}>
