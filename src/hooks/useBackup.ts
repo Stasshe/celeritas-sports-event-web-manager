@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { database } from '../config/firebase';
+import { getFirebaseDatabase } from '../config/firebase';
 import { ref, onValue, update, set, get, DataSnapshot } from 'firebase/database';
 import { Event, Sport } from '../types';
 import { useDatabase } from './useDatabase';
@@ -30,6 +30,7 @@ export interface BackupData {
 }
 
 export function useBackup() {
+  const database = getFirebaseDatabase();
   const { data: events } = useDatabase<Record<string, Event>>('/events');
   const { data: sports } = useDatabase<Record<string, Sport>>('/sports');
   

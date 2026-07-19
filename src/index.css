@@ -2,12 +2,117 @@
 
 body {
   margin: 0;
-  height: '100dvh';
+  min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.error-screen {
+  box-sizing: border-box;
+  display: grid;
+  min-height: 100vh;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 24px;
+  color: #172033;
+  background: #f4f6f9;
+}
+
+.error-panel {
+  width: min(100%, 680px);
+  padding: 40px;
+  border-top: 6px solid #c62828;
+  background: #ffffff;
+  box-shadow: 0 18px 50px rgb(23 32 51 / 10%);
+}
+
+.error-mark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 28px;
+  place-items: center;
+  color: #ffffff;
+  background: #c62828;
+  font-size: 1.75rem;
+  font-weight: 800;
+}
+
+.error-label {
+  margin: 0 0 8px;
+  color: #8b1d1d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.error-panel h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  line-height: 1.2;
+}
+
+.error-description {
+  margin: 16px 0 0;
+  color: #49546a;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.error-details {
+  margin-top: 28px;
+  padding: 20px 0;
+  border-block: 1px solid #d9dee7;
+  color: #354056;
+  line-height: 1.6;
+}
+
+.error-details p {
+  margin: 0;
+}
+
+.error-details ul {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.error-details code {
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.error-retry {
+  margin-top: 28px;
+  padding: 12px 20px;
+  border: 0;
+  color: #ffffff;
+  background: #172033;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.error-retry:hover {
+  background: #2d3b57;
+}
+
+.error-retry:focus-visible {
+  outline: 3px solid #f2b84b;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .error-screen {
+    padding: 16px;
+  }
+
+  .error-panel {
+    padding: 28px 24px;
+  }
 }
 
 code {

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { database } from '../config/firebase';
+import { getFirebaseDatabase } from '../config/firebase';
 import { ref, onValue, set, update, remove, push, DataSnapshot } from 'firebase/database';
 
 interface UpdateOptions {
@@ -8,6 +8,7 @@ interface UpdateOptions {
 }
 
 export function useDatabase<T>(path: string, initialValue: T | null = null) {
+  const database = getFirebaseDatabase();
   const [data, setData] = useState<T | null>(initialValue);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

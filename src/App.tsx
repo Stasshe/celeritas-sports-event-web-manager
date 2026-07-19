@@ -23,8 +23,14 @@ import ClassSchedulePage from './general/pages/ClassSchedulePage'; // 追加: �
 import ProtectedRoute from './admin/components/ProtectedRoute';
 import PublicLayout from './general/components/PublicLayout';
 import AdminLayout from './admin/components/AdminLayout';
+import ErrorScreen from './ErrorScreen';
+import { firebaseInitializationError } from './config/firebase';
 
 function App() {
+  if (firebaseInitializationError) {
+    return <ErrorScreen error={firebaseInitializationError} />;
+  }
+
   return (
     <CustomThemeProvider>
       <CssBaseline />
