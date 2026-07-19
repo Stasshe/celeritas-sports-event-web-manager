@@ -44,8 +44,8 @@ import { useBackup, BackupType, BackupEntry } from '../../hooks/useBackup';
 import { useAdminLayout } from '../../contexts/AdminLayoutContext';
 import { motion } from 'framer-motion';
 import { useThemeContext } from '../../contexts/ThemeContext';
-import { formatDistanceToNow } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
+import { ja } from 'date-fns/locale/ja';
 
 const BackupPanel: React.FC = () => {
   const { t } = useTranslation();

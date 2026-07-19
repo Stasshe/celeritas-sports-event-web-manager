@@ -43,7 +43,6 @@ import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrate
 import { CSS } from '@dnd-kit/utilities';
 import { Sport, Team, RankingEntry } from '../../../types';
 import { useTranslation } from 'react-i18next';
-import { v4 as uuidv4 } from 'uuid';
 
 // ソート可能な行コンポーネント
 interface SortableItemProps {
@@ -380,7 +379,7 @@ const RankingScoring: React.FC<RankingScoringProps> = ({ sport, onUpdate, readOn
     
     // 新しいエントリを作成
     const newEntries: RankingEntry[] = newTeams.map((team, index) => ({
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       teamId: team.id,
       rank: rankings.length + index + 1,
       score: null, // undefinedではなくnullを使用

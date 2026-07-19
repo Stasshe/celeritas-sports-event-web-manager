@@ -92,8 +92,8 @@ jobs:
             
             ### 📦 インストール方法
             ```bash
-            npm install
-            npm run dev
+            pnpm install
+            pnpm dev
             ```
             
             **完全な変更履歴**: [比較を表示](https://github.com/${{ github.repository }}/compare/${{ steps.prev_tag.outputs.prev_tag }}...v${{ steps.version.outputs.version }})

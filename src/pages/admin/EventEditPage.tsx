@@ -97,7 +97,7 @@ const EventEditPage: React.FC = () => {
   const [localEvent, setLocalEvent] = useState<Event | null>(null);
   const [saveStatus, setSaveStatusLocal] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [activeTab, setActiveTab] = useState(0);
-  const [autoSaveTimerId, setAutoSaveTimerId] = useState<NodeJS.Timeout | null>(null);
+  const [autoSaveTimerId, setAutoSaveTimerId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // 新規担当者ための状態
