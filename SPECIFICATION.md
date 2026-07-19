@@ -65,7 +65,7 @@ Firebase必須環境変数を起動時に検証する。設定不足またはSDK
 
 `src/hooks/useDatabase.ts`の更新、Firebase RTDB `update()`一回による複数fieldのatomic write。transaction、server-side version追跡、競合解決layerなし。複数client同一field編集、last-write-wins。
 
-write中`isUpdatingRef`を立て、`onValue` snapshotによるin-flight optimistic state上書き防止。実際に起きた表示flicker・編集不安定を止めるguard。旧version-tracking/conflict-detection系、完成していたが呼ばれないparallel write pathだったため削除済み。復活禁止。field-level `update()` + in-flight guard、意図した最終設計。
+write中`isUpdatingRef`を立て、`onValue` snapshotによるin-flight optimistic state上書き防止。実際に起きた表示flicker・編集不安定を止めるguard。旧version-tracking/conflict-detection系、完成していたが呼ばれないparallel write pathだったため削除済み。復活禁止。multi-field atomic `update()` + in-flight guard、意図した最終設計。
 
 ## UI言語
 

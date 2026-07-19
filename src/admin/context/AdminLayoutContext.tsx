@@ -7,8 +7,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, Box, Button, Snackbar } from '@mui/material';
-import { Sync as SyncIcon, Warning as WarningIcon } from '@mui/icons-material';
+import { Alert, Box, Button, Snackbar, Typography } from '@mui/material';
+import { Save as SaveIcon, Sync as SyncIcon, Warning as WarningIcon } from '@mui/icons-material';
 
 export const AUTO_SAVE_DELAY = 800;
 
@@ -54,6 +54,37 @@ interface SnackbarState {
 
 const AdminLayoutActionsContext = createContext<AdminLayoutActions | null>(null);
 const AdminSaveStateContext = createContext<AdminSaveState | null>(null);
+
+const PendingSave = () => {
+  const actions = useContext(AdminLayoutActionsContext);
+  const state = useContext(AdminSaveStateContext);
+  if (!actions || !state?.hasUnsavedChanges) return null;
+
+  return (
+    <Box
+      sx={{
+        alignItems: 'center',
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2,
+        bottom: 24,
+        boxShadow: 4,
+        display: 'flex',
+        gap: 1,
+        left: 24,
+        p: 1.5,
+        position: 'fixed',
+        zIndex: 2000,
+      }}
+    >
+      <Typography variant="body2" color="text.secondary">未保存の変更があります</Typography>
+      <Button size="small" startIcon={<SaveIcon />} onClick={() => actions.save()} variant="outlined">
+        保存
+      </Button>
+    </Box>
+  );
+};
 
 export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [saveState, setSaveState] = useState<AdminSaveState>({
@@ -270,6 +301,7 @@ export const AdminLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ c
     <AdminLayoutActionsContext.Provider value={actions}>
       <AdminSaveStateContext.Provider value={saveState}>
         {children}
+        <PendingSave />
         <Snackbar
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
           autoHideDuration={snackbar.autoHideDuration}
