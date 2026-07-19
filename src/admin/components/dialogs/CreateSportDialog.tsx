@@ -6,23 +6,14 @@ import {
   DialogActions,
   Button,
   TextField,
-  Divider,
-  Typography,
-  Box,
-  Chip,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Grid,
-  CircularProgress,
-  FormHelperText
+  CircularProgress
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon
-} from '@mui/icons-material';
-import { Sport, Organizer, Event } from '../../../types/index';
+import { Sport, Event } from '../../../types/index';
 import { useDatabase } from '../../../hooks/useDatabase';
 
 interface CreateSportDialogProps {
@@ -48,7 +39,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   const pendingSportRef = useRef<Sport | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newSport, setNewSport] = useState<Partial<Sport> & { organizers: Organizer[] }>(
+  const [newSport, setNewSport] = useState<Partial<Sport> & Pick<Sport, 'organizers'>>(
     sport 
       ? { ...sport } 
       : {
@@ -62,13 +53,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         }
   );
   
-  const [newOrganizer, setNewOrganizer] = useState<Organizer>({
-    id: `org_${Date.now()}`,
-    name: '',
-    role: 'member',
-    grade: 2
-  });
-
   // ダイアログが開かれたときに初期値をセット
   useEffect(() => {
     if (open) {
@@ -85,13 +69,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           matches: []
         });
       }
-      
-      setNewOrganizer({
-        id: `org_${Date.now()}`,
-        name: '',
-        role: 'member',
-        grade: 2
-      });
     }
   }, [open, sport, eventId]);
   
@@ -102,37 +79,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
     }
   };
   
-  const handleOrganizerChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
-    const { name, value } = e.target;
-    if (name) {
-      setNewOrganizer(prev => ({ ...prev, [name]: value }));
-    }
-  };
-  
-  const addOrganizer = () => {
-    if (newOrganizer.name) {
-      setNewSport(prev => ({
-        ...prev,
-        organizers: [...(prev.organizers || []), { ...newOrganizer, id: `org_${Date.now()}` }]
-      }));
-      
-      // リセット
-      setNewOrganizer({
-        id: `org_${Date.now()}`,
-        name: '',
-        role: 'member',
-        grade: 2
-      });
-    }
-  };
-  
-  const removeOrganizer = (id: string) => {
-    setNewSport(prev => ({
-      ...prev,
-      organizers: (prev.organizers || []).filter(org => org.id !== id)
-    }));
-  };
-
   // 型定義エラーを修正
   const handleSubmit = async () => {
     if (!newSport.name || !newSport.eventId || isSubmittingRef.current) return;
@@ -228,32 +174,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
     };
   }, []);
   
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'leader':
-        return "リーダー";
-      case 'member':
-        return "メンバー";
-      default:
-        return role;
-    }
-  };
-  
-  const getTypeDescription = (type: string) => {
-    switch (type) {
-      case 'tournament':
-        return "トーナメント形式で試合を行います";
-      case 'roundRobin':
-        return "総当たり戦で試合を行います";
-      case 'league':
-        return "リーグ戦形式で試合を行います";
-      case 'ranking':
-        return "ランキング形式で順位を決定します";
-      default:
-        return '';
-    }
-  };
-
   return (
     <Dialog 
       open={open} 
@@ -309,129 +229,9 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
                 <MenuItem value="league">{"リーグ"}</MenuItem>
                 <MenuItem value="ranking">{"ランキング"}</MenuItem>
               </Select>
-              <FormHelperText>
-                {getTypeDescription(newSport.type || 'tournament')}
-              </FormHelperText>
             </FormControl>
           </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              name="description"
-              label={"説明"}
-              fullWidth
-              multiline
-              rows={3}
-              margin="normal"
-              value={newSport.description || ''}
-              onChange={handleInputChange}
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              name="rules"
-              label={"ルール"}
-              fullWidth
-              multiline
-              rows={2}
-              margin="normal"
-              value={newSport.rules || ''}
-              onChange={handleInputChange}
-              helperText={"競技のルールを記入してください"}
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              name="manual"
-              label={"マニュアル"}
-              fullWidth
-              multiline
-              rows={2}
-              margin="normal"
-              value={newSport.manual || ''}
-              onChange={handleInputChange}
-              helperText={"競技の進行マニュアルを記入してください"}
-            />
-          </Grid>
         </Grid>
-        
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            {"担当者"}
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
-          
-          <Grid container spacing={2} alignItems="flex-end">
-            <Grid item xs={12} sm={4}>
-              <TextField
-                name="name"
-                label={"担当者名"}
-                fullWidth
-                value={newOrganizer.name}
-                onChange={handleOrganizerChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth>
-                <InputLabel>{"役割"}</InputLabel>
-                <Select
-                  name="role"
-                  value={newOrganizer.role}
-                  onChange={handleOrganizerChange as any}
-                >
-                  <MenuItem value="leader">{"リーダー"}</MenuItem>
-                  <MenuItem value="member">{"メンバー"}</MenuItem>
-                  
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <FormControl fullWidth>
-                <InputLabel>{"学年"}</InputLabel>
-                <Select
-                  name="grade"
-                  value={newOrganizer.grade}
-                  onChange={handleOrganizerChange as any}
-                >
-                  <MenuItem value={1}>{"1年生"}</MenuItem>
-                  <MenuItem value={2}>{"2年生"}</MenuItem>
-                  <MenuItem value={3}>{"3年生"}</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={2}>
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                startIcon={<AddIcon />}
-                onClick={addOrganizer}
-                disabled={!newOrganizer.name}
-              >
-                {"追加"}
-              </Button>
-            </Grid>
-          </Grid>
-          
-          {/* 担当者リスト */}
-          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {(newSport.organizers || []).map(org => (
-              <Chip
-                key={org.id}
-                label={`${org.name} (${getRoleLabel(org.role)}, ${org.grade}${"年"})`}
-                onDelete={() => removeOrganizer(org.id)}
-                color={org.role === 'leader' ? 'primary' : 'default'}
-              />
-            ))}
-            {(!newSport.organizers || newSport.organizers.length === 0) && (
-              <Typography variant="body2" color="text.secondary">
-                {"担当者がいません"}
-              </Typography>
-            )}
-          </Box>
-        </Box>
       </DialogContent>
       
       <DialogActions>
