@@ -1,26 +1,8 @@
 import React, { useMemo } from 'react';
+import { Box, Chip, LinearProgress, Paper, Typography, alpha, useTheme } from '@mui/material';
 import {
-  Box,
-  Paper,
-  Typography,
-  Chip,
-  useTheme,
-  Card,
-  CardContent,
-  Tooltip,
-  alpha,
-  Grid,
-  Stack,
-  Divider,
-  Badge
-} from '@mui/material';
-import {
-  SportsSoccer as SportIcon,
-  Event as EventIcon,
-  DateRange as DateIcon,
   AccessTime as TimeIcon,
   Place as PlaceIcon,
-  HelpOutline as HelpIcon,
   CheckCircle as ConfirmedIcon,
   Help as PotentialIcon
 } from '@mui/icons-material';
@@ -33,359 +15,176 @@ interface ClassScheduleTimelineProps {
   selectedClasses: string[];
 }
 
-// 時間を順序付けるためのユーティリティ関数
-const getTimeValue = (entry: ClassScheduleEntry): number => {
-  // 日付がある場合は日付も考慮する
-  if (entry.date) {
-    const dateValue = new Date(entry.date).getTime();
-    return dateValue + timeToMinutes(entry.startTime);
-  }
-  return timeToMinutes(entry.startTime);
+interface DateGroup {
+  date: string;
+  formattedDate: string;
+  timeGroups: { time: string; entries: ClassScheduleEntry[] }[];
+}
+
+const groupEntries = (entries: ClassScheduleEntry[]): DateGroup[] => {
+  const byDate = new Map<string, ClassScheduleEntry[]>();
+  entries.forEach(entry => {
+    const dateKey = entry.date || '日付未定';
+    if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+    byDate.get(dateKey)!.push(entry);
+  });
+
+  const groups: DateGroup[] = [...byDate.entries()].map(([dateKey, dateEntries]) => {
+    const byTime = new Map<string, ClassScheduleEntry[]>();
+    dateEntries.forEach(entry => {
+      if (!byTime.has(entry.startTime)) byTime.set(entry.startTime, []);
+      byTime.get(entry.startTime)!.push(entry);
+    });
+
+    const timeGroups = [...byTime.entries()]
+      .sort(([a], [b]) => timeToMinutes(a) - timeToMinutes(b))
+      .map(([time, timeEntries]) => ({
+        time,
+        entries: [...timeEntries].sort((a, b) => {
+          if (a.status === 'potential' && b.status !== 'potential') return 1;
+          if (a.status !== 'potential' && b.status === 'potential') return -1;
+          return (b.certainty ?? 0) - (a.certainty ?? 0);
+        })
+      }));
+
+    return {
+      date: dateKey,
+      formattedDate: dateKey !== '日付未定' ? new Date(dateKey).toLocaleDateString() : '日付未定',
+      timeGroups
+    };
+  });
+
+  return groups.sort((a, b) => {
+    if (a.date === '日付未定') return 1;
+    if (b.date === '日付未定') return -1;
+    return a.date.localeCompare(b.date);
+  });
 };
 
-// 同じ時間帯をグループ化するためのキーを生成
-const getTimeGroupKey = (entry: ClassScheduleEntry): string => {
-  return `${entry.date || 'unknown'}-${entry.startTime}`;
-};
-
-const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({
-  scheduleEntries,
-  selectedClasses
-}) => {
+const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({ scheduleEntries, selectedClasses }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const dateGroups = useMemo(() => groupEntries(scheduleEntries), [scheduleEntries]);
 
-  // エントリを日付と時間でグループ化
-  const groupedEntries = useMemo(() => {
-    // 日付ごとにグループ化
-    const byDate: Record<string, { 
-      date: string, 
-      entries: ClassScheduleEntry[] 
-    }> = {};
-
-    // 日付でのグループ化
-    scheduleEntries.forEach(entry => {
-      const dateKey = entry.date || "日付未定";
-      if (!byDate[dateKey]) {
-        byDate[dateKey] = {
-          date: entry.date || '',
-          entries: []
-        };
-      }
-      byDate[dateKey].entries.push(entry);
-    });
-
-    // 各日付内で時間別にグループ化して、時間順でソート
-    const result = Object.entries(byDate).map(([dateKey, dateGroup]) => {
-      // 同じ時間でグループ化
-      const byTime: Record<string, ClassScheduleEntry[]> = {};
-      dateGroup.entries.forEach(entry => {
-        const timeKey = entry.startTime;
-        if (!byTime[timeKey]) {
-          byTime[timeKey] = [];
-        }
-        byTime[timeKey].push(entry);
-      });
-
-      // 時間順にソート
-      const sortedTimes = Object.keys(byTime).sort((a, b) => {
-        return timeToMinutes(a) - timeToMinutes(b);
-      });
-
-      return {
-        date: dateKey,
-        formattedDate: dateGroup.date ? new Date(dateGroup.date).toLocaleDateString() : "日付未定",
-        timeSlots: sortedTimes.map(time => ({
-          time,
-          entries: byTime[time].sort((a, b) => {
-            // 確定試合を優先して上に表示
-            if (a.status === 'potential' && b.status !== 'potential') return 1;
-            if (a.status !== 'potential' && b.status === 'potential') return -1;
-            // 確度で比較（高い方を上に）
-            if (a.certainty !== undefined && b.certainty !== undefined) {
-              return b.certainty - a.certainty;
-            }
-            return 0;
-          })
-        }))
-      };
-    });
-
-    // 日付順にソート
-    return result.sort((a, b) => {
-      if (a.date === "日付未定") return 1;
-      if (b.date === "日付未定") return -1;
-      return a.date.localeCompare(b.date);
-    });
-  }, [scheduleEntries]);
-
-  // エントリがない場合
   if (scheduleEntries.length === 0) {
     return (
-      <Paper 
-        elevation={1} 
-        sx={{ 
-          p: 3, 
-          textAlign: 'center',
-          bgcolor: 'background.default'
-        }}
-      >
-        <Typography variant="h6" color="text.secondary">
-          {"スケジュールが見つかりません"}
+      <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="body1" color="text.secondary">
+          スケジュールが見つかりません
         </Typography>
       </Paper>
     );
   }
 
+  const isHighlighted = (teamId: string) => selectedClasses.includes(teamId);
+
   return (
     <Box>
-      {/* 日付ごとのセクション */}
-      {groupedEntries.map((dateGroup, dateIndex) => (
-        <Box key={`date-${dateIndex}`} sx={{ mb: 3 }}>
-          {/* 日付ヘッダー */}
-          <Paper 
-            elevation={2} 
-            sx={{ 
-              p: 1, 
-              mb: 2, 
-              display: 'flex',
-              alignItems: 'center',
-              bgcolor: theme.palette.primary.main,
-              color: theme.palette.primary.contrastText
-            }}
+      {dateGroups.map(dateGroup => (
+        <Box key={dateGroup.date} sx={{ mb: 3 }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={700}
+            sx={{ px: 1.5, py: 0.75, mb: 1.5, bgcolor: 'primary.main', color: 'primary.contrastText', borderRadius: 1 }}
           >
-            <DateIcon sx={{ mr: 0.5 }} fontSize="small" />
-            <Typography variant="subtitle1">
-              {dateGroup.formattedDate}
-            </Typography>
-          </Paper>
-          
-          {/* 時間ごとのグループ */}
-          <Stack spacing={1.5}>
-            {dateGroup.timeSlots.map((timeSlot, timeIndex) => (
-              <Paper
-                key={`time-${timeIndex}`}
-                elevation={1}
-                sx={{ 
-                  overflow: 'hidden',
-                  borderRadius: 1
+            {dateGroup.formattedDate}
+          </Typography>
+
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+            {dateGroup.timeGroups.map((timeGroup, index) => (
+              <Box
+                key={timeGroup.time}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: '90px 1fr' },
+                  borderTop: index === 0 ? 'none' : '1px solid',
+                  borderColor: 'divider'
                 }}
               >
-                {/* 時間ヘッダー */}
-                <Box 
-                  sx={{ 
-                    py: 0.5,
-                    px: 1.5, 
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
+                <Box
+                  sx={{
                     display: 'flex',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    gap: 0.5,
+                    p: 1,
+                    bgcolor: alpha(theme.palette.primary.main, 0.06),
+                    fontSize: '0.85rem',
+                    fontWeight: 600
                   }}
                 >
-                  <TimeIcon sx={{ mr: 0.5, color: theme.palette.text.secondary }} fontSize="small" />
-                  <Typography variant="body1" fontWeight="medium">
-                    {timeSlot.time}
-                  </Typography>
+                  <TimeIcon fontSize="small" color="action" />
+                  {timeGroup.time}
                 </Box>
-                
-                {/* 同じ時間のスケジュールエントリー */}
-                <Box sx={{ p: 1 }}>
-                  <Grid container spacing={1}>
-                    {timeSlot.entries.map((entry, entryIndex) => (
-                      <Grid item xs={12} sm={12} md={6} lg={4} key={`entry-${entryIndex}`}>
-                        <Card 
-                          variant={entry.status === 'potential' ? 'outlined' : 'elevation'} 
-                          elevation={entry.status === 'potential' ? 0 : 1}
-                          sx={{ 
-                            height: '100%',
-                            cursor: 'pointer',
-                            borderLeft: '3px solid',
-                            borderColor: entry.status === 'potential' 
-                              ? theme.palette.warning.main 
-                              : theme.palette.primary.main,
-                            transition: 'transform 0.1s',
-                            '&:hover': {
-                              transform: 'translateY(-1px)',
-                              boxShadow: 2
-                            }
-                          }}
-                          onClick={() => navigate(`/sport/${entry.sportId}`)}
-                        >
-                          <CardContent sx={{ p: { xs: 2, sm: 1.5 }, '&:last-child': { pb: { xs: 2, sm: 1.5 } } }}>
-                            {/* ヘッダー行: スポーツ名と状態 */}
-                            <Box sx={{ 
-                              display: 'flex', 
-                              justifyContent: 'space-between', 
-                              alignItems: 'center', 
-                              mb: { xs: 1, sm: 0.5 }
-                            }}>
-                              <Typography 
-                                variant="body1" 
-                                fontWeight="bold" 
-                                noWrap 
-                                sx={{ 
-                                  maxWidth: '70%',
-                                  fontSize: { xs: '1rem', sm: '0.875rem' }
-                                }}
-                              >
-                                {entry.sportName}
-                              </Typography>
-                              
-                              {/* 確定/可能性の表示 */}
-                              <Tooltip title={
-                                entry.status === 'potential' 
-                                  ? "出場の可能性がある試合" 
-                                  : "出場が確定している試合"
-                              }>
-                                <Chip
-                                  icon={entry.status === 'potential' ? <PotentialIcon fontSize="small" /> : <ConfirmedIcon fontSize="small" />}
-                                  label={entry.status === 'potential' ? '可能性' : '確定'}
-                                  size="small"
-                                  color={entry.status === 'potential' ? "warning" : "success"}
-                                  variant="outlined"
-                                  sx={{ 
-                                    height: { xs: 24, sm: 20 }, 
-                                    '& .MuiChip-label': { 
-                                      px: 0.5, 
-                                      fontSize: { xs: '0.8rem', sm: '0.7rem' } 
-                                    } 
-                                  }}
-                                />
-                              </Tooltip>
-                            </Box>
 
-                            {/* 確度バー（可能性の場合のみ） */}
-                            {entry.status === 'potential' && entry.certainty !== undefined && (
-                              <Box sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                mb: { xs: 1.2, sm: 0.7 },
-                                gap: 0.5
-                              }}>
-                                <Typography variant="caption" sx={{ fontSize: { xs: '0.8rem', sm: '0.7rem' } }}>
-                                  {"確率"}:
-                                </Typography>
-                                <Box 
-                                  sx={{ 
-                                    flexGrow: 1, 
-                                    height: { xs: 6, sm: 4 }, 
-                                    bgcolor: alpha(theme.palette.warning.main, 0.2),
-                                    borderRadius: 0.5
-                                  }}
-                                >
-                                  <Box 
-                                    sx={{ 
-                                      width: `${entry.certainty}%`, 
-                                      height: '100%', 
-                                      bgcolor: theme.palette.warning.main,
-                                      borderRadius: 0.5
-                                    }}
-                                  />
-                                </Box>
-                                <Typography variant="caption" sx={{ 
-                                  fontSize: { xs: '0.8rem', sm: '0.7rem' }, 
-                                  minWidth: 24, 
-                                  textAlign: 'right' 
-                                }}>
-                                  {entry.certainty}%
-                                </Typography>
-                              </Box>
-                            )}
-                            
-                            <Divider sx={{ my: { xs: 1.2, sm: 0.7 } }} />
-                            
-                            {/* 対戦情報 */}
-                            <Box sx={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'space-between',
-                              gap: { xs: 1.5, sm: 1 },
-                              mb: { xs: 1.2, sm: 0.7 }
-                            }}>
-                              <Typography 
-                                variant="body1" 
-                                fontWeight="bold" 
-                                sx={{ 
-                                  textAlign: 'right',
-                                  flexBasis: '45%',
-                                  color: selectedClasses.includes(entry.teams.team1Id) 
-                                    ? theme.palette.primary.main 
-                                    : 'inherit',
-                                  fontSize: { xs: '1rem', sm: '0.875rem' }
-                                }}
-                              >
-                                {entry.teams.team1Name}
-                              </Typography>
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  flexShrink: 0,
-                                  fontSize: { xs: '0.9rem', sm: '0.8rem' }
-                                }}
-                              >
-                                vs
-                              </Typography>
-                              <Typography 
-                                variant="body1" 
-                                fontWeight="bold"
-                                sx={{ 
-                                  flexBasis: '45%',
-                                  color: selectedClasses.includes(entry.teams.team2Id) 
-                                    ? theme.palette.primary.main 
-                                    : 'inherit',
-                                  fontSize: { xs: '1rem', sm: '0.875rem' }
-                                }}
-                              >
-                                {entry.teams.team2Name}
-                              </Typography>
-                            </Box>
-                            
-                            {/* 追加情報 */}
-                            <Stack 
-                              direction="row" 
-                              spacing={0.5} 
-                              flexWrap="wrap" 
-                              useFlexGap 
-                              sx={{ 
-                                '& .MuiChip-root': { 
-                                  height: { xs: 24, sm: 20 }, 
-                                  '& .MuiChip-label': { 
-                                    px: 0.5, 
-                                    fontSize: { xs: '0.8rem', sm: '0.7rem' }
-                                  },
-                                  '& .MuiChip-icon': {
-                                    fontSize: { xs: '0.85rem', sm: '0.75rem' },
-                                    ml: 0.3,
-                                    mr: '-0.05rem'
-                                  }
-                                }
-                              }}
-                            >
-                              {entry.courtName && (
-                                <Chip
-                                  icon={<PlaceIcon fontSize="small" />}
-                                  label={entry.courtName.replace(/コート|場|Court/gi, '')}
-                                  size="small"
-                                  variant="outlined"
-                                />
-                              )}
-                              <Chip
-                                icon={<TimeIcon fontSize="small" />}
-                                label={`${entry.startTime}-${entry.endTime}`}
-                                size="small"
-                                variant="outlined"
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  {timeGroup.entries.map((entry, i) => (
+                    <Box
+                      key={`${entry.sportId}-${entry.matchId}`}
+                      onClick={() => navigate(`/sport/${entry.sportId}`)}
+                      sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        gap: 1,
+                        p: 1,
+                        cursor: 'pointer',
+                        borderTop: i === 0 ? 'none' : '1px solid',
+                        borderColor: 'divider',
+                        borderLeft: '3px solid',
+                        borderLeftColor: entry.status === 'potential' ? 'warning.main' : 'primary.main',
+                        '&:hover': { bgcolor: 'action.hover' }
+                      }}
+                    >
+                      <Chip size="small" label={entry.sportName} sx={{ fontWeight: 600 }} />
+
+                      <Typography
+                        variant="body2"
+                        fontWeight={isHighlighted(entry.teams.team1Id) ? 700 : 400}
+                        color={isHighlighted(entry.teams.team1Id) ? 'primary.main' : 'text.primary'}
+                      >
+                        {entry.teams.team1Name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        vs
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        fontWeight={isHighlighted(entry.teams.team2Id) ? 700 : 400}
+                        color={isHighlighted(entry.teams.team2Id) ? 'primary.main' : 'text.primary'}
+                      >
+                        {entry.teams.team2Name}
+                      </Typography>
+
+                      <Box sx={{ flexGrow: 1 }} />
+
+                      {entry.courtName && (
+                        <Chip size="small" variant="outlined" icon={<PlaceIcon fontSize="small" />} label={entry.courtName} />
+                      )}
+                      <Chip size="small" variant="outlined" label={`${entry.startTime}-${entry.endTime}`} />
+
+                      {entry.status === 'potential' ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 90 }}>
+                          <Chip size="small" color="warning" variant="outlined" icon={<PotentialIcon fontSize="small" />} label="可能性" />
+                          {entry.certainty !== undefined && (
+                            <Box sx={{ flexGrow: 1, minWidth: 40 }}>
+                              <LinearProgress
+                                variant="determinate"
+                                value={entry.certainty}
+                                color="warning"
+                                sx={{ height: 4, borderRadius: 2 }}
                               />
-                            </Stack>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
+                            </Box>
+                          )}
+                        </Box>
+                      ) : (
+                        <Chip size="small" color="success" variant="outlined" icon={<ConfirmedIcon fontSize="small" />} label="確定" />
+                      )}
+                    </Box>
+                  ))}
                 </Box>
-              </Paper>
+              </Box>
             ))}
-          </Stack>
+          </Box>
         </Box>
       ))}
     </Box>
