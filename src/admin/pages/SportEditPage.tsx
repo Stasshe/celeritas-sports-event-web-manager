@@ -354,15 +354,20 @@ const SportEditPage: React.FC = () => {
     setShowSnackbar(false);
   };
 
-  // スポーツデータの更新ハンドラ（子コンポーネントから呼ばれる）
-  const handleSportUpdate = (updatedSport: Sport) => {
-    setLocalSport(updatedSport);
-  };
+  // スポーツデータの更新ハンドラ（子コンポーネントから呼ばれる。デバウンス自動保存）
+  const handleSportUpdate = useCallback((updatedSport: Sport) => {
+    setLocalSport({
+      ...updatedSport,
+      lastEditedBy: currentUser?.email || undefined,
+      lastEditedAt: new Date().toISOString()
+    });
+    scheduleAutoSave();
+  }, [currentUser, scheduleAutoSave]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
-    if (name && localSport) {
-      setLocalSport(prev => prev ? { ...prev, [name]: value } : prev);
+    if (name) {
+      handlePartialUpdate(name as keyof Sport, value);
     }
   };
 
@@ -371,31 +376,20 @@ const SportEditPage: React.FC = () => {
     return events && events[eventId] ? events[eventId].name : "不明なイベント";
   };
 
-  // tournamentSettingsの型エラーを修正
   const handleSettingsChange = (key: string, value: boolean) => {
-    setLocalSport(prev => {
-      if (!prev) return prev;
-      
-      // tournamentSettingsが存在しない場合は作成
-      const tournamentSettings = prev.tournamentSettings || { 
-        hasThirdPlaceMatch: false, 
-        hasRepechage: false 
-      };
-      
-      return {
-        ...prev,
-        tournamentSettings: {
-          ...tournamentSettings,
-          [key]: value
-        }
-      };
-    });
+    if (!localSport) return;
+    const tournamentSettings = localSport.tournamentSettings || {
+      hasThirdPlaceMatch: false,
+      hasRepechage: false
+    };
+    handlePartialUpdate('tournamentSettings', { ...tournamentSettings, [key]: value });
   };
 
   const handleRoundRobinSettingsUpdate = (
-    key: keyof Required<Sport>['roundRobinSettings'], 
+    key: keyof Required<Sport>['roundRobinSettings'],
     value: number | boolean | 'points' | 'goalDifference' | 'goals'
   ) => {
+    if (!localSport) return;
     const defaultSettings: Required<Sport>['roundRobinSettings'] = {
       winPoints: 3,
       drawPoints: 1,
@@ -404,17 +398,10 @@ const SportEditPage: React.FC = () => {
       rankingMethod: 'points',
       displayRankCount: 3
     };
-  
-    setLocalSport(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        roundRobinSettings: {
-          ...defaultSettings,
-          ...(prev.roundRobinSettings || {}),
-          [key]: value
-        }
-      };
+    handlePartialUpdate('roundRobinSettings', {
+      ...defaultSettings,
+      ...(localSport.roundRobinSettings || {}),
+      [key]: value
     });
   };
 
@@ -858,12 +845,7 @@ const SportEditPage: React.FC = () => {
                 </Typography>
                 <SportImageSelector
                   value={localSport.coverImageUrl || ''}
-                  onChange={(value) => {
-                    setLocalSport(prev => ({
-                      ...prev!,
-                      coverImageUrl: value
-                    }));
-                  }}
+                  onChange={(value) => handlePartialUpdate('coverImageUrl', value)}
                 />
                 {localSport.coverImageUrl && (
                   <Box sx={{ mt: 2, p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
@@ -983,13 +965,7 @@ const SportEditPage: React.FC = () => {
                     value={localSport.roundRobinSettings?.displayRankCount || 3}
                     onChange={(e) => {
                       const value = Math.min(Math.max(parseInt(e.target.value) || 3, 3), 6);
-                      setLocalSport(prev => ({
-                        ...prev!,
-                        roundRobinSettings: {
-                          ...prev!.roundRobinSettings || {},
-                          displayRankCount: value
-                        }
-                      }));
+                      handleRoundRobinSettingsUpdate('displayRankCount', value);
                     }}
                     InputProps={{ inputProps: { min: 3, max: 6 } }}
                   />
