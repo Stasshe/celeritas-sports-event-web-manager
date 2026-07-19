@@ -739,7 +739,18 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         </Grid>
         {/* アクション */}
         <Grid item xs={12}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              mb: 3,
+              gap: 2,
+              '& > button': {
+                width: { xs: '100%', sm: 'auto' }
+              }
+            }}
+          >
             <Button
               variant="contained"
               color="primary"

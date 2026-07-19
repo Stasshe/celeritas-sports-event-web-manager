@@ -6,6 +6,7 @@ import {
   Divider,
   CircularProgress,
   Chip,
+  CardActionArea,
   useTheme
 } from '@mui/material';
 import {
@@ -15,7 +16,8 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Save as SaveIcon,
-  Help as HelpIcon
+  Help as HelpIcon,
+  ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 import { getSportTypeDescription, getSportTypeLabel } from '../../utils/labels';
 import { useNavigate } from 'react-router-dom';
@@ -354,20 +356,27 @@ const AdminPage: React.FC = () => {
                 display: 'grid',
                 gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(3, minmax(0, 1fr))' },
                 borderLeft: '1px solid',
-                borderColor: 'divider',
+                borderColor: alpha(theme.palette.primary.main, 0.3),
               }}
             >
               {eventSports.map((sport) => (
-                <Box
+                <CardActionArea
                   key={sport.id}
+                  onClick={() => handleEditSport(sport.id)}
                   sx={{
                     minWidth: 0,
                     p: 1.5,
                     display: 'flex',
                     flexDirection: 'column',
+                    alignItems: 'stretch',
                     borderRight: '1px solid',
                     borderBottom: '1px solid',
-                    borderColor: 'divider',
+                    borderColor: alpha(theme.palette.primary.main, 0.3),
+                    bgcolor: alpha(theme.palette.primary.main, 0.06),
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.16),
+                    },
                   }}
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 0.75 }}>
@@ -381,7 +390,7 @@ const AdminPage: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1, flexGrow: 1 }}>
                     {sport.description || getSportTypeDescription(sport.type)}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 4, mb: 0.5 }}>
+                  <Box sx={{ display: 'flex', gap: 4 }}>
                     <Box>
                       <Typography variant="caption" color="text.secondary">チーム</Typography>
                       <Typography variant="body2">{sport.teams?.length || 0}</Typography>
@@ -391,10 +400,11 @@ const AdminPage: React.FC = () => {
                       <Typography variant="body2">{sport.matches?.length || 0}</Typography>
                     </Box>
                   </Box>
-                  <Button size="small" onClick={() => handleEditSport(sport.id)} sx={{ alignSelf: 'flex-start', px: 0 }}>
-                    競技を管理
-                  </Button>
-                </Box>
+                  <ArrowForwardIcon
+                    fontSize="small"
+                    sx={{ mt: 1, alignSelf: 'flex-end', color: 'primary.main' }}
+                  />
+                </CardActionArea>
               ))}
             </Box>
           ) : (
