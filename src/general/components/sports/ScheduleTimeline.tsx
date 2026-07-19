@@ -3,7 +3,7 @@ import { Alert, Box, Chip, Typography, useMediaQuery, useTheme } from '@mui/mate
 import { Schedule as ScheduleIcon, Place as PlaceIcon } from '@mui/icons-material';
 import { getScheduleTypeLabel } from '../../../utils/labels';
 import { Sport, TimeSlot } from '../../../types';
-import { getMatchContext, getParticipantName } from '../../../utils/match';
+import { getMatchContext, getParticipantName, getTimeSlotLabel } from '../../../utils/match';
 import { groupTimeSlotsByBlock } from '../../../utils/timeSlotGrouping';
 
 interface ScheduleTimelineProps {
@@ -63,7 +63,9 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
             </Typography>
           </>
         ) : (
-          <Typography variant="body2">{slot.title || getScheduleTypeLabel(slot.type)}</Typography>
+          <Typography variant="body2">
+            {getTimeSlotLabel(slot, sport) || getScheduleTypeLabel(slot.type)}
+          </Typography>
         )}
       </Box>
     );

@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { Sport, TimeSlot } from '../../../types';
 import { useManualScheduleRows } from '../../../hooks/useManualScheduleRows';
+import { getTimeSlotLabel } from '../../../utils/match';
 
 interface ManualScheduleEditorProps {
   open: boolean;
@@ -45,7 +46,8 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
   onClose,
   timeSlots,
   onChange,
-  courtNames
+  courtNames,
+  sport
 }) => {
   const rows = useManualScheduleRows(timeSlots, onChange);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -104,93 +106,101 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
             </Box>
             <Divider />
 
-            {timeSlots.map((slot, index) => (
-              <Box
-                key={index}
-                draggable
-                onDragStart={() => setDragIndex(index)}
-                onDragOver={e => {
-                  e.preventDefault();
-                  if (dropIndex !== index) setDropIndex(index);
-                }}
-                onDrop={() => handleDrop(index)}
-                onDragEnd={() => {
-                  setDragIndex(null);
-                  setDropIndex(null);
-                }}
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '32px 1fr 110px 110px 1fr 40px',
-                  gap: 1,
-                  px: 1.5,
-                  py: 1,
-                  alignItems: 'center',
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: dropIndex === index ? 'action.selected' : 'transparent',
-                  opacity: dragIndex === index ? 0.4 : 1,
-                  '&:last-of-type': { borderBottom: 'none' }
-                }}
-              >
-                <DragIndicatorIcon
-                  fontSize="small"
-                  sx={{ color: 'text.disabled', cursor: 'grab' }}
-                />
+            {timeSlots.map((slot, index) => {
+              const hasLinkedMatch = slot.type === 'match'
+                && Boolean(slot.matchId && sport.matches.some(match => match.id === slot.matchId));
+              let detail = slot.matchDescription ?? slot.description ?? slot.title ?? '';
+              if (hasLinkedMatch) detail = getTimeSlotLabel(slot, sport);
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <TextField
-                    type="time"
-                    size="small"
-                    value={slot.startTime}
-                    onChange={e => rows.updateField(index, 'startTime', e.target.value)}
-                    sx={{ minWidth: 100 }}
+              return (
+                <Box
+                  key={index}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={e => {
+                    e.preventDefault();
+                    if (dropIndex !== index) setDropIndex(index);
+                  }}
+                  onDrop={() => handleDrop(index)}
+                  onDragEnd={() => {
+                    setDragIndex(null);
+                    setDropIndex(null);
+                  }}
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: '32px 1fr 110px 110px 1fr 40px',
+                    gap: 1,
+                    px: 1.5,
+                    py: 1,
+                    alignItems: 'center',
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: dropIndex === index ? 'action.selected' : 'transparent',
+                    opacity: dragIndex === index ? 0.4 : 1,
+                    '&:last-of-type': { borderBottom: 'none' }
+                  }}
+                >
+                  <DragIndicatorIcon
+                    fontSize="small"
+                    sx={{ color: 'text.disabled', cursor: 'grab' }}
                   />
-                  <Typography variant="body2" color="text.secondary">
-                    ～
-                  </Typography>
-                  <TextField
-                    type="time"
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <TextField
+                      type="time"
+                      size="small"
+                      value={slot.startTime}
+                      onChange={e => rows.updateField(index, 'startTime', e.target.value)}
+                      sx={{ minWidth: 100 }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      ～
+                    </Typography>
+                    <TextField
+                      type="time"
+                      size="small"
+                      value={slot.endTime}
+                      onChange={e => rows.updateField(index, 'endTime', e.target.value)}
+                      sx={{ minWidth: 100 }}
+                    />
+                  </Box>
+
+                  <Select
                     size="small"
-                    value={slot.endTime}
-                    onChange={e => rows.updateField(index, 'endTime', e.target.value)}
-                    sx={{ minWidth: 100 }}
+                    value={slot.type}
+                    onChange={e => rows.updateField(index, 'type', e.target.value)}
+                  >
+                    {timeSlotTypes.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+
+                  <Select
+                    size="small"
+                    value={slot.courtId || 'court1'}
+                    onChange={e => rows.updateField(index, 'courtId', e.target.value)}
+                  >
+                    <MenuItem value="court1">{courtNames?.court1 || '第1コート'}</MenuItem>
+                    {courtNames?.court2 && <MenuItem value="court2">{courtNames.court2}</MenuItem>}
+                  </Select>
+
+                  <TextField
+                    size="small"
+                    value={detail}
+                    onChange={e => rows.updateField(index, 'matchDescription', e.target.value)}
+                    placeholder="例: 1年A vs 2年B"
+                    inputProps={{ maxLength: 100 }}
+                    InputProps={{ readOnly: hasLinkedMatch }}
                   />
+
+                  <IconButton size="small" onClick={() => rows.removeRow(index)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
                 </Box>
-
-                <Select
-                  size="small"
-                  value={slot.type}
-                  onChange={e => rows.updateField(index, 'type', e.target.value)}
-                >
-                  {timeSlotTypes.map(opt => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-
-                <Select
-                  size="small"
-                  value={slot.courtId || 'court1'}
-                  onChange={e => rows.updateField(index, 'courtId', e.target.value)}
-                >
-                  <MenuItem value="court1">{courtNames?.court1 || '第1コート'}</MenuItem>
-                  {courtNames?.court2 && <MenuItem value="court2">{courtNames.court2}</MenuItem>}
-                </Select>
-
-                <TextField
-                  size="small"
-                  value={slot.matchDescription ?? slot.description ?? slot.title ?? ''}
-                  onChange={e => rows.updateField(index, 'matchDescription', e.target.value)}
-                  placeholder="例: 1年A vs 2年B"
-                  inputProps={{ maxLength: 100 }}
-                />
-
-                <IconButton size="small" onClick={() => rows.removeRow(index)}>
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         )}
       </DialogContent>
