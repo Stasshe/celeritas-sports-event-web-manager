@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Match, ScheduleSettings, Sport, Team, TimeSlot } from '../types';
 import { createTournamentMatches } from '../common/tournament';
 import { generateSchedule, timeToMinutes } from './scheduleGenerator';
@@ -62,6 +62,10 @@ const createRoundRobinMatches = (teams: Team[]): Match[] => {
     status: 'scheduled'
   }));
 };
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('generateSchedule tournament constraints', () => {
   it.each([3, 5, 6, 7])('never schedules first-round byes for %i teams', teamCount => {
@@ -130,6 +134,51 @@ describe('generateSchedule tournament constraints', () => {
 });
 
 describe('generateSchedule court and time constraints', () => {
+  it('keeps the configured cadence when a team plays in consecutive slots', () => {
+    const teams = createTeams(3);
+    const matches = createRoundRobinMatches(createTeams(4)).slice(0, 2);
+    matches[0].team1Id = teams[0].id;
+    matches[0].team2Id = teams[1].id;
+    matches[1].team1Id = teams[0].id;
+    matches[1].team2Id = teams[2].id;
+    const sport = createSport('roundRobin', teams, matches);
+
+    const slots = getMatchSlots(generateSchedule(sport, createSettings(), false));
+
+    expect(slots.map(slot => slot.startTime)).toEqual(['09:00', '09:25']);
+  });
+
+  it('continues using both courts when later matches reuse teams from the previous slot', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9999);
+    const teams = createTeams(6);
+    const matches = [
+      ['m1', 'team_1', 'team_2'],
+      ['m2', 'team_3', 'team_4'],
+      ['m3', 'team_1', 'team_3'],
+      ['m4', 'team_2', 'team_4'],
+      ['m5', 'team_5', 'team_6']
+    ].map(([id, team1Id, team2Id], index): Match => ({
+      id,
+      team1Id,
+      team2Id,
+      team1Score: 0,
+      team2Score: 0,
+      round: 1,
+      matchNumber: index + 1,
+      status: 'scheduled'
+    }));
+    const sport = createSport('roundRobin', teams, matches);
+
+    const slots = getMatchSlots(generateSchedule(sport, createSettings({ courtCount: 2 })));
+    const courtCounts = slots.reduce<Map<string, number>>((counts, slot) => {
+      counts.set(slot.startTime, (counts.get(slot.startTime) || 0) + 1);
+      return counts;
+    }, new Map());
+
+    expect(courtCounts.get('09:00')).toBe(2);
+    expect(courtCounts.get('09:25')).toBe(2);
+  });
+
   it('never places the same team on both courts at once', () => {
     const teams = createTeams(4);
     const matches = createRoundRobinMatches(teams);
@@ -219,6 +268,53 @@ describe('generateSchedule court and time constraints', () => {
 
     expect(timeToMinutes(groupSlot!.endTime) - timeToMinutes(groupSlot!.startTime)).toBe(12);
     expect(timeToMinutes(playoffSlot!.endTime) - timeToMinutes(playoffSlot!.startTime)).toBe(18);
+  });
+
+  it('includes the league third-place match and final when enough time remains', () => {
+    const teams = createTeams(4);
+    const groupMatches = createRoundRobinMatches(teams).slice(0, 2).map((match, index) => ({
+      ...match,
+      id: `group_${index + 1}`,
+      blockId: `block_${index + 1}`
+    }));
+    const playoffMatches = createTournamentMatches(teams, true);
+    const sport = createSport('league', teams, [...groupMatches, ...playoffMatches]);
+    const settings = {
+      ...createSettings({ endTime: '10:00', courtCount: 2 }),
+      groupStageDuration: 10,
+      playoffDuration: 10,
+      breakBetweenStages: 5
+    };
+
+    const slots = getMatchSlots(generateSchedule(sport, settings, false));
+    const closingSlots = slots.filter(slot => {
+      return slot.matchId === 'third_place_match' || slot.matchId === 'match_3';
+    });
+
+    expect(closingSlots).toHaveLength(2);
+    expect(closingSlots[0].startTime).toBe(closingSlots[1].startTime);
+    expect(new Set(closingSlots.map(slot => slot.courtId))).toEqual(new Set(['court1', 'court2']));
+  });
+
+  it('throws instead of dropping league closing matches at the end-time boundary', () => {
+    const teams = createTeams(4);
+    const groupMatches = createRoundRobinMatches(teams).slice(0, 2).map((match, index) => ({
+      ...match,
+      id: `group_${index + 1}`,
+      blockId: `block_${index + 1}`
+    }));
+    const playoffMatches = createTournamentMatches(teams, true);
+    const sport = createSport('league', teams, [...groupMatches, ...playoffMatches]);
+    const settings = {
+      ...createSettings({ endTime: '09:35', courtCount: 2 }),
+      groupStageDuration: 10,
+      playoffDuration: 10,
+      breakBetweenStages: 5
+    };
+
+    expect(() => generateSchedule(sport, settings, false)).toThrow(
+      '時間内にすべての試合をスケジュールできません'
+    );
   });
 
   it('runs independent league blocks simultaneously on two courts', () => {

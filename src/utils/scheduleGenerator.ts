@@ -28,6 +28,15 @@ const hasTeamConflict = (match: Match, teamIds: string[]): boolean => {
   return getKnownTeamIds(match).some(teamId => teamIds.includes(teamId));
 };
 
+const assertMatchesFinishBy = (timeSlots: TimeSlot[], endMinutes: number): void => {
+  const exceedsEndTime = timeSlots.some(slot => {
+    return slot.type === 'match' && timeToMinutes(slot.endTime) > endMinutes;
+  });
+  if (exceedsEndTime) {
+    throw new Error('時間内にすべての試合をスケジュールできません');
+  }
+};
+
 // 時間を分に変換するヘルパー関数
 export const timeToMinutes = (time: string): number => {
   const [hours, minutes] = time.split(':').map(Number);
@@ -254,10 +263,6 @@ const generateMatchBasedScheduleWithCourts = (
   
   // 使用中のチームIDを追跡
   let usedTeamIds: string[] = [];
-  // --- ここから追加 ---
-  // 直前の時間枠で試合をしたチームIDを記録するための変数を追加
-  let prevSlotTeamIds: string[] = [];
-  // --- ここまで追加 ---
   // すべての試合がスケジュールされるまでループ
   while (schedulableMatches.length > 0) {
     const availableCourts = courtCount === 1 ? ['court1'] : ['court1', 'court2'];
@@ -305,18 +310,12 @@ const generateMatchBasedScheduleWithCourts = (
     }
     let scheduledMatchesCount = 0;
     usedTeamIds = [];
-    let thisSlotTeamIds: string[] = [];
 
     // --- 順番厳守: shuffle=false の場合は先頭から courtCount 分だけ詰めていく ---
     if (shuffle === false) {
       for (let c = 0; c < availableCourts.length; c++) {
         if (schedulableMatches.length === 0) break;
         const match = schedulableMatches[0];
-        // 直前の時間枠で試合をしたチームが含まれていればスキップ
-        if (hasTeamConflict(match, prevSlotTeamIds)) {
-          // 直前チームが含まれていたら、次の時間枠で再挑戦
-          break;
-        }
         // 既に使用されているチームがいるかチェック
         if (hasTeamConflict(match, usedTeamIds)) {
           // 既にこの枠で使われているチームがいれば、次のコートへ
@@ -340,7 +339,6 @@ const generateMatchBasedScheduleWithCourts = (
         schedulableMatches.shift();
         const knownTeamIds = getKnownTeamIds(match);
         usedTeamIds.push(...knownTeamIds);
-        thisSlotTeamIds.push(...knownTeamIds);
         timeSlots.push({
           startTime: minutesToTime(currentMinutes),
           endTime: minutesToTime(currentMinutes + settings.matchDuration),
@@ -359,9 +357,6 @@ const generateMatchBasedScheduleWithCourts = (
         let matchIndex = -1;
         for (let i = 0; i < schedulableMatches.length; i++) {
           const match = schedulableMatches[i];
-          if (hasTeamConflict(match, prevSlotTeamIds)) {
-            continue;
-          }
           if (hasTeamConflict(match, usedTeamIds)) {
             continue;
           }
@@ -384,7 +379,6 @@ const generateMatchBasedScheduleWithCourts = (
         const match = schedulableMatches.splice(matchIndex, 1)[0];
         const knownTeamIds = getKnownTeamIds(match);
         usedTeamIds.push(...knownTeamIds);
-        thisSlotTeamIds.push(...knownTeamIds);
         timeSlots.push({
           startTime: minutesToTime(currentMinutes),
           endTime: minutesToTime(currentMinutes + settings.matchDuration),
@@ -397,18 +391,16 @@ const generateMatchBasedScheduleWithCourts = (
         scheduledMatchesCount++;
       }
     }
-    if (scheduledMatchesCount > 0) {
-      currentMinutes += settings.matchDuration + settings.breakDuration;
-    } else {
-      currentMinutes += 5;
+    if (scheduledMatchesCount === 0) {
+      throw new Error('試合をコートへ割り当てられません');
     }
+    currentMinutes += settings.matchDuration + settings.breakDuration;
     if (currentMinutes >= endMinutes && schedulableMatches.length > 0) {
       throw new Error('時間内にすべての試合をスケジュールできません');
     }
-    prevSlotTeamIds = thisSlotTeamIds;
   }
   
-  // 時間順にソート
+  assertMatchesFinishBy(timeSlots, endMinutes);
   return timeSlots.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 };
 
@@ -512,9 +504,6 @@ const generateLeagueScheduleWithCourts = (
   
   // 使用中のチームIDを追跡
   let usedTeamIds: string[] = [];
-  // --- ここから追加 ---
-  let prevSlotTeamIds: string[] = [];
-  // --- ここまで追加 ---
   // グループステージの試合をスケジュール
   while (schedulableMatches.length > 0) {
     // この時間枠で利用可能なコート
@@ -583,20 +572,12 @@ const generateLeagueScheduleWithCourts = (
     // この時間枠でスケジュールされた試合数
     let scheduledMatchesCount = 0;
     usedTeamIds = [];
-    // --- ここから追加 ---
-    let thisSlotTeamIds: string[] = [];
-    // --- ここまで追加 ---
     // 各コートについて処理
     for (const court of availableCourts) {
       if (schedulableMatches.length === 0) break;
       let matchIndex = -1;
       for (let i = 0; i < schedulableMatches.length; i++) {
         const match = schedulableMatches[i];
-        // --- ここから追加 ---
-        if (hasTeamConflict(match, prevSlotTeamIds)) {
-          continue;
-        }
-        // --- ここまで追加 ---
         // 既に使用されているチームがいるかチェック
         if (hasTeamConflict(match, usedTeamIds)) {
           continue;
@@ -625,9 +606,6 @@ const generateLeagueScheduleWithCourts = (
       const match = schedulableMatches.splice(matchIndex, 1)[0];
       const knownTeamIds = getKnownTeamIds(match);
       usedTeamIds.push(...knownTeamIds);
-      // --- ここから追加 ---
-      thisSlotTeamIds.push(...knownTeamIds);
-      // --- ここまで追加 ---
       // タイムスロットを追加
       timeSlots.push({
         startTime: minutesToTime(currentMinutes),
@@ -643,20 +621,15 @@ const generateLeagueScheduleWithCourts = (
     }
     
     // 次の時間枠へ
-    if (scheduledMatchesCount > 0) {
-      currentMinutes += groupStageDuration + settings.breakDuration;
-    } else {
-      // もし試合がスケジュールできなかった場合、時間を少し進める
-      currentMinutes += 5;
+    if (scheduledMatchesCount === 0) {
+      throw new Error('試合をコートへ割り当てられません');
     }
+    currentMinutes += groupStageDuration + settings.breakDuration;
     
     // 終了時間チェック
     if (currentMinutes >= endMinutes && schedulableMatches.length > 0) {
       throw new Error('時間内にすべての試合をスケジュールできません');
     }
-    // --- ここから追加 ---
-    prevSlotTeamIds = thisSlotTeamIds;
-    // --- ここまで追加 ---
   }
   
   // プレーオフがある場合は追加
@@ -683,7 +656,6 @@ const generateLeagueScheduleWithCourts = (
     // 3位決定戦と他の試合を分離
     schedulablePlayoffMatches.forEach(match => {
       if (isThirdPlaceMatch(match)) {
-        console.log("Found third place match:", match);
         thirdPlaceMatch = match;
       } else {
         if (!playoffRoundGroups[match.round]) {
@@ -692,9 +664,6 @@ const generateLeagueScheduleWithCourts = (
         playoffRoundGroups[match.round].push(match);
       }
     });
-    
-    // 3位決定戦があるかログ出力
-    console.log("Third place match found:", !!thirdPlaceMatch);
     
     // 各ラウンドの試合をシャッフル
     Object.keys(playoffRoundGroups).forEach(round => {
@@ -737,8 +706,6 @@ const generateLeagueScheduleWithCourts = (
       
       // 現在処理中のラウンドを保存（同時進行できる試合を判断するため）
       const currentRound = sortedPlayoffMatches[0].round;
-      console.log(`Processing playoff round ${currentRound} with ${sortedPlayoffMatches.length} matches. Available courts: ${availableCourts.length}`);
-      
       // 休憩とランチが被らないように調整
       let safetyCounter = 0; // 無限ループ防止用のカウンター
       let adjustedTime = false;
@@ -809,8 +776,6 @@ const generateLeagueScheduleWithCourts = (
         m.round === currentRound && !isSeededMatch(m)
       );
       
-      console.log(`Found ${sameRoundMatches.length} matches in round ${currentRound} to schedule on ${availableCourts.length} courts`);
-      
       // 各コートについて処理
       for (const court of availableCourts) {
         if (sameRoundMatches.length === 0) break;
@@ -858,7 +823,6 @@ const generateLeagueScheduleWithCourts = (
         
         // スケジュール可能な試合がない場合はこのコートをスキップ
         if (matchIndex === -1 || !matchToSchedule) {
-          console.log(`No schedulable match found for court ${court}`);
           continue;
         }
         
@@ -876,8 +840,6 @@ const generateLeagueScheduleWithCourts = (
         
         // ラウンド名を取得 - このラウンド変換ロジックを修正
         const roundName = getRoundName(match, sport);
-        
-        console.log(`Scheduling playoff match on ${court}: Round ${match.round}(${roundName}), Match ${match.matchNumber}, Teams: ${match.team1Id} vs ${match.team2Id}`);
         
         // タイムスロットを追加
         timeSlots.push({
@@ -907,19 +869,11 @@ const generateLeagueScheduleWithCourts = (
       }
     }
     
-    // 3位決定戦と決勝戦のスケジューリング - 条件をチェック
-    console.log("Scheduling final matches:", { 
-      hasThirdPlace: !!thirdPlaceMatch, 
-      hasFinal: !!finalMatch,
-      timeLeft: currentMinutes < endMinutes 
-    });
-    
-    if ((thirdPlaceMatch || finalMatch) && currentMinutes < endMinutes) {
+    // 3位決定戦と決勝戦のスケジューリング
+    if (thirdPlaceMatch || finalMatch) {
       // コート数によって処理を分ける
       if (courtCount === 2 && thirdPlaceMatch && finalMatch) {
         // 2コートの場合: 3位決定戦と決勝戦を同時に行う
-        const availableCourts = ['court1', 'court2'];
-        
         // 休憩とランチが被らないように調整
         currentMinutes = adjustTimeForBreaksWithDuration(currentMinutes, settings, playoffDuration);
         
@@ -966,19 +920,9 @@ const generateLeagueScheduleWithCourts = (
           currentMinutes += playoffDuration + settings.breakDuration;
         }
       }
-    } else {
-      // 3位決定戦や決勝がなかったか、時間がなかった場合
-      console.log("Could not schedule final matches:", { 
-        hasThirdPlace: !!thirdPlaceMatch, 
-        hasFinal: !!finalMatch,
-        timeLeft: currentMinutes < endMinutes 
-      });
     }
     
-    // 終了時間チェック
-    if (currentMinutes > endMinutes) {
-      throw new Error('時間内にすべての試合をスケジュールできません');
-    }
+    assertMatchesFinishBy(timeSlots, endMinutes);
   }
   
   // 時間順にソート

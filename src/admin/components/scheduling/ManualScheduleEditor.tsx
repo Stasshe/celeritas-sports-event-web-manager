@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { TimeSlot, Sport } from '../../../types';
+import { getTimeSlotLabel } from '../../../utils/match';
 
 interface ManualScheduleEditorProps {
   open: boolean;
@@ -27,7 +28,7 @@ interface ManualScheduleEditorProps {
   timeSlots: TimeSlot[];
   onChange: (slots: TimeSlot[]) => void;
   courtNames?: { court1: string; court2?: string };
-  teams?: { id: string; name: string }[];
+  sport: Sport;
 }
 
 const timeSlotTypes = [
@@ -44,7 +45,7 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
   timeSlots,
   onChange,
   courtNames,
-  teams
+  sport
 }) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editSlot, setEditSlot] = useState<Partial<TimeSlot>>({});
@@ -64,10 +65,7 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
     setEditingIndex(idx);
     setEditSlot({
       ...slot,
-      matchDescription:
-        slot.matchDescription && slot.matchDescription.trim() !== ''
-          ? slot.matchDescription
-          : slot.description || slot.title || ''
+      matchDescription: getTimeSlotLabel(slot, sport)
     });
   };
 
@@ -239,7 +237,7 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
                     <TableCell>{timeSlotTypes.find(t => t.value === slot.type)?.label || slot.type}</TableCell>
                     <TableCell>{slot.courtId === 'court2' ? (courtNames?.court2 || '第2コート') : (courtNames?.court1 || '第1コート')}</TableCell>
                     <TableCell sx={{ minWidth: 200, maxWidth: 220, wordBreak: 'break-all' }}>
-                      {slot.matchDescription || slot.description || slot.title || '-'}
+                      {getTimeSlotLabel(slot, sport) || '-'}
                     </TableCell>
                     <TableCell>
                       <IconButton onClick={() => handleEdit(idx)} size="small"><EditIcon fontSize="small" /></IconButton>

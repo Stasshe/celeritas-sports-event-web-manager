@@ -1,4 +1,4 @@
-import { Match, MatchParticipantSource, Sport, Team } from '../types';
+import { Match, MatchParticipantSource, Sport, Team, TimeSlot } from '../types';
 
 export const getTeamDisplayName = (team: Team): string => {
   return team.name.replace(/^grade[1-3]-/, '');
@@ -82,4 +82,12 @@ export const getMatchContext = (match: Match, sport: Sport): string => {
     return getRoundName(match, sport);
   }
   return `試合 ${match.matchNumber}`;
+};
+
+export const getTimeSlotLabel = (slot: TimeSlot, sport: Sport): string => {
+  if (slot.type === 'match' && slot.matchId) {
+    const match = sport.matches.find(candidate => candidate.id === slot.matchId);
+    if (match) return getMatchupLabel(match, sport);
+  }
+  return slot.matchDescription || slot.description || slot.title || '';
 };

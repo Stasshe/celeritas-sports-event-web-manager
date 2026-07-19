@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { Match, Sport, Team } from '../types';
-import { getMatchContext, getMatchupLabel, getParticipantName, getTeamDisplayName } from './match';
+import { Match, Sport, Team, TimeSlot } from '../types';
+import {
+  getMatchContext,
+  getMatchupLabel,
+  getParticipantName,
+  getTeamDisplayName,
+  getTimeSlotLabel
+} from './match';
 
 const teams: Team[] = [
   { id: 'a', name: 'grade3-3-6' },
@@ -97,5 +103,29 @@ describe('match display resolution', () => {
     });
     expect(getParticipantName(playoff, 'team1', createSport([playoff], 'league')))
       .toBe('ブロック2 3位');
+  });
+
+  it('ignores a stale saved matchup when the linked match changes', () => {
+    const match = createMatch({ id: 'scheduled', team1Id: 'c', team2Id: 'd' });
+    const slot: TimeSlot = {
+      startTime: '09:00',
+      endTime: '09:20',
+      type: 'match',
+      matchId: match.id,
+      matchDescription: 'old team vs old team'
+    };
+
+    expect(getTimeSlotLabel(slot, createSport([match]))).toBe('1-4 vs 1-5');
+  });
+
+  it('keeps a manual matchup when no match is linked', () => {
+    const slot: TimeSlot = {
+      startTime: '09:00',
+      endTime: '09:20',
+      type: 'match',
+      matchDescription: 'Exhibition A vs Exhibition B'
+    };
+
+    expect(getTimeSlotLabel(slot, createSport([]))).toBe('Exhibition A vs Exhibition B');
   });
 });

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Team } from '../types';
-import { createThirdPlaceMatch, createTournamentMatches } from './tournament';
+import {
+  createThirdPlaceMatch,
+  createTournamentMatches,
+  resolveTournamentParticipants
+} from './tournament';
 
 const createTeams = (count: number): Team[] => {
   return Array.from({ length: count }, (_, index) => ({
@@ -106,5 +110,61 @@ describe('createThirdPlaceMatch', () => {
   it('returns undefined when a bracket has no two-match semifinal', () => {
     const finalOnly = createTournamentMatches(createTeams(2), false);
     expect(createThirdPlaceMatch(finalOnly)).toBeUndefined();
+  });
+});
+
+describe('resolveTournamentParticipants', () => {
+  it('maps each semifinal loser to the matching third-place source', () => {
+    const matches = createTournamentMatches(createTeams(4), true);
+    const semifinals = matches.filter(match => match.round === 1);
+    semifinals[0].status = 'completed';
+    semifinals[0].winnerId = semifinals[0].team2Id;
+    semifinals[1].status = 'completed';
+    semifinals[1].winnerId = semifinals[1].team1Id;
+
+    const resolved = resolveTournamentParticipants(matches);
+    const finalMatch = resolved.find(match => match.round === 2 && match.matchNumber === 1);
+    const thirdPlaceMatch = resolved.find(match => match.matchNumber === 0);
+
+    expect(finalMatch?.team1Id).toBe(semifinals[0].team2Id);
+    expect(finalMatch?.team2Id).toBe(semifinals[1].team1Id);
+    expect(thirdPlaceMatch?.team1Id).toBe(semifinals[0].team1Id);
+    expect(thirdPlaceMatch?.team2Id).toBe(semifinals[1].team2Id);
+  });
+
+  it('replaces stale third-place participants after a semifinal result changes', () => {
+    const matches = createTournamentMatches(createTeams(4), true);
+    const semifinals = matches.filter(match => match.round === 1);
+    semifinals[0].winnerId = semifinals[0].team1Id;
+    semifinals[1].winnerId = semifinals[1].team1Id;
+    const initiallyResolved = resolveTournamentParticipants(matches);
+    const changedMatches = initiallyResolved.map(match => {
+      if (match.id !== semifinals[0].id) return match;
+      return { ...match, winnerId: match.team2Id };
+    });
+
+    const resolvedAgain = resolveTournamentParticipants(changedMatches);
+    const thirdPlaceMatch = resolvedAgain.find(match => match.matchNumber === 0);
+
+    expect(thirdPlaceMatch?.team1Id).toBe(semifinals[0].team1Id);
+    expect(thirdPlaceMatch?.team2Id).toBe(semifinals[1].team2Id);
+  });
+
+  it('resolves a first-round bye into the correct next-round side', () => {
+    const matches = createTournamentMatches(createTeams(5), false);
+    const bye = matches.find(match => {
+      return match.round === 1 && Boolean(match.team1Id) !== Boolean(match.team2Id);
+    });
+
+    const resolved = resolveTournamentParticipants(matches);
+    const nextMatch = resolved.find(match => {
+      return match.round === 2 && match.matchNumber === Math.ceil((bye?.matchNumber || 0) / 2);
+    });
+    const expectedTeamId = bye?.team1Id || bye?.team2Id;
+    const actualTeamId = (bye?.matchNumber || 0) % 2 === 1
+      ? nextMatch?.team1Id
+      : nextMatch?.team2Id;
+
+    expect(actualTeamId).toBe(expectedTeamId);
   });
 });

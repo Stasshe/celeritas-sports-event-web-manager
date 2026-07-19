@@ -1,6 +1,7 @@
 import { Match, Team, LeagueBlock } from '../../../../types';
 import { TournamentStructureHelper } from '../../../../common/TournamentStructureHelper';
 import { LeagueMatchHelper } from './LeagueMatchHelper';
+import { resolveTournamentParticipants } from '../../../../common/tournament';
 
 interface PlayoffGenerationResult {
   success: boolean;
@@ -236,7 +237,7 @@ export class LeaguePlayoffHelper {
    * プレーオフ試合を更新し、3位決定戦の設定などを行う
    */
   static updatePlayoffMatches(matches: Match[]): Match[] {
-    const newPlayoffMatches = [...matches];
+    const newPlayoffMatches = matches.map(match => ({ ...match }));
     
     // 1. シード戦の処理 - 1回戦の不戦勝のみを自動的に処理
     newPlayoffMatches.forEach(match => {
@@ -265,92 +266,10 @@ export class LeaguePlayoffHelper {
         match.team2Score = match.team2Id ? 1 : 0;
         match.winnerId = winningTeamId;
         
-        // 次の試合を探して勝者を進出させる
-        const nextRoundMatch = newPlayoffMatches.find(m => 
-          m.round === match.round + 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
-        );
-        
-        if (nextRoundMatch) {
-          if (match.matchNumber % 2 !== 0) {
-            nextRoundMatch.team1Id = winningTeamId;
-          } else {
-            nextRoundMatch.team2Id = winningTeamId;
-          }
-        }
       }
     });
-    
-    // 2. 勝者が既に決まっている試合からの進出処理
-    newPlayoffMatches.forEach(match => {
-      // TBDチームが含まれる試合はスキップ
-      const isTBDTeam1 = match.team1Source?.type === 'blockRank' && !match.team1Id;
-      const isTBDTeam2 = match.team2Source?.type === 'blockRank' && !match.team2Id;
-      if (isTBDTeam1 || isTBDTeam2) return;
-      
-      // 完了して勝者が決まっている試合で、両方のチームが存在する試合
-      if (match.status === 'completed' && match.winnerId && 
-          match.team1Id && match.team1Id !== '' && 
-          match.team2Id && match.team2Id !== '') {
-        const nextRoundMatch = newPlayoffMatches.find(m => 
-          m.round === match.round + 1 && Math.ceil(match.matchNumber / 2) === m.matchNumber
-        );
-        
-        // 次のラウンドがあり、進出先の位置が空いている場合のみ進出させる
-        if (nextRoundMatch) {
-          const position = match.matchNumber % 2 !== 0 ? 'team1Id' : 'team2Id';
-          
-          // 既に他の試合から進出してきた場合は上書きしない
-          // また、TBDチームがある場合も上書きしない
-          const isTBDNextTeam = nextRoundMatch[position] && nextRoundMatch[position].startsWith('tbd_');
-          if (!nextRoundMatch[position] || nextRoundMatch[position] === '' || 
-              (nextRoundMatch[position] && !isTBDNextTeam)) {
-            nextRoundMatch[position] = match.winnerId;
-          }
-        }
-      }
-    });
-    
-    // 3. 3位決定戦の処理
-    const maxRound = newPlayoffMatches.length > 0 ? Math.max(...newPlayoffMatches.map(m => m.round)) : 0;
-    
-    // 準決勝ラウンドを正しく特定する
-    // 4チームの場合：準決勝=Round1、決勝=Round2
-    // 8チームの場合：準々決勝=Round1、準決勝=Round2、決勝=Round3
-    const semifinalRound = maxRound - 1;
-    
-    // 準決勝の試合を取得（完了した試合のみ）
-    const semifinalMatches = newPlayoffMatches.filter(m => 
-      m.round === semifinalRound && 
-      m.status === 'completed' && 
-      m.winnerId && 
-      m.team1Id && m.team2Id && // 両方のチームが存在
-      !m.team1Id?.startsWith('tbd_') && !m.team2Id?.startsWith('tbd_') // TBDチームを含まない
-    );
-    
-    const thirdPlaceMatch = newPlayoffMatches.find(m => 
-      m.matchNumber === 0 || m.id.includes('third_place')
-    );
-    
-    if (semifinalMatches.length >= 2 && thirdPlaceMatch) {
-      // 準決勝の敗者を取得
-      const losers = semifinalMatches.map(match => {
-        // 勝者でない方が敗者
-        return match.team1Id === match.winnerId ? match.team2Id : match.team1Id;
-      }).filter((id): id is string => Boolean(id) && !id.startsWith('tbd_'));
-      
-      // 3位決定戦に敗者を配置（空いている位置のみ）
-      if (losers.length >= 2) {
-        if (!thirdPlaceMatch.team1Id || thirdPlaceMatch.team1Id === '') {
-          thirdPlaceMatch.team1Id = losers[0];
-        }
-        
-        if (!thirdPlaceMatch.team2Id || thirdPlaceMatch.team2Id === '') {
-          thirdPlaceMatch.team2Id = losers[1];
-        }
-      }
-    }
-    
-    return newPlayoffMatches;
+
+    return resolveTournamentParticipants(newPlayoffMatches);
   }
 
   static resolveBlockRankSources(matches: Match[], blocks: LeagueBlock[]): Match[] {

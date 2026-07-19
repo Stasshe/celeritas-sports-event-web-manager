@@ -148,3 +148,30 @@ describe('LeaguePlayoffHelper.resolveBlockRankSources', () => {
     expect(resolvedMatch.team2Id).toBe('b2');
   });
 });
+
+describe('LeaguePlayoffHelper.updatePlayoffMatches', () => {
+  it('keeps third-place sides tied to their semifinal sources regardless of update order', () => {
+    const result = LeaguePlayoffHelper.generatePlayoffTournament(
+      createBlocks(true),
+      teams,
+      2,
+      true
+    );
+    const semifinals = result.matches.filter(match => match.round === 1);
+    const completedMatches = result.matches.map(match => {
+      const semifinal = semifinals.find(candidate => candidate.id === match.id);
+      if (!semifinal) return match;
+      return {
+        ...match,
+        status: 'completed' as const,
+        winnerId: match.matchNumber === 1 ? match.team2Id : match.team1Id
+      };
+    }).reverse();
+
+    const updated = LeaguePlayoffHelper.updatePlayoffMatches(completedMatches);
+    const thirdPlaceMatch = updated.find(match => match.matchNumber === 0);
+
+    expect(thirdPlaceMatch?.team1Id).toBe(semifinals[0].team1Id);
+    expect(thirdPlaceMatch?.team2Id).toBe(semifinals[1].team2Id);
+  });
+});

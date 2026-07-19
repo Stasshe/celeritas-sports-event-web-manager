@@ -1,7 +1,47 @@
-import { Match, Team } from '../types';
+import { Match, MatchParticipantSource, Team } from '../types';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
 
 const getDate = (): string => new Date().toISOString().split('T')[0];
+
+const resolveSourceTeamId = (
+  source: MatchParticipantSource,
+  matchesById: Map<string, Match>
+): string => {
+  if (source.type === 'blockRank') return '';
+
+  const previousMatch = matchesById.get(source.matchId);
+  if (!previousMatch) return '';
+
+  if (source.type === 'winner') {
+    if (previousMatch.winnerId) return previousMatch.winnerId;
+    const participants = [previousMatch.team1Id, previousMatch.team2Id].filter(Boolean);
+    if (participants.length === 1) return participants[0];
+    return '';
+  }
+
+  if (!previousMatch.winnerId) return '';
+  if (previousMatch.team1Id === previousMatch.winnerId) return previousMatch.team2Id;
+  if (previousMatch.team2Id === previousMatch.winnerId) return previousMatch.team1Id;
+  return '';
+};
+
+export const resolveTournamentParticipants = (matches: Match[]): Match[] => {
+  const resolvedMatches = matches.map(match => ({ ...match }));
+  const matchesById = new Map(resolvedMatches.map(match => [match.id, match]));
+
+  [...resolvedMatches]
+    .sort((first, second) => first.round - second.round)
+    .forEach(match => {
+      if (match.team1Source?.type === 'winner' || match.team1Source?.type === 'loser') {
+        match.team1Id = resolveSourceTeamId(match.team1Source, matchesById);
+      }
+      if (match.team2Source?.type === 'winner' || match.team2Source?.type === 'loser') {
+        match.team2Id = resolveSourceTeamId(match.team2Source, matchesById);
+      }
+    });
+
+  return resolvedMatches;
+};
 
 export const createThirdPlaceMatch = (
   matches: Match[],

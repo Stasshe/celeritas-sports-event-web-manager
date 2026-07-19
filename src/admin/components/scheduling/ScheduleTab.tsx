@@ -811,7 +811,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
           timeSlots={timeSlots}
           onChange={handleManualEditorChange}
           courtNames={scheduleSettings.courtNames}
-          teams={sport.teams}
+          sport={sport}
         />
         {/* ...existing code... */}
         <Dialog
