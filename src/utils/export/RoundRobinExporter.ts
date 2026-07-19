@@ -1,6 +1,7 @@
 import * as ExcelJS from 'exceljs';
 import { Sport, Match, Team } from '../../types';
 import { defaultRoundRobinSettings } from '../../types';
+import { getParticipantName, getTeamDisplayName } from '../match';
 
 /**
  * 総当たり戦データをExcelワークシートにエクスポート
@@ -201,7 +202,7 @@ const addStandingsTable = (
   sortedTeams.forEach((team, index) => {
     const stats = teamStats[team.id];
     const row = sheet.addRow([
-      team.name,
+      getTeamDisplayName(team),
       stats.played.toString(),
       stats.won.toString(),
       stats.drawn.toString(),
@@ -299,8 +300,8 @@ const addMatchResultsTable = (
     }
     
     // チーム名を取得
-    const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || '不明';
-    const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || '不明';
+    const team1 = getParticipantName(match, 'team1', sport);
+    const team2 = getParticipantName(match, 'team2', sport);
     
     // 日付をフォーマット
     const matchDate = match.date ? new Date(match.date).toLocaleDateString() : '-';
@@ -401,7 +402,7 @@ const addCrossTable = (
   // 上部行にチーム名を追加（テキスト回転なし）
   teams.forEach((team, index) => {
     const cell = headerRow.getCell(index + 2);
-    cell.value = team.name;
+    cell.value = getTeamDisplayName(team);
     cell.font = { bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
     cell.border = {
@@ -442,7 +443,7 @@ const addCrossTable = (
   
   // 各チームの行を追加
   teams.forEach((team, rowIndex) => {
-    const row = sheet.addRow([team.name]);
+    const row = sheet.addRow([getTeamDisplayName(team)]);
     row.getCell(1).font = { bold: true };
     row.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
     row.getCell(1).border = {

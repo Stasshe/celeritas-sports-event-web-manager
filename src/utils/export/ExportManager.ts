@@ -5,6 +5,7 @@ import { exportTournament } from './TournamentExporter';
 import { exportRoundRobin } from './RoundRobinExporter';
 import { exportLeague } from './LeagueExporter';
 import { exportRanking } from './RankingExporter';
+import { getParticipantName, getTeamDisplayName } from '../match';
 
 interface ExportOptions {
   includeOverallWinners?: boolean;
@@ -343,9 +344,9 @@ const addOverallWinnersSheet = (
     sheet.addRow({
       event: event.name,
       sport: sport.name,
-      firstPlace: winners.first?.name || '-',
-      secondPlace: winners.second?.name || '-',
-      thirdPlace: winners.third?.name || '-'
+      firstPlace: winners.first ? getTeamDisplayName(winners.first) : '-',
+      secondPlace: winners.second ? getTeamDisplayName(winners.second) : '-',
+      thirdPlace: winners.third ? getTeamDisplayName(winners.third) : '-'
     });
     
     // Style the row
@@ -384,18 +385,6 @@ const addEventInfoSheet = (
   // Event details
   sheet.addRow(['Date:', new Date(event.date).toLocaleDateString()]);
   sheet.addRow(['Description:', event.description]);
-  
-  // Add organizers
-  sheet.addRow(['']);
-  sheet.addRow(['Organizers:']);
-  // Check if organizers array exists before iterating
-  if (event.organizers && Array.isArray(event.organizers) && event.organizers.length > 0) {
-    event.organizers.forEach(org => {
-      sheet.addRow([org.name, org.role, `Grade: ${org.grade}`]);
-    });
-  } else {
-    sheet.addRow(['No organizers assigned']);
-  }
   
   // Sports list
   sheet.addRow(['']);
@@ -452,7 +441,7 @@ const addGenericSportSheet = (
   
   sport.teams.forEach(team => {
     sheet.addRow([
-      team.name,
+      getTeamDisplayName(team),
       team.members?.join(', ') || ''
     ]);
   });
@@ -467,11 +456,10 @@ const addGenericSportSheet = (
     matchesHeader.font = { bold: true };
     
     sport.matches.forEach(match => {
-      const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || 'Unknown';
-      const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || 'Unknown';
-      const winner = match.winnerId 
-        ? sport.teams.find(t => t.id === match.winnerId)?.name 
-        : 'None';
+      const team1 = getParticipantName(match, 'team1', sport);
+      const team2 = getParticipantName(match, 'team2', sport);
+      const winnerTeam = sport.teams.find(team => team.id === match.winnerId);
+      const winner = winnerTeam ? getTeamDisplayName(winnerTeam) : 'None';
         
       sheet.addRow([
         match.matchNumber,

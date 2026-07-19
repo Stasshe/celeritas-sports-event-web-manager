@@ -6,7 +6,6 @@ export interface Event {
   alternativeDate?: string; // 雨天時の予備日
   description: string;
   isActive: boolean; // 現在表示したい行事かどうか
-  organizers: Organizer[]; // 担当者リスト
   sports: string[]; // スポーツIDの配列
   coverImageUrl?: string; // カバー画像URL追加
   createdAt?: string; // オプショナルなcreatedAt属性を追加
@@ -41,14 +40,6 @@ export interface Event {
   }>;
 }
 
-// 担当者タイプ
-export interface Organizer {
-  id: string;
-  name: string;
-  role: "leader" | "member" | string; // リーダー、メンバー、またはカスタム役職
-  grade: 1 | 2 | 3; // 学年
-}
-
 // スポーツタイプ
 export interface Sport {
   id: string;
@@ -56,9 +47,7 @@ export interface Sport {
   eventId: string;
   type: "tournament" | "roundRobin" | "league" | "ranking"; // 競技形式
   description?: string;
-  rules?: string;
-  manual?: string; // マニュアル情報
-  organizers: Organizer[]; // 担当者リスト
+  operationsNote?: string;
   teams: Team[];
   matches: Match[];
   // トーナメント設定
@@ -141,6 +130,10 @@ export interface Team {
   blockId?: string; // Add this property for league competitions
 }
 
+export type MatchParticipantSource =
+  | { type: "winner" | "loser"; matchId: string }
+  | { type: "blockRank"; blockId: string; rank: number };
+
 // 試合タイプ - winnerId を string | undefined に統一
 export interface Match {
   id: string;
@@ -161,6 +154,8 @@ export interface Match {
   potentialParticipants?: string[]; // 潜在的な参加者（チームID）を追加
   certainty?: number; // 0-100で試合確度を表す (100%が確定)
   previousMatches?: string[]; // 前の試合IDの配列を追加（準決勝→決勝など）
+  team1Source?: MatchParticipantSource;
+  team2Source?: MatchParticipantSource;
   type?: "tournament" | "league" | "roundRobin"; // 試合のタイプを指定
 }
 

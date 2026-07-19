@@ -1,5 +1,6 @@
 import * as ExcelJS from 'exceljs';
 import { Sport, Match, Team } from '../../types';
+import { getParticipantName, getTeamDisplayName } from '../match';
 
 /**
  * リーグ戦データをExcelワークシートにエクスポート
@@ -375,7 +376,7 @@ const addBlockStandingsTable = (
   sortedTeams.forEach((team, index) => {
     const stats = teamStats[team.id];
     const row = sheet.addRow([
-      team.name,
+      getTeamDisplayName(team),
       stats.played.toString(),
       stats.won.toString(),
       stats.drawn.toString(),
@@ -447,7 +448,7 @@ const addBlockCrossTable = (
   // 上部行にチーム名を追加
   blockTeams.forEach((team, index) => {
     const cell = headerRow.getCell(index + 2);
-    cell.value = team.name;
+    cell.value = getTeamDisplayName(team);
     cell.font = { bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
     cell.border = {
@@ -500,7 +501,7 @@ const addBlockCrossTable = (
   
   // チーム行を追加
   blockTeams.forEach((team, rowIndex) => {
-    const row = sheet.addRow([team.name]);
+    const row = sheet.addRow([getTeamDisplayName(team)]);
     row.getCell(1).font = { bold: true };
     row.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' };
     row.getCell(1).border = {
@@ -609,8 +610,8 @@ const addBlockMatchesTable = (
   // 試合行を追加
   sortedMatches.forEach(match => {
     // チーム名を取得
-    const team1 = sport.teams.find(t => t.id === match.team1Id)?.name || match.team1Id;
-    const team2 = sport.teams.find(t => t.id === match.team2Id)?.name || match.team2Id;
+    const team1 = getParticipantName(match, 'team1', sport);
+    const team2 = getParticipantName(match, 'team2', sport);
     
     // 日付をフォーマット
     const matchDate = match.date ? new Date(match.date).toLocaleDateString() : '-';
@@ -704,17 +705,6 @@ const addPlayoffBracket = (
   // デバッグログ - プレーオフのマッチ情報を出力
   console.log('Playoff matches:', playoffMatches);
   
-  // すべてのチーム情報をIDで索引付けして高速アクセスできるようにする
-  const teamMap: Record<string, Team> = {};
-  if (sport.teams && Array.isArray(sport.teams)) {
-    sport.teams.forEach(team => {
-      teamMap[team.id] = team;
-    });
-  }
-  
-  // デバッグ: チームIDリストを出力
-  console.log('Available team IDs:', Object.keys(teamMap));
-  
   // ラウンドヘッダーを追加
   const headerRow = sheet.getRow(startRow++);
   rounds.forEach((round, index) => {
@@ -798,23 +788,9 @@ const addPlayoffBracket = (
       const match = matches[i];
       const matchCenterRow = matchPositions[round][i];
       
-      // チーム名を取得 - 修正: チームマップを使用して直接アクセス
-      let team1 = 'TBD';
-      let team2 = 'TBD';
-      
-      if (match.team1Id && teamMap[match.team1Id]) {
-        team1 = teamMap[match.team1Id].name;
-      } else if (match.team1Id) {
-        team1 = `ID: ${match.team1Id}`;
-        console.log(`Team with ID ${match.team1Id} not found in teams list`);
-      }
-      
-      if (match.team2Id && teamMap[match.team2Id]) {
-        team2 = teamMap[match.team2Id].name;
-      } else if (match.team2Id) {
-        team2 = `ID: ${match.team2Id}`;
-        console.log(`Team with ID ${match.team2Id} not found in teams list`);
-      }
+      // Resolve participant names using the same rules as the UI.
+      const team1 = getParticipantName(match, 'team1', sport);
+      const team2 = getParticipantName(match, 'team2', sport);
       
       // デバッグログ - 各マッチのチーム情報を詳細表示
       console.log(`Match ${match.id}:`);
@@ -933,21 +909,9 @@ const addPlayoffBracket = (
     );
     
     if (thirdPlaceMatch) {
-      // チーム名を取得 - 同様にチームマップを使用
-      let team1 = 'TBD';
-      let team2 = 'TBD';
-      
-      if (thirdPlaceMatch.team1Id && teamMap[thirdPlaceMatch.team1Id]) {
-        team1 = teamMap[thirdPlaceMatch.team1Id].name;
-      } else if (thirdPlaceMatch.team1Id) {
-        team1 = `ID: ${thirdPlaceMatch.team1Id}`;
-      }
-      
-      if (thirdPlaceMatch.team2Id && teamMap[thirdPlaceMatch.team2Id]) {
-        team2 = teamMap[thirdPlaceMatch.team2Id].name;
-      } else if (thirdPlaceMatch.team2Id) {
-        team2 = `ID: ${thirdPlaceMatch.team2Id}`;
-      }
+      // Resolve participant names using the same rules as the UI.
+      const team1 = getParticipantName(thirdPlaceMatch, 'team1', sport);
+      const team2 = getParticipantName(thirdPlaceMatch, 'team2', sport);
       
       // デバッグログ - 3位決定戦のチーム情報
       console.log(`Third place match:`);
@@ -1123,7 +1087,7 @@ const addFinalStandings = (
     
     const row = sheet.addRow([
       standing.position.toString(),
-      team.name,
+      getTeamDisplayName(team),
       standing.note
     ]);
     

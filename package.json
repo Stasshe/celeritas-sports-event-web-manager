@@ -29,19 +29,18 @@
     "firebase": "^10.14.1",
     "firebase-admin": "^13.10.0",
     "framer-motion": "^10.18.0",
-    "i18next": "^23.16.8",
     "joi": "^17.13.4",
     "react": "^18.3.1",
     "react-color": "^2.19.3",
     "react-dom": "^18.3.1",
-    "react-i18next": "^13.5.0",
-    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.30.4",
     "styled-components": "^4.4.1"
   },
   "scripts": {
     "start": "vite --port 3001",
     "dev": "vite --port 3001",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "build": "pnpm typecheck && vite build && cp dist/index.html dist/404.html",
     "deploy": "pnpm build && surge ./dist sports-event-manager.surge.sh",
@@ -68,6 +67,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "surge": "^0.23.1",
     "typescript": "^6.0.3",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
   }
 }

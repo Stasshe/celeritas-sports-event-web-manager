@@ -1,5 +1,6 @@
 import * as ExcelJS from 'exceljs';
 import { Sport, Team, RankingEntry } from '../../types';
+import { getTeamDisplayName } from '../match';
 
 /**
  * Exports ranking data to an Excel worksheet
@@ -157,7 +158,7 @@ const addRankingTable = (
     if (sport.teams && Array.isArray(sport.teams)) {
       const team = sport.teams.find(t => t.id === ranking.teamId);
       if (team) {
-        teamName = team.name;
+        teamName = getTeamDisplayName(team);
       }
     } else {
       // If teams array doesn't exist, use participant name directly from ranking if available
@@ -239,7 +240,7 @@ const addTeamDetailsList = (
     // Add each team with details
     sport.teams.forEach(team => {
       const row = sheet.addRow([
-        team.name,
+        getTeamDisplayName(team),
         team.members?.join(', ') || '',
         '' // Additional information (could be customized)
       ]);

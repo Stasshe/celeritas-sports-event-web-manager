@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Sport, Match, ClassScheduleEntry, Event } from '../types';
 import { timeToMinutes } from '../utils/scheduleGenerator';
+import { getParticipantName } from '../utils/match';
 
 // 各スポーツのスケジュール設定からクラススケジュールエントリを生成するフック
 export const useClassSchedule = (
@@ -28,9 +29,6 @@ export const useClassSchedule = (
       // スケジュール設定とスケジュールのタイムスロットを確認
       console.log(`Sport ${sport.name} has ${sport.scheduleSettings.timeSlots.length} timeSlots`);
       
-      // すべてのチームを含める（フィルタリングは後で行う）
-      const allTeams = sport.teams || [];
-      
       // タイムスロットを処理
       sport.scheduleSettings.timeSlots.forEach(slot => {
         // 試合タイプのみ処理
@@ -43,46 +41,8 @@ export const useClassSchedule = (
           return;
         }
         
-        // チームを取得
-        const team1 = allTeams.find(t => t.id === match.team1Id);
-        const team2 = allTeams.find(t => t.id === match.team2Id);
-        
-        if (!team1 || !team2) {
-          console.log(`Teams not found for match: ${match.id} in sport ${sport.name}`);
-          return;
-        }
-        
-        // 名前からクラス識別子を抽出するヘルパー関数
-        const extractClassIdentifier = (teamName: string): string => {
-          // "grade1-1-A", "grade2-2-B", "1A", "3C"などの形式に対応
-          const patterns = [
-            /grade(\d)-(\d)-([A-Za-z0-9]+)/i,  // grade1-1-A形式
-            /^(\d)([A-Za-z])$/                 // 1A形式
-          ];
-          
-          for (const pattern of patterns) {
-            const match = teamName.match(pattern);
-            if (match) {
-              return match[0];
-            }
-          }
-          return teamName; // パターンに一致しない場合はそのまま返す
-        };
-        
-        // チーム名からクラス識別子を取得
-        const team1ClassId = extractClassIdentifier(team1.name);
-        const team2ClassId = extractClassIdentifier(team2.name);
-        
-        // この試合が選択されたクラスに関連するかチェック
-        const isRelevantToSelectedClasses = 
-          selectedClasses.length === 0 || // 何も選択されていない場合はすべて表示
-          selectedClasses.includes(team1.id) || 
-          selectedClasses.includes(team2.id) ||
-          selectedClasses.includes(team1ClassId) ||
-          selectedClasses.includes(team2ClassId);
-        
-        // クラス選択関連性に関わらず、すべての試合を一旦登録する方法
-        // （フィルタリングは最後に行う）
+        const team1Name = getParticipantName(match, 'team1', sport);
+        const team2Name = getParticipantName(match, 'team2', sport);
         
         // 確定試合の場合
         const entry: ClassScheduleEntry = {
@@ -94,10 +54,10 @@ export const useClassSchedule = (
           location: match.location,
           date: match.date,
           teams: {
-            team1Id: team1.id,
-            team1Name: team1.name,
-            team2Id: team2.id,
-            team2Name: team2.name
+            team1Id: match.team1Id,
+            team1Name,
+            team2Id: match.team2Id,
+            team2Name
           },
           status: match.status || 'scheduled',
           courtId: slot.courtId,

@@ -1,0 +1,872 @@
+import React, { useMemo, useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  useTheme,
+  useMediaQuery,
+  Chip,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Alert,
+  CircularProgress,
+  alpha,
+  Divider,
+  Stack,
+  IconButton,
+  ButtonGroup,
+} from '@mui/material';
+import {
+  SportsSoccer as SportsIcon,
+  Restaurant as LunchIcon,
+  Coffee as BreakIcon,
+  Schedule as ScheduleIcon,
+  Place as PlaceIcon,
+  AccessTime as TimeIcon,
+  Close as CloseIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
+  Add as AddIcon,
+  Remove as RemoveIcon
+} from '@mui/icons-material';
+import { getMatchStatusLabel, getScheduleTypeLabel } from '../../../utils/labels';
+import { timeToMinutes, minutesToTime } from '../../../utils/scheduleGenerator';
+import { getParticipantName } from '../../../utils/match';
+import { Sport, TimeSlot, Event, Match } from '../../../types';
+import { useNavigate } from 'react-router-dom';
+
+interface EventOverallTimelineProps {
+  sports: Sport[];
+  activeEvent?: Event | null;
+}
+
+interface TimelineEvent {
+  sportId: string;
+  sportName: string;
+  timeSlot: TimeSlot;
+  type: 'match' | 'break' | 'lunch' | 'preparation' | 'cleanup';
+  startMinutes: number;
+  endMinutes: number;
+  matchInfo?: {
+    matchId?: string;
+    team1Id?: string;
+    team1Name: string;
+    team2Id?: string;
+    team2Name: string;
+    courtName?: string;
+  };
+}
+
+// 時間の範囲を生成する関数（30分単位）
+const generateTimeRanges = (startHour: number, endHour: number): string[] => {
+  const timeRanges: string[] = [];
+  for (let hour = startHour; hour <= endHour; hour++) {
+    timeRanges.push(`${hour.toString().padStart(2, '0')}:00`);
+    timeRanges.push(`${hour.toString().padStart(2, '0')}:30`);
+  }
+  return timeRanges;
+};
+
+const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, activeEvent }) => {
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const [currentTime, setCurrentTime] = useState<number>(
+    timeToMinutes(new Date().toTimeString().substring(0, 5))
+  );
+  const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
+  const [scale, setScale] = useState<number>(isMobile ? 3 : isTablet ? 4 : 5);
+
+  // 1分ごとに現在時刻を更新
+  useEffect(() => {
+    const updateCurrentTime = () => {
+      const now = new Date();
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      setCurrentTime(minutes);
+    };
+
+    updateCurrentTime();
+    const interval = setInterval(updateCurrentTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 全スポーツのスケジュールデータを処理
+  const { allEvents, timeRanges, minTime, maxTime } = useMemo(() => {
+    // スケジュールがあるスポーツのみをフィルタリング
+    const sportsWithSchedule = sports.filter(
+      sport => sport.scheduleSettings?.timeSlots && sport.scheduleSettings.timeSlots.length > 0
+    );
+
+    // 時間の最小値と最大値を特定
+    let minTimeMinutes = 24 * 60;
+    let maxTimeMinutes = 0;
+
+    const events: TimelineEvent[] = [];
+
+    sportsWithSchedule.forEach(sport => {
+      if (!sport.scheduleSettings?.timeSlots) return;
+
+      // コート名を取得する関数
+      const getCourtName = (courtId?: 'court1' | 'court2'): string | undefined => {
+        if (!courtId) return undefined;
+        return sport.scheduleSettings?.courtNames?.[courtId] || 
+              (courtId === 'court1' ? '第1コート' : '第2コート');
+      };
+
+      sport.scheduleSettings.timeSlots.forEach(slot => {
+        const startMinutes = timeToMinutes(slot.startTime);
+        const endMinutes = timeToMinutes(slot.endTime);
+        
+        // 時間の最小値と最大値を更新
+        minTimeMinutes = Math.min(minTimeMinutes, startMinutes);
+        maxTimeMinutes = Math.max(maxTimeMinutes, endMinutes);
+
+        // マッチ情報を取得
+        let matchInfo;
+        if (slot.type === 'match' && slot.matchId) {
+          const match = sport.matches?.find(m => m.id === slot.matchId);
+          if (match) {
+            matchInfo = {
+              matchId: match.id,
+              team1Id: match.team1Id,
+              team1Name: getParticipantName(match, 'team1', sport),
+              team2Id: match.team2Id,
+              team2Name: getParticipantName(match, 'team2', sport),
+              courtName: getCourtName(slot.courtId)
+            };
+          }
+        }
+
+        events.push({
+          sportId: sport.id,
+          sportName: sport.name,
+          timeSlot: slot,
+          type: slot.type,
+          startMinutes,
+          endMinutes,
+          matchInfo
+        });
+      });
+    });
+
+    // 時間の範囲を30分単位で生成
+    const startHour = Math.floor(minTimeMinutes / 60);
+    const endHour = Math.ceil(maxTimeMinutes / 60);
+    const timeRangeArray = generateTimeRanges(startHour, endHour);
+
+    return {
+      allEvents: events,
+      timeRanges: timeRangeArray,
+      minTime: minTimeMinutes,
+      maxTime: maxTimeMinutes
+    };
+  }, [sports]);
+
+  // スポーツごとにイベントをグループ化し、重なりを計算
+  const sportGroupedEvents = useMemo(() => {
+    const grouped: Record<string, TimelineEvent[]> = {};
+    const metaInfo: Record<string, any> = {}; // メタ情報を別のオブジェクトに保存
+    
+    allEvents.forEach(event => {
+      if (!grouped[event.sportId]) {
+        grouped[event.sportId] = [];
+      }
+      grouped[event.sportId].push(event);
+    });
+    
+    // 各スポーツごとに時間が重なるイベントを処理して垂直位置を計算
+    Object.keys(grouped).forEach(sportId => {
+      const events = grouped[sportId];
+      
+      // 開始時間でソート
+      events.sort((a, b) => a.startMinutes - b.startMinutes);
+      
+      // 各イベントに垂直位置（row）を割り当て
+      const rows: { end: number, row: number }[] = [];
+      
+      events.forEach(event => {
+        // このイベントを配置できる適切な行を探す
+        let rowIndex = 0;
+        let placed = false;
+        
+        for (let i = 0; i < rows.length; i++) {
+          if (event.startMinutes >= rows[i].end) {
+            // この行に配置可能
+            rows[i].end = event.endMinutes;
+            rowIndex = i;
+            placed = true;
+            break;
+          }
+        }
+        
+        if (!placed) {
+          // 新しい行を追加
+          rows.push({ end: event.endMinutes, row: rows.length });
+          rowIndex = rows.length - 1;
+        }
+        
+        // イベントにrow情報を追加
+        (event as any).row = rowIndex;
+      });
+      
+      // 行の総数を記録（メタ情報として別に保存）
+      metaInfo[`${sportId}_rowCount`] = Math.max(1, rows.length);
+    });
+    
+    return { events: grouped, meta: metaInfo };
+  }, [allEvents]);
+
+  // イベントをクリックしたときの処理
+  const handleEventClick = (event: TimelineEvent) => {
+    setSelectedEvent(event);
+    
+    // 試合情報がある場合は試合データも取得
+    if (event.matchInfo?.matchId) {
+      const sport = sports.find(s => s.id === event.sportId);
+      if (sport) {
+        setSelectedSport(sport);
+        const match = sport.matches?.find(m => m.id === event.matchInfo?.matchId);
+        if (match) {
+          setSelectedMatch(match);
+        }
+      }
+    }
+    
+    setDialogOpen(true);
+  };
+
+  // ダイアログを閉じる
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setSelectedEvent(null);
+    setSelectedMatch(null);
+    setSelectedSport(null);
+  };
+
+  // 試合詳細に移動
+  const handleViewDetails = () => {
+    if (selectedEvent) {
+      navigate(`/sport/${selectedEvent.sportId}`);
+      handleCloseDialog();
+    }
+  };
+
+  // スケール調整用のハンドラー
+  const handleZoomIn = () => {
+    setScale(prev => Math.min(prev + 0.5, 10));
+  };
+  
+  const handleZoomOut = () => {
+    setScale(prev => Math.max(prev - 0.5, 1));
+  };
+
+  const handleScaleSet = (newScale: number) => {
+    setScale(newScale);
+  };
+
+  // ローディング状態
+  if (sports.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // スケジュールがある競技が存在しない場合
+  if (Object.keys(sportGroupedEvents).length === 0) {
+    return (
+      <Alert severity="info" sx={{ my: 2 }}>
+        {"スケジュールのある競技がありません"}
+      </Alert>
+    );
+  }
+
+  // イベントタイプに基づいて色を返す
+  const getEventColor = (type: TimelineEvent['type']) => {
+    switch (type) {
+      case 'match': return theme.palette.primary.main;
+      case 'break': return theme.palette.secondary.main;
+      case 'lunch': return theme.palette.warning.main;
+      case 'preparation': return theme.palette.info.main;
+      case 'cleanup': return theme.palette.error.main;
+      default: return theme.palette.text.secondary;
+    }
+  };
+
+  // イベントタイプに応じたアイコンを取得
+  const getTypeIcon = (type: TimelineEvent['type']) => {
+    switch (type) {
+      case 'match':
+        return <SportsIcon fontSize="small" />;
+      case 'break':
+        return <BreakIcon fontSize="small" />;
+      case 'lunch':
+        return <LunchIcon fontSize="small" />;
+      case 'preparation':
+        return <ScheduleIcon fontSize="small" />;
+      case 'cleanup':
+        return <ScheduleIcon fontSize="small" />;
+      default:
+        return <ScheduleIcon fontSize="small" />;
+    }
+  };
+
+  // タイムラインのピクセル/分の比率を計算（固定値から動的な値に変更）
+  const pixelPerMinute = scale;
+  
+  // 総合タイムラインのコンテンツ幅
+  const totalTimelineWidth = (maxTime - minTime) * pixelPerMinute;
+
+  // 現在時刻の位置を計算
+  const currentTimePosition = currentTime >= minTime && currentTime <= maxTime
+    ? (currentTime - minTime) * pixelPerMinute
+    : -1;
+
+  return (
+    <Box sx={{ mt: 3 }}>
+      {/* タイトル部分の後にスケール調整コントロールを追加 */}
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
+          <ScheduleIcon sx={{ mr: 1 }} />
+          {"総合タイムスケジュール"}
+        </Typography>
+        
+        <Box sx={{ mt: { xs: 1, sm: 0 } }}>
+          {/* 現在時刻表示 */}
+          {currentTimePosition > 0 && (
+            <Chip 
+              icon={<TimeIcon fontSize="small" />}
+              label={`${"現在時刻"}: ${minutesToTime(currentTime)}`}
+              size="small"
+              color="primary"
+              sx={{ mr: 1 }}
+            />
+          )}
+        </Box>
+      </Box>
+      
+      {/* スケール調整コントロールをスライダーからボタンに変更 */}
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+        <Typography variant="body2" sx={{ mr: 2 }}>
+          {"タイムライン縮尺"}:
+        </Typography>
+        
+        <ButtonGroup size="small" sx={{ mr: 2 }}>
+          <Button 
+            onClick={handleZoomOut}
+            disabled={scale <= 1}
+            startIcon={<RemoveIcon />}
+          >
+            {"小さくする"}
+          </Button>
+          <Button 
+            onClick={handleZoomIn}
+            disabled={scale >= 10}
+            startIcon={<AddIcon />}
+          >
+            {"大きくする"}
+          </Button>
+        </ButtonGroup>
+        
+        {/* プリセットスケールボタン */}
+        <ButtonGroup size="small" sx={{ mr: 2 }}>
+          {[2, 4, 6, 8].map(presetScale => (
+            <Button 
+              key={`scale-${presetScale}`}
+              onClick={() => handleScaleSet(presetScale)}
+              variant={Math.abs(scale - presetScale) < 0.1 ? 'contained' : 'outlined'}
+            >
+              {presetScale}x
+            </Button>
+          ))}
+        </ButtonGroup>
+        
+        <Tooltip title={"縮尺をリセット"}>
+          <Button 
+            size="small" 
+            onClick={() => setScale(isMobile ? 3 : isTablet ? 4 : 5)}
+            variant="outlined"
+          >
+            {"リセット"}
+          </Button>
+        </Tooltip>
+        
+        <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
+          {"現在の縮尺"}: {scale}x
+        </Typography>
+      </Box>
+
+      <Paper 
+        elevation={2} 
+        sx={{ 
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 2
+        }}
+      >
+        {/* 固定ヘッダーエリア - 競技名とタイムヘッダー */}
+        <Box sx={{ 
+          display: 'flex',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          position: 'sticky',
+          top: 0,
+          bgcolor: 'background.paper',
+          zIndex: 10,
+        }}>
+          {/* 左側の競技名ヘッダーエリア */}
+          <Box sx={{ 
+            minWidth: isMobile ? 100 : 160, 
+            p: 1.5,
+            borderRight: '1px solid',
+            borderColor: 'divider',
+            bgcolor: theme.palette.grey[50],
+            zIndex: 11,
+            position: 'sticky',
+            left: 0,
+          }}>
+            <Typography variant="subtitle2" align="center">
+              {"競技"}
+            </Typography>
+          </Box>
+
+          {/* 時間ヘッダー - スクロール同期のためにコンテナで囲む */}
+          <Box 
+            sx={{ 
+              position: 'relative',
+              width: `calc(100% - ${isMobile ? 100 : 160}px)`,
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              '&::-webkit-scrollbar': { height: 8 },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: theme.palette.grey[300],
+                borderRadius: 4
+              }
+            }}
+            id="timeline-header-scroll"
+            onScroll={(e) => {
+              // スクロール位置を同期させる
+              const contentScroll = document.getElementById('timeline-content-scroll');
+              if (contentScroll) {
+                contentScroll.scrollLeft = e.currentTarget.scrollLeft;
+              }
+            }}
+          >
+            <Box sx={{ 
+              position: 'relative',
+              width: `${totalTimelineWidth}px`,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+            }}>
+              {/* 時間目盛り */}
+              {timeRanges.map((time, index) => {
+                const timeInMinutes = timeToMinutes(time);
+                const position = (timeInMinutes - minTime) * pixelPerMinute;
+                
+                return (
+                  <Typography 
+                    key={`time-${index}`} 
+                    variant="caption" 
+                    sx={{ 
+                      position: 'absolute',
+                      left: `${position}px`,
+                      transform: 'translateX(-50%)',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {time}
+                  </Typography>
+                );
+              })}
+            </Box>
+          </Box>
+        </Box>
+        
+        {/* スケジュールのメインコンテンツエリア */}
+        <Box sx={{ 
+          display: 'flex',
+          position: 'relative',
+          maxHeight: '500px',
+        }}>
+          {/* 左側の競技名列 - 固定表示 */}
+          <Box sx={{ 
+            minWidth: isMobile ? 100 : 160,
+            borderRight: '1px solid',
+            borderColor: 'divider',
+            position: 'sticky',
+            left: 0,
+            zIndex: 9,
+            bgcolor: 'background.paper'
+          }}>
+            {Object.entries(sportGroupedEvents.events).map(([sportId, events]) => {
+              const sport = sports.find(s => s.id === sportId);
+              if (!sport) return null;
+              
+              // 各スポーツの行数を取得
+              const rowCount = sportGroupedEvents.meta[`${sportId}_rowCount`] || 1;
+              // 行数に基づいて高さを調整（最低60px、行数に応じて増加）
+              const rowHeight = Math.max(60, rowCount * 50);
+              
+              return (
+                <Box 
+                  key={`sport-${sportId}`}
+                  sx={{ 
+                    p: 1.5,
+                    height: rowHeight,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.05)
+                    }
+                  }}
+                  onClick={() => navigate(`/sport/${sportId}`)}
+                >
+                  <Tooltip title={"クリックして詳細を表示"}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 'medium',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}
+                    >
+                      {sport.name}
+                    </Typography>
+                  </Tooltip>
+                </Box>
+              );
+            })}
+          </Box>
+          
+          {/* タイムラインコンテンツ - スクロール可能エリア */}
+          <Box 
+            sx={{ 
+              position: 'relative',
+              width: `calc(100% - ${isMobile ? 100 : 160}px)`,
+              overflowX: 'auto',
+              overflowY: 'auto',
+              '&::-webkit-scrollbar': { height: 8, width: 8 },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: theme.palette.grey[300],
+                borderRadius: 4
+              }
+            }}
+            id="timeline-content-scroll"
+            onScroll={(e) => {
+              // 水平スクロール位置をヘッダーと同期
+              const headerScroll = document.getElementById('timeline-header-scroll');
+              if (headerScroll) {
+                headerScroll.scrollLeft = e.currentTarget.scrollLeft;
+              }
+            }}
+          >
+            <Box sx={{ 
+              width: `${totalTimelineWidth}px`,
+              position: 'relative'
+            }}>
+              {/* 時間の区切り線 */}
+              {timeRanges.map((time, index) => {
+                const timeInMinutes = timeToMinutes(time);
+                const position = (timeInMinutes - minTime) * pixelPerMinute;
+                
+                return (
+                  <Box 
+                    key={`line-${time}`}
+                    sx={{
+                      position: 'absolute',
+                      left: `${position}px`,
+                      top: 0,
+                      bottom: 0,
+                      height: '100%',
+                      borderLeft: '1px dashed',
+                      borderColor: 'divider',
+                      zIndex: 1
+                    }}
+                  />
+                );
+              })}
+
+              {/* 現在時刻の線 */}
+              {currentTimePosition > 0 && (
+                <Box 
+                  sx={{
+                    position: 'absolute',
+                    left: `${currentTimePosition}px`,
+                    top: 0,
+                    bottom: 0,
+                    height: '100%',
+                    borderLeft: `2px solid ${theme.palette.error.main}`,
+                    zIndex: 3,
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: -4,
+                      width: 8,
+                      height: 8,
+                      bgcolor: theme.palette.error.main,
+                      borderRadius: '50%'
+                    }
+                  }}
+                />
+              )}
+              
+              {/* スポーツごとの行 */}
+              {Object.entries(sportGroupedEvents.events).map(([sportId, events]) => {
+                // 各スポーツの行数を取得
+                const rowCount = sportGroupedEvents.meta[`${sportId}_rowCount`] || 1;
+                // 行数に基づいて高さを調整（最低60px、行数に応じて増加）
+                const rowHeight = Math.max(60, rowCount * 50);
+                
+                return (
+                  <Box 
+                    key={`timeline-${sportId}`}
+                    sx={{ 
+                      height: rowHeight,
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      position: 'relative'
+                    }}
+                  >
+                    {/* イベント要素を配置 */}
+                    {events.map((event, index) => {
+                      const left = (event.startMinutes - minTime) * pixelPerMinute;
+                      const width = (event.endMinutes - event.startMinutes) * pixelPerMinute;
+                      const minWidth = 40;
+                      const finalWidth = Math.max(width, minWidth);
+                      
+                      // 行の位置を取得（デフォルトは0）
+                      const row = (event as any).row || 0;
+                      // 行に基づいて上からの位置を計算
+                      const top = 5 + (row * 45);
+                      
+                      return (
+                        <Box
+                          key={`event-${sportId}-${index}`}
+                          sx={{
+                            position: 'absolute',
+                            left: `${left}px`,
+                            width: `${finalWidth}px`,
+                            height: 40,
+                            top: `${top}px`,
+                            borderRadius: 1,
+                            bgcolor: event.type === 'match' 
+                              ? alpha(theme.palette.primary.main, 0.85) 
+                              : alpha(getEventColor(event.type), 0.7),
+                            border: '1px solid',
+                            borderColor: getEventColor(event.type),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                            p: 0.5,
+                            cursor: 'pointer',
+                            color: event.type === 'match' ? '#fff' : 'text.primary',
+                            '&:hover': {
+                              boxShadow: 2,
+                              filter: 'brightness(1.1)',
+                              zIndex: 5
+                            },
+                            zIndex: event.type === 'match' ? 4 : 2
+                          }}
+                          onClick={() => handleEventClick(event)}
+                        >
+                          {/* 試合の場合はチーム情報を表示、それ以外はアイコンのみ */}
+                          {event.type === 'match' && event.matchInfo ? (
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                textShadow: '0 0 2px rgba(0,0,0,0.7)',
+                                fontWeight: 'medium',
+                                textAlign: 'center',
+                                width: '100%'
+                              }}
+                            >
+                              {event.matchInfo.team1Name} vs {event.matchInfo.team2Name}
+                            </Typography>
+                          ) : (
+                            // 試合以外はアイコンのみ表示
+                            getTypeIcon(event.type)
+                          )}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+        </Box>
+      </Paper>
+      
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+        <Typography variant="caption" color="text.secondary">
+          {"タイムラインヒント"}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          ({"現在の縮尺"}: {scale}x)
+        </Typography>
+      </Stack>
+
+      {/* イベント詳細ダイアログ */}
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        {selectedEvent && (
+          <>
+            <DialogTitle sx={{ 
+              bgcolor: alpha(getEventColor(selectedEvent.type), 0.1),
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <Box>
+                <Typography variant="h6">
+                  {selectedEvent.sportName}
+                </Typography>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {selectedEvent.timeSlot.startTime} - {selectedEvent.timeSlot.endTime}
+                </Typography>
+              </Box>
+              <Chip 
+                label={getScheduleTypeLabel(selectedEvent.type)}
+                color={selectedEvent.type === 'match' ? 'primary' : 'default'}
+                size="small"
+              />
+            </DialogTitle>
+
+            <DialogContent sx={{ mt: 2 }}>
+              {selectedEvent.type === 'match' && selectedEvent.matchInfo ? (
+                <Box>
+                  {/* 試合情報 */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    my: 2
+                  }}>
+                    <Typography variant="h6" align="right" sx={{ flex: 1 }}>
+                      {selectedEvent.matchInfo.team1Name}
+                    </Typography>
+                    <Typography variant="h5" sx={{ mx: 2 }}>vs</Typography>
+                    <Typography variant="h6" align="left" sx={{ flex: 1 }}>
+                      {selectedEvent.matchInfo.team2Name}
+                    </Typography>
+                  </Box>
+
+                  {/* 試合状態や詳細 */}
+                  {selectedMatch && (
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="subtitle1" gutterBottom>
+                        {"試合詳細"}
+                      </Typography>
+                      <Divider sx={{ mb: 2 }} />
+
+                      <Grid container spacing={2}>
+                        {selectedMatch.status && (
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">
+                              {"状態"}
+                            </Typography>
+                            <Typography variant="body1">
+                              {getMatchStatusLabel(selectedMatch.status)}
+                            </Typography>
+                          </Grid>
+                        )}
+
+                        {selectedEvent.matchInfo.courtName && (
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">
+                              {"場所"}
+                            </Typography>
+                            <Typography variant="body1">
+                              {selectedEvent.matchInfo.courtName}
+                            </Typography>
+                          </Grid>
+                        )}
+
+                        {/* round情報表示を削除 */}
+
+                        {selectedMatch.blockId && (
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">
+                              {"ブロック"}
+                            </Typography>
+                            <Typography variant="body1">
+                              {`${"ブロック"} ${selectedMatch.blockId.replace('block_', '')}`}
+                            </Typography>
+                          </Grid>
+                        )}
+
+                        {selectedMatch.notes && (
+                          <Grid item xs={12}>
+                            <Typography variant="body2" color="text.secondary">
+                              {"備考"}
+                            </Typography>
+                            <Typography variant="body1">
+                              {selectedMatch.notes}
+                            </Typography>
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Box>
+                  )}
+                </Box>
+              ) : (
+                // 試合以外の時間枠
+                <Box sx={{ py: 2 }}>
+                  <Typography variant="h6">
+                    {selectedEvent.timeSlot.title || getScheduleTypeLabel(selectedEvent.type)}
+                  </Typography>
+                  
+                  {selectedEvent.timeSlot.description && (
+                    <Typography variant="body1" sx={{ mt: 2 }}>
+                      {selectedEvent.timeSlot.description}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </DialogContent>
+
+            <DialogActions>
+              <Button onClick={handleCloseDialog} color="inherit">
+                {"閉じる"}
+              </Button>
+              <Button 
+                onClick={handleViewDetails} 
+                variant="contained" 
+                color="primary"
+              >
+                {"詳細を表示"}
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+    </Box>
+  );
+};
+
+export default EventOverallTimeline;
