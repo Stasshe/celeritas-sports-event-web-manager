@@ -20,6 +20,14 @@ const orderByMatchIds = (matches: Match[], matchIds: string[]): Match[] => {
   });
 };
 
+const getKnownTeamIds = (match: Match): string[] => {
+  return [match.team1Id, match.team2Id].filter((teamId): teamId is string => Boolean(teamId));
+};
+
+const hasTeamConflict = (match: Match, teamIds: string[]): boolean => {
+  return getKnownTeamIds(match).some(teamId => teamIds.includes(teamId));
+};
+
 // 時間を分に変換するヘルパー関数
 export const timeToMinutes = (time: string): number => {
   const [hours, minutes] = time.split(':').map(Number);
@@ -44,16 +52,7 @@ const overlapsWithLunch = (
   const lunchStartMinutes = timeToMinutes(lunchBreak.startTime);
   const lunchEndMinutes = timeToMinutes(lunchBreak.endTime);
   
-  // 部分的に重複する場合
-  if (
-    (startMinutes >= lunchStartMinutes && startMinutes < lunchEndMinutes) ||
-    (endMinutes > lunchStartMinutes && endMinutes <= lunchEndMinutes) ||
-    (startMinutes <= lunchStartMinutes && endMinutes >= lunchStartMinutes)
-  ) {
-    return true;
-  }
-  
-  return false;
+  return startMinutes < lunchEndMinutes && endMinutes > lunchStartMinutes;
 };
 
 // 他の休憩時間と重複するかチェックする関数
@@ -68,16 +67,7 @@ const overlapsWithBreakTimes = (
     const breakStartMinutes = timeToMinutes(breakTime.startTime);
     const breakEndMinutes = timeToMinutes(breakTime.endTime);
     
-    // 部分的に重複する場合
-    if (
-      (startMinutes >= breakStartMinutes && startMinutes < breakEndMinutes) ||
-      (endMinutes > breakStartMinutes && endMinutes <= breakEndMinutes) ||
-      (startMinutes <= breakStartMinutes && endMinutes >= breakStartMinutes)
-    ) {
-      return true;
-    }
-    
-    return false;
+    return startMinutes < breakEndMinutes && endMinutes > breakStartMinutes;
   });
 };
 
@@ -204,6 +194,7 @@ const generateMatchBasedScheduleWithCourts = (
   // 開始時間と終了時間
   const startMinutes = timeToMinutes(settings.startTime);
   const endMinutes = timeToMinutes(settings.endTime);
+  const matchDuration = settings.matchDuration;
   
   // コート数と名前
   const courtCount = settings.courtCount || 1;
@@ -273,15 +264,15 @@ const generateMatchBasedScheduleWithCourts = (
     let safetyCounter = 0;
     let adjustedTime = false;
     while (
-      (overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
-      overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)) &&
+      (overlapsWithLunch(currentMinutes, currentMinutes + matchDuration, settings.lunchBreak) ||
+      overlapsWithBreakTimes(currentMinutes, currentMinutes + matchDuration, settings.breakTimes)) &&
       safetyCounter < 100
     ) {
       safetyCounter++;
       adjustedTime = false;
       if (settings.lunchBreak && 
           currentMinutes < timeToMinutes(settings.lunchBreak.endTime) && 
-          currentMinutes + settings.matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
+          currentMinutes + matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
         currentMinutes = timeToMinutes(settings.lunchBreak.endTime);
         adjustedTime = true;
         continue;
@@ -291,7 +282,7 @@ const generateMatchBasedScheduleWithCourts = (
           const breakStartMinutes = timeToMinutes(breakTime.startTime);
           const breakEndMinutes = timeToMinutes(breakTime.endTime);
           if (currentMinutes < breakEndMinutes && 
-              currentMinutes + settings.matchDuration > breakStartMinutes) {
+              currentMinutes + matchDuration > breakStartMinutes) {
             currentMinutes = breakEndMinutes;
             adjustedTime = true;
             break;
@@ -322,12 +313,12 @@ const generateMatchBasedScheduleWithCourts = (
         if (schedulableMatches.length === 0) break;
         const match = schedulableMatches[0];
         // 直前の時間枠で試合をしたチームが含まれていればスキップ
-        if (prevSlotTeamIds.includes(match.team1Id) || prevSlotTeamIds.includes(match.team2Id)) {
+        if (hasTeamConflict(match, prevSlotTeamIds)) {
           // 直前チームが含まれていたら、次の時間枠で再挑戦
           break;
         }
         // 既に使用されているチームがいるかチェック
-        if (usedTeamIds.includes(match.team1Id) || usedTeamIds.includes(match.team2Id)) {
+        if (hasTeamConflict(match, usedTeamIds)) {
           // 既にこの枠で使われているチームがいれば、次のコートへ
           continue;
         }
@@ -347,8 +338,9 @@ const generateMatchBasedScheduleWithCourts = (
         }
         // スケジュール
         schedulableMatches.shift();
-        usedTeamIds.push(match.team1Id, match.team2Id);
-        thisSlotTeamIds.push(match.team1Id, match.team2Id);
+        const knownTeamIds = getKnownTeamIds(match);
+        usedTeamIds.push(...knownTeamIds);
+        thisSlotTeamIds.push(...knownTeamIds);
         timeSlots.push({
           startTime: minutesToTime(currentMinutes),
           endTime: minutesToTime(currentMinutes + settings.matchDuration),
@@ -367,10 +359,10 @@ const generateMatchBasedScheduleWithCourts = (
         let matchIndex = -1;
         for (let i = 0; i < schedulableMatches.length; i++) {
           const match = schedulableMatches[i];
-          if (prevSlotTeamIds.includes(match.team1Id) || prevSlotTeamIds.includes(match.team2Id)) {
+          if (hasTeamConflict(match, prevSlotTeamIds)) {
             continue;
           }
-          if (usedTeamIds.includes(match.team1Id) || usedTeamIds.includes(match.team2Id)) {
+          if (hasTeamConflict(match, usedTeamIds)) {
             continue;
           }
           const team1Class = teamInfoMap[match.team1Id]?.className;
@@ -390,8 +382,9 @@ const generateMatchBasedScheduleWithCourts = (
         }
         if (matchIndex === -1) continue;
         const match = schedulableMatches.splice(matchIndex, 1)[0];
-        usedTeamIds.push(match.team1Id, match.team2Id);
-        thisSlotTeamIds.push(match.team1Id, match.team2Id);
+        const knownTeamIds = getKnownTeamIds(match);
+        usedTeamIds.push(...knownTeamIds);
+        thisSlotTeamIds.push(...knownTeamIds);
         timeSlots.push({
           startTime: minutesToTime(currentMinutes),
           endTime: minutesToTime(currentMinutes + settings.matchDuration),
@@ -444,6 +437,8 @@ const generateLeagueScheduleWithCourts = (
   // 開始時間と終了時間
   const startMinutes = timeToMinutes(settings.startTime);
   const endMinutes = timeToMinutes(settings.endTime);
+  const groupStageDuration = (settings as LeagueScheduleSettings).groupStageDuration
+    || settings.matchDuration;
   
   // チーム情報マップ（クラス競合チェック用）
   const teamInfoMap = getTeamInfoMap(sport.teams || []);
@@ -530,8 +525,8 @@ const generateLeagueScheduleWithCourts = (
     let adjustedTime = false;
     
     while (
-      (overlapsWithLunch(currentMinutes, currentMinutes + settings.matchDuration, settings.lunchBreak) ||
-      overlapsWithBreakTimes(currentMinutes, currentMinutes + settings.matchDuration, settings.breakTimes)) &&
+      (overlapsWithLunch(currentMinutes, currentMinutes + groupStageDuration, settings.lunchBreak) ||
+      overlapsWithBreakTimes(currentMinutes, currentMinutes + groupStageDuration, settings.breakTimes)) &&
       safetyCounter < 100 // 安全策として最大100回のループ制限
     ) {
       safetyCounter++;
@@ -540,7 +535,7 @@ const generateLeagueScheduleWithCourts = (
       // ランチ休憩との重複をチェック
       if (settings.lunchBreak && 
           currentMinutes < timeToMinutes(settings.lunchBreak.endTime) && 
-          currentMinutes + settings.matchDuration > timeToMinutes(settings.lunchBreak.startTime)) {
+          currentMinutes + groupStageDuration > timeToMinutes(settings.lunchBreak.startTime)) {
         // ランチ休憩の終了時間にスキップ
         currentMinutes = timeToMinutes(settings.lunchBreak.endTime);
         adjustedTime = true;
@@ -554,7 +549,7 @@ const generateLeagueScheduleWithCourts = (
           const breakEndMinutes = timeToMinutes(breakTime.endTime);
           
           if (currentMinutes < breakEndMinutes && 
-              currentMinutes + settings.matchDuration > breakStartMinutes) {
+              currentMinutes + groupStageDuration > breakStartMinutes) {
             // この休憩の終了時間にスキップ
             currentMinutes = breakEndMinutes;
             adjustedTime = true;
@@ -598,12 +593,12 @@ const generateLeagueScheduleWithCourts = (
       for (let i = 0; i < schedulableMatches.length; i++) {
         const match = schedulableMatches[i];
         // --- ここから追加 ---
-        if (prevSlotTeamIds.includes(match.team1Id) || prevSlotTeamIds.includes(match.team2Id)) {
+        if (hasTeamConflict(match, prevSlotTeamIds)) {
           continue;
         }
         // --- ここまで追加 ---
         // 既に使用されているチームがいるかチェック
-        if (usedTeamIds.includes(match.team1Id) || usedTeamIds.includes(match.team2Id)) {
+        if (hasTeamConflict(match, usedTeamIds)) {
           continue;
         }
         
@@ -628,14 +623,15 @@ const generateLeagueScheduleWithCourts = (
       }
       if (matchIndex === -1) continue;
       const match = schedulableMatches.splice(matchIndex, 1)[0];
-      usedTeamIds.push(match.team1Id, match.team2Id);
+      const knownTeamIds = getKnownTeamIds(match);
+      usedTeamIds.push(...knownTeamIds);
       // --- ここから追加 ---
-      thisSlotTeamIds.push(match.team1Id, match.team2Id);
+      thisSlotTeamIds.push(...knownTeamIds);
       // --- ここまで追加 ---
       // タイムスロットを追加
       timeSlots.push({
         startTime: minutesToTime(currentMinutes),
-        endTime: minutesToTime(currentMinutes + settings.matchDuration),
+        endTime: minutesToTime(currentMinutes + groupStageDuration),
         type: 'match',
         matchId: match.id,
         courtId: court as 'court1' | 'court2',
@@ -648,7 +644,7 @@ const generateLeagueScheduleWithCourts = (
     
     // 次の時間枠へ
     if (scheduledMatchesCount > 0) {
-      currentMinutes += settings.matchDuration + settings.breakDuration;
+      currentMinutes += groupStageDuration + settings.breakDuration;
     } else {
       // もし試合がスケジュールできなかった場合、時間を少し進める
       currentMinutes += 5;

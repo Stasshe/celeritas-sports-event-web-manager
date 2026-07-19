@@ -42,6 +42,7 @@ import MatchEditDialog from './MatchEditDialog';
 import TournamentBuilder from './TournamentBuilder';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
 import { generateBracketMatches } from './tournamentViewHelper';
+import { createThirdPlaceMatch } from './tournament';
 
 // インターフェース部分を修正
 interface TournamentScoringProps {
@@ -309,27 +310,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     });
 
     if (checked && updatedMatches.length > 0) {
-      const maxRound = Math.max(...updatedMatches.map(match => match.round));
-      const semifinalMatches = updatedMatches.filter(match => match.round === maxRound - 1);
-      if (semifinalMatches.length === 2) {
-        updatedMatches = [
-          ...updatedMatches,
-          {
-            id: 'third_place_match',
-            round: maxRound,
-            matchNumber: 0,
-            team1Id: '',
-            team2Id: '',
-            team1Score: 0,
-            team2Score: 0,
-            status: 'scheduled',
-            date: new Date().toISOString().split('T')[0],
-            previousMatches: semifinalMatches.map(match => match.id),
-            team1Source: { type: 'loser', matchId: semifinalMatches[0].id },
-            team2Source: { type: 'loser', matchId: semifinalMatches[1].id }
-          }
-        ];
-      }
+      const thirdPlaceMatch = createThirdPlaceMatch(updatedMatches);
+      if (thirdPlaceMatch) updatedMatches = [...updatedMatches, thirdPlaceMatch];
     }
 
     setMatches(updatedMatches);

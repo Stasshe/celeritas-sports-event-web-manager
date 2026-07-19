@@ -39,6 +39,8 @@
   "scripts": {
     "start": "vite --port 3001",
     "dev": "vite --port 3001",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "build": "pnpm typecheck && vite build && cp dist/index.html dist/404.html",
     "deploy": "pnpm build && surge ./dist sports-event-manager.surge.sh",
@@ -65,6 +67,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "surge": "^0.23.1",
     "typescript": "^6.0.3",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
   }
 }
