@@ -8,7 +8,6 @@ import {
   TextField,
   Button,
   IconButton,
-  Grid,
   Table,
   TableBody,
   TableCell,
@@ -19,7 +18,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Chip,
   Tooltip,
   useTheme,
   Alert
@@ -28,8 +26,6 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  Save as SaveIcon,
-  Group as GroupIcon,
   Sync as SyncIcon
 } from '@mui/icons-material';
 import { Sport, Event } from '../../types';
@@ -293,31 +289,132 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
     return members.length;
   };
 
+  // 競技側: 紐づく行事の現在学年タブのクラス名(名簿があるもののみ)
+  const getEventGradeClassNames = () => {
+    const gradeKey = getCurrentGradeKey();
+    const gradeData = eventData?.roster?.[gradeKey] || {};
+    return Object.keys(gradeData).filter(key => Array.isArray(gradeData[key]));
+  };
+
+  // 競技側: 行事の名簿にはあるが、まだ競技側に無いクラス名
+  const getMissingFromEventRoster = () => {
+    const gradeKey = getCurrentGradeKey();
+    const currentNames = new Set(Object.keys(roster?.[gradeKey] || {}));
+    return getEventGradeClassNames().filter(name => !currentNames.has(name));
+  };
+
+  // 競技側: 行事の名簿全体で競技側のrosterを上書き同期
+  const handleSyncFromEvent = () => {
+    if (!sport || !eventData?.roster) return;
+    setRoster(eventData.roster);
+    (onUpdate as (sport: Sport) => void)({
+      ...sport,
+      roster: eventData.roster
+    });
+    setShowEventRosterAlert(false);
+  };
+
+  // 競技側: 行事の名簿にのみあるクラスを個別に追加(名簿ごとコピー)
+  const handleAddMissingFromEvent = () => {
+    if (!sport) return;
+    const gradeKey = getCurrentGradeKey();
+    const missing = getMissingFromEventRoster();
+    if (missing.length === 0) return;
+
+    const eventGradeData = eventData?.roster?.[gradeKey] || {};
+    const updatedRoster = { ...roster };
+    updatedRoster[gradeKey] = { ...(updatedRoster[gradeKey] || {}) };
+    missing.forEach(className => {
+      updatedRoster[gradeKey]![className] = eventGradeData[className];
+    });
+
+    setRoster(updatedRoster);
+    (onUpdate as (sport: Sport) => void)({
+      ...sport,
+      roster: updatedRoster
+    });
+  };
+
+  // 競技側: 同期/追加/削除の3操作のみの一覧(所属生徒は表示しない)
+  const renderSportClassList = () => {
+    const missing = getMissingFromEventRoster();
+    return (
+      <>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 1, flexWrap: 'wrap' }}>
+          <Typography variant="h6">
+            {"クラス一覧"}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              startIcon={<SyncIcon />}
+              onClick={handleSyncFromEvent}
+              disabled={!eventData?.roster}
+            >
+              {"行事から同期"}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={handleAddMissingFromEvent}
+              disabled={missing.length === 0}
+            >
+              {`行事の名簿にのみあるものを追加 (${missing.length})`}
+            </Button>
+          </Box>
+        </Box>
+
+        <TableContainer component={Paper} variant="outlined" sx={{ mb: 4 }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>{"クラス名"}</TableCell>
+                <TableCell align="right" width="80px">{"操作"}</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {getSortedClassNames().map(className => (
+                <TableRow key={className}>
+                  <TableCell>{className}</TableCell>
+                  <TableCell align="right">
+                    <Tooltip title={"削除"}>
+                      <IconButton size="small" color="error" onClick={() => handleDeleteClass(className)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {getSortedClassNames().length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={2} align="center" sx={{ color: 'text.secondary', py: 3 }}>
+                    {"クラスがありません"}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </>
+    );
+  };
+
   return (
     <Box>
       {showEventRosterAlert && (
         <Alert severity="info" sx={{ mb: 3 }}>
           {"イベント名簿アラート"}
-          <Button 
-            size="small" 
-            startIcon={<SyncIcon />} 
-            onClick={() => {
-              if (sport && eventData?.roster) {
-                setRoster(eventData.roster);
-                (onUpdate as (sport: Sport) => void)({
-                  ...sport,
-                  roster: eventData.roster
-                });
-                setShowEventRosterAlert(false);
-              }
-            }}
+          <Button
+            size="small"
+            startIcon={<SyncIcon />}
+            onClick={handleSyncFromEvent}
             sx={{ ml: 2 }}
           >
             {"イベントから同期"}
           </Button>
         </Alert>
       )}
-      
+
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={selectedGrade} onChange={handleGradeChange} aria-label="grade tabs">
           <Tab label={"1年生"} />
@@ -326,6 +423,10 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
         </Tabs>
       </Box>
 
+      {sport && renderSportClassList()}
+
+      {!sport && (
+      <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">
           {"クラス一覧"}
@@ -338,96 +439,49 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
           {"クラスを追加"}
         </Button>
       </Box>
-      
+
       {/* クラス一覧表 */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        {getSortedClassNames().map(className => (
-          <Grid item xs={12} sm={6} md={4} key={className}>
-            <Paper 
-              elevation={2} 
-              sx={{ 
-                p: 2, 
-                display: 'flex', 
-                flexDirection: 'column',
-                height: '100%',
-                '&:hover': {
-                  boxShadow: 4
-                }
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="h6" component="h3">
-                  {className}
-                </Typography>
-                <Box>
+      <TableContainer component={Paper} variant="outlined" sx={{ mb: 4 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>{"クラス名"}</TableCell>
+              <TableCell align="right" width="100px">{"メンバー数"}</TableCell>
+              <TableCell align="right" width="100px">{"操作"}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {getSortedClassNames().map(className => (
+              <TableRow key={className} hover onClick={() => openClassDialog(className)} sx={{ cursor: 'pointer' }}>
+                <TableCell>{className}</TableCell>
+                <TableCell align="right">{getMembersCount(className)}</TableCell>
+                <TableCell align="right">
                   <Tooltip title={"編集"}>
-                    <IconButton size="small" onClick={() => openClassDialog(className)}>
+                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); openClassDialog(className); }}>
                       <EditIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title={"削除"}>
-                    <IconButton size="small" color="error" onClick={() => handleDeleteClass(className)}>
+                    <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteClass(className); }}>
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                </Box>
-              </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                メンバー数: {getMembersCount(className)}
-              </Typography>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                  {"メンバー一覧"}:
-                </Typography>
-                <Box sx={{ maxHeight: 150, overflowY: 'auto' }}>
-                  {getCurrentGradeData()[className]?.map((member, index) => (
-                    member !== 'none' && (
-                      <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
-                        {member}
-                      </Typography>
-                    )
-                  ))}
-                  {!getCurrentGradeData()[className] || 
-                   (getCurrentGradeData()[className].length === 1 && 
-                    getCurrentGradeData()[className][0] === 'none') ? (
-                    <Typography variant="body2" color="text.secondary">
-                      {"メンバーがいません"}
-                    </Typography>
-                  ) : null}
-                </Box>
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Button 
-                  size="small" 
-                  variant="text" 
-                  fullWidth
-                  onClick={() => openClassDialog(className)}
-                >
-                  {"表示・編集"}
-                </Button>
-              </Box>
-            </Paper>
-          </Grid>
-        ))}
-        
-        {getSortedClassNames().length === 0 && (
-          <Grid item xs={12}>
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography color="text.secondary">
-                {"クラスがありません"}
-              </Typography>
-              <Button 
-                startIcon={<AddIcon />}
-                onClick={() => openClassDialog()}
-                sx={{ mt: 2 }}
-              >
-                {"クラスを追加"}
-              </Button>
-            </Paper>
-          </Grid>
-        )}
-      </Grid>
-      
+                </TableCell>
+              </TableRow>
+            ))}
+            {getSortedClassNames().length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3} align="center" sx={{ color: 'text.secondary', py: 3 }}>
+                  {"クラスがありません"}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      </>
+      )}
+
       {/* クラス編集ダイアログ */}
       <Dialog open={dialogOpen} onClose={closeClassDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
