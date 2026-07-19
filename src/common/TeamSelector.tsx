@@ -17,6 +17,7 @@ interface TeamSelectorProps {
   onChange: (teamId: string) => void;
   disabled?: boolean;
   compact?: boolean; // コンパクトモードを追加
+  allowSeed?: boolean;
 }
 
 const TeamSelector: React.FC<TeamSelectorProps> = ({
@@ -25,7 +26,8 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
   rosters,
   onChange,
   disabled = false,
-  compact = false
+  compact = false,
+  allowSeed = false
 }) => {
 
   return (
@@ -38,9 +40,11 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
           disabled={disabled}
           size={compact ? "small" : "medium"}
         >
-          <MenuItem value="">
-            <em>{"チームを選択"}</em>
-          </MenuItem>
+          {allowSeed && (
+            <MenuItem value="">
+              <em>{"シード"}</em>
+            </MenuItem>
+          )}
           {teams.map(team => (
             <MenuItem key={team.id} value={team.id}>
               <Box sx={{ display: 'flex', flexDirection: 'column' }}>

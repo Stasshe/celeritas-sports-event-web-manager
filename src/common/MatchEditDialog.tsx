@@ -267,6 +267,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                           onChange={(teamId) => handleTeamChange(teamId, 'team2')}
                           disabled={false}
                           compact={true}
+                          allowSeed
                         />
                         <Button 
                           size="small" 
