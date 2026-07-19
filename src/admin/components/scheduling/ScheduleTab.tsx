@@ -509,7 +509,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       <Grid container spacing={3}>
         {/* 基本設定 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }}>
+          <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
             <Typography variant="subtitle1" gutterBottom>
               {"基本設定"}
             </Typography>
@@ -626,7 +626,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         </Grid>
         {/* 休憩設定 */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: '100%' }}>
+          <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
             <Typography variant="subtitle1" gutterBottom>
               {"休憩設定"}
             </Typography>
