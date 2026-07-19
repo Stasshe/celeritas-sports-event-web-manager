@@ -105,7 +105,7 @@ const SportEditPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { alpha } = useThemeContext();
-  const { save, registerSaveHandler, unregisterSaveHandler, showSnackbar: showAdminSnackbar } = useAdminLayout();
+  const { save, registerSaveHandler, unregisterSaveHandler, showSnackbar: showAdminSnackbar, setHasUnsavedChanges } = useAdminLayout();
   const isProcessingRef = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { currentUser } = useAuth();
@@ -122,14 +122,6 @@ const SportEditPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false); // ダイアログの状態を追加
 
-  // 各タブのローディング状態を個別管理
-  const [tabLoadingStates, setTabLoadingStates] = useState({
-    details: false,
-    roster: false,
-    note: false,
-    settings: false
-  });
-  
   // 差分を管理
   const [differences, setDifferences] = useState<{
     [key: string]: {
@@ -252,20 +244,6 @@ const SportEditPage: React.FC = () => {
     };
   }, [registerSaveHandler, unregisterSaveHandler, handleSave, sportId]);
 
-  // データ変更時の自動保存設定を改善
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (localSport && sport && JSON.stringify(localSport) !== JSON.stringify(sport)) {
-        save(`sport_${sportId}`);
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [localSport, sport, save, sportId]);
-
   // タブの状態管理を改善
   const [tabStates, setTabStates] = useState<TabStates>({
     details: { 
@@ -310,13 +288,8 @@ const SportEditPage: React.FC = () => {
     return fieldToTabMap[field] || 'details';
   };
 
-  // タブ切り替えの統合されたハンドラ
-  const handleTabChange = useCallback(async (event: React.SyntheticEvent, newValue: number) => {
-    // 現在のタブのデータに変更があれば保存
-    if (localSport && sport && JSON.stringify(localSport) !== JSON.stringify(sport) && localSport.id === sport.id) {
-      await save(`sport_${sportId}`);
-    }
-
+  // タブ切り替えハンドラ（保存は行わない。保存はデバウンス自動保存/保存ボタンに一本化）
+  const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
     const tabName = ['details', 'schedule', 'roster', 'note', 'settings'][newValue];
     setActiveTab(newValue);
 
@@ -326,71 +299,46 @@ const SportEditPage: React.FC = () => {
         [tabName]: { ...prev[tabName], isLoaded: true }
       }));
     }
-  }, [tabStates, localSport, sport, save, sportId]);
+  }, [tabStates]);
 
-  // 部分更新の統合されたハンドラを改善
-  const handlePartialUpdate = useCallback(async (field: keyof Sport, value: any) => {
-    if (!localSport || isProcessingRef.current) return;
+  // デバウンス自動保存（全フィールド共通）
+  const scheduleAutoSave = useCallback((tabName?: string) => {
+    setHasUnsavedChanges(true);
 
-    const tabName = getTabNameForField(field);
-    
-    // 楽観的UI更新（即時反映）
-    const updatedSport: Sport = {
+    if (tabName) {
+      setTabStates(prev => ({
+        ...prev,
+        [tabName]: { ...prev[tabName], isDirty: true, lastUpdated: Date.now() }
+      }));
+    }
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(async () => {
+      const success = await save(`sport_${sportId}`);
+      if (success && tabName) {
+        setTabStates(prev => ({
+          ...prev,
+          [tabName]: { ...prev[tabName], isDirty: false }
+        }));
+      }
+    }, 800);
+  }, [save, sportId, setHasUnsavedChanges]);
+
+  // 単一フィールドの更新（楽観的UI更新 + デバウンス自動保存）
+  const handlePartialUpdate = useCallback((field: keyof Sport, value: any) => {
+    if (!localSport) return;
+
+    setLocalSport({
       ...localSport,
       [field]: value,
       lastEditedBy: currentUser?.email || undefined,
       lastEditedAt: new Date().toISOString()
-    };
-    
-    // 即時にローカル状態を更新（UXのため）
-    setLocalSport(updatedSport);
+    });
 
-    try {
-      // タブの状態を更新（ローディングなしで）
-      setTabStates(prev => ({
-        ...prev,
-        [tabName]: {
-          ...prev[tabName],
-          isDirty: true,
-          lastUpdated: Date.now()
-        }
-      }));
-
-      // バックグラウンドで保存（ローディング表示なし）
-      await updateData(updatedSport);
-
-      // 更新成功後、タブの状態をクリア
-      setTabStates(prev => ({
-        ...prev,
-        [tabName]: {
-          ...prev[tabName],
-          isDirty: false
-        }
-      }));
-
-      showAdminSnackbar("フィールドを更新しました", 'success');
-    } catch (error) {
-      console.error(`Error updating ${field}:`, error);
-      showAdminSnackbar("フィールド更新エラー", 'error');
-      
-      // エラー時にローカル状態を元に戻す
-      if (sport) {
-        setLocalSport({
-          ...localSport,
-          [field]: sport[field]
-        });
-      }
-      
-      // エラー時にタブの状態を戻す
-      setTabStates(prev => ({
-        ...prev,
-        [tabName]: {
-          ...prev[tabName],
-          isDirty: false
-        }
-      }));
-    }
-  }, [localSport, currentUser, updateData, showAdminSnackbar, sport]);
+    scheduleAutoSave(getTabNameForField(field));
+  }, [localSport, currentUser, scheduleAutoSave]);
 
   // クリーンアップ
   useEffect(() => {

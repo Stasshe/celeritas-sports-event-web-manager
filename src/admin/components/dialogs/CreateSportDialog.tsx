@@ -36,8 +36,6 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   
   const isSubmittingRef = useRef(false);
   const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingSportRef = useRef<Sport | null>(null);
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSport, setNewSport] = useState<Partial<Sport>>(
     sport 

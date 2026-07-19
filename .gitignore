@@ -4,3 +4,6 @@ dist
 memo.txt
 .env
 CLAUDE.md
+
+.claude/
+.codex/
