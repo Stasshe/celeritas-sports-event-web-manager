@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Match, ScheduleSettings, Sport, Team, TimeSlot } from '../types';
-import { createTournamentMatches } from '../common/tournament';
+import { createConsolationMatches, createTournamentMatches } from '../common/tournament';
 import { generateSchedule, timeToMinutes } from './scheduleGenerator';
 
 const createTeams = (count: number): Team[] => {
@@ -68,6 +68,15 @@ afterEach(() => {
 });
 
 describe('generateSchedule tournament constraints', () => {
+  it('reports a missing legacy match list without throwing a TypeError', () => {
+    const sport = createSport('tournament', createTeams(2), []);
+    Reflect.deleteProperty(sport, 'matches');
+
+    expect(() => generateSchedule(sport, createSettings())).toThrow(
+      'スケジュール生成用の試合が見つかりません'
+    );
+  });
+
   it.each([3, 5, 6, 7])('never schedules first-round byes for %i teams', teamCount => {
     const teams = createTeams(teamCount);
     const matches = createTournamentMatches(teams, true);
@@ -130,6 +139,29 @@ describe('generateSchedule tournament constraints', () => {
       );
       expect(currentStart).toBeGreaterThanOrEqual(previousEnd);
     }
+  });
+
+  it('schedules consolation matches only after all participant sources finish', () => {
+    const teams = createTeams(8);
+    const mainMatches = createTournamentMatches(teams, false);
+    const consolationMatches = createConsolationMatches(mainMatches, true);
+    const matches = [...mainMatches, ...consolationMatches];
+    const sport = createSport('tournament', teams, matches);
+    const slots = getMatchSlots(generateSchedule(sport, createSettings({ courtCount: 2 }), false));
+    const slotsByMatchId = new Map(slots.map(slot => [slot.matchId, slot]));
+
+    consolationMatches.forEach(match => {
+      const slot = slotsByMatchId.get(match.id);
+      if (!slot) return;
+      [match.team1Source, match.team2Source].forEach(source => {
+        if (!source || source.type === 'blockRank') return;
+        const sourceSlot = slotsByMatchId.get(source.matchId);
+        if (!sourceSlot) return;
+        expect(timeToMinutes(slot.startTime)).toBeGreaterThanOrEqual(
+          timeToMinutes(sourceSlot.endTime)
+        );
+      });
+    });
   });
 });
 
@@ -345,6 +377,36 @@ describe('generateSchedule court and time constraints', () => {
     expect(() => generateSchedule(sport, settings, false)).toThrow(
       '時間内にすべての試合をスケジュールできません'
     );
+  });
+
+  it('generates every match past the configured end when overrun is allowed', () => {
+    const teams = createTeams(4);
+    const matches = createRoundRobinMatches(teams);
+    const sport = createSport('roundRobin', teams, matches);
+    const settings = createSettings({
+      startTime: '09:00',
+      endTime: '09:30',
+      allowEndTimeOverrun: true
+    });
+
+    const slots = getMatchSlots(generateSchedule(sport, settings, false));
+
+    expect(slots).toHaveLength(matches.length);
+    expect(timeToMinutes(slots.at(-1)!.endTime)).toBeGreaterThan(timeToMinutes(settings.endTime));
+  });
+
+  it('omits only explicitly excluded matches', () => {
+    const teams = createTeams(4);
+    const matches = createRoundRobinMatches(teams);
+    const sport = createSport('roundRobin', teams, matches);
+
+    const slots = getMatchSlots(generateSchedule(
+      sport,
+      createSettings({ excludedMatchIds: ['m2', 'm4'] }),
+      false
+    ));
+
+    expect(slots.map(slot => slot.matchId)).toEqual(['m1', 'm3']);
   });
 
   it('preserves the existing match order while recalculating times', () => {

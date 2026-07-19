@@ -24,7 +24,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  DialogContentText
+  DialogContentText,
+  Checkbox
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -38,6 +39,7 @@ import { Sport, ScheduleSettings, TimeSlot, Match, LeagueScheduleSettings } from
 import TimeSlotTable from './TimeSlotTable';
 import { generateSchedule } from '../../../utils/scheduleGenerator';
 import ManualScheduleEditor from './ManualScheduleEditor';
+import { getMatchContext, getMatchupLabel } from '../../../utils/match';
   
 
 interface ScheduleTabProps {
@@ -48,6 +50,7 @@ interface ScheduleTabProps {
 const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   // 現在のスポーツIDを保持
   const sportIdRef = useRef(sport.id);
+  const matches = sport.matches || [];
 
   const [hasLunchBreak, setHasLunchBreak] = useState<boolean>(
     !!sport.scheduleSettings?.lunchBreak
@@ -224,6 +227,27 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       scheduleSettings: {
         ...updatedSettings,
         timeSlots: timeSlots
+      }
+    });
+  };
+
+  const handleMatchIncludedChange = (matchId: string, included: boolean) => {
+    const excludedMatchIds = new Set(scheduleSettings.excludedMatchIds || []);
+    if (included) {
+      excludedMatchIds.delete(matchId);
+    } else {
+      excludedMatchIds.add(matchId);
+    }
+    const updatedSettings = {
+      ...scheduleSettings,
+      excludedMatchIds: [...excludedMatchIds]
+    };
+    setScheduleSettings(updatedSettings);
+    onUpdate({
+      ...sport,
+      scheduleSettings: {
+        ...updatedSettings,
+        timeSlots
       }
     });
   };
@@ -527,6 +551,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                   margin="normal"
                 />
               </Grid>
+
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -537,6 +562,28 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                   onChange={handleInputChange}
                   InputLabelProps={{ shrink: true }}
                   margin="normal"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      checked={scheduleSettings.allowEndTimeOverrun ?? false}
+                      onChange={event => {
+                        const updatedSettings = {
+                          ...scheduleSettings,
+                          allowEndTimeOverrun: event.target.checked
+                        };
+                        setScheduleSettings(updatedSettings);
+                        onUpdate({
+                          ...sport,
+                          scheduleSettings: { ...updatedSettings, timeSlots }
+                        });
+                      }}
+                    />
+                  )}
+                  label="終了時間を超えても全試合を生成"
                 />
               </Grid>
               
@@ -621,6 +668,35 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
               
               {/* スポーツタイプ特有の入力 */}
               {renderSportTypeSpecificInputs()}
+
+              {sport.type !== 'ranking' && matches.length > 0 && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    生成する試合
+                  </Typography>
+                  <Box sx={{ maxHeight: 240, overflowY: 'auto' }}>
+                    {matches.map(match => {
+                      const included = !scheduleSettings.excludedMatchIds?.includes(match.id);
+                      return (
+                        <FormControlLabel
+                          key={match.id}
+                          sx={{ display: 'flex', m: 0 }}
+                          control={(
+                            <Checkbox
+                              size="small"
+                              checked={included}
+                              onChange={event => {
+                                handleMatchIncludedChange(match.id, event.target.checked);
+                              }}
+                            />
+                          )}
+                          label={`${getMatchContext(match, sport)}: ${getMatchupLabel(match, sport)}`}
+                        />
+                      );
+                    })}
+                  </Box>
+                </Grid>
+              )}
             </Grid>
           </Paper>
         </Grid>

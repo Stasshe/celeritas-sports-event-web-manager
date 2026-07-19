@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Team } from '../types';
 import {
+  createConsolationMatches,
   createThirdPlaceMatch,
   createTournamentMatches,
+  hasValidTournamentParticipants,
   resolveTournamentParticipants
 } from './tournament';
 
@@ -166,5 +168,75 @@ describe('resolveTournamentParticipants', () => {
       : nextMatch?.team2Id;
 
     expect(actualTeamId).toBe(expectedTeamId);
+  });
+});
+
+describe('hasValidTournamentParticipants', () => {
+  it('allows one known team in the first round for a bye', () => {
+    const teams = createTeams(2);
+    const match = createTournamentMatches(teams, false)[0];
+    match.team2Id = '';
+
+    expect(hasValidTournamentParticipants(match, teams)).toBe(true);
+  });
+
+  it('rejects an empty first-round match and an incomplete later match', () => {
+    const teams = createTeams(2);
+    const firstRound = createTournamentMatches(teams, false)[0];
+    firstRound.team1Id = '';
+    firstRound.team2Id = '';
+    const laterMatch = { ...firstRound, round: 2, team1Id: teams[0].id };
+
+    expect(hasValidTournamentParticipants(firstRound, teams)).toBe(false);
+    expect(hasValidTournamentParticipants(laterMatch, teams)).toBe(false);
+  });
+});
+
+describe('createConsolationMatches', () => {
+  it('creates a bracket from every playable first-round loser', () => {
+    const mainMatches = createTournamentMatches(createTeams(8), false);
+    const consolationMatches = createConsolationMatches(mainMatches, false, '2026-07-19');
+    const loserSources = consolationMatches.flatMap(match => {
+      return [match.team1Source, match.team2Source].flatMap(source => {
+        return source?.type === 'loser' ? [source] : [];
+      });
+    });
+
+    expect(consolationMatches).toHaveLength(3);
+    expect(loserSources).toHaveLength(4);
+    expect(new Set(loserSources.map(source => source?.matchId))).toEqual(
+      new Set(mainMatches.filter(match => match.round === 1).map(match => match.id))
+    );
+    expect(consolationMatches.every(match => match.bracket === 'consolation')).toBe(true);
+  });
+
+  it('adds second-round losers without fake team IDs', () => {
+    const mainMatches = createTournamentMatches(createTeams(8), false);
+    const consolationMatches = createConsolationMatches(mainMatches, true);
+    const loserSources = consolationMatches.flatMap(match => {
+      return [match.team1Source, match.team2Source].flatMap(source => {
+        return source?.type === 'loser' ? [source] : [];
+      });
+    });
+
+    expect(consolationMatches).toHaveLength(7);
+    expect(loserSources).toHaveLength(6);
+    expect(consolationMatches.flatMap(match => [match.team1Id, match.team2Id]).every(id => id === ''))
+      .toBe(true);
+  });
+
+  it('resolves semifinal losers into a two-team consolation final', () => {
+    const mainMatches = createTournamentMatches(createTeams(4), false);
+    mainMatches.filter(match => match.round === 1).forEach(match => {
+      match.status = 'completed';
+      match.winnerId = match.team1Id;
+    });
+    const consolationMatches = createConsolationMatches(mainMatches, false);
+
+    const resolved = resolveTournamentParticipants([...mainMatches, ...consolationMatches]);
+    const consolationFinal = resolved.find(match => match.bracket === 'consolation');
+
+    expect(consolationFinal?.team1Id).toBe(mainMatches[0].team2Id);
+    expect(consolationFinal?.team2Id).toBe(mainMatches[1].team2Id);
   });
 });

@@ -42,7 +42,12 @@ import MatchEditDialog from './MatchEditDialog';
 import TournamentBuilder from './TournamentBuilder';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
 import { generateBracketMatches } from './tournamentViewHelper';
-import { createThirdPlaceMatch, resolveTournamentParticipants } from './tournament';
+import {
+  createConsolationMatches,
+  createThirdPlaceMatch,
+  hasValidTournamentParticipants,
+  resolveTournamentParticipants
+} from './tournament';
 
 // インターフェース部分を修正
 interface TournamentScoringProps {
@@ -89,6 +94,12 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   const [hasThirdPlace, setHasThirdPlace] = useState(
     sport.tournamentSettings?.hasThirdPlaceMatch ?? false
   );
+  const [hasConsolation, setHasConsolation] = useState(
+    sport.tournamentSettings?.consolation?.enabled ?? false
+  );
+  const [includeSecondRoundLosers, setIncludeSecondRoundLosers] = useState(
+    sport.tournamentSettings?.consolation?.includeSecondRoundLosers ?? false
+  );
   const [isDialogProcessing, setIsDialogProcessing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -102,9 +113,10 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
 
 
   // トーナメント表示用のデータ - メインブラケットと3位決定戦ブラケットを分離
-  const { mainBracketMatches, thirdPlaceMatch } = useMemo(() => {
-    const formattedMatches = generateBracketMatches(sport);
-    console.log("All formatted matches:", formattedMatches);
+  const { mainBracketMatches, consolationBracketMatches, thirdPlaceMatch } = useMemo(() => {
+    const currentSport = { ...sport, matches };
+    const formattedMatches = generateBracketMatches(currentSport);
+    const consolationMatches = generateBracketMatches(currentSport, 'consolation');
     
     // 3位決定戦の試合を抽出（matchNumber === 0 または名前が3位決定戦）
     const thirdPlaceMatches = formattedMatches.filter(match => {
@@ -117,8 +129,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       
       return isThirdPlaceByName || isThirdPlaceById;
     });
-    
-    console.log("Third place matches found:", thirdPlaceMatches);
     
     // メインブラケットの試合（3位決定戦以外）
     const mainMatches = formattedMatches.filter(match => {
@@ -175,6 +185,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     
     return { 
       mainBracketMatches: mainMatches,
+      consolationBracketMatches: consolationMatches,
       thirdPlaceMatch: thirdPlaceMatchData
     };
   }, [sport, matches]);
@@ -193,20 +204,17 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     try {
       // トーナメントでは同点をチェック（3位決定戦を除く）
       const isThirdPlaceMatch = updatedMatch.matchNumber === 0 || updatedMatch.id.includes('third_place');
+      const hasEnteredScore = updatedMatch.team1Score !== 0 || updatedMatch.team2Score !== 0;
       
       // トーナメントでは同点を許可しない（3位決定戦を除く）
-      if (!isThirdPlaceMatch && TournamentStructureHelper.isTie(updatedMatch)) {
+      if (!isThirdPlaceMatch && hasEnteredScore && TournamentStructureHelper.isTie(updatedMatch)) {
         alert("トーナメントでは同点は許可されません。勝者を決定してください。");
         setIsDialogProcessing(false);
         return;
       }
       
       // チームIDの検証
-      const team1Exists = sport.teams.some(t => t.id === updatedMatch.team1Id);
-      const team2Exists = sport.teams.some(t => t.id === updatedMatch.team2Id);
-      
-      // 存在しないチームIDがあればエラー（3位決定戦で準決勝の敗者が未定の場合を除く）
-      if (!isThirdPlaceMatch && (!team1Exists || !team2Exists)) {
+      if (!hasValidTournamentParticipants(updatedMatch, sport.teams)) {
         throw new Error('Invalid team IDs in match');
       }
       
@@ -251,15 +259,19 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   // handleMatchesCreateを修正
   const handleMatchesCreate = (newMatches: Match[], selectedTeams: Team[]) => {
     if (readOnly) return;
-    
+    const consolationMatches = hasConsolation
+      ? createConsolationMatches(newMatches, includeSecondRoundLosers)
+      : [];
+    const allMatches = [...newMatches, ...consolationMatches];
+
     // ローカルの状態を更新
-    setMatches(newMatches);
+    setMatches(allMatches);
     setTeams(selectedTeams);
 
     // 即時にクラウドに保存
     const updatedSport = {
       ...sport,
-      matches: newMatches,
+      matches: allMatches,
       teams: selectedTeams
     };
     
@@ -274,7 +286,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     });
 
     if (checked && updatedMatches.length > 0) {
-      const thirdPlaceMatch = createThirdPlaceMatch(updatedMatches);
+      const mainMatches = updatedMatches.filter(match => match.bracket !== 'consolation');
+      const thirdPlaceMatch = createThirdPlaceMatch(mainMatches);
       if (thirdPlaceMatch) updatedMatches = [...updatedMatches, thirdPlaceMatch];
     }
 
@@ -284,7 +297,31 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
       matches: updatedMatches,
       tournamentSettings: {
         hasThirdPlaceMatch: checked,
-        hasRepechage: sport.tournamentSettings?.hasRepechage ?? false
+        hasRepechage: sport.tournamentSettings?.hasRepechage ?? false,
+        consolation: sport.tournamentSettings?.consolation
+      }
+    });
+  };
+
+  const updateConsolation = (enabled: boolean, includeSecondRound: boolean) => {
+    setHasConsolation(enabled);
+    setIncludeSecondRoundLosers(includeSecondRound);
+    const mainMatches = matches.filter(match => match.bracket !== 'consolation');
+    const consolationMatches = enabled
+      ? createConsolationMatches(mainMatches, includeSecondRound)
+      : [];
+    const updatedMatches = [...mainMatches, ...consolationMatches];
+    setMatches(updatedMatches);
+    onUpdate({
+      ...sport,
+      matches: updatedMatches,
+      tournamentSettings: {
+        hasThirdPlaceMatch: sport.tournamentSettings?.hasThirdPlaceMatch ?? false,
+        hasRepechage: sport.tournamentSettings?.hasRepechage ?? false,
+        consolation: {
+          enabled,
+          includeSecondRoundLosers: includeSecondRound
+        }
       }
     });
   };
@@ -579,6 +616,29 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               label={"3位決定戦を実施"}
             />
           </Box>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={hasConsolation}
+                  onChange={event => {
+                    updateConsolation(event.target.checked, includeSecondRoundLosers);
+                  }}
+                />
+              )}
+              label="負け側トーナメントを実施"
+            />
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={includeSecondRoundLosers}
+                  disabled={!hasConsolation}
+                  onChange={event => updateConsolation(true, event.target.checked)}
+                />
+              )}
+              label="2回戦敗者も参加"
+            />
+          </Stack>
         </Paper>
       )}
 
@@ -627,6 +687,31 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               )}
             </Box>
           </Paper>
+
+          {consolationBracketMatches.length > 0 && (
+            <Paper sx={{ p: 2, mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                負け側トーナメント
+              </Typography>
+              <Box sx={{ width: '100%', overflow: 'auto' }}>
+                <SingleEliminationBracket
+                  matches={consolationBracketMatches}
+                  matchComponent={renderMatchComponent}
+                  options={{
+                    style: {
+                      roundHeader: {
+                        backgroundColor: theme.palette.secondary.main,
+                        color: theme.palette.secondary.contrastText,
+                        fontWeight: 'bold'
+                      },
+                      connectorColor: theme.palette.divider,
+                      connectorColorHighlight: theme.palette.secondary.main
+                    }
+                  }}
+                />
+              </Box>
+            </Paper>
+          )}
           
           {/* 3位決定戦の表示 - より堅牢なコンポーネント使用 */}
           {matches.some(m => m.matchNumber === 0 || m.id.includes('third_place')) && (

@@ -720,14 +720,13 @@ const SportEditPage: React.FC = () => {
                   label="遅延時間（分）"
                   value={localSport.delayMinutes ?? 0}
                   onChange={e => {
-                    const value = Math.max(0, parseInt(e.target.value) || 0);
+                    const value = parseInt(e.target.value) || 0;
                     handlePartialUpdate('delayMinutes', value);
                   }}
-                  InputProps={{ inputProps: { min: 0 } }}
                   sx={{ width: 120 }}
                 />
                 <Typography variant="body2" color="text.secondary">
-                  分
+                  分（マイナスは前倒し）
                 </Typography>
               </Box>
               <Box sx={{ mt: 1 }}>

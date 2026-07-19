@@ -16,11 +16,14 @@ import {
   Select,
   MenuItem,
   IconButton,
-  Box
+  Box,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { TimeSlot, Sport } from '../../../types';
 import { getTimeSlotLabel } from '../../../utils/match';
+import { moveTimeSlot } from '../../../utils/scheduleEditor';
 
 interface ManualScheduleEditorProps {
   open: boolean;
@@ -49,6 +52,7 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
 }) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editSlot, setEditSlot] = useState<Partial<TimeSlot>>({});
+  const [moveTimes, setMoveTimes] = useState(false);
 
   // 新規追加用の空スロット
   const emptySlot: Partial<TimeSlot> = {
@@ -111,38 +115,14 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
     setEditSlot(emptySlot);
   };
 
-  // 行を上に詰める（時間帯は固定、内容のみ入れ替え）
+  // Move the row up.
   const handleRowMoveUp = (idx: number) => {
-    if (idx === 0) return;
-    const updated = [...timeSlots];
-    const keys = [
-      'type', 'courtId', 'matchDescription', 'description', 'matchId', 'title'
-    ] as const;
-    const prev = updated[idx - 1];
-    const curr = updated[idx];
-    keys.forEach(key => {
-      const temp = prev[key];
-      (prev as any)[key] = curr[key];
-      (curr as any)[key] = temp;
-    });
-    onChange(updated);
+    onChange(moveTimeSlot(timeSlots, idx, -1, moveTimes));
   };
 
-  // 行を下に詰める（時間帯は固定、内容のみ入れ替え）
+  // Move the row down.
   const handleRowMoveDown = (idx: number) => {
-    if (idx === timeSlots.length - 1) return;
-    const updated = [...timeSlots];
-    const curr = updated[idx];
-    const next = updated[idx + 1];
-    const keys = [
-      'type', 'courtId', 'matchDescription', 'description', 'matchId', 'title'
-    ] as const;
-    keys.forEach(key => {
-      const temp = next[key];
-      (next as any)[key] = curr[key];
-      (curr as any)[key] = temp;
-    });
-    onChange(updated);
+    onChange(moveTimeSlot(timeSlots, idx, 1, moveTimes));
   };
 
   return (
@@ -153,6 +133,16 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleAdd}>
             行を追加
           </Button>
+          <FormControlLabel
+            sx={{ ml: 2 }}
+            control={(
+              <Switch
+                checked={moveTimes}
+                onChange={event => setMoveTimes(event.target.checked)}
+              />
+            )}
+            label="行移動時に時間も移動"
+          />
         </Box>
         <TableContainer component={Paper}>
           <Table size="small">

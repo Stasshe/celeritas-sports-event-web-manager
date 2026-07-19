@@ -13,6 +13,7 @@ export const getRoundName = (match: Match, sport: Sport): string => {
 
   const bracketMatches = sport.matches.filter(candidate => {
     if (candidate.blockId !== undefined) return false;
+    if (candidate.bracket !== match.bracket) return false;
     return !isThirdPlaceMatch(candidate);
   });
   const maxRound = Math.max(...bracketMatches.map(candidate => candidate.round), match.round);
@@ -79,6 +80,9 @@ export const getMatchContext = (match: Match, sport: Sport): string => {
     return `ブロック ${blockNumber}`;
   }
   if (sport.type === 'tournament' || sport.type === 'league') {
+    if (match.bracket === 'consolation') {
+      return `負け側 ${getRoundName(match, sport)}`;
+    }
     return getRoundName(match, sport);
   }
   return `試合 ${match.matchNumber}`;

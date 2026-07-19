@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { getScheduleTypeLabel } from '../../../utils/labels';
 import { TimeSlot, Sport } from '../../../types';
-import { getMatchContext, getMatchupLabel } from '../../../utils/match';
+import { getMatchContext, getMatchupLabel, getTimeSlotLabel } from '../../../utils/match';
 
 interface TimeSlotTableProps {
   timeSlots: TimeSlot[];
@@ -43,7 +43,9 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
     
     // 対応する試合を探す
     const match = sport.matches?.find(m => m.id === slot.matchId);
-    if (!match) return null;
+    if (!match) {
+      return <Typography variant="body2">{getTimeSlotLabel(slot, sport) || '-'}</Typography>;
+    }
     
     return (
       <Box>
