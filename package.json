@@ -65,6 +65,7 @@
     "@types/styled-components": "^5.1.36",
     "@vitejs/plugin-react": "^6.0.3",
     "eslint-plugin-jsx-a11y": "^6.10.2",
+    "react-scan": "^0.5.7",
     "surge": "^0.23.1",
     "typescript": "^6.0.3",
     "vite": "^8.1.5",
