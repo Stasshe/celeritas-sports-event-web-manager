@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { getScheduleTypeLabel } from '../../../utils/labels';
 import { TimeSlot, Sport } from '../../../types';
+import { getMatchContext, getMatchupLabel } from '../../../utils/match';
 
 interface TimeSlotTableProps {
   timeSlots: TimeSlot[];
@@ -36,13 +37,6 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
     groupedTimeSlots[key].push(slot);
   });
   
-  // チーム名を取得する関数
-  const getTeamName = (teamId?: string): string => {
-    if (!teamId) return "未定";
-    const team = sport.teams.find(t => t.id === teamId);
-    return team?.name || "不明なチーム";
-  };
-  
   // 試合の説明を取得する関数
   const getMatchInfo = (slot: TimeSlot): React.ReactNode => {
     if (slot.type !== 'match') return null;
@@ -54,13 +48,11 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
     return (
       <Box>
         <Typography variant="body2" fontWeight="bold">
-          {getTeamName(match.team1Id)} vs {getTeamName(match.team2Id)}
+          {getMatchupLabel(match, sport)}
         </Typography>
-        {slot.description && (
-          <Typography variant="caption" color="text.secondary">
-            {slot.description}
-          </Typography>
-        )}
+        <Typography variant="caption" color="text.secondary">
+          {getMatchContext(match, sport)}
+        </Typography>
       </Box>
     );
   };

@@ -130,6 +130,10 @@ export interface Team {
   blockId?: string; // Add this property for league competitions
 }
 
+export type MatchParticipantSource =
+  | { type: "winner" | "loser"; matchId: string }
+  | { type: "blockRank"; blockId: string; rank: number };
+
 // 試合タイプ - winnerId を string | undefined に統一
 export interface Match {
   id: string;
@@ -150,6 +154,8 @@ export interface Match {
   potentialParticipants?: string[]; // 潜在的な参加者（チームID）を追加
   certainty?: number; // 0-100で試合確度を表す (100%が確定)
   previousMatches?: string[]; // 前の試合IDの配列を追加（準決勝→決勝など）
+  team1Source?: MatchParticipantSource;
+  team2Source?: MatchParticipantSource;
   type?: "tournament" | "league" | "roundRobin"; // 試合のタイプを指定
 }
 

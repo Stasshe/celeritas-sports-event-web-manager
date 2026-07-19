@@ -65,3 +65,11 @@ write中`isUpdatingRef`を立て、`onValue` snapshotによるin-flight optimist
 ## UI言語
 
 i18n廃止。全UI文字列、JSXへ日本語直接記述。`i18next`、`react-i18next`、翻訳resource、language selector再導入しない。
+
+## 試合構造とスケジュール
+
+`Sport.matches`が対戦構造の正本。後続枠はチームらしき仮IDを保存せず、`team1Source`、`team2Source`へ前試合の勝者・敗者またはブロック順位を保存する。シードは片側にチームまたは参照がなく、反対側だけ存在する1回戦。不戦勝枠を実施スケジュールへ含めない。
+
+3位決定戦は決勝と同じround、`matchNumber: 0`。両参加枠は2つの準決勝敗者参照。リーグのプレーオフ初戦は、未確定ならブロック順位参照、順位確定後に同じ試合へ実チームIDを反映する。
+
+`TimeSlot`は時刻、コート、`matchId`の割当を所有。対戦名は保存済みdescriptionを正本にせず、表示時に現在の`Sport.matches`から解決する。通常の再生成はラウンド制約内でシャッフル。「順番を維持してリスケ」は既存TimeSlotのmatchId順を入力順として時間設定だけ再適用する。

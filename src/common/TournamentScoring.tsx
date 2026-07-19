@@ -85,7 +85,9 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   const [matches, setMatches] = useState<Match[]>(sport.matches || []);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [matchDialogOpen, setMatchDialogOpen] = useState(false);
-  const [hasThirdPlace, setHasThirdPlace] = useState(false);
+  const [hasThirdPlace, setHasThirdPlace] = useState(
+    sport.tournamentSettings?.hasThirdPlaceMatch ?? false
+  );
   const [isDialogProcessing, setIsDialogProcessing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -298,6 +300,47 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
     
     // 直接onUpdateを呼び出し
     onUpdate(updatedSport);
+  };
+
+  const handleThirdPlaceChange = (checked: boolean) => {
+    setHasThirdPlace(checked);
+    let updatedMatches = matches.filter(match => {
+      return match.matchNumber !== 0 && !match.id.includes('third_place');
+    });
+
+    if (checked && updatedMatches.length > 0) {
+      const maxRound = Math.max(...updatedMatches.map(match => match.round));
+      const semifinalMatches = updatedMatches.filter(match => match.round === maxRound - 1);
+      if (semifinalMatches.length === 2) {
+        updatedMatches = [
+          ...updatedMatches,
+          {
+            id: 'third_place_match',
+            round: maxRound,
+            matchNumber: 0,
+            team1Id: '',
+            team2Id: '',
+            team1Score: 0,
+            team2Score: 0,
+            status: 'scheduled',
+            date: new Date().toISOString().split('T')[0],
+            previousMatches: semifinalMatches.map(match => match.id),
+            team1Source: { type: 'loser', matchId: semifinalMatches[0].id },
+            team2Source: { type: 'loser', matchId: semifinalMatches[1].id }
+          }
+        ];
+      }
+    }
+
+    setMatches(updatedMatches);
+    onUpdate({
+      ...sport,
+      matches: updatedMatches,
+      tournamentSettings: {
+        hasThirdPlaceMatch: checked,
+        hasRepechage: sport.tournamentSettings?.hasRepechage ?? false
+      }
+    });
   };
 
   // トーナメント表示のコンポーネント部分を修正
@@ -583,8 +626,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
                 <Switch
                   checked={hasThirdPlace}
                   onChange={(e) => {
-                    setHasThirdPlace(e.target.checked);
-                    // 3位決定戦の追加/削除ロジックをここに実装
+                    handleThirdPlaceChange(e.target.checked);
                   }}
                 />
               }

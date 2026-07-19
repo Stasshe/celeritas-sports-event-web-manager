@@ -1,4 +1,5 @@
 import { Sport, ScheduleSettings, TimeSlot, Match, LeagueScheduleSettings, Team } from '../types';
+import { getMatchContext, getMatchupLabel, getRoundName } from './match';
 
 // 配列をランダムにシャッフルするヘルパー関数
 const shuffleArray = <T>(array: T[]): T[] => {
@@ -8,6 +9,15 @@ const shuffleArray = <T>(array: T[]): T[] => {
     [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
   return newArray;
+};
+
+const orderByMatchIds = (matches: Match[], matchIds: string[]): Match[] => {
+  const positions = new Map(matchIds.map((id, index) => [id, index]));
+  return [...matches].sort((first, second) => {
+    const firstPosition = positions.get(first.id) ?? Number.MAX_SAFE_INTEGER;
+    const secondPosition = positions.get(second.id) ?? Number.MAX_SAFE_INTEGER;
+    return firstPosition - secondPosition;
+  });
 };
 
 // 時間を分に変換するヘルパー関数
@@ -99,113 +109,15 @@ const extractClassName = (teamName: string): string | undefined => {
 
 // 試合の説明テキストを生成する関数を修正
 const getMatchDescription = (match: Match, sport: Sport): string => {
-  const team1 = sport.teams.find(t => t.id === match.team1Id);
-  const team2 = sport.teams.find(t => t.id === match.team2Id);
-  
-  // 不戦勝の場合は特別な表示
-  if ((!match.team1Id || match.team1Id === '') && match.team2Id && match.team2Id !== '') {
-    // Team1がいない場合はTeam2が不戦勝
-    return `${team2?.name || '不明なチーム'} (不戦勝)`;
-  } 
-  if (match.team1Id && match.team1Id !== '' && (!match.team2Id || match.team2Id === '')) {
-    // Team2がいない場合はTeam1が不戦勝
-    return `${team1?.name || '不明なチーム'} (不戦勝)`;
-  }
-  
-  // プレーオフの試合で、チームがまだ決まっていない場合
-  if (!match.blockId) {
-    // 前の試合情報から「〇〇の勝者」のように表示
-    const team1Display = team1?.name || (match.team1Id ? '不明なチーム' : getPreviousMatchReference(match, 'team1', sport));
-    const team2Display = team2?.name || (match.team2Id ? '不明なチーム' : getPreviousMatchReference(match, 'team2', sport));
-    return `${team1Display} vs ${team2Display}`;
-  }
-  
-  return `${team1?.name || '不明なチーム'} vs ${team2?.name || '不明なチーム'}`;
-};
-
-// 前の試合からの参照を生成する関数を修正
-const getPreviousMatchReference = (match: Match, teamPosition: 'team1' | 'team2', sport: Sport): string => {
-  // マッチの参照情報がある場合
-  if (match.previousMatches && match.previousMatches.length > 0) {
-    const prevMatchIndex = teamPosition === 'team1' ? 0 : 1;
-    if (prevMatchIndex < match.previousMatches.length) {
-      const prevMatchId = match.previousMatches[prevMatchIndex];
-      const prevMatch = sport.matches?.find(m => m.id === prevMatchId);
-      
-      if (prevMatch) {
-        // 前のラウンド名を推定
-        const maxRounds = Math.max(...(sport.matches?.map(m => m.round) || [0]));
-        let roundName = '';
-        
-        switch (prevMatch.round) {
-          case maxRounds:
-            roundName = '決勝';
-            break;
-          case maxRounds - 1:
-            roundName = '準決勝';
-            break;
-          case maxRounds - 2:
-            roundName = '準々決勝';
-            break;
-          default:
-            roundName = `ラウンド${prevMatch.round}`;
-        }
-        
-        return `${roundName}${prevMatch.matchNumber ? ` #${prevMatch.matchNumber}` : ''}の勝者`;
-      }
-    }
-  }
-  
-  // previousMatchesがない場合、トーナメント構造から推測
-  if (match.round > 1) {
-    // 前のラウンドの試合番号を計算（従来のトーナメント構造に基づく）
-    const prevRound = match.round - 1;
-    const prevMatchNumber1 = match.matchNumber * 2 - 1;
-    const prevMatchNumber2 = match.matchNumber * 2;
-    
-    // 該当するチームの前の試合を取得
-    const prevMatchNumber = teamPosition === 'team1' ? prevMatchNumber1 : prevMatchNumber2;
-    
-    // 前のラウンド名を推定
-    const maxRounds = Math.max(...(sport.matches?.map(m => m.round) || [0]));
-    let roundName = '';
-    
-    switch (prevRound) {
-      case maxRounds:
-        roundName = '決勝';
-        break;
-      case maxRounds - 1:
-        roundName = '準決勝';
-        break;
-      case maxRounds - 2:
-        roundName = '準々決勝';
-        break;
-      default:
-        roundName = `ラウンド${prevRound}`;
-    }
-    
-    return `${roundName} #${prevMatchNumber}の勝者`;
-  }
-  
-  // マッチ番号がある場合は使用
-  if (match.matchNumber && match.round > 0) {
-    return `試合#${match.matchNumber}の勝者`;
-  }
-  
-  // 情報がない場合のデフォルト表示
-  return '勝者未定';
+  return getMatchupLabel(match, sport);
 };
 
 // 試合がシード戦（不戦勝/スキップ対象）かどうかをチェックする関数を修正
 const isSeededMatch = (match: Match): boolean => {
-  // ラウンド1で片方のチームIDが空の場合はシード戦（不戦勝）
-  if (match.round === 1) {
-    return (!match.team1Id || match.team1Id === '') || 
-           (!match.team2Id || match.team2Id === '');
-  }
-  
-  // ラウンド1以外では両方のチームIDが空の場合のみスキップ
-  return false;
+  if (match.round !== 1) return false;
+  const hasTeam1 = Boolean(match.team1Id || match.team1Source);
+  const hasTeam2 = Boolean(match.team2Id || match.team2Source);
+  return hasTeam1 !== hasTeam2;
 }
 
 // 試合が3位決定戦かどうかをチェックする関数を修正
@@ -227,7 +139,12 @@ const isFinalMatch = (match: Match, maxRound: number): boolean => {
 };
 
 // 同時進行に対応した新しいスケジュール生成関数
-export const generateSchedule = (sport: Sport, settings: ScheduleSettings, shuffle: boolean = true): TimeSlot[] => {
+export const generateSchedule = (
+  sport: Sport,
+  settings: ScheduleSettings,
+  shuffle: boolean = true,
+  matchOrder: string[] = []
+): TimeSlot[] => {
   const timeSlots: TimeSlot[] = [];
   
   // ランキング形式は特殊処理
@@ -263,9 +180,9 @@ export const generateSchedule = (sport: Sport, settings: ScheduleSettings, shuff
   
   // スポーツタイプに応じたスケジュール生成
   if (sport.type === 'league') {
-    return generateLeagueScheduleWithCourts(sport, settings, timeSlots, shuffle);
+    return generateLeagueScheduleWithCourts(sport, settings, timeSlots, shuffle, matchOrder);
   } else {
-    return generateMatchBasedScheduleWithCourts(sport, settings, timeSlots, shuffle);
+    return generateMatchBasedScheduleWithCourts(sport, settings, timeSlots, shuffle, matchOrder);
   }
 };
 
@@ -274,7 +191,8 @@ const generateMatchBasedScheduleWithCourts = (
   sport: Sport,
   settings: ScheduleSettings,
   initialTimeSlots: TimeSlot[],
-  shuffle: boolean = true
+  shuffle: boolean = true,
+  matchOrder: string[] = []
 ): TimeSlot[] => {
   const timeSlots = [...initialTimeSlots];
   const { matches } = sport;
@@ -311,16 +229,30 @@ const generateMatchBasedScheduleWithCourts = (
     const sortedRounds = Object.keys(roundGroups).map(Number).sort((a, b) => a - b);
     schedulableMatches = [];
     sortedRounds.forEach(round => {
-      // 各ラウンド内の試合をランダムにシャッフル or そのまま
-      if (shuffle === true) {
-        schedulableMatches.push(...shuffleArray(roundGroups[round]));
-      } else {
-        schedulableMatches.push(...roundGroups[round]);
+      if (!shuffle) {
+        schedulableMatches.push(...orderByMatchIds(roundGroups[round], matchOrder));
+        return;
       }
+
+      const thirdPlaceMatch = roundGroups[round].find(isThirdPlaceMatch);
+      const regularMatches = roundGroups[round].filter(match => !isThirdPlaceMatch(match));
+      const shuffledMatches = shuffleArray(regularMatches);
+      if (!thirdPlaceMatch) {
+        schedulableMatches.push(...shuffledMatches);
+        return;
+      }
+
+      const finalMatchIndex = shuffledMatches.findIndex(match => match.matchNumber === 1);
+      if (finalMatchIndex === -1) {
+        schedulableMatches.push(...shuffledMatches, thirdPlaceMatch);
+        return;
+      }
+      const finalMatch = shuffledMatches.splice(finalMatchIndex, 1)[0];
+      schedulableMatches.push(...shuffledMatches, thirdPlaceMatch, finalMatch);
     });
   } else {
     // 総当たり戦の場合は全試合をランダムにシャッフル or そのまま
-    schedulableMatches = shuffle === true ? shuffleArray([...matches]) : [...matches];
+    schedulableMatches = shuffle === true ? shuffleArray([...matches]) : orderByMatchIds(matches, matchOrder);
   }
   
   // チーム情報マップ（クラス競合チェック用）
@@ -423,7 +355,7 @@ const generateMatchBasedScheduleWithCourts = (
           type: 'match',
           matchId: match.id,
           courtId: availableCourts[c] as 'court1' | 'court2',
-          description: getMatchDescription(match, sport),
+          description: getMatchContext(match, sport),
           matchDescription: getMatchDescription(match, sport)
         });
         scheduledMatchesCount++;
@@ -466,7 +398,7 @@ const generateMatchBasedScheduleWithCourts = (
           type: 'match',
           matchId: match.id,
           courtId: court as 'court1' | 'court2',
-          description: getMatchDescription(match, sport),
+          description: getMatchContext(match, sport),
           matchDescription: getMatchDescription(match, sport)
         });
         scheduledMatchesCount++;
@@ -492,7 +424,8 @@ const generateLeagueScheduleWithCourts = (
   sport: Sport,
   settings: ScheduleSettings,
   initialTimeSlots: TimeSlot[],
-  shuffle: boolean = true
+  shuffle: boolean = true,
+  matchOrder: string[] = []
 ): TimeSlot[] => {
   const timeSlots = [...initialTimeSlots];
   const { matches } = sport;
@@ -558,6 +491,11 @@ const generateLeagueScheduleWithCourts = (
   // グループステージの試合をスケジュール
   const schedulableMatches: Match[] = [];
   let allBlocksFinished = false;
+
+  if (!shuffle && matchOrder.length > 0) {
+    schedulableMatches.push(...orderByMatchIds(groupMatches, matchOrder));
+    allBlocksFinished = true;
+  }
   
   // 各ブロックから均等に試合を取得
   while (!allBlocksFinished) {
@@ -701,7 +639,7 @@ const generateLeagueScheduleWithCourts = (
         type: 'match',
         matchId: match.id,
         courtId: court as 'court1' | 'court2',
-        description: `ブロック ${match.blockId}: ${getMatchDescription(match, sport)}`,
+        description: getMatchContext(match, sport),
         matchDescription: getMatchDescription(match, sport)
       });
       
@@ -764,7 +702,12 @@ const generateLeagueScheduleWithCourts = (
     
     // 各ラウンドの試合をシャッフル
     Object.keys(playoffRoundGroups).forEach(round => {
-      playoffRoundGroups[Number(round)] = shuffle === true ? shuffleArray(playoffRoundGroups[Number(round)]) : playoffRoundGroups[Number(round)];
+      const matchesInRound = playoffRoundGroups[Number(round)];
+      if (shuffle) {
+        playoffRoundGroups[Number(round)] = shuffleArray(matchesInRound);
+      } else {
+        playoffRoundGroups[Number(round)] = orderByMatchIds(matchesInRound, matchOrder);
+      }
     });
     
     // 最大ラウンド（決勝ラウンド）を特定
@@ -936,21 +879,7 @@ const generateLeagueScheduleWithCourts = (
         if (match.team2Id && match.team2Id !== '') usedTeamIds.push(match.team2Id);
         
         // ラウンド名を取得 - このラウンド変換ロジックを修正
-        let roundName = '';
-        const maxRounds = Math.max(...playoffMatches.map(m => m.round));
-        switch (match.round) {
-          case maxRounds:
-            roundName = '決勝';
-            break;
-          case maxRounds - 1:
-            roundName = '準決勝';
-            break;
-          case maxRounds - 2:
-            roundName = '準々決勝';
-            break;
-          default:
-            roundName = `ラウンド${match.round}`;
-        }
+        const roundName = getRoundName(match, sport);
         
         console.log(`Scheduling playoff match on ${court}: Round ${match.round}(${roundName}), Match ${match.matchNumber}, Teams: ${match.team1Id} vs ${match.team2Id}`);
         
@@ -1022,38 +951,22 @@ const generateLeagueScheduleWithCourts = (
         currentMinutes += playoffDuration + settings.breakDuration;
         
       } else {
-        // 1コートの場合: 3位決定戦の後に決勝戦を行う
-        if (thirdPlaceMatch) {
-          // 休憩とランチが被らないように調整
+        const closingMatches = orderByMatchIds(
+          [thirdPlaceMatch, finalMatch].filter((match): match is Match => Boolean(match)),
+          matchOrder
+        );
+        for (const closingMatch of closingMatches) {
           currentMinutes = adjustTimeForBreaksWithDuration(currentMinutes, settings, playoffDuration);
-          
+          const matchName = isThirdPlaceMatch(closingMatch) ? '3位決定戦' : '決勝';
           timeSlots.push({
             startTime: minutesToTime(currentMinutes),
             endTime: minutesToTime(currentMinutes + playoffDuration),
             type: 'match',
-            matchId: thirdPlaceMatch.id,
+            matchId: closingMatch.id,
             courtId: 'court1',
-            description: `プレーオフ: 3位決定戦`,
-            matchDescription: getMatchDescription(thirdPlaceMatch, sport)
+            description: `プレーオフ: ${matchName}`,
+            matchDescription: getMatchDescription(closingMatch, sport)
           });
-          
-          currentMinutes += playoffDuration + settings.breakDuration;
-        }
-        
-        if (finalMatch) {
-          // 休憩とランチが被らないように調整
-          currentMinutes = adjustTimeForBreaksWithDuration(currentMinutes, settings, playoffDuration);
-          
-          timeSlots.push({
-            startTime: minutesToTime(currentMinutes),
-            endTime: minutesToTime(currentMinutes + playoffDuration),
-            type: 'match',
-            matchId: finalMatch.id,
-            courtId: 'court1',
-            description: `プレーオフ: 決勝`,
-            matchDescription: getMatchDescription(finalMatch, sport)
-          });
-          
           currentMinutes += playoffDuration + settings.breakDuration;
         }
       }

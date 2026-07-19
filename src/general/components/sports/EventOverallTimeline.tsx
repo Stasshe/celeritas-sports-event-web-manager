@@ -36,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import { getMatchStatusLabel, getScheduleTypeLabel } from '../../../utils/labels';
 import { timeToMinutes, minutesToTime } from '../../../utils/scheduleGenerator';
+import { getParticipantName } from '../../../utils/match';
 import { Sport, TimeSlot, Event, Match } from '../../../types';
 import { useNavigate } from 'react-router-dom';
 
@@ -114,13 +115,6 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
     sportsWithSchedule.forEach(sport => {
       if (!sport.scheduleSettings?.timeSlots) return;
 
-      // チーム名を取得する関数
-      const getTeamName = (teamId?: string): string => {
-        if (!teamId) return "未定";
-        const team = sport.teams.find(t => t.id === teamId);
-        return team?.name || "不明なチーム";
-      };
-
       // コート名を取得する関数
       const getCourtName = (courtId?: 'court1' | 'court2'): string | undefined => {
         if (!courtId) return undefined;
@@ -144,9 +138,9 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
             matchInfo = {
               matchId: match.id,
               team1Id: match.team1Id,
-              team1Name: getTeamName(match.team1Id),
+              team1Name: getParticipantName(match, 'team1', sport),
               team2Id: match.team2Id,
-              team2Name: getTeamName(match.team2Id),
+              team2Name: getParticipantName(match, 'team2', sport),
               courtName: getCourtName(slot.courtId)
             };
           }
@@ -707,7 +701,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                                 width: '100%'
                               }}
                             >
-                              {event.matchInfo.team1Name.slice(-3)}vs{event.matchInfo.team2Name.slice(-3)}
+                              {event.matchInfo.team1Name} vs {event.matchInfo.team2Name}
                             </Typography>
                           ) : (
                             // 試合以外はアイコンのみ表示

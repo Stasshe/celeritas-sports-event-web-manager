@@ -37,7 +37,7 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
           if (members && members.length > 0) {
             teams.push({
               id: `team_${gradeKey}_${className}`,
-              name: `${gradeKey}-${className}`,
+              name: className,
               members: members
             });
           }
@@ -63,6 +63,12 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
     // 試合構造を生成
     const initialMatches = TournamentStructureHelper.generateInitialMatches(selectedTeams.length);
     const placements = TournamentStructureHelper.calculateTeamPlacements(selectedTeams);
+    const getMatchId = (round: number, matchNumber: number): string => {
+      const index = initialMatches.findIndex(match => {
+        return match.round === round && match.matchNumber === matchNumber;
+      });
+      return `match_${index + 1}`;
+    };
 
     // 試合データを生成
     const matches: Match[] = initialMatches.map((match, index) => {
@@ -73,7 +79,7 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
       const team1Placement = matchPlacements.find(p => p.position === 'team1');
       const team2Placement = matchPlacements.find(p => p.position === 'team2');
       
-      return {
+      const createdMatch: Match = {
         id: `match_${index + 1}`,
         round: match.round,
         matchNumber: match.matchNumber,
@@ -85,6 +91,14 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
         date: new Date().toISOString().split('T')[0],
         winnerId: ''
       };
+      if (match.round > 1) {
+        const firstPreviousId = getMatchId(match.round - 1, match.matchNumber * 2 - 1);
+        const secondPreviousId = getMatchId(match.round - 1, match.matchNumber * 2);
+        createdMatch.previousMatches = [firstPreviousId, secondPreviousId];
+        createdMatch.team1Source = { type: 'winner', matchId: firstPreviousId };
+        createdMatch.team2Source = { type: 'winner', matchId: secondPreviousId };
+      }
+      return createdMatch;
     });
 
     // 1回戦の不戦勝チームを自動的に次のラウンドに進出させる
@@ -103,6 +117,27 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
         }
       }
     });
+
+    if (sport.tournamentSettings?.hasThirdPlaceMatch && selectedTeams.length >= 4) {
+      const maxRound = TournamentStructureHelper.calculateTotalRounds(selectedTeams.length);
+      const semifinalMatches = matches.filter(match => match.round === maxRound - 1);
+      if (semifinalMatches.length === 2) {
+        matches.push({
+          id: 'third_place_match',
+          round: maxRound,
+          matchNumber: 0,
+          team1Id: '',
+          team2Id: '',
+          team1Score: 0,
+          team2Score: 0,
+          status: 'scheduled',
+          date: new Date().toISOString().split('T')[0],
+          previousMatches: semifinalMatches.map(match => match.id),
+          team1Source: { type: 'loser', matchId: semifinalMatches[0].id },
+          team2Source: { type: 'loser', matchId: semifinalMatches[1].id }
+        });
+      }
+    }
 
     onMatchesCreate(matches, selectedTeams);
   };

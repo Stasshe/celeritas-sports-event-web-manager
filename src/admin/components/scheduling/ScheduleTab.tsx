@@ -380,7 +380,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         breakTimes: scheduleSettings.breakTimes || [],
         timeSlots: scheduleSettings.timeSlots || []
       };
-      const generatedTimeSlots = generateSchedule(sport, safeSettings, false); // シャッフルしない
+      const currentMatchOrder = timeSlots.flatMap(slot => {
+        if (slot.type === 'match' && slot.matchId) return [slot.matchId];
+        return [];
+      });
+      const generatedTimeSlots = generateSchedule(sport, safeSettings, false, currentMatchOrder);
       setTimeSlots(generatedTimeSlots);
       // 履歴に追加
       const newHistory = history.slice(0, historyIndex + 1);

@@ -360,10 +360,16 @@ const LeagueScoring: React.FC<LeagueScoringProps> = ({ sport, onUpdate, readOnly
     
     setBlocks(updatedBlocks);
     
+    const resolvedPlayoffMatches = LeaguePlayoffHelper.resolveBlockRankSources(
+      playoffMatches,
+      updatedBlocks
+    );
+    setPlayoffMatches(resolvedPlayoffMatches);
+
     // スポーツデータ全体を更新
     const allMatches = [
       ...updatedBlocks.flatMap(block => block.matches),
-      ...playoffMatches
+      ...resolvedPlayoffMatches
     ];
     
     onUpdate({

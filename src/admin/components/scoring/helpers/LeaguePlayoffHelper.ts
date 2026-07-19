@@ -74,12 +74,20 @@ export class LeaguePlayoffHelper {
       // 未完了ブロックに対応する仮想TBDチームを追加
       // 各未完了ブロックから進出する可能性のあるチーム数を計算
       const expectedTeamsFromIncompleteBlocks = incompleteBlocks.length * advancingTeams;
+      const qualifierSources = incompleteBlocks.flatMap(block => {
+        return Array.from({ length: advancingTeams }, (_, index) => ({
+          id: `qualifier_${block.id}_${index + 1}`,
+          blockId: block.id,
+          rank: index + 1
+        }));
+      });
       
       // TBDチームを作成し、playoffTeamObjectsに追加
       for (let i = 0; i < expectedTeamsFromIncompleteBlocks; i++) {
+        const qualifier = qualifierSources[i];
         const tbdTeam: Team = {
-          id: `tbd_${i}`,
-          name: 'TBD (完了待ち)',
+          id: qualifier.id,
+          name: `ブロック${qualifier.blockId.replace(/^block_/, '')} ${qualifier.rank}位`,
           color: '#CCCCCC'
         } as Team;
         
@@ -110,10 +118,12 @@ export class LeaguePlayoffHelper {
         );
         
         // 新しい試合オブジェクトを作成
+        const team1Qualifier = qualifierSources.find(source => source.id === team1Placement?.teamId);
+        const team2Qualifier = qualifierSources.find(source => source.id === team2Placement?.teamId);
         const newMatch: Match = {
           id: `playoff_match_${round}_${matchNumber}`,
-          team1Id: team1Placement?.teamId || '',
-          team2Id: team2Placement?.teamId || '',
+          team1Id: team1Qualifier ? '' : team1Placement?.teamId || '',
+          team2Id: team2Qualifier ? '' : team2Placement?.teamId || '',
           team1Score: 0,
           team2Score: 0,
           round,
@@ -122,6 +132,27 @@ export class LeaguePlayoffHelper {
           date: new Date().toISOString().split('T')[0],
           // blockIdは設定しない（プレーオフ試合の識別用）
         };
+        if (team1Qualifier) {
+          newMatch.team1Source = {
+            type: 'blockRank',
+            blockId: team1Qualifier.blockId,
+            rank: team1Qualifier.rank
+          };
+        }
+        if (team2Qualifier) {
+          newMatch.team2Source = {
+            type: 'blockRank',
+            blockId: team2Qualifier.blockId,
+            rank: team2Qualifier.rank
+          };
+        }
+        if (round > 1) {
+          const firstPreviousId = `playoff_match_${round - 1}_${matchNumber * 2 - 1}`;
+          const secondPreviousId = `playoff_match_${round - 1}_${matchNumber * 2}`;
+          newMatch.previousMatches = [firstPreviousId, secondPreviousId];
+          newMatch.team1Source = { type: 'winner', matchId: firstPreviousId };
+          newMatch.team2Source = { type: 'winner', matchId: secondPreviousId };
+        }
         
         newPlayoffMatches.push(newMatch);
       });
@@ -129,8 +160,8 @@ export class LeaguePlayoffHelper {
       // 4. シード戦の処理 (1回戦の片方のチームしかない場合)
       newPlayoffMatches.forEach(match => {
         // TBDチームのIDを特定
-        const isTBDTeam1 = match.team1Id && match.team1Id.startsWith('tbd_');
-        const isTBDTeam2 = match.team2Id && match.team2Id.startsWith('tbd_');
+        const isTBDTeam1 = match.team1Source?.type === 'blockRank';
+        const isTBDTeam2 = match.team2Source?.type === 'blockRank';
         
         // TBDチームを含む試合はシード進行させない
         if (isTBDTeam1 || isTBDTeam2) {
@@ -175,6 +206,9 @@ export class LeaguePlayoffHelper {
             matchNumber: 0, // 特別な番号として0を使用
             status: 'scheduled',
             date: new Date().toISOString().split('T')[0],
+            previousMatches: semifinalMatches.slice(0, 2).map(match => match.id),
+            team1Source: { type: 'loser', matchId: semifinalMatches[0].id },
+            team2Source: { type: 'loser', matchId: semifinalMatches[1].id }
           };
           
           // 3位決定戦を追加
@@ -210,14 +244,15 @@ export class LeaguePlayoffHelper {
       if (match.status === 'completed') return;
       
       // TBDチームが含まれる試合はスキップ
-      const isTBDTeam1 = match.team1Id && match.team1Id.startsWith('tbd_');
-      const isTBDTeam2 = match.team2Id && match.team2Id.startsWith('tbd_');
+      const isTBDTeam1 = match.team1Source?.type === 'blockRank' && !match.team1Id;
+      const isTBDTeam2 = match.team2Source?.type === 'blockRank' && !match.team2Id;
       if (isTBDTeam1 || isTBDTeam2) return;
       
       // シード戦は1回戦でのみ発生し、片方のチームのみが存在する場合
       const isFirstRound = match.round === 1;
-      const hasOnlyOneTeam = Boolean(match.team1Id && match.team1Id !== '' && (!match.team2Id || match.team2Id === '')) || 
-                            Boolean(match.team2Id && match.team2Id !== '' && (!match.team1Id || match.team1Id === ''));
+      const hasTeam1 = Boolean(match.team1Id || match.team1Source);
+      const hasTeam2 = Boolean(match.team2Id || match.team2Source);
+      const hasOnlyOneTeam = hasTeam1 !== hasTeam2;
       
       const isSeedMatch = isFirstRound && hasOnlyOneTeam;
       
@@ -248,8 +283,8 @@ export class LeaguePlayoffHelper {
     // 2. 勝者が既に決まっている試合からの進出処理
     newPlayoffMatches.forEach(match => {
       // TBDチームが含まれる試合はスキップ
-      const isTBDTeam1 = match.team1Id && match.team1Id.startsWith('tbd_');
-      const isTBDTeam2 = match.team2Id && match.team2Id.startsWith('tbd_');
+      const isTBDTeam1 = match.team1Source?.type === 'blockRank' && !match.team1Id;
+      const isTBDTeam2 = match.team2Source?.type === 'blockRank' && !match.team2Id;
       if (isTBDTeam1 || isTBDTeam2) return;
       
       // 完了して勝者が決まっている試合で、両方のチームが存在する試合
@@ -316,5 +351,27 @@ export class LeaguePlayoffHelper {
     }
     
     return newPlayoffMatches;
+  }
+
+  static resolveBlockRankSources(matches: Match[], blocks: LeagueBlock[]): Match[] {
+    const standings = new Map<string, string[]>();
+    blocks.forEach(block => {
+      if (this.isBlockCompleted(block)) {
+        standings.set(block.id, LeagueMatchHelper.calculateBlockStandings(block));
+      } else {
+        standings.set(block.id, []);
+      }
+    });
+
+    return matches.map(match => {
+      const updatedMatch = { ...match };
+      if (match.team1Source?.type === 'blockRank') {
+        updatedMatch.team1Id = standings.get(match.team1Source.blockId)?.[match.team1Source.rank - 1] || '';
+      }
+      if (match.team2Source?.type === 'blockRank') {
+        updatedMatch.team2Id = standings.get(match.team2Source.blockId)?.[match.team2Source.rank - 1] || '';
+      }
+      return updatedMatch;
+    });
   }
 }

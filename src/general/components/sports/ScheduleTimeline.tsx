@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { getScheduleTypeLabel } from '../../../utils/labels';
 import { Sport, TimeSlot, Match } from '../../../types';
+import { getMatchContext, getParticipantName } from '../../../utils/match';
 
 interface ScheduleTimelineProps {
   sport: Sport;
@@ -80,12 +81,6 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
       </Alert>
     );
   }
-
-  // チーム名を取得する関数
-  const getTeamName = (teamId: string): string => {
-    const team = sport.teams?.find(t => t.id === teamId);
-    return team ? team.name : "不明なチーム";
-  };
 
   // 試合情報を取得する関数
   const getMatchInfo = (matchId: string): Match | undefined => {
@@ -228,7 +223,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
                                 fontWeight="bold"
                                 sx={{ flexGrow: 1, textAlign: 'right' }}
                               >
-                                {getTeamName(match.team1Id).slice(-3)}
+                                {getParticipantName(match, 'team1', sport)}
                               </Typography>
                               
                               <Avatar sx={{ 
@@ -245,7 +240,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
                                 fontWeight="bold"
                                 sx={{ flexGrow: 1 }}
                               >
-                                {getTeamName(match.team2Id).slice(-3)}
+                                {getParticipantName(match, 'team2', sport)}
                               </Typography>
                             </Box>
                             
@@ -256,11 +251,9 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
                                   {"場所"}: {match.location}
                                 </Typography>
                               )}
-                              {slot.description && (
-                                <Typography variant="caption" color="text.secondary" display="block">
-                                  {slot.description}
-                                </Typography>
-                              )}
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                {getMatchContext(match, sport)}
+                              </Typography>
                             </Box>
                           </CardContent>
                         </Card>
