@@ -31,7 +31,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       </Typography>
       <Divider sx={{ mb: 3 }} />
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: { xs: 2, lg: 3 } }}>
         <ScheduleBasicSettingsCard sport={sport} settings={form.settings} form={form} />
         <ScheduleBreakSettingsCard settings={form.settings} form={form} />
       </Box>

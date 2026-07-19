@@ -35,9 +35,10 @@ import {
 import { Sport, Match, Team } from '../types';
 import { getMatchStatusLabel } from '../utils/labels';
 import { useThemeContext } from '../contexts/ThemeContext';
-import { SingleEliminationBracket, SVGViewer, Participant } from '@g-loot/react-tournament-brackets';
+import { SingleEliminationBracket, Participant } from '@g-loot/react-tournament-brackets';
 import MatchCard from './MatchCard';
 import MatchEditDialog from './MatchEditDialog';
+import BracketViewport from './BracketViewport';
 //import TournamentMatchPlacer from './components/TournamentMatchPlacer';
 import TournamentBuilder from './TournamentBuilder';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
@@ -68,14 +69,9 @@ interface MatchComponentProps {
     state: 'DONE' | 'PLAYING' | 'SCHEDULED';
     participants: Participant[];
   };
-  onMatchClick?: () => void;
   onPartyClick?: (party: Participant) => void;
   topParty: Participant;
   bottomParty: Participant;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
 }
 
 const TournamentScoring: React.FC<TournamentScoringProps> = ({ 
@@ -108,10 +104,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
 
   // チームデータの状態管理を追加
   const [teams, setTeams] = useState<Team[]>(sport.teams || []);
-
-  // SVG要素を大文字で定義
-  const ForeignObject = 'foreignObject';
-
 
   // トーナメント表示用のデータ - メインブラケットと3位決定戦ブラケットを分離
   const { mainBracketMatches, consolationBracketMatches } = useMemo(() => {
@@ -290,22 +282,14 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   // トーナメント表示のコンポーネント部分を修正
   const renderMatchComponent = useCallback(({
     match,
-    onMatchClick,
     onPartyClick,
     topParty,
-    bottomParty,
-    ...props
+    bottomParty
   }: MatchComponentProps) => {
     // 現在の試合データを取得
     const currentMatch = matches.find(m => m.id === match.id);
 
     return (
-    <ForeignObject
-      x={props.x - props.width / 2}
-      y={props.y - props.height / 2}
-      width={props.width}
-      height={props.height}
-    >
       <Box
         sx={{
           width: '100%',
@@ -329,6 +313,10 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
             handleEditMatch(currentMatch);
           }
         }}
+        onTouchStart={event => event.stopPropagation()}
+        onTouchMove={event => event.stopPropagation()}
+        onTouchEnd={event => event.stopPropagation()}
+        onTouchCancel={event => event.stopPropagation()}
       >
         <Box sx={{ p: 0.5, backgroundColor: theme.palette.grey[100], borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Typography variant="caption" noWrap>
@@ -418,11 +406,8 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
           </Typography>
         </Box>
       </Box>
-    </ForeignObject>
     );
   }, [theme, readOnly, matches, handleEditMatch]);
-  const nodeWidth = 200;
-  const nodeHeight = 100;
 
   const ThirdPlaceMatchCard = ({ bracket }: { bracket: 'main' | 'consolation' }) => {
     const thirdPlaceMatchData = matches.find(match => {
@@ -601,35 +586,24 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
             <Typography variant="h6" gutterBottom>
               {"メインブラケット"}
             </Typography>
-            <Box 
-              sx={{ 
-                width: '100%',
-                height: 'auto',
-                overflow: 'auto',
-                '& svg': {
-                  width: '100% !important',
-                  height: '100% !important'
-                }
-              }}
-            >
-              {mainBracketMatches.length > 0 && (
-                <SingleEliminationBracket
-                  matches={mainBracketMatches}
-                  matchComponent={renderMatchComponent}
-                  options={{
-                    style: {
-                      roundHeader: {
-                        backgroundColor: theme.palette.primary.main,
-                        color: theme.palette.primary.contrastText,
-                        fontWeight: 'bold'
-                      },
-                      connectorColor: theme.palette.divider,
-                      connectorColorHighlight: theme.palette.primary.main
-                    }
-                  }}
-                />
-              )}
-            </Box>
+            {mainBracketMatches.length > 0 && (
+              <SingleEliminationBracket
+                matches={mainBracketMatches}
+                matchComponent={renderMatchComponent}
+                svgWrapper={BracketViewport}
+                options={{
+                  style: {
+                    roundHeader: {
+                      backgroundColor: theme.palette.primary.main,
+                      color: theme.palette.primary.contrastText,
+                      fontWeight: 'bold'
+                    },
+                    connectorColor: theme.palette.divider,
+                    connectorColorHighlight: theme.palette.primary.main
+                  }
+                }}
+              />
+            )}
           </Paper>
 
           <ThirdPlaceMatchCard bracket="main" />
@@ -639,23 +613,22 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               <Typography variant="h6" gutterBottom>
                 負け側トーナメント
               </Typography>
-              <Box sx={{ width: '100%', overflow: 'auto' }}>
-                <SingleEliminationBracket
-                  matches={consolationBracketMatches}
-                  matchComponent={renderMatchComponent}
-                  options={{
-                    style: {
-                      roundHeader: {
-                        backgroundColor: theme.palette.secondary.main,
-                        color: theme.palette.secondary.contrastText,
-                        fontWeight: 'bold'
-                      },
-                      connectorColor: theme.palette.divider,
-                      connectorColorHighlight: theme.palette.secondary.main
-                    }
-                  }}
-                />
-              </Box>
+              <SingleEliminationBracket
+                matches={consolationBracketMatches}
+                matchComponent={renderMatchComponent}
+                svgWrapper={BracketViewport}
+                options={{
+                  style: {
+                    roundHeader: {
+                      backgroundColor: theme.palette.secondary.main,
+                      color: theme.palette.secondary.contrastText,
+                      fontWeight: 'bold'
+                    },
+                    connectorColor: theme.palette.divider,
+                    connectorColorHighlight: theme.palette.secondary.main
+                  }
+                }}
+              />
             </Paper>
           )}
 

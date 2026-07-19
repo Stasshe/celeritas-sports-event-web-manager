@@ -13,7 +13,9 @@ import {
   Select,
   Switch,
   TextField,
-  Typography
+  Typography,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -49,6 +51,8 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
   courtNames,
   sport
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const rows = useManualScheduleRows(timeSlots, onChange);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
@@ -60,10 +64,19 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={isMobile}>
       <DialogTitle>スケジュール手動編集</DialogTitle>
       <DialogContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' },
+            justifyContent: 'space-between',
+            gap: 1,
+            mb: 2
+          }}
+        >
           <Button variant="contained" startIcon={<AddIcon />} onClick={rows.addRow}>
             行を追加
           </Button>
@@ -83,11 +96,11 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
             行がありません。「行を追加」から作成してください
           </Typography>
         ) : (
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
             {/* ヘッダー */}
             <Box
               sx={{
-                display: 'grid',
+                display: { xs: 'none', sm: 'grid' },
                 gridTemplateColumns: '32px 1fr 110px 110px 1fr 40px',
                 gap: 1,
                 px: 1.5,
@@ -115,7 +128,7 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
               return (
                 <Box
                   key={index}
-                  draggable
+                  draggable={!isMobile}
                   onDragStart={() => setDragIndex(index)}
                   onDragOver={e => {
                     e.preventDefault();
@@ -128,7 +141,7 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
                   }}
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns: '32px 1fr 110px 110px 1fr 40px',
+                    gridTemplateColumns: { xs: 'minmax(0, 1fr) 44px', sm: '32px 1fr 110px 110px 1fr 40px' },
                     gap: 1,
                     px: 1.5,
                     py: 1,
@@ -142,16 +155,20 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
                 >
                   <DragIndicatorIcon
                     fontSize="small"
-                    sx={{ color: 'text.disabled', cursor: 'grab' }}
+                    sx={{ display: { xs: 'none', sm: 'block' }, color: 'text.disabled', cursor: 'grab' }}
                   />
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 0.5 }}>
+                      時間
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', alignItems: 'center', gap: 0.5 }}>
                     <TextField
                       type="time"
                       size="small"
                       value={slot.startTime}
                       onChange={e => rows.updateField(index, 'startTime', e.target.value)}
-                      sx={{ minWidth: 100 }}
+                      fullWidth
                     />
                     <Typography variant="body2" color="text.secondary">
                       ～
@@ -161,41 +178,64 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
                       size="small"
                       value={slot.endTime}
                       onChange={e => rows.updateField(index, 'endTime', e.target.value)}
-                      sx={{ minWidth: 100 }}
+                      fullWidth
+                    />
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 0.5 }}>
+                      タイプ
+                    </Typography>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={slot.type}
+                      onChange={e => rows.updateField(index, 'type', e.target.value)}
+                    >
+                      {timeSlotTypes.map(opt => (
+                        <MenuItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Box>
+
+                  <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 0.5 }}>
+                      コート
+                    </Typography>
+                    <Select
+                      fullWidth
+                      size="small"
+                      value={slot.courtId || 'court1'}
+                      onChange={e => rows.updateField(index, 'courtId', e.target.value)}
+                    >
+                      <MenuItem value="court1">{courtNames?.court1 || '第1コート'}</MenuItem>
+                      {courtNames?.court2 && <MenuItem value="court2">{courtNames.court2}</MenuItem>}
+                    </Select>
+                  </Box>
+
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 0.5 }}>
+                      詳細
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={detail}
+                      onChange={e => rows.updateField(index, 'matchDescription', e.target.value)}
+                      placeholder="例: 1年A vs 2年B"
+                      inputProps={{ maxLength: 100 }}
+                      InputProps={{ readOnly: hasLinkedMatch }}
                     />
                   </Box>
 
-                  <Select
-                    size="small"
-                    value={slot.type}
-                    onChange={e => rows.updateField(index, 'type', e.target.value)}
+                  <IconButton
+                    onClick={() => rows.removeRow(index)}
+                    aria-label="行を削除"
+                    sx={{ minWidth: { xs: 44, sm: 40 }, minHeight: { xs: 44, sm: 40 }, alignSelf: 'end' }}
                   >
-                    {timeSlotTypes.map(opt => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-
-                  <Select
-                    size="small"
-                    value={slot.courtId || 'court1'}
-                    onChange={e => rows.updateField(index, 'courtId', e.target.value)}
-                  >
-                    <MenuItem value="court1">{courtNames?.court1 || '第1コート'}</MenuItem>
-                    {courtNames?.court2 && <MenuItem value="court2">{courtNames.court2}</MenuItem>}
-                  </Select>
-
-                  <TextField
-                    size="small"
-                    value={detail}
-                    onChange={e => rows.updateField(index, 'matchDescription', e.target.value)}
-                    placeholder="例: 1年A vs 2年B"
-                    inputProps={{ maxLength: 100 }}
-                    InputProps={{ readOnly: hasLinkedMatch }}
-                  />
-
-                  <IconButton size="small" onClick={() => rows.removeRow(index)}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Box>

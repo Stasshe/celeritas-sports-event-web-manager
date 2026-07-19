@@ -20,7 +20,7 @@ declare module '@g-loot/react-tournament-brackets' {
   export interface SingleEliminationBracketProps {
     matches: Match[];
     matchComponent?: React.ComponentType<any>;
-    svgWrapper?: React.ComponentType<any>;
+    svgWrapper?: React.ComponentType<SVGWrapperProps>;
     options?: {
       style?: {
         roundHeader?: {
@@ -53,13 +53,22 @@ declare module '@g-loot/react-tournament-brackets' {
 
   export const SingleEliminationBracket: React.FC<SingleEliminationBracketProps>;
 
-  export interface SVGViewerProps extends React.SVGAttributes<SVGSVGElement> {
+  export interface SVGWrapperProps {
+    children: React.ReactNode;
+    bracketWidth: number;
+    bracketHeight: number;
+    startAt?: [number, number];
+  }
+
+  export interface SVGViewerProps extends SVGWrapperProps {
     width: number;
     height: number;
-    children: React.ReactNode;
     background?: string;
     SVGBackground?: string;
     style?: React.CSSProperties;
+    miniatureProps?: {
+      position: 'none' | 'left' | 'right';
+    };
   }
 
   export const SVGViewer: React.FC<SVGViewerProps>;

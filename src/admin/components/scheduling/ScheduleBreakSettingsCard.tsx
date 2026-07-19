@@ -21,7 +21,7 @@ interface ScheduleBreakSettingsCardProps {
 
 const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ settings, form }) => {
   return (
-    <Paper variant="outlined" sx={{ p: 2.5 }}>
+    <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 } }}>
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>
         休憩設定
       </Typography>
@@ -38,7 +38,7 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
       />
 
       {form.hasLunchBreak && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 1.5 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1.5 }}>
           <TextField
             fullWidth
             size="small"
@@ -65,7 +65,14 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
       <Typography variant="subtitle2" gutterBottom>
         追加の休憩
       </Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 1.5, alignItems: 'flex-end' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+          gap: 1.5,
+          alignItems: 'flex-end'
+        }}
+      >
         <TextField
           fullWidth
           size="small"
@@ -90,8 +97,14 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
           label="タイトル"
           value={form.newBreakTime.title || ''}
           onChange={e => form.handleNewBreakTimeChange('title', e.target.value)}
+          sx={{ gridColumn: { sm: '1 / -1' } }}
         />
-        <Button variant="contained" onClick={form.handleAddBreakTime} sx={{ height: 40 }}>
+        <Button
+          variant="contained"
+          onClick={form.handleAddBreakTime}
+          aria-label="休憩を追加"
+          sx={{ height: 40, minHeight: { xs: 44, sm: 40 }, gridColumn: { sm: '1 / -1' } }}
+        >
           <AddIcon fontSize="small" />
         </Button>
       </Box>

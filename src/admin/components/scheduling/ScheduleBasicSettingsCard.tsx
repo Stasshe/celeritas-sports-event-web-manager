@@ -31,7 +31,7 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
   const leagueSettings = settings as LeagueScheduleSettings;
 
   return (
-    <Paper variant="outlined" sx={{ p: 2.5 }}>
+    <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 } }}>
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>
         基本設定
       </Typography>
@@ -185,7 +185,7 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
                       />
                     }
                     label={
-                      <Typography variant="body2" noWrap>
+                      <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
                         {getMatchContext(match, sport)}: {getMatchupLabel(match, sport)}
                       </Typography>
                     }

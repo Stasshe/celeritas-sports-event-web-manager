@@ -531,7 +531,7 @@ const SportEditPage: React.FC = () => {
 
         {/* スケジュールタブ (新しく追加) */}
         <TabPanel value={activeTab} index={1}>
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: { xs: 1.5, sm: 3 } }}>
             <ScheduleTab sport={localSport} onUpdate={handleSportUpdate} />
           </Paper>
         </TabPanel>
