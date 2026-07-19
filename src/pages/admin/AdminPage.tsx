@@ -256,6 +256,9 @@ const AdminPage: React.FC = () => {
         
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           {t('admin.dashboardDescription')}
+          ご迷惑をおかけしましてすいません。メンテナです。
+          現在すべてのデバッグ作業にとりかかっています。
+          eterynity2024workspace@gmail.comにまで連絡があればお願いします。
         </Typography>
       </Box>
 
