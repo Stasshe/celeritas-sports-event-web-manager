@@ -159,8 +159,18 @@ export const createConsolationMatches = (
   date: string = getDate()
 ): Match[] => {
   const sourceRounds = includeSecondRoundLosers ? new Set([1, 2]) : new Set([1]);
+  const thirdPlaceSourceIds = new Set(
+    mainMatches
+      .filter(match => match.matchNumber === 0 || match.id.includes('third_place'))
+      .flatMap(match => [match.team1Source, match.team2Source])
+      .flatMap(source => {
+        if (source?.type === 'loser') return [source.matchId];
+        return [];
+      })
+  );
   const sources = mainMatches.filter(match => {
     if (match.bracket === 'consolation' || match.matchNumber === 0) return false;
+    if (thirdPlaceSourceIds.has(match.id)) return false;
     if (!sourceRounds.has(match.round)) return false;
     const hasTeam1 = Boolean(match.team1Id || match.team1Source);
     const hasTeam2 = Boolean(match.team2Id || match.team2Source);

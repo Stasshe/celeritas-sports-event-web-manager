@@ -279,15 +279,19 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
 
   const handleThirdPlaceChange = (checked: boolean) => {
     setHasThirdPlace(checked);
-    let updatedMatches = matches.filter(match => {
+    let mainMatches = matches.filter(match => {
+      if (match.bracket === 'consolation') return false;
       return match.matchNumber !== 0 && !match.id.includes('third_place');
     });
 
-    if (checked && updatedMatches.length > 0) {
-      const mainMatches = updatedMatches.filter(match => match.bracket !== 'consolation');
+    if (checked && mainMatches.length > 0) {
       const thirdPlaceMatch = createThirdPlaceMatch(mainMatches);
-      if (thirdPlaceMatch) updatedMatches = [...updatedMatches, thirdPlaceMatch];
+      if (thirdPlaceMatch) mainMatches = [...mainMatches, thirdPlaceMatch];
     }
+    const consolationMatches = hasConsolation
+      ? createConsolationMatches(mainMatches, includeSecondRoundLosers)
+      : [];
+    const updatedMatches = [...mainMatches, ...consolationMatches];
 
     setMatches(updatedMatches);
     onUpdate({
@@ -646,6 +650,10 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
             </Box>
           </Paper>
 
+          {matches.some(m => m.matchNumber === 0 || m.id.includes('third_place')) && (
+            <ThirdPlaceMatchCard />
+          )}
+
           {consolationBracketMatches.length > 0 && (
             <Paper sx={{ p: 2, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
@@ -669,11 +677,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
                 />
               </Box>
             </Paper>
-          )}
-          
-          {/* 3位決定戦の表示 - より堅牢なコンポーネント使用 */}
-          {matches.some(m => m.matchNumber === 0 || m.id.includes('third_place')) && (
-            <ThirdPlaceMatchCard />
           )}
         </>
       ) : (

@@ -254,6 +254,25 @@ describe('createConsolationMatches', () => {
       .toBe(true);
   });
 
+  it('excludes third-place participants from the consolation bracket', () => {
+    const mainMatches = createTournamentMatches(createTeams(8), true);
+    const consolationMatches = createConsolationMatches(mainMatches, true);
+    const loserSourceIds = consolationMatches.flatMap(match => {
+      return [match.team1Source, match.team2Source].flatMap(source => {
+        if (source?.type === 'loser') return [source.matchId];
+        return [];
+      });
+    });
+    const semifinalIds = mainMatches
+      .filter(match => match.round === 2 && match.matchNumber !== 0)
+      .map(match => match.id);
+
+    expect(consolationMatches).toHaveLength(3);
+    semifinalIds.forEach(id => {
+      expect(loserSourceIds).not.toContain(id);
+    });
+  });
+
   it('resolves semifinal losers into a two-team consolation final', () => {
     const mainMatches = createTournamentMatches(createTeams(4), false);
     mainMatches.filter(match => match.round === 1).forEach(match => {
