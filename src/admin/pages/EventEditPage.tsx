@@ -355,7 +355,7 @@ const EventEditPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" disableGutters>
+    <Container maxWidth={false} disableGutters>
         <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
           <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
             <ArrowBackIcon />
@@ -373,7 +373,7 @@ const EventEditPage: React.FC = () => {
           )}
         </Box>
         
-        <Paper sx={{ mb: 1 }}>
+        <Paper elevation={0} square sx={{ mb: 1, bgcolor: 'transparent', borderBottom: '1px solid', borderColor: 'divider' }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}

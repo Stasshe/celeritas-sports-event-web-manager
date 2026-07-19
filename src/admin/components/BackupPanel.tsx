@@ -159,7 +159,7 @@ const BackupPanel: React.FC = () => {
   }, [activeTab]);
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth={false} disableGutters>
       <Box sx={{ mb: 4 }}>
         <Button
           startIcon={<ArrowBackIcon />}

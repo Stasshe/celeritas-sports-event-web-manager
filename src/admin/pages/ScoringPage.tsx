@@ -4,7 +4,7 @@ import {
   Container, 
   Typography, 
   Box, 
-  Paper, 
+  Paper,
   Button, 
   CircularProgress, 
   IconButton,
@@ -143,7 +143,7 @@ const ScoringPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" disableGutters>
+    <Container maxWidth={false} disableGutters>
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
         <IconButton onClick={() => navigate(`/admin/sports/${sportId}`)} aria-label="back" sx={{ mr: 1 }}>
           <ArrowBackIcon />

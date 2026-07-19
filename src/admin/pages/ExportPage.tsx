@@ -8,7 +8,7 @@ const ExportPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Container maxWidth="lg" disableGutters>
+    <Container maxWidth={false} disableGutters>
       <Box sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
           <IconButton onClick={() => navigate('/admin')} sx={{ mr: 1 }}>
@@ -33,7 +33,7 @@ const ExportPage: React.FC = () => {
         </Breadcrumbs>
       </Box>
 
-      <Paper sx={{ p: 0 }}>
+      <Paper elevation={0} square sx={{ p: 0, bgcolor: 'transparent' }}>
         <ExportPanel />
       </Paper>
     </Container>

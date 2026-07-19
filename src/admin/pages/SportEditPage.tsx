@@ -841,7 +841,7 @@ const SportEditPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" disableGutters>
+    <Container maxWidth={false} disableGutters>
         <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
           <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
             <ArrowBackIcon />
@@ -857,7 +857,7 @@ const SportEditPage: React.FC = () => {
           />
         </Box>
 
-        <Paper sx={{ mb: 1 }}>
+        <Paper elevation={0} square sx={{ mb: 1, bgcolor: 'transparent', borderBottom: '1px solid', borderColor: 'divider' }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
@@ -925,7 +925,7 @@ const SportEditPage: React.FC = () => {
             <Grid container spacing={2}>
               {/* 既存の詳細情報セクション */}
               <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
+                <Paper sx={{ p: 2, mb: 2, height: '100%' }}>
                   <Typography variant="h6" gutterBottom>
                     {"基本情報"}
                   </Typography>
@@ -974,7 +974,7 @@ const SportEditPage: React.FC = () => {
               
               {/* 既存の主催者セクション */}
               <Grid item xs={12} md={6}>
-                <Paper sx={{ p: 2, mb: 4, height: '100%' }}>
+                <Paper sx={{ p: 2, mb: 2, height: '100%' }}>
                   <Typography variant="h6" gutterBottom>
                     {"担当者"}
                   </Typography>

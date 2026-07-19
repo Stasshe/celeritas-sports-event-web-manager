@@ -642,7 +642,14 @@ const AdminLayout = () => {
           </Box>
         )}
 
-        <Box sx={{ p: { xs: 1, sm: 1.5, lg: 2 }, maxWidth: 1440, width: '100%', mx: 'auto' }}>
+        <Box
+          sx={{
+            p: { xs: 1, sm: 1.25 },
+            width: '100%',
+            '& .MuiPaper-root': { boxShadow: 'none' },
+            '& .MuiCard-root': { borderRadius: 0 },
+          }}
+        >
           <Outlet />
         </Box>
       </Box>

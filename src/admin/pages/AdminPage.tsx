@@ -2,12 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
-  Paper,
-  Grid,
   Button,
-  Card,
-  CardContent,
-  CardActions,
   Divider,
   CircularProgress,
   Chip,
@@ -27,13 +22,9 @@ import { useNavigate } from 'react-router-dom';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 import { useThemeContext } from '../../contexts/ThemeContext';
-import { motion, AnimatePresence } from 'framer-motion';
 import CreateEventDialog from '../components/dialogs/CreateEventDialog';
 import CreateSportDialog from '../components/dialogs/CreateSportDialog';
 import { useAdminLayout } from '../context/AdminLayoutContext';
-
-const MotionPaper = motion(Paper);
-const MotionCard = motion(Card);
 
 const AdminPage: React.FC = () => {
   const theme = useTheme();
@@ -257,15 +248,8 @@ const AdminPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* アクティブイベント表示 */}
-      <MotionPaper
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        elevation={0}
-        sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, border: '1px solid', borderColor: 'divider' }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 2 }}>
+      <Box component="section" sx={{ py: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 1 }}>
           <Box>
             <Typography variant="h6" fontWeight={700}>{"現在のイベント"}</Typography>
             <Typography variant="caption" color="text.secondary">公開画面に表示するイベント</Typography>
@@ -291,7 +275,6 @@ const AdminPage: React.FC = () => {
               bgcolor: alpha(theme.palette.primary.main, 0.05),
               borderLeft: '4px solid',
               borderColor: 'primary.main',
-              borderRadius: 2,
             }}
           >
                 <Box sx={{ minWidth: 0 }}>
@@ -323,17 +306,10 @@ const AdminPage: React.FC = () => {
             </Button>
           </Box>
         )}
-      </MotionPaper>
+      </Box>
 
-      {/* 選択されたイベントの競技一覧 */}
       {selectedEvent && (
-        <MotionPaper
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          elevation={0}
-          sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, border: '1px solid', borderColor: 'divider' }}
-        >
+        <Box component="section" sx={{ pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
           <Box
             sx={{
               display: 'flex',
@@ -341,7 +317,7 @@ const AdminPage: React.FC = () => {
               justifyContent: 'space-between',
               alignItems: { xs: 'stretch', sm: 'center' },
               gap: 2,
-              mb: 2,
+              mb: 1,
             }}
           >
             <Box>
@@ -370,77 +346,71 @@ const AdminPage: React.FC = () => {
             </Box>
           </Box>
           
-          <Divider sx={{ mb: 1.5 }} />
-          
-          <Grid container spacing={1.5}>
-            <AnimatePresence mode="sync">
-              {eventSports.length > 0 ? (
-                eventSports.map((sport, index) => (
-                  <Grid item xs={12} sm={6} md={4} key={sport.id}>
-                    <MotionCard
-                      layoutId={`sport-card-${sport.id}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3, delay: 0.1 * (index + 1) }}
-                      elevation={0}
-                      variant="outlined"
-                      sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-                    >
-                      <CardContent sx={{ flexGrow: 1, p: 1.75, '&:last-child': { pb: 1.75 } }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
-                          <Typography variant="h6" fontWeight={700}>{sport.name}</Typography>
-                          <Chip 
-                            label={getSportTypeLabel(sport.type)} 
-                            color={sport.type === 'tournament' ? 'primary' : sport.type === 'roundRobin' ? 'secondary' : 'default'}
-                            size="small" 
-                          />
-                        </Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.25 }}>
-                          {sport.description || getSportTypeDescription(sport.type)}
-                        </Typography>
-                        
-                        <Grid container spacing={1}>
-                          <Grid item xs={6}>
-                            <Typography variant="caption" display="block">{"チーム"}</Typography>
-                            <Typography variant="body2">{sport.teams?.length || 0}</Typography>
-                          </Grid>
-                          <Grid item xs={6}>
-                            <Typography variant="caption" display="block">{"試合数"}</Typography>
-                            <Typography variant="body2">{sport.matches?.length || 0}</Typography>
-                          </Grid>
-                        </Grid>
-                      </CardContent>
-                      <CardActions sx={{ px: 1.5, py: 0.5 }}>
-                        <Button 
-                          size="small" 
-                          onClick={() => handleEditSport(sport.id)}
-                          fullWidth
-                        >
-                          {"競技を管理"}
-                        </Button>
-                      </CardActions>
-                    </MotionCard>
-                  </Grid>
-                ))
-              ) : (
-                <Grid item xs={12}>
-                  <Box sx={{ textAlign: 'center', py: 4, bgcolor: alpha('#f5f5f5', 0.5) }}>
-                    <Typography color="text.secondary" paragraph>
-                      {"このイベントには競技がありません"}
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={() => handleOpenCreateSportDialog(selectedEvent.id)}
-                    >
-                      {"最初の競技を作成"}
-                    </Button>
+          <Divider />
+
+          {eventSports.length > 0 ? (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(3, minmax(0, 1fr))' },
+                borderLeft: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              {eventSports.map((sport) => (
+                <Box
+                  key={sport.id}
+                  sx={{
+                    minWidth: 0,
+                    p: 1.5,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRight: '1px solid',
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 0.75 }}>
+                    <Typography variant="h6" fontWeight={700}>{sport.name}</Typography>
+                    <Chip
+                      label={getSportTypeLabel(sport.type)}
+                      color={sport.type === 'tournament' ? 'primary' : sport.type === 'roundRobin' ? 'secondary' : 'default'}
+                      size="small"
+                    />
                   </Box>
-                </Grid>
-              )}
-            </AnimatePresence>
-          </Grid>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1, flexGrow: 1 }}>
+                    {sport.description || getSportTypeDescription(sport.type)}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 4, mb: 0.5 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">チーム</Typography>
+                      <Typography variant="body2">{sport.teams?.length || 0}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">試合数</Typography>
+                      <Typography variant="body2">{sport.matches?.length || 0}</Typography>
+                    </Box>
+                  </Box>
+                  <Button size="small" onClick={() => handleEditSport(sport.id)} sx={{ alignSelf: 'flex-start', px: 0 }}>
+                    競技を管理
+                  </Button>
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 3 }}>
+              <Typography color="text.secondary" paragraph>
+                {"このイベントには競技がありません"}
+              </Typography>
+              <Button
+                variant="outlined"
+                startIcon={<AddIcon />}
+                onClick={() => handleOpenCreateSportDialog(selectedEvent.id)}
+              >
+                {"最初の競技を作成"}
+              </Button>
+            </Box>
+          )}
           
           {!selectedEvent.isActive && (
             <Box sx={{ mt: 3, textAlign: 'center' }}>
@@ -454,7 +424,7 @@ const AdminPage: React.FC = () => {
               </Button>
             </Box>
           )}
-        </MotionPaper>
+        </Box>
       )}
 
       {/* ダイアログコンポーネント */}

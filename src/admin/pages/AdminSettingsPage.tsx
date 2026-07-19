@@ -51,7 +51,7 @@ const AdminSettingsPage: React.FC = () => {
   };
   
   return (
-    <Container maxWidth="md" disableGutters>
+    <Container maxWidth={false} disableGutters>
       <Box sx={{ mb: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}

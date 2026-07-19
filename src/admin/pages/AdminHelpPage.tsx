@@ -43,7 +43,7 @@ const AdminHelpPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" disableGutters>
+    <Container maxWidth={false} disableGutters>
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
         <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
           <ArrowBackIcon />
@@ -101,7 +101,7 @@ const AdminHelpPage: React.FC = () => {
 
         {/* メインコンテンツ */}
         <Grid item xs={12} md={9}>
-          <Paper sx={{ p: 3 }}>
+          <Box>
             <Accordion 
               expanded={expanded === 'panel1'} 
               onChange={handleAccordionChange('panel1')}
@@ -458,7 +458,7 @@ const AdminHelpPage: React.FC = () => {
                 </Box>
               </AccordionDetails>
             </Accordion>
-          </Paper>
+          </Box>
         </Grid>
       </Grid>
     </Container>
