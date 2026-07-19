@@ -11,7 +11,7 @@ const ProtectedRoute = () => {
     return <div>ローディング中...</div>;
   }
 
-  if (!currentUser && !window.location.search.includes('ui-preview')) {
+  if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
 

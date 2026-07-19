@@ -51,12 +51,12 @@ const AdminSettingsPage: React.FC = () => {
   };
   
   return (
-    <Container maxWidth="md">
-      <Box sx={{ mb: 4 }}>
+    <Container maxWidth="md" disableGutters>
+      <Box sx={{ mb: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/admin')}
-          sx={{ mb: 2 }}
+          sx={{ mb: 1 }}
         >
           {"戻る"}
         </Button>
@@ -76,13 +76,13 @@ const AdminSettingsPage: React.FC = () => {
         </Box>
       </Box>
       
-      <Paper sx={{ p: 4, mb: 4 }}>
+      <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           {"外観"}
         </Typography>
-        <Divider sx={{ mb: 3 }} />
+        <Divider sx={{ mb: 2 }} />
         
-        <Grid container spacing={4} alignItems="center">
+        <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={6}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               {mode === 'dark' ? 

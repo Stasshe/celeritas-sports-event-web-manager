@@ -143,8 +143,8 @@ const ScoringPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+    <Container maxWidth="lg" disableGutters>
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
         <IconButton onClick={() => navigate(`/admin/sports/${sportId}`)} aria-label="back" sx={{ mr: 1 }}>
           <ArrowBackIcon />
         </IconButton>
@@ -153,7 +153,7 @@ const ScoringPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Paper sx={{ p: 3, mb: 4 }}>
+      <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           {getSportTypeLabel(localSport.type)} - {"スコアを更新"}
         </Typography>

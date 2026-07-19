@@ -8,9 +8,9 @@ const ExportPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+    <Container maxWidth="lg" disableGutters>
+      <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
           <IconButton onClick={() => navigate('/admin')} sx={{ mr: 1 }}>
             <ArrowBackIcon />
           </IconButton>
@@ -19,7 +19,7 @@ const ExportPage: React.FC = () => {
           </Typography>
         </Box>
         
-        <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+        <Breadcrumbs aria-label="breadcrumb">
           <Link 
             underline="hover" 
             color="inherit" 

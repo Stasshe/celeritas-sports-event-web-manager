@@ -9,27 +9,17 @@ import {
   CardContent,
   CardActions,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  IconButton,
   CircularProgress,
   Chip,
-  Tooltip,
-  Snackbar,
-  Alert,
   useTheme
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon,
   Event as EventIcon,
   SportsSoccer as SportIcon,
   Settings as SettingsIcon,
   Add as AddIcon,
   Edit as EditIcon,
   Save as SaveIcon,
-  Info as InfoIcon,
   Help as HelpIcon
 } from '@mui/icons-material';
 import { getSportTypeDescription, getSportTypeLabel } from '../../utils/labels';
@@ -53,8 +43,7 @@ const AdminPage: React.FC = () => {
   const { 
     data: events, 
     loading: eventsLoading, 
-    updateData: updateEvents,
-    partialUpdate: partialUpdateEvents
+    updateData: updateEvents
   } = useDatabase<Record<string, Event>>('/events');
   
   const { 
@@ -216,7 +205,7 @@ const AdminPage: React.FC = () => {
 
   return (
     <>
-      <Box sx={{ mb: { xs: 3, md: 4 } }}>
+      <Box sx={{ mb: 2 }}>
         <Typography variant="overline" color="primary.main" fontWeight={700}>
           Overview
         </Typography>
@@ -226,7 +215,7 @@ const AdminPage: React.FC = () => {
             flexDirection: { xs: 'column', md: 'row' },
             alignItems: { xs: 'stretch', md: 'flex-end' },
             justifyContent: 'space-between',
-            gap: 2,
+            gap: 1.5,
           }}
         >
           <Box>
@@ -238,7 +227,7 @@ const AdminPage: React.FC = () => {
             >
               ダッシュボード
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
               開催中のイベントと競技をまとめて管理します。
             </Typography>
           </Box>
@@ -274,7 +263,7 @@ const AdminPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         elevation={0}
-        sx={{ p: { xs: 2, sm: 3 }, mb: 3, border: '1px solid', borderColor: 'divider' }}
+        sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, border: '1px solid', borderColor: 'divider' }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 2 }}>
           <Box>
@@ -293,7 +282,7 @@ const AdminPage: React.FC = () => {
         {activeEvent ? (
           <Box
             sx={{
-              p: { xs: 2, sm: 2.5 },
+              p: { xs: 1.5, sm: 2 },
               display: 'flex',
               flexDirection: { xs: 'column', sm: 'row' },
               justifyContent: 'space-between',
@@ -343,7 +332,7 @@ const AdminPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
           elevation={0}
-          sx={{ p: { xs: 2, sm: 3 }, mb: 3, border: '1px solid', borderColor: 'divider' }}
+          sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, border: '1px solid', borderColor: 'divider' }}
         >
           <Box
             sx={{
@@ -381,9 +370,9 @@ const AdminPage: React.FC = () => {
             </Box>
           </Box>
           
-          <Divider sx={{ mb: 2.5 }} />
+          <Divider sx={{ mb: 1.5 }} />
           
-          <Grid container spacing={2}>
+          <Grid container spacing={1.5}>
             <AnimatePresence mode="sync">
               {eventSports.length > 0 ? (
                 eventSports.map((sport, index) => (
@@ -398,7 +387,7 @@ const AdminPage: React.FC = () => {
                       variant="outlined"
                       sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                     >
-                      <CardContent sx={{ flexGrow: 1 }}>
+                      <CardContent sx={{ flexGrow: 1, p: 1.75, '&:last-child': { pb: 1.75 } }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
                           <Typography variant="h6" fontWeight={700}>{sport.name}</Typography>
                           <Chip 
@@ -407,7 +396,7 @@ const AdminPage: React.FC = () => {
                             size="small" 
                           />
                         </Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.25 }}>
                           {sport.description || getSportTypeDescription(sport.type)}
                         </Typography>
                         
@@ -422,7 +411,7 @@ const AdminPage: React.FC = () => {
                           </Grid>
                         </Grid>
                       </CardContent>
-                      <CardActions>
+                      <CardActions sx={{ px: 1.5, py: 0.5 }}>
                         <Button 
                           size="small" 
                           onClick={() => handleEditSport(sport.id)}

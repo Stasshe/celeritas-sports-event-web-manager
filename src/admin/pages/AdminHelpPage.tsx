@@ -43,8 +43,8 @@ const AdminHelpPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center' }}>
+    <Container maxWidth="lg" disableGutters>
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
         <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
           <ArrowBackIcon />
         </IconButton>
@@ -53,7 +53,7 @@ const AdminHelpPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Grid container spacing={4}>
+      <Grid container spacing={2}>
         {/* サイドメニュー */}
         <Grid item xs={12} md={3}>
           <Paper sx={{ p: 2 }}>

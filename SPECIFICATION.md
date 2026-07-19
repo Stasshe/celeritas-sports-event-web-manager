@@ -18,6 +18,12 @@ Vite + React 18 SPA固定。Next.js移行禁止。`@g-loot/react-tournament-brac
 
 背景、旧構造では公開`SportPage.tsx`が管理側のトーナメントcomponentをimportし、公開→管理の依存逆転発生。管理専用`AdminLayoutContext`も全体用`src/contexts/`に混在。3領域分割、依存方向とstate ownershipを一致させるため。
 
+## 管理UI
+
+`md`以上、固定幅サイドバーと独立スクロールするワークスペースの2領域。`md`未満、サイドバーを一時表示Drawerへ切替。ワークスペースヘッダーは同領域内sticky配置。固定ヘッダーと本文offsetの別管理禁止。
+
+管理ページ外周余白は共通layoutが所有。個別pageの`Container`はgutterを重ねない。操作、状態、本文の優先順を保ち、狭幅では横並びを縦積みへ変える。
+
 ## 管理保存
 
 ### 状態と実行経路

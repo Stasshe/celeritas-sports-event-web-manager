@@ -74,7 +74,7 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
       {...other}
     >
       {value === index && (
-        <Box sx={{ pt: 3 }}>
+        <Box sx={{ pt: 1.5 }}>
           {children}
         </Box>
       )}
@@ -355,8 +355,8 @@ const EventEditPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg">
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+    <Container maxWidth="lg" disableGutters>
+        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
           <IconButton onClick={() => navigate('/admin')} aria-label="back" sx={{ mr: 1 }}>
             <ArrowBackIcon />
           </IconButton>
@@ -373,7 +373,7 @@ const EventEditPage: React.FC = () => {
           )}
         </Box>
         
-        <Paper sx={{ mb: 2 }}>
+        <Paper sx={{ mb: 1 }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}

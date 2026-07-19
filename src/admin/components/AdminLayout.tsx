@@ -16,8 +16,6 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Snackbar,
-  Alert,
   CircularProgress,
   Chip,
   Tooltip,
@@ -34,11 +32,8 @@ import {
   ExpandLess,
   ExpandMore,
   Add as AddIcon,
-  Save as SaveIcon,
   Help as HelpIcon,
   Home as HomeIcon,
-  AccountCircle,
-  Scoreboard as ScoreboardIcon,
   FileDownload as ExportIcon,
   Backup as BackupIcon
 } from '@mui/icons-material';
@@ -51,8 +46,8 @@ import { useAdminLayout } from '../context/AdminLayoutContext';
 import CreateEventDialog from './dialogs/CreateEventDialog';
 import CreateSportDialog from './dialogs/CreateSportDialog';
 
-const drawerWidth = 272;
-const headerHeight = 64;
+const drawerWidth = 256;
+const headerHeight = 56;
 
 const AdminLayout = () => {
   const theme = useTheme();
@@ -300,7 +295,7 @@ const AdminLayout = () => {
       <Toolbar
         sx={{
           minHeight: `${headerHeight}px !important`,
-          px: 2.5,
+          px: 2,
           justifyContent: 'space-between',
           position: 'sticky',
           top: 0,
@@ -327,7 +322,7 @@ const AdminLayout = () => {
       <Divider />
       
       {/* ダッシュボードリンク */}
-      <List>
+      <List dense>
         <ListItem disablePadding>
           <ListItemButton 
             selected={location.pathname === '/admin'}
@@ -364,7 +359,7 @@ const AdminLayout = () => {
       </List>
       
       {/*エクスポートタブ */}
-      <List>
+      <List dense>
         <ListItem disablePadding>
           <ListItemButton 
             selected={location.pathname === '/admin/export'}
@@ -392,8 +387,9 @@ const AdminLayout = () => {
       
       {/* イベントリスト */}
       <List
+        dense
         subheader={
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 1, borderRadius: 0 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: 0.5 }}>
             <Typography variant="subtitle2" className="item-label">
               {"イベント管理"}
             </Typography>
@@ -527,8 +523,9 @@ const AdminLayout = () => {
           overflowY: 'auto',
           bgcolor: 'background.paper',
           borderRight: `1px solid ${theme.palette.divider}`,
-          '& .MuiListItemButton-root': { mx: 1, borderRadius: 2, py: 1 },
-          '& .MuiListItemIcon-root': { minWidth: 40 },
+          '& .MuiList-root': { py: 0.5 },
+          '& .MuiListItemButton-root': { mx: 0.75, borderRadius: 1.5, py: 0.625 },
+          '& .MuiListItemIcon-root': { minWidth: 36 },
         }}
       >
         {renderDrawerContent()}
@@ -544,8 +541,9 @@ const AdminLayout = () => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             borderRadius: 0,
-            '& .MuiListItemButton-root': { mx: 1, borderRadius: 2, py: 1 },
-            '& .MuiListItemIcon-root': { minWidth: 40 },
+            '& .MuiList-root': { py: 0.5 },
+            '& .MuiListItemButton-root': { mx: 0.75, borderRadius: 1.5, py: 0.625 },
+            '& .MuiListItemIcon-root': { minWidth: 36 },
           },
         }}
       >
@@ -564,7 +562,7 @@ const AdminLayout = () => {
             top: 0,
             zIndex: theme.zIndex.appBar,
             height: headerHeight,
-            px: { xs: 1.5, sm: 3 },
+            px: { xs: 1, sm: 2 },
             display: 'flex',
             alignItems: 'center',
             gap: 1,
@@ -644,7 +642,7 @@ const AdminLayout = () => {
           </Box>
         )}
 
-        <Box sx={{ p: { xs: 2, sm: 3, lg: 4 }, maxWidth: 1440, width: '100%', mx: 'auto' }}>
+        <Box sx={{ p: { xs: 1, sm: 1.5, lg: 2 }, maxWidth: 1440, width: '100%', mx: 'auto' }}>
           <Outlet />
         </Box>
       </Box>
