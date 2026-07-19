@@ -1,0 +1,6 @@
+allowBuilds:
+  '@firebase/util': false
+  core-js: false
+  core-js-pure: false
+  protobufjs: false
+  styled-components: false

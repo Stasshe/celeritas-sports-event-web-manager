@@ -438,7 +438,7 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   const nodeWidth = 200;
   const nodeHeight = 100;
 
-  const savingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const savingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingUpdateRef = useRef<Sport | null>(null);
 
   // 更新を制御するためのデバウンス処理を改善

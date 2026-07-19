@@ -46,7 +46,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   const { data: events, updateData: updateEvent } = useDatabase<Record<string, Event>>('/events');
   
   const isSubmittingRef = useRef(false);
-  const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSportRef = useRef<Sport | null>(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);

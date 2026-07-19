@@ -305,7 +305,7 @@ const ClassSchedulePage: React.FC = () => {
           </Typography>
           
           {/* デバッグ情報（開発時のみ表示） */}
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
             <Box sx={{ mt: 3, p: 2, border: '1px dashed', borderColor: 'divider' }}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 デバッグ情報:
