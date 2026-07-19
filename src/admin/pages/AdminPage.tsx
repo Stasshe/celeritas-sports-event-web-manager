@@ -18,7 +18,8 @@ import {
   Chip,
   Tooltip,
   Snackbar,
-  Alert
+  Alert,
+  useTheme
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -45,6 +46,7 @@ const MotionPaper = motion(Paper);
 const MotionCard = motion(Card);
 
 const AdminPage: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { alpha } = useThemeContext();
   const { showSnackbar, registerSaveHandler, unregisterSaveHandler, save, setHasUnsavedChanges } = useAdminLayout();
@@ -214,17 +216,33 @@ const AdminPage: React.FC = () => {
 
   return (
     <>
-      {/* ダッシュボードヘッダー */}
-      <Box sx={{ mb: 4 }}>
-        <Grid container spacing={2} alignItems="center" justifyContent="space-between">
-          <Grid item>
-            <Typography variant="h4" component="h1">
-              <DashboardIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              {"ダッシュボード"}
+      <Box sx={{ mb: { xs: 3, md: 4 } }}>
+        <Typography variant="overline" color="primary.main" fontWeight={700}>
+          Overview
+        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'stretch', md: 'flex-end' },
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography
+              variant="h4"
+              component="h1"
+              fontWeight={700}
+              sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}
+            >
+              ダッシュボード
             </Typography>
-          </Grid>
-          <Grid item>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              開催中のイベントと競技をまとめて管理します。
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               <Button
                 variant="outlined"
                 startIcon={<HelpIcon />}
@@ -246,16 +264,8 @@ const AdminPage: React.FC = () => {
               >
                 {"変更を保存"}
               </Button>
-            </Box>
-          </Grid>
-        </Grid>
-        
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          {"このダッシュボードからスポーツイベントを管理できます"}
-          ご迷惑をおかけしましてすいません。メンテナです。
-          現在すべてのデバッグ作業にとりかかっています。
-          eterynity2024workspace@gmail.comにまで連絡があればお願いします。
-        </Typography>
+          </Box>
+        </Box>
       </Box>
 
       {/* アクティブイベント表示 */}
@@ -263,11 +273,14 @@ const AdminPage: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        elevation={3}
-        sx={{ p: 3, mb: 4 }}
+        elevation={0}
+        sx={{ p: { xs: 2, sm: 3 }, mb: 3, border: '1px solid', borderColor: 'divider' }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">{"現在のイベント"}</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 2 }}>
+          <Box>
+            <Typography variant="h6" fontWeight={700}>{"現在のイベント"}</Typography>
+            <Typography variant="caption" color="text.secondary">公開画面に表示するイベント</Typography>
+          </Box>
           <Button
             variant="outlined"
             startIcon={<EventIcon />}
@@ -278,11 +291,22 @@ const AdminPage: React.FC = () => {
         </Box>
         
         {activeEvent ? (
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h5">{activeEvent.name}</Typography>
+          <Box
+            sx={{
+              p: { xs: 2, sm: 2.5 },
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: 2,
+              bgcolor: alpha(theme.palette.primary.main, 0.05),
+              borderLeft: '4px solid',
+              borderColor: 'primary.main',
+              borderRadius: 2,
+            }}
+          >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="h5" fontWeight={700}>{activeEvent.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     {new Date(activeEvent.date).toLocaleDateString()}
                     {activeEvent.alternativeDate && ` (${"予備日"}: ${new Date(activeEvent.alternativeDate).toLocaleDateString()})`}
@@ -294,9 +318,7 @@ const AdminPage: React.FC = () => {
                   )}
                 </Box>
                 <Chip color="success" label={"アクティブ"} />
-              </Box>
-            </CardContent>
-          </Card>
+          </Box>
         ) : (
           <Box sx={{ textAlign: 'center', py: 3, bgcolor: alpha('#f5f5f5', 0.5) }}>
             <Typography color="text.secondary">
@@ -320,24 +342,32 @@ const AdminPage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          elevation={3}
-          sx={{ p: 3, mb: 4 }}
+          elevation={0}
+          sx={{ p: { xs: 2, sm: 3 }, mb: 3, border: '1px solid', borderColor: 'divider' }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: { xs: 'stretch', sm: 'center' },
+              gap: 2,
+              mb: 2,
+            }}
+          >
             <Box>
-              <Typography variant="h6">
+              <Typography variant="h6" fontWeight={700}>
                 {selectedEvent.name} - {"競技管理"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 競技数: {eventSports.length}
               </Typography>
             </Box>
-            <Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               <Button 
                 variant="outlined" 
                 startIcon={<EditIcon />}
                 onClick={() => navigate(`/admin/events/${selectedEvent.id}`)}
-                sx={{ mr: 1 }}
               >
                 {"イベント編集"}
               </Button>
@@ -351,7 +381,7 @@ const AdminPage: React.FC = () => {
             </Box>
           </Box>
           
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ mb: 2.5 }} />
           
           <Grid container spacing={2}>
             <AnimatePresence mode="sync">
@@ -364,12 +394,13 @@ const AdminPage: React.FC = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.3, delay: 0.1 * (index + 1) }}
-                      elevation={2}
+                      elevation={0}
+                      variant="outlined"
                       sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                     >
                       <CardContent sx={{ flexGrow: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="h6" noWrap>{sport.name}</Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                          <Typography variant="h6" fontWeight={700}>{sport.name}</Typography>
                           <Chip 
                             label={getSportTypeLabel(sport.type)} 
                             color={sport.type === 'tournament' ? 'primary' : sport.type === 'roundRobin' ? 'secondary' : 'default'}

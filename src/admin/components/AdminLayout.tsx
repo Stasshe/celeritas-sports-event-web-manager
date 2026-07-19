@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
-  AppBar,
   Toolbar,
   Drawer,
   IconButton,
@@ -27,7 +26,7 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  ChevronLeft as ChevronLeftIcon,
+  Close as CloseIcon,
   Dashboard as DashboardIcon,
   Event as EventIcon,
   SportsSoccer as SportIcon,
@@ -52,19 +51,17 @@ import { useAdminLayout } from '../context/AdminLayoutContext';
 import CreateEventDialog from './dialogs/CreateEventDialog';
 import CreateSportDialog from './dialogs/CreateSportDialog';
 
-// drawerWidthを変数として定義
-const drawerWidth = 240;
-const collapsedDrawerWidth = 72; // 収納時の幅を少し広げる
+const drawerWidth = 272;
+const headerHeight = 64;
 
 const AdminLayout = () => {
   const theme = useTheme();
-  const { mode, toggleColorMode, alpha } = useThemeContext();
+  const { alpha } = useThemeContext();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useAuth();
   const { showSnackbar, savingStatus, setSavingStatus, save, hasUnsavedChanges, registerSaveHandler } = useAdminLayout(); // コンテキストから機能を取得
   
-  const [drawerOpen, setDrawerOpen] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   // メインコンテンツのローディング状態を管理
@@ -75,7 +72,7 @@ const AdminLayout = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   // モバイルビューの状態管理を追加
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   
   // イベント展開状態
@@ -151,19 +148,8 @@ const AdminLayout = () => {
   
   
 
-  // ドロワーの開閉ハンドラーを更新
   const handleDrawerToggle = () => {
-    if (isMobile) {
-      setMobileOpen(!mobileOpen);
-    } else {
-      setDrawerOpen(!drawerOpen);
-      // アイコンのアニメーションのためにタイムアウトを設定
-      setTimeout(() => {
-        if (contentRef.current) {
-          contentRef.current.style.transition = 'all 0.2s ease-out';
-        }
-      }, 0);
-    }
+    setMobileOpen((open) => !open);
   };
 
   const handleEventClick = (eventId: string) => {
@@ -186,6 +172,7 @@ const AdminLayout = () => {
     
     // URLを変更して、React Routerの通常のナビゲーションを使用
     navigate(`/admin/events/${eventId}`);
+    setMobileOpen(false);
     
     // スクロール位置をトップに戻す
     if (contentRef.current) {
@@ -229,6 +216,7 @@ const AdminLayout = () => {
       
       // React Routerのナビゲーションを使用
       navigate(`/admin/sports/${sportId}`);
+      setMobileOpen(false);
       
       // スクロール位置をトップに戻す
       if (contentRef.current) {
@@ -251,12 +239,19 @@ const AdminLayout = () => {
   };
 
   const handleCreateEvent = () => {
+    setMobileOpen(false);
     setEventDialogOpen(true);
   };
   
   const handleCreateSport = (eventId: string) => {
+    setMobileOpen(false);
     setSelectedEventId(eventId);
     setSportDialogOpen(true);
+  };
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setMobileOpen(false);
   };
 
   // ユーザーメニュー
@@ -300,85 +295,35 @@ const AdminLayout = () => {
     navigate(`/admin/sports/${sportId}`);
   };
 
-  // ドロワーの共通スタイル
-  const drawerStyles = {
-    width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-    boxSizing: 'border-box',
-    '& .MuiDrawer-paper': {
-      width: drawerOpen ? drawerWidth : collapsedDrawerWidth,
-      transition: theme.transitions.create(['width', 'margin'], {
-        easing: theme.transitions.easing.sharp,
-        duration: theme.transitions.duration.enteringScreen,
-      }),
-      overflowX: 'hidden',
-      borderRight: `1px solid ${theme.palette.divider}`,
-      backgroundColor: theme.palette.background.paper,
-      // ホバー時のスタイルを mouseEnter/mouseLeave で制御するため削除
-    },
-    '& .MuiListItemText-root': {
-      opacity: drawerOpen ? 1 : 0,
-      transition: theme.transitions.create(['opacity', 'margin'], {
-        duration: theme.transitions.duration.shorter,
-      }),
-      display: drawerOpen ? 'block' : 'none',
-      whiteSpace: 'normal',
-    },
-    '& .MuiListItemIcon-root': {
-      minWidth: drawerOpen ? 56 : collapsedDrawerWidth,
-      justifyContent: drawerOpen ? 'initial' : 'center',
-      transition: theme.transitions.create(['min-width', 'justify-content'], {
-        duration: theme.transitions.duration.shorter,
-      }),
-    },
-    '& .MuiListItemButton-root': {
-      justifyContent: drawerOpen ? 'initial' : 'center',
-      px: drawerOpen ? 2 : 1,
-      py: 1.5,
-      mx: !drawerOpen ? 1 : 0,
-      borderRadius: !drawerOpen ? 1 : 0,
-      '&:hover': {
-        bgcolor: alpha(theme.palette.primary.main, 0.08),
-      },
-      '&.Mui-selected': {
-        bgcolor: alpha(theme.palette.primary.main, 0.12),
-        '&:hover': {
-          bgcolor: alpha(theme.palette.primary.main, 0.16),
-        }
-      }
-    },
-    '& .item-label': {
-      display: drawerOpen ? 'block' : 'none',
-    },
-    '& .expand-icon': {
-      display: drawerOpen ? 'block' : 'none',
-    },
-    '& .create-button-text': {
-      display: drawerOpen ? 'inline-flex' : 'none',
-    }
-  };
-
-  // 一時的なドロワー展開状態の管理
-  const [isHovered, setIsHovered] = useState(false);
-  
-  // マウスイベントハンドラ
-  const handleMouseEnter = () => {
-    if (!drawerOpen && !isMobile) {
-      setIsHovered(true);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (!drawerOpen && !isMobile) {
-      setIsHovered(false);
-    }
-  };
-
-  // ドロワーの内容をコンポーネント化（関数をコンポーネント内に移動）
   const renderDrawerContent = () => (
     <>
-      <Toolbar variant="dense" />
+      <Toolbar
+        sx={{
+          minHeight: `${headerHeight}px !important`,
+          px: 2.5,
+          justifyContent: 'space-between',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1,
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Typography
+          variant="h6"
+          fontWeight={800}
+          color="primary.main"
+        >
+          CELERITAS
+        </Typography>
+        <IconButton
+          aria-label="メニューを閉じる"
+          onClick={handleDrawerToggle}
+          size="small"
+          sx={{ display: { md: 'none' } }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Toolbar>
       <Divider />
       
       {/* ダッシュボードリンク */}
@@ -386,12 +331,34 @@ const AdminLayout = () => {
         <ListItem disablePadding>
           <ListItemButton 
             selected={location.pathname === '/admin'}
-            onClick={() => navigate('/admin')}
+            onClick={() => handleNavigate('/admin')}
           >
             <ListItemIcon>
               <DashboardIcon />
             </ListItemIcon>
             <ListItemText primary={"ダッシュボード"} />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={location.pathname === '/admin/settings'}
+            onClick={() => handleNavigate('/admin/settings')}
+          >
+            <ListItemIcon>
+              <SettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary={"設定"} />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton
+            selected={location.pathname === '/admin/help'}
+            onClick={() => handleNavigate('/admin/help')}
+          >
+            <ListItemIcon>
+              <HelpIcon />
+            </ListItemIcon>
+            <ListItemText primary={"ヘルプ"} />
           </ListItemButton>
         </ListItem>
       </List>
@@ -401,7 +368,7 @@ const AdminLayout = () => {
         <ListItem disablePadding>
           <ListItemButton 
             selected={location.pathname === '/admin/export'}
-            onClick={() => navigate('/admin/export')}
+            onClick={() => handleNavigate('/admin/export')}
           >
             <ListItemIcon>
               <ExportIcon />
@@ -412,7 +379,7 @@ const AdminLayout = () => {
         <ListItem disablePadding>
           <ListItemButton 
             selected={location.pathname === '/admin/backup'}
-            onClick={() => navigate('/admin/backup')}
+            onClick={() => handleNavigate('/admin/backup')}
           >
             <ListItemIcon>
               <BackupIcon />
@@ -433,13 +400,9 @@ const AdminLayout = () => {
             <Button
               size="small"
               onClick={handleCreateEvent}
-              sx={{
-                minWidth: drawerOpen ? 'auto' : 32,
-                p: drawerOpen ? 'auto' : '4px',
-              }}
+              startIcon={<AddIcon />}
             >
-              <AddIcon />
-              <span className="create-button-text">{"作成"}</span>
+              {"作成"}
             </Button>
           </Box>
         }
@@ -464,9 +427,10 @@ const AdminLayout = () => {
             return (
               <React.Fragment key={event.id}>
                 <ListItem disablePadding>
-                  <ListItemButton 
+                  <ListItemButton
                     onClick={() => handleEventClick(event.id)}
                     selected={isCurrentPath}
+                    sx={{ pr: 6 }}
                   >
                     <ListItemIcon>
                       <EventIcon color={event.isActive ? "primary" : "inherit"} />
@@ -475,15 +439,15 @@ const AdminLayout = () => {
                       primary={event.name} 
                       secondary={new Date(event.date).toLocaleDateString()}
                     />
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleEventToggle(event.id, e)}
-                      sx={{ ml: 'auto' }}
-                      className="expand-icon"
-                    >
-                      {shouldExpand ? <ExpandLess /> : <ExpandMore />}
-                    </IconButton>
                   </ListItemButton>
+                  <IconButton
+                    size="small"
+                    aria-label={shouldExpand ? `${event.name}の競技を閉じる` : `${event.name}の競技を開く`}
+                    onClick={(e) => handleEventToggle(event.id, e)}
+                    sx={{ position: 'absolute', right: 14 }}
+                  >
+                    {shouldExpand ? <ExpandLess /> : <ExpandMore />}
+                  </IconButton>
                 </ListItem>
                 
                 {/* 競技リスト - 縮小時は自動展開しない */}
@@ -546,220 +510,143 @@ const AdminLayout = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* トップツールバー（常時表示） */}
-      <AppBar
-        position="fixed"
-        color="default"
-        elevation={1}
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: `${drawerWidth}px minmax(0, 1fr)` },
+        height: '100dvh',
+        overflow: 'hidden',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Box
+        component="aside"
         sx={{
-          zIndex: theme.zIndex.drawer + 2,
-          bgcolor: alpha(theme.palette.background.paper, 0.8),
-          backdropFilter: 'blur(8px)',
-          '& .MuiToolbar-root': {
-            minHeight: 48, // ツールバーの高さを小さく
-          }
+          display: { xs: 'none', md: 'block' },
+          height: '100dvh',
+          overflowY: 'auto',
+          bgcolor: 'background.paper',
+          borderRight: `1px solid ${theme.palette.divider}`,
+          '& .MuiListItemButton-root': { mx: 1, borderRadius: 2, py: 1 },
+          '& .MuiListItemIcon-root': { minWidth: 40 },
         }}
       >
-        <Toolbar variant="dense" sx={{ minHeight: 48 }}>
-          {/* ハンバーガーメニューを追加 */}
-          <IconButton
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            onClick={handleDrawerToggle}
-            sx={{
-              mr: 2,
-              display: { lg: drawerOpen ? 'none' : 'block' },
-              transition: theme.transitions.create(['transform', 'margin'], {
-                duration: theme.transitions.duration.shorter,
-              }),
-              transform: drawerOpen ? 'rotate(180deg)' : 'none',
-            }}
-          >
-            {isMobile ? <MenuIcon /> : drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
-          </IconButton>
+        {renderDrawerContent()}
+      </Box>
 
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {"管理パネル"}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            borderRadius: 0,
+            '& .MuiListItemButton-root': { mx: 1, borderRadius: 2, py: 1 },
+            '& .MuiListItemIcon-root': { minWidth: 40 },
+          },
+        }}
+      >
+        {renderDrawerContent()}
+      </Drawer>
+
+      <Box
+        component="main"
+        ref={contentRef}
+        sx={{ minWidth: 0, height: '100dvh', overflowY: 'auto', position: 'relative' }}
+      >
+        <Box
+          component="header"
+          sx={{
+            position: 'sticky',
+            top: 0,
+            zIndex: theme.zIndex.appBar,
+            height: headerHeight,
+            px: { xs: 1.5, sm: 3 },
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            bgcolor: alpha(theme.palette.background.paper, 0.94),
+            backdropFilter: 'blur(12px)',
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <IconButton
+            color="inherit"
+            aria-label="メニューを開く"
+            onClick={handleDrawerToggle}
+            sx={{ display: { md: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ flexGrow: 1 }}>
+            管理ワークスペース
           </Typography>
-          
-          {/* 保存状態表示 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-            {hasUnsavedChanges && (
-              <Chip 
-                label={"未保存の変更があります"} 
-                color="warning" 
-                size="small" 
-                sx={{ mr: 1 }}
-              />
+
+          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', mr: 0.5 }}>
+            {hasUnsavedChanges && <Chip label="未保存" color="warning" size="small" />}
+            {savingStatus === 'saving' && <CircularProgress size={18} sx={{ ml: 1 }} />}
+            {savingStatus === 'saved' && lastSaved && (
+              <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                {lastSaved.toLocaleTimeString()} 保存
+              </Typography>
             )}
-            {savingStatus === 'saving' ? (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CircularProgress size={16} sx={{ mr: 1 }} />
-                <Typography variant="body2">{"保存中..."}</Typography>
-              </Box>
-            ) : savingStatus === 'saved' ? (
-              <Typography variant="body2" color="text.secondary">
-                {lastSaved && `最終保存: ${lastSaved.toLocaleTimeString()}`}
+            {savingStatus === 'error' && (
+              <Typography variant="caption" color="error" sx={{ ml: 1 }}>
+                保存失敗
               </Typography>
-            ) : savingStatus === 'error' ? (
-              <Typography variant="body2" color="error">
-                {"保存に失敗しました"}
-              </Typography>
-            ) : null}
+            )}
           </Box>
-          
-          {/* アクションボタン群 */}
-          <Tooltip title={"ホームに戻る"}>
+
+          <Tooltip title="公開画面に戻る">
             <IconButton color="inherit" onClick={() => navigate('/')}>
               <HomeIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title={"設定"}>
-            <IconButton color="inherit" onClick={() => navigate('/admin/settings')}>
-              <SettingsIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={"ヘルプ"}>
-            <IconButton color="inherit" onClick={() => navigate('/admin/help')}>
-              <HelpIcon />
-            </IconButton>
-          </Tooltip>
-          {/* ユーザーメニュー */}
           <IconButton
-            size="large"
-            edge="end"
             onClick={handleUserMenuOpen}
             color="inherit"
+            aria-label="アカウントメニュー"
           >
-            <Avatar 
-              sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}
-              alt={currentUser?.email || 'User'}
-            >
+            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}>
               {currentUser?.email?.charAt(0).toUpperCase() || 'U'}
             </Avatar>
           </IconButton>
           <Menu
-            id="menu-appbar"
             anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             open={Boolean(anchorEl)}
             onClose={handleUserMenuClose}
           >
-            <MenuItem disabled>
-              <Typography variant="body2">
-                {currentUser?.email}
-              </Typography>
-            </MenuItem>
+            <MenuItem disabled>{currentUser?.email}</MenuItem>
             <Divider />
-            <MenuItem onClick={handleLogout}>
-              {"ログアウト"}
-            </MenuItem>
+            <MenuItem onClick={handleLogout}>ログアウト</MenuItem>
           </Menu>
-        </Toolbar>
-      </AppBar>
+        </Box>
 
-      {/* モバイル用ドロワー */}
-      <Box component="nav" sx={{ display: { xs: 'block', sm: 'none' } }}>
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            ...drawerStyles,
-            '& .MuiDrawer-paper': {
-              width: drawerWidth,
-              overflowX: 'hidden',
-            },
-          }}
-        >
-          {/* ドロワーの内容 */}
-          {renderDrawerContent()}
-        </Drawer>
-      </Box>
-
-      {/* デスクトップ用ドロワー */}
-      <Box component="nav" sx={{ display: { xs: 'none', sm: 'block' } }}>
-        <Drawer
-          variant="permanent"
-          open={drawerOpen}
-          sx={{
-            ...drawerStyles,
-            '& .MuiDrawer-paper': {
-              ...drawerStyles['& .MuiDrawer-paper'],
-              width: drawerOpen ? drawerWidth : isHovered ? drawerWidth : collapsedDrawerWidth,
-            },
-            '& .MuiListItemText-root': {
-              ...drawerStyles['& .MuiListItemText-root'],
-              display: drawerOpen || isHovered ? 'block' : 'none',
-              opacity: drawerOpen || isHovered ? 1 : 0,
-            },
-            '& .item-label': {
-              display: drawerOpen || isHovered ? 'block' : 'none',
-            },
-            '& .expand-icon': {
-              display: drawerOpen || isHovered ? 'block' : 'none',
-            },
-            '& .create-button-text': {
-              display: drawerOpen || isHovered ? 'inline-flex' : 'none',
-            }
-          }}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          {renderDrawerContent()}
-        </Drawer>
-      </Box>
-
-      {/* メインコンテンツ */}
-      <Box
-        component="main"
-        ref={contentRef}
-        sx={{
-          flexGrow: 1,
-          p: 2, // パディングを小さく
-          transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          height: '100%',
-          overflow: 'auto',
-          pt: { xs: 6, sm: 6 }, // 上部余白を小さく
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative', // ローディングオーバーレイのための相対位置設定
-        }}
-      >
-        {/* コンテンツローディングオーバーレイ */}
         {contentLoading && (
-          <Box sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: alpha(theme.palette.background.paper, 0.7),
-            zIndex: 10,
-            backdropFilter: 'blur(3px)',
-          }}>
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: `${headerHeight}px 0 0`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: alpha(theme.palette.background.paper, 0.72),
+              zIndex: theme.zIndex.appBar - 1,
+              backdropFilter: 'blur(3px)',
+            }}
+          >
             <CircularProgress />
           </Box>
         )}
-        
-        <Outlet />
+
+        <Box sx={{ p: { xs: 2, sm: 3, lg: 4 }, maxWidth: 1440, width: '100%', mx: 'auto' }}>
+          <Outlet />
+        </Box>
       </Box>
 
       {/* ダイアログの追加 */}
