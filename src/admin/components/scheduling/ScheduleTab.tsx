@@ -46,6 +46,11 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
   let mobileSettingsDisplay = 'none';
   if (settingsOpen) mobileSettingsDisplay = 'block';
 
+  const handleManualSave = (slots: TimeSlot[]) => {
+    history.applyManualEdit(slots);
+    setEditing(false);
+  };
+
   return (
     <Box>
       <Box
@@ -121,7 +126,8 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
           {editing && (
             <ManualScheduleEditor
               timeSlots={history.timeSlots}
-              onChange={history.applyManualEdit}
+              onSave={handleManualSave}
+              onCancel={() => setEditing(false)}
               courtNames={form.settings.courtNames}
               sport={sport}
             />
