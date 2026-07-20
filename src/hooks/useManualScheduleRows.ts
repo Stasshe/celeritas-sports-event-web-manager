@@ -13,6 +13,7 @@ const emptySlot: TimeSlot = {
 export type TimeSlotField = keyof TimeSlot;
 
 export interface ManualScheduleRows {
+  rowCount: number;
   moveTimes: boolean;
   setMoveTimes: (value: boolean) => void;
   updateField: (index: number, field: TimeSlotField, value: string) => void;
@@ -44,5 +45,5 @@ export const useManualScheduleRows = (
     onChange(reorderTimeSlots(timeSlots, fromIndex, toIndex, moveTimes));
   };
 
-  return { moveTimes, setMoveTimes, updateField, addRow, removeRow, reorder };
+  return { rowCount: timeSlots.length, moveTimes, setMoveTimes, updateField, addRow, removeRow, reorder };
 };

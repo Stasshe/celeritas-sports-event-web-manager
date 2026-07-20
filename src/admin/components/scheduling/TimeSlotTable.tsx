@@ -62,12 +62,14 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
   const gridTemplateColumns = `110px repeat(${courtColumns.length}, 1fr)`;
 
   return (
-    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+    <Box>
       <Box
         sx={{
           display: { xs: 'none', sm: 'grid' },
           gridTemplateColumns,
           bgcolor: 'action.hover',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
           fontSize: '0.8rem',
           fontWeight: 600
         }}
@@ -82,7 +84,7 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
 
       <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
         {blocks.map(block => (
-          <Box key={block.key} sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
+          <Box key={block.key} sx={{ borderBottom: '1px solid', borderColor: 'divider', '&:last-of-type': { borderBottom: 0 } }}>
             {block.shared.length > 0 && (
               <Box sx={{ display: 'grid', gridTemplateColumns: '110px 1fr' }}>
                 <Box sx={{ p: 1, fontSize: '0.8rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
@@ -121,9 +123,9 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
             key={block.key}
             sx={{
               p: 1.5,
-              borderTop: '1px solid',
+              borderBottom: '1px solid',
               borderColor: 'divider',
-              '&:first-of-type': { borderTop: 'none' }
+              '&:last-of-type': { borderBottom: 'none' }
             }}
           >
             <Typography variant="subtitle2" sx={{ mb: 1 }}>

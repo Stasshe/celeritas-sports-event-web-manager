@@ -5,7 +5,6 @@ import {
   Checkbox,
   Divider,
   FormControlLabel,
-  Paper,
   Switch,
   TextField,
   ToggleButton,
@@ -31,7 +30,7 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
   const leagueSettings = settings as LeagueScheduleSettings;
 
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>
         基本設定
       </Typography>
@@ -196,7 +195,7 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
           )}
         </>
       )}
-    </Paper>
+    </Box>
   );
 };
 

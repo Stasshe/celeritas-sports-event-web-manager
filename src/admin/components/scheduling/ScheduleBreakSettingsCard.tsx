@@ -5,7 +5,6 @@ import {
   Chip,
   Divider,
   FormControlLabel,
-  Paper,
   Switch,
   TextField,
   Typography
@@ -21,7 +20,7 @@ interface ScheduleBreakSettingsCardProps {
 
 const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ settings, form }) => {
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2 }, borderTop: '1px solid', borderColor: 'divider' }}>
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>
         休憩設定
       </Typography>
@@ -126,7 +125,7 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
           ))
         )}
       </Box>
-    </Paper>
+    </Box>
   );
 };
 
