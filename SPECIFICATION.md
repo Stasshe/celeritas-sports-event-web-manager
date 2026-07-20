@@ -94,3 +94,7 @@ i18n廃止。全UI文字列、JSXへ日本語直接記述。`i18next`、`react-i
 ## 自動テスト
 
 Vitest、Node環境。生成規則はUIを介さない純粋関数を正本として検証し、component内へ同じ生成ロジックを複製しない。必須境界はチーム数1・2・2の累乗前後、シード進出先、3位決定戦の準決勝敗者参照、負け側の参加元と依存順、リーグ終了前後の順位参照、1/2コートの同時配置とチーム競合、ラウンド依存、休憩の半開区間境界、時間不足と超過許可、対象外試合、順序維持リスケ、行入れ替えの時刻保持。
+
+## リリース
+
+GitHub Actionsの手動workflowで`patch`、`minor`、`major`を選ぶ。testとproduction build成功後だけversionを更新する。version commitに`package.json`、lockfile、`tree.sh`が再生成した`tree.txt`を含め、同versionのtagとGitHub Releaseを作成する。依存関係cacheはlockfileをkeyにする。

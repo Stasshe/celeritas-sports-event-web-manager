@@ -129,6 +129,7 @@
 │   │       ├── ScoringPage.tsx
 │   │       └── SportEditPage.tsx
 │   ├── common
+│   │   ├── BracketViewport.tsx
 │   │   ├── MatchCard.tsx
 │   │   ├── MatchEditDialog.tsx
 │   │   ├── TeamSelector.tsx
@@ -178,7 +179,6 @@
 │   ├── index.tsx
 │   ├── types
 │   │   ├── index.ts
-│   │   ├── react-color.d.ts
 │   │   └── tournament-brackets.d.ts
 │   ├── utils
 │   │   ├── export
@@ -205,7 +205,7 @@
 
 30 directories, 174 files
 
-src/*.ts, *.tsx の統計:
-合計行数: 22952
-合計文字数: 728720
-合計ファイルサイズ(bytes): 780297
+TypeScript source statistics:
+Total lines: 23188
+Total characters: 737990
+Total size (bytes): 788845

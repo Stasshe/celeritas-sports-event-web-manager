@@ -4,3 +4,6 @@ allowBuilds:
   core-js-pure: false
   protobufjs: false
   styled-components: false
+
+overrides:
+  uuid: ^11.1.1
