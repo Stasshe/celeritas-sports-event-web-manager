@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Paper,
-  Button, 
-  CircularProgress, 
-  IconButton,
-  Divider
+import {
+  Container,
+  Typography,
+  Box,
+  Button,
+  CircularProgress,
+  IconButton
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { getSportTypeLabel } from '../../utils/labels';
@@ -68,35 +66,31 @@ const ScoringPage: React.FC = () => {
 
   return (
     <Container maxWidth={false} disableGutters>
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-        <IconButton onClick={() => navigate(`/admin/sports/${sportId}`)} aria-label="back" sx={{ mr: 1 }}>
-          <ArrowBackIcon />
+      <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <IconButton onClick={() => navigate(`/admin/sports/${sportId}`)} aria-label="back" size="small">
+          <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <Typography variant="h4" component="h1">
-          {localSport.name}のスコア管理
+        <Typography variant="h6" component="h1" fontWeight={700}>
+          {localSport.name}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {getSportTypeLabel(localSport.type)} ・ スコア管理
         </Typography>
       </Box>
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          {getSportTypeLabel(localSport.type)} - {"スコアを更新"}
-        </Typography>
-        <Divider sx={{ my: 2 }} />
-
-        {/* スポーツタイプに合わせたスコアリングコンポーネント */}
-        {localSport.type === 'tournament' && (
-          <TournamentScoring sport={localSport} onUpdate={handleSportUpdate} />
-        )}
-        {localSport.type === 'roundRobin' && (
-          <RoundRobinScoring sport={localSport} onUpdate={handleSportUpdate} />
-        )}
-        {localSport.type === 'league' && (
-          <LeagueScoring sport={localSport} onUpdate={handleSportUpdate} />
-        )}
-        {localSport.type === 'ranking' && (
-          <RankingScoring sport={localSport} onUpdate={handleSportUpdate} />
-        )}
-      </Paper>
+      {/* スポーツタイプに合わせたスコアリングコンポーネント */}
+      {localSport.type === 'tournament' && (
+        <TournamentScoring sport={localSport} onUpdate={handleSportUpdate} />
+      )}
+      {localSport.type === 'roundRobin' && (
+        <RoundRobinScoring sport={localSport} onUpdate={handleSportUpdate} />
+      )}
+      {localSport.type === 'league' && (
+        <LeagueScoring sport={localSport} onUpdate={handleSportUpdate} />
+      )}
+      {localSport.type === 'ranking' && (
+        <RankingScoring sport={localSport} onUpdate={handleSportUpdate} />
+      )}
     </Container>
   );
 };

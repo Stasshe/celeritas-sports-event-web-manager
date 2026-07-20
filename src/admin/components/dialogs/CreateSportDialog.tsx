@@ -174,11 +174,11 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
   }, []);
   
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      fullWidth 
-      maxWidth="md"
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="xs"
       TransitionProps={{
         onExited: () => {
           // ダイアログが閉じられた後にステートをリセット
@@ -199,25 +199,26 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
         {sport ? "競技編集" : "競技作成"}
       </DialogTitle>
       
-      <DialogContent dividers>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+      <DialogContent dividers sx={{ pt: 2 }}>
+        <Grid container spacing={1.5}>
+          <Grid item xs={12}>
             <TextField
               name="name"
               label={"競技名"}
+              size="small"
               fullWidth
-              margin="normal"
               value={newSport.name || ''}
               onChange={handleInputChange}
               required
             />
           </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth margin="normal" required>
+
+          <Grid item xs={12}>
+            <FormControl fullWidth size="small" required>
               <InputLabel>{"タイプ"}</InputLabel>
               <Select
                 name="type"
+                label={"タイプ"}
                 value={newSport.type || 'tournament'}
                 onChange={handleInputChange as any}
                 disabled={!!sport} // 既存競技の場合は変更不可

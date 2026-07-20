@@ -147,189 +147,88 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
         <DialogTitle>
           {getMatchTitle()}
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent dividers sx={{ pt: 2 }}>
           <Alert severity="warning" sx={{ mb: 2 }}>
             {"チーム選択は試合結果の入力後に変更すると、トーナメントの整合性が損なわれる可能性があります"}
           </Alert>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  {"チーム1"}
-                </Typography>
-                
-                {/* チーム表示エリア */}
-                <Box 
-                  sx={{ 
+          <Grid container spacing={2}>
+            {(['team1', 'team2'] as const).map((position) => (
+              <Grid item xs={12} sm={6} key={position}>
+                <Box
+                  sx={{
                     border: '1px solid',
                     borderColor: 'divider',
                     borderRadius: 1,
-                    p: 2,
-                    bgcolor: 'background.paper',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    minHeight: '60px'
+                    p: 1.5,
+                    height: '100%',
                   }}
                 >
-                  <Box sx={{ flex: 1 }}>
-                    {editingTeam === 'team1' ? (
-                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                        <TeamSelector
-                          selectedTeamId={editedMatch.team1Id}
-                          teams={sport.teams}
-                          rosters={teamRosters}
-                          onChange={(teamId) => handleTeamChange(teamId, 'team1')}
-                          disabled={false}
-                          compact={true}
-                        />
-                        <Button 
-                          size="small" 
-                          onClick={handleCancelEdit}
-                          color="inherit"
-                        >
-                          {"キャンセル"}
-                        </Button>
-                      </Box>
-                    ) : (
-                      <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-                        {sport.teams.find(t => t.id === editedMatch.team1Id)?.name || "未定"}
-                      </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      {position === 'team1' ? "チーム1" : "チーム2"}
+                    </Typography>
+                    {editingTeam !== position && (
+                      <Tooltip title={editedMatch.round === 1 ? 'チームを編集' : '2回戦以降のチームは編集できません'}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditTeam(position)}
+                            disabled={editedMatch.round !== 1}
+                            sx={{ opacity: editedMatch.round === 1 ? 1 : 0.3 }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     )}
                   </Box>
-                  
-                  {editingTeam !== 'team1' && (
-                    <Tooltip title={editedMatch.round === 1 ? 'チームを編集' : '2回戦以降のチームは編集できません'}>
-                      <span>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditTeam('team1')}
-                          disabled={editedMatch.round !== 1}
-                          sx={{ 
-                            opacity: editedMatch.round === 1 ? 1 : 0.3,
-                            ml: 1
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
+
+                  {editingTeam === position ? (
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1.5 }}>
+                      <TeamSelector
+                        selectedTeamId={editedMatch[`${position}Id`]}
+                        teams={sport.teams}
+                        rosters={teamRosters}
+                        onChange={(teamId) => handleTeamChange(teamId, position)}
+                        disabled={false}
+                        compact={true}
+                        allowSeed={position === 'team2'}
+                      />
+                      <Button size="small" onClick={handleCancelEdit} color="inherit">
+                        {"キャンセル"}
+                      </Button>
+                    </Box>
+                  ) : (
+                    <Typography variant="h6" sx={{ fontWeight: 'medium', mb: 1.5 }} noWrap>
+                      {sport.teams.find(t => t.id === editedMatch[`${position}Id`])?.name || "未定"}
+                    </Typography>
+                  )}
+
+                  <TextField
+                    label={"スコア"}
+                    type="number"
+                    size="small"
+                    fullWidth
+                    value={editedMatch[`${position}Score`]}
+                    onChange={(e) => handleScoreChange(e, position)}
+                    inputProps={{ min: 0 }}
+                  />
+
+                  {editedMatch.round !== 1 && (
+                    <Typography variant="caption" color="info.main" sx={{ display: 'block', mt: 1 }}>
+                      1stラウンド以外でチームの選択はできません
+                    </Typography>
                   )}
                 </Box>
-                
-                {/* 1stラウンド以外の説明テキスト */}
-                {editedMatch.round !== 1 && (
-                  <Typography 
-                    variant="caption" 
-                    color="info.main" 
-                    sx={{ display: 'block', mt: 1, fontSize: '0.75rem' }}
-                  >
-                    1stラウンド以外でチームの選択はできません
-                  </Typography>
-                )}
-              </Box>
-              <TextField
-                label={"スコア"}
-                type="number"
-                fullWidth
-                value={editedMatch.team1Score}
-                onChange={(e) => handleScoreChange(e, 'team1')}
-                inputProps={{ min: 0 }}
-              />
-            </Grid>
+              </Grid>
+            ))}
 
-            <Grid item xs={12}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  {"チーム2"}
-                </Typography>
-                
-                {/* チーム表示エリア */}
-                <Box 
-                  sx={{ 
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    p: 2,
-                    bgcolor: 'background.paper',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    minHeight: '60px'
-                  }}
-                >
-                  <Box sx={{ flex: 1 }}>
-                    {editingTeam === 'team2' ? (
-                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                        <TeamSelector
-                          selectedTeamId={editedMatch.team2Id}
-                          teams={sport.teams}
-                          rosters={teamRosters}
-                          onChange={(teamId) => handleTeamChange(teamId, 'team2')}
-                          disabled={false}
-                          compact={true}
-                          allowSeed
-                        />
-                        <Button 
-                          size="small" 
-                          onClick={handleCancelEdit}
-                          color="inherit"
-                        >
-                          {"キャンセル"}
-                        </Button>
-                      </Box>
-                    ) : (
-                      <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-                        {sport.teams.find(t => t.id === editedMatch.team2Id)?.name || "未定"}
-                      </Typography>
-                    )}
-                  </Box>
-                  
-                  {editingTeam !== 'team2' && (
-                    <Tooltip title={editedMatch.round === 1 ? 'チームを編集' : '2回戦以降のチームは編集できません'}>
-                      <span>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditTeam('team2')}
-                          disabled={editedMatch.round !== 1}
-                          sx={{ 
-                            opacity: editedMatch.round === 1 ? 1 : 0.3,
-                            ml: 1
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  )}
-                </Box>
-                
-                {/* 1stラウンド以外の説明テキスト */}
-                {editedMatch.round !== 1 && (
-                  <Typography 
-                    variant="caption" 
-                    color="info.main" 
-                    sx={{ display: 'block', mt: 1, fontSize: '0.75rem' }}
-                  >
-                    1stラウンド以外でチームの選択はできません
-                  </Typography>
-                )}
-              </Box>
-              <TextField
-                label={"スコア"}
-                type="number"
-                fullWidth
-                value={editedMatch.team2Score}
-                onChange={(e) => handleScoreChange(e, 'team2')}
-                inputProps={{ min: 0 }}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 name="date"
                 label={"日付"}
                 type="date"
+                size="small"
                 fullWidth
                 value={editedMatch.date || ''}
                 onChange={handleInputChange}
@@ -343,6 +242,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                 label={"メモ"}
                 multiline
                 rows={2}
+                size="small"
                 fullWidth
                 value={editedMatch.notes || ''}
                 onChange={handleInputChange}

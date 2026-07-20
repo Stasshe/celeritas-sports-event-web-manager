@@ -21,6 +21,7 @@ import {
   Select,
   MenuItem,
   Chip,
+  Stack,
   useTheme
 } from '@mui/material';
 import {
@@ -436,97 +437,82 @@ const SportEditPage: React.FC = () => {
 
         {/* ホームタブ */}
         <TabPanel value={activeTab} index={0}>
-          <Box>
-            {/* スコア管理ボタン - 上部に移動 */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h6">
-                  {"スコア管理"}
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => navigate(`/admin/scoring/${sportId}`)}
-                  startIcon={<SportIcon />}
-                  size="large"
-                >
-                  {"スコア管理"}
-                </Button>
-              </Box>
-            </Paper>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.5 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate(`/admin/scoring/${sportId}`)}
+              startIcon={<SportIcon />}
+            >
+              {"スコアを編集"}
+            </Button>
+          </Box>
 
-            {/* 遅延時間入力欄を追加 */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="h6">
-                  遅延時間
+          <Grid container spacing={1.5}>
+            <Grid item xs={12} md={8}>
+              <Paper sx={{ p: 2, height: '100%' }}>
+                <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                  {"基本情報"}
                 </Typography>
+                <Divider sx={{ mb: 2 }} />
+
+                <Stack spacing={2}>
+                  <TextField
+                    name="name"
+                    label={"競技名"}
+                    size="small"
+                    fullWidth
+                    value={localSport.name}
+                    onChange={handleInputChange}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    label={"この競技の行事"}
+                    size="small"
+                    fullWidth
+                    value={getEventName(localSport.eventId)}
+                    InputProps={{ readOnly: true }}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    name="description"
+                    label={"説明"}
+                    size="small"
+                    fullWidth
+                    multiline
+                    rows={3}
+                    value={localSport.description || ''}
+                    onChange={handleInputChange}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Stack>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Paper sx={{ p: 2, height: '100%' }}>
+                <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                  {"遅延時間"}
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
                 <TextField
                   type="number"
                   name="delayMinutes"
                   label="遅延時間（分）"
+                  size="small"
+                  fullWidth
                   value={localSport.delayMinutes ?? 0}
                   onChange={e => {
                     const value = parseInt(e.target.value) || 0;
                     handlePartialUpdate('delayMinutes', value);
                   }}
-                  sx={{ width: 120 }}
                 />
-                <Typography variant="body2" color="text.secondary">
-                  分（マイナスは前倒し）
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  マイナスは前倒し
                 </Typography>
-              </Box>
-            </Paper>
-
-            <Grid container spacing={2}>
-              {/* 既存の詳細情報セクション */}
-              <Grid item xs={12}>
-                <Paper sx={{ p: 2, mb: 2, height: '100%' }}>
-                  <Typography variant="h6" gutterBottom>
-                    {"基本情報"}
-                  </Typography>
-                  <Divider sx={{ mb: 3 }} />
-                  
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <TextField
-                        name="name"
-                        label={"競技名"}
-                        fullWidth
-                        margin="normal"
-                        value={localSport.name}
-                        onChange={handleInputChange}
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        label={"この競技の行事"}
-                        fullWidth
-                        margin="normal"
-                        value={getEventName(localSport.eventId)}
-                        InputProps={{ readOnly: true }}
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        name="description"
-                        label={"説明"}
-                        fullWidth
-                        multiline
-                        rows={3}
-                        margin="normal"
-                        value={localSport.description || ''}
-                        onChange={handleInputChange}
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
+              </Paper>
             </Grid>
-          </Box>
+          </Grid>
         </TabPanel>
 
         {/* スケジュールタブ (新しく追加) */}

@@ -142,11 +142,11 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
   }, []);
   
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      fullWidth 
-      maxWidth="md"
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
       TransitionProps={{
         onExited: () => {
           // ダイアログが閉じられた後にステートをリセット
@@ -167,14 +167,14 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
         {event ? "編集" : "イベント作成"}
       </DialogTitle>
       
-      <DialogContent dividers>
-        <Grid container spacing={2}>
+      <DialogContent dividers sx={{ pt: 2 }}>
+        <Grid container spacing={1.5}>
           <Grid item xs={12} sm={6}>
             <TextField
               name="name"
               label={"イベント名"}
+              size="small"
               fullWidth
-              margin="normal"
               value={newEvent.name}
               onChange={handleInputChange}
               required
@@ -185,8 +185,8 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
               name="date"
               label={"日付"}
               type="date"
+              size="small"
               fullWidth
-              margin="normal"
               value={newEvent.date}
               onChange={handleInputChange}
               InputLabelProps={{ shrink: true }}
@@ -197,15 +197,15 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
               name="alternativeDate"
               label={"予備日"}
               type="date"
+              size="small"
               fullWidth
-              margin="normal"
               value={newEvent.alternativeDate || ''}
               onChange={handleInputChange}
               InputLabelProps={{ shrink: true }}
               helperText={"予備日を設定できます"}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center' }}>
             <FormControlLabel
               control={
                 <Switch
@@ -222,10 +222,10 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
             <TextField
               name="description"
               label={"説明"}
+              size="small"
               fullWidth
               multiline
               rows={3}
-              margin="normal"
               value={newEvent.description || ''}
               onChange={handleInputChange}
             />
