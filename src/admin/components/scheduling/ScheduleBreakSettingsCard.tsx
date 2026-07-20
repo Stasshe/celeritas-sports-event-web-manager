@@ -37,7 +37,17 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
       />
 
       {form.hasLunchBreak && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1.5 }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr)',
+            gap: 2,
+            mt: 1.5,
+            '@container (min-width: 540px)': {
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+            }
+          }}
+        >
           <TextField
             fullWidth
             size="small"
@@ -67,9 +77,12 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+          gridTemplateColumns: 'minmax(0, 1fr)',
           gap: 1.5,
-          alignItems: 'flex-end'
+          alignItems: 'flex-end',
+          '@container (min-width: 540px)': {
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+          }
         }}
       >
         <TextField
@@ -96,13 +109,17 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
           label="タイトル"
           value={form.newBreakTime.title || ''}
           onChange={e => form.handleNewBreakTimeChange('title', e.target.value)}
-          sx={{ gridColumn: { sm: '1 / -1' } }}
+          sx={{ '@container (min-width: 540px)': { gridColumn: '1 / -1' } }}
         />
         <Button
           variant="contained"
           onClick={form.handleAddBreakTime}
           aria-label="休憩を追加"
-          sx={{ height: 40, minHeight: { xs: 44, sm: 40 }, gridColumn: { sm: '1 / -1' } }}
+          sx={{
+            height: 40,
+            minHeight: { xs: 44, sm: 40 },
+            '@container (min-width: 540px)': { gridColumn: '1 / -1' }
+          }}
         >
           <AddIcon fontSize="small" />
         </Button>

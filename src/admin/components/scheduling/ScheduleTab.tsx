@@ -100,7 +100,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
             top: { lg: 16 }
           }}
         >
-          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+          <Paper variant="outlined" sx={{ overflow: 'hidden', containerType: 'inline-size' }}>
             <Box sx={{ px: 2, py: 1.5, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}>
               <Typography variant="subtitle1" fontWeight={700}>生成条件</Typography>
               <Typography variant="caption" color="text.secondary">変更内容は自動保存されます</Typography>

@@ -36,7 +36,16 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
       </Typography>
       <Divider sx={{ mb: 2 }} />
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gap: 2,
+          '@container (min-width: 540px)': {
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+          }
+        }}
+      >
         <TextField
           fullWidth
           size="small"
@@ -119,10 +128,21 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
       <Typography variant="subtitle2" gutterBottom>
         コート設定
       </Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'auto 1fr 1fr' }, gap: 2, alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gap: 2,
+          alignItems: 'center',
+          '@container (min-width: 720px)': {
+            gridTemplateColumns: 'auto repeat(2, minmax(0, 1fr))'
+          }
+        }}
+      >
         <ToggleButtonGroup
           value={settings.courtCount}
           exclusive
+          fullWidth
           size="small"
           aria-label="court count"
           onChange={(_, value) => value !== null && form.handleCourtCountChange(value)}
