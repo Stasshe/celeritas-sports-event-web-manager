@@ -62,12 +62,12 @@ const TabPanel: React.FC<TabPanelProps> = (props) => {
 
 const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) => {
   const theme = useTheme();
-  
+
   // 競技を編集する場合は関連するイベントのデータを取得
   const { data: eventData } = useDatabase<Event>(
     sport ? `/events/${sport.eventId}` : '/events/none'
   );
-  
+
   const [selectedGrade, setSelectedGrade] = useState(0);
   const [roster, setRoster] = useState<Event['roster']>(
     (sport?.roster || event?.roster) || {
@@ -76,7 +76,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
       grade3: {}
     }
   );
-  
+
   // 編集ダイアログ用の状態
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState('');
@@ -95,7 +95,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
         grade3: {}
       }
     );
-    
+
     // sportの編集時に、関連するイベントにrosterがある場合は通知を表示
     if (sport && eventData?.roster && Object.keys(eventData.roster).length > 0) {
       setShowEventRosterAlert(true);
@@ -169,7 +169,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
     if (newClassName.trim()) {
       const gradeKey = getCurrentGradeKey();
       const updatedRoster = { ...roster };
-      
+
       // 既存クラスを削除（名前が変更された場合に備えて）
       if (editingClass && editingClass !== newClassName && updatedRoster[gradeKey]) {
         const gradeData = { ...updatedRoster[gradeKey] };
@@ -178,21 +178,21 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
         }
         updatedRoster[gradeKey] = gradeData;
       }
-      
+
       if (!updatedRoster[gradeKey]) {
         updatedRoster[gradeKey] = {};
       }
-      
+
       // メンバーが空の場合は['none']を設定
       const membersToSave = classMembers.length > 0 ? classMembers : ['none'];
-      
+
       updatedRoster[gradeKey] = {
         ...updatedRoster[gradeKey],
         [newClassName]: membersToSave
       };
-      
+
       setRoster(updatedRoster);
-      
+
       // sportかeventのどちらが提供されたかに基づいて更新
       if (sport) {
         (onUpdate as (sport: Sport) => void)({
@@ -204,31 +204,31 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
         if (typeof onUpdate === 'function') {
           if (onUpdate.length === 1) {
             // パラメータが1つの場合、Event全体またはRosterのみを想定
-            const param = onUpdate.toString().includes('roster') 
+            const param = onUpdate.toString().includes('roster')
               ? updatedRoster  // Rosterのみを更新する関数
               : { ...event, roster: updatedRoster };  // Event全体を更新する関数
-              
+
             (onUpdate as any)(param);
           }
         }
       }
-      
+
       closeClassDialog();
     }
   };
 
   const handleDeleteClass = (className: string) => {
     const gradeKey = getCurrentGradeKey();
-    
+
     // nullチェックを追加
     if (roster && roster[gradeKey] && className in roster[gradeKey]!) {
       const updatedRoster = { ...roster };
       const gradeData = { ...updatedRoster[gradeKey] };
       delete gradeData[className];
       updatedRoster[gradeKey] = gradeData;
-      
+
       setRoster(updatedRoster);
-      
+
       // sportかeventのどちらが提供されたかに基づいて更新
       if (sport) {
         (onUpdate as (sport: Sport) => void)({
@@ -253,26 +253,26 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
   const getSortedClassNames = () => {
     const gradeData = getCurrentGradeData();
     // 保存されているチームのみを対象にする
-    const classNames = Object.keys(gradeData).filter(key => 
+    const classNames = Object.keys(gradeData).filter(key =>
       Array.isArray(gradeData[key]) // 配列として保存されているもののみ
     );
     return classNames.sort((a, b) => {
       // クラス名が 1-1, 1-2 等の形式でソート
       const match1 = a.match(/(\d+)-(\d+)/);
       const match2 = b.match(/(\d+)-(\d+)/);
-      
+
       if (match1 && match2) {
         const gradeA = parseInt(match1[1]);
         const classA = parseInt(match1[2]);
         const gradeB = parseInt(match2[1]);
         const classB = parseInt(match2[2]);
-        
+
         if (gradeA !== gradeB) {
           return gradeA - gradeB;
         }
         return classA - classB;
       }
-      
+
       // 標準の文字列比較
       return a.localeCompare(b);
     });
@@ -414,7 +414,6 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
           </Button>
         </Alert>
       )}
-
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={selectedGrade} onChange={handleGradeChange} aria-label="grade tabs">
           <Tab label={"1年生"} />
@@ -422,9 +421,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
           <Tab label={"3年生"} />
         </Tabs>
       </Box>
-
       {sport && renderSportClassList()}
-
       {!sport && (
       <>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -481,7 +478,6 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
       </TableContainer>
       </>
       )}
-
       {/* クラス編集ダイアログ */}
       <Dialog open={dialogOpen} onClose={closeClassDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
@@ -496,7 +492,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
             margin="normal"
             required
           />
-          
+
           <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle1" gutterBottom>
               {"メンバー一覧"}
@@ -509,7 +505,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
                 onChange={(e) => setNewMember(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddMember()}
               />
-              <Button 
+              <Button
                 variant="contained"
                 onClick={handleAddMember}
                 disabled={!newMember.trim()}
@@ -518,7 +514,7 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
                 <AddIcon />
               </Button>
             </Box>
-            
+
             <Paper variant="outlined" sx={{ maxHeight: 300, overflow: 'auto', p: 2 }}>
               {classMembers.length > 0 && !(classMembers.length === 1 && classMembers[0] === 'none') ? (
                 <Table size="small">
@@ -530,8 +526,8 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
                             {member}
                           </TableCell>
                           <TableCell align="right" width="60px">
-                            <IconButton 
-                              size="small" 
+                            <IconButton
+                              size="small"
                               color="error"
                               onClick={() => handleRemoveMember(index)}
                             >
@@ -544,7 +540,12 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
                   </TableBody>
                 </Table>
               ) : (
-                <Typography color="text.secondary" align="center" sx={{ py: 3 }}>
+                <Typography
+                  align="center"
+                  sx={{
+                    color: "text.secondary",
+                    py: 3
+                  }}>
                   {"メンバーがいません"}
                 </Typography>
               )}
@@ -555,9 +556,9 @@ const RosterEditor: React.FC<RosterEditorProps> = ({ sport, event, onUpdate }) =
           <Button onClick={closeClassDialog}>
             {"キャンセル"}
           </Button>
-          <Button 
-            onClick={handleSaveClass} 
-            variant="contained" 
+          <Button
+            onClick={handleSaveClass}
+            variant="contained"
             color="primary"
             disabled={!newClassName.trim()}
           >

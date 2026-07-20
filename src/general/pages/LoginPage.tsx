@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Container, 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
+import { useNavigate, useLocation } from 'react-router';
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
   Paper,
   Alert,
   Avatar
@@ -64,8 +64,8 @@ const LoginPage: React.FC = () => {
 
   return (
     <Container component="main" maxWidth="xs">
-      <MotionPaper 
-        elevation={3} 
+      <MotionPaper
+        elevation={3}
         sx={{ p: 4, mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -77,13 +77,13 @@ const LoginPage: React.FC = () => {
         <Typography component="h1" variant="h5">
           {"ログイン"}
         </Typography>
-        
+
         {error && (
           <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
             {error}
           </Alert>
         )}
-        
+
         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
           <TextField
             margin="normal"

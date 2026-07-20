@@ -9,7 +9,7 @@ import {
   Tab,
   Tabs,
   List,
-  ListItem,
+  ListItemButton,
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
@@ -38,10 +38,9 @@ import {
   Backup as BackupIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useBackup, BackupType, BackupEntry } from '../../hooks/useBackup';
 import { useAdminLayout } from '../context/AdminLayoutContext';
-import { motion } from 'framer-motion';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
 import { ja } from 'date-fns/locale/ja';
@@ -51,7 +50,7 @@ const BackupPanel: React.FC = () => {
   const theme = useTheme();
   const { alpha } = useThemeContext();
   const { showSnackbar } = useAdminLayout();
-  
+
   const [activeTab, setActiveTab] = useState<BackupType>('auto');
   const [selectedBackup, setSelectedBackup] = useState<string | null>(null);
   const [compareBackup, setCompareBackup] = useState<string | null>(null);
@@ -62,7 +61,7 @@ const BackupPanel: React.FC = () => {
   const [diffDialogOpen, setDiffDialogOpen] = useState(false);
   const [diffData, setDiffData] = useState<{ events: any, sports: any } | null>(null);
   const [diffLoading, setDiffLoading] = useState(false);
-  
+
   const {
     autoBackups,
     manualBackups,
@@ -72,12 +71,12 @@ const BackupPanel: React.FC = () => {
     restoreBackup,
     getBackupDiff
   } = useBackup();
-  
+
   // 現在選択中のバックアップリスト
   const currentBackups = useMemo(() => {
     return activeTab === 'auto' ? autoBackups : manualBackups;
   }, [activeTab, autoBackups, manualBackups]);
-  
+
   // バックアップの作成
   const handleCreateBackup = async () => {
     try {
@@ -92,16 +91,16 @@ const BackupPanel: React.FC = () => {
       showSnackbar("バックアップ作成に失敗しました", 'error');
     }
   };
-  
+
   // バックアップの復元
   const handleOpenRestoreDialog = (type: BackupType, id: string) => {
     setRestoreTarget({ type, id });
     setRestoreDialogOpen(true);
   };
-  
+
   const handleRestoreBackup = async () => {
     if (!restoreTarget) return;
-    
+
     try {
       const success = await restoreBackup(restoreTarget.type, restoreTarget.id);
       if (success) {
@@ -116,17 +115,17 @@ const BackupPanel: React.FC = () => {
       showSnackbar("復元に失敗しました", 'error');
     }
   };
-  
+
   // 差分の表示
   const handleShowDiff = async (type: BackupType, id: string, compareToId: string | 'current') => {
     try {
       setDiffLoading(true);
       setDiffDialogOpen(true);
-      
-      const compareTo = compareToId === 'current' 
-        ? 'current' 
+
+      const compareTo = compareToId === 'current'
+        ? 'current'
         : { type, id: compareToId };
-      
+
       const diff = await getBackupDiff(type, id, compareTo);
       setDiffData(diff);
     } catch (error) {
@@ -136,7 +135,7 @@ const BackupPanel: React.FC = () => {
       setDiffLoading(false);
     }
   };
-  
+
   // 比較するバックアップを選択
   const handleSelectCompare = (id: string) => {
     if (id === selectedBackup) {
@@ -145,13 +144,13 @@ const BackupPanel: React.FC = () => {
     }
     setCompareBackup(id);
   };
-  
+
   // 差分表示ダイアログを閉じる際のリセット
   const handleCloseDiffDialog = () => {
     setDiffDialogOpen(false);
     setDiffData(null);
   };
-  
+
   // タブ変更時に選択状態をリセット
   useEffect(() => {
     setSelectedBackup(null);
@@ -168,7 +167,7 @@ const BackupPanel: React.FC = () => {
         >
           {"戻る"}
         </Button>
-        
+
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <BackupIcon sx={{ mr: 1, fontSize: 28 }} />
@@ -176,7 +175,7 @@ const BackupPanel: React.FC = () => {
               {"バックアップ"}
             </Typography>
           </Box>
-          
+
           <Button
             variant="contained"
             color="primary"
@@ -187,7 +186,7 @@ const BackupPanel: React.FC = () => {
             {"今すぐ作成"}
           </Button>
         </Box>
-        
+
         <Paper sx={{ mb: 4 }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
@@ -195,7 +194,7 @@ const BackupPanel: React.FC = () => {
               <Tab label={"手動"} value="manual" />
             </Tabs>
           </Box>
-          
+
           <Box sx={{ p: 3 }}>
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -204,20 +203,36 @@ const BackupPanel: React.FC = () => {
             ) : currentBackups.length > 0 ? (
               <>
                 <Paper variant="outlined" sx={{ mb: 2, p: 2 }}>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={6}>
+                  <Grid container spacing={2} sx={{
+                    alignItems: "center"
+                  }}>
+                    <Grid
+                      size={{
+                        xs: 12,
+                        sm: 6
+                      }}>
                       <Typography variant="subtitle1">
                         {activeTab === 'auto' ? "自動バックアップの説明" : "手動バックアップの説明"}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={6} sx={{ textAlign: 'right' }}>
+                    <Grid
+                      sx={{ textAlign: 'right' }}
+                      size={{
+                        xs: 12,
+                        sm: 6
+                      }}>
                       {selectedBackup && (
                         <Box>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "text.secondary",
+                              mb: 1
+                            }}>
                             {"比較する"}:
                           </Typography>
                           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                            <Button 
+                            <Button
                               size="small"
                               variant={compareBackup === 'current' ? "contained" : "outlined"}
                               onClick={() => setCompareBackup('current')}
@@ -230,7 +245,7 @@ const BackupPanel: React.FC = () => {
                                 <Button
                                   key={backup.id}
                                   size="small"
-                                  variant={compareBackup === backup.id ? "contained" : "outlined"} 
+                                  variant={compareBackup === backup.id ? "contained" : "outlined"}
                                   onClick={() => handleSelectCompare(backup.id)}
                                 >
                                   {"バージョン"} {currentBackups.length - index}
@@ -243,27 +258,27 @@ const BackupPanel: React.FC = () => {
                     </Grid>
                   </Grid>
                 </Paper>
-                
+
                 <List sx={{ bgcolor: 'background.paper' }}>
                   {currentBackups.map((backup, index) => {
                     const isSelected = selectedBackup === backup.id;
                     const formattedDate = new Date(backup.timestamp).toLocaleString();
                     const timeAgo = formatDistanceToNow(new Date(backup.timestamp), { addSuffix: true, locale: ja });
-                    
+
                     return (
-                      <ListItem 
+                      <ListItemButton
                         key={backup.id}
-                        component={motion.div}
-                        whileHover={{ backgroundColor: alpha(theme.palette.primary.main, 0.04) }}
                         selected={isSelected}
-                        button
                         onClick={() => setSelectedBackup(isSelected ? null : backup.id)}
-                        sx={{ 
-                          mb: 1, 
+                        sx={{
+                          mb: 1,
                           border: '1px solid',
                           borderColor: 'divider',
                           borderRadius: 1,
-                          bgcolor: isSelected ? alpha(theme.palette.primary.main, 0.08) : 'background.paper'
+                          bgcolor: isSelected ? alpha(theme.palette.primary.main, 0.08) : 'background.paper',
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.04)
+                          }
                         }}
                       >
                         <ListItemText
@@ -272,12 +287,12 @@ const BackupPanel: React.FC = () => {
                               <Typography variant="subtitle1">
                                 {"バージョン"} {currentBackups.length - index}
                               </Typography>
-                              <Chip 
-                                size="small" 
-                                label={timeAgo} 
-                                color="primary" 
-                                variant="outlined" 
-                                sx={{ ml: 2 }} 
+                              <Chip
+                                size="small"
+                                label={timeAgo}
+                                color="primary"
+                                variant="outlined"
+                                sx={{ ml: 2 }}
                               />
                             </Box>
                           }
@@ -302,8 +317,8 @@ const BackupPanel: React.FC = () => {
                                   edge="end"
                                   color="primary"
                                   onClick={() => handleShowDiff(
-                                    activeTab, 
-                                    backup.id, 
+                                    activeTab,
+                                    backup.id,
                                     compareBackup
                                   )}
                                 >
@@ -322,7 +337,7 @@ const BackupPanel: React.FC = () => {
                             </Tooltip>
                           </Box>
                         </ListItemSecondaryAction>
-                      </ListItem>
+                      </ListItemButton>
                     );
                   })}
                 </List>
@@ -335,7 +350,6 @@ const BackupPanel: React.FC = () => {
           </Box>
         </Paper>
       </Box>
-      
       {/* 手動バックアップ作成ダイアログ */}
       <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)}>
         <DialogTitle>{"バックアップを作成"}</DialogTitle>
@@ -356,7 +370,7 @@ const BackupPanel: React.FC = () => {
           <Button onClick={() => setCreateDialogOpen(false)}>
             {"キャンセル"}
           </Button>
-          <Button 
+          <Button
             onClick={handleCreateBackup}
             color="primary"
             variant="contained"
@@ -367,7 +381,6 @@ const BackupPanel: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
       {/* バックアップ復元確認ダイアログ */}
       <Dialog open={restoreDialogOpen} onClose={() => setRestoreDialogOpen(false)}>
         <DialogTitle>{"復元を確認"}</DialogTitle>
@@ -383,7 +396,7 @@ const BackupPanel: React.FC = () => {
           <Button onClick={() => setRestoreDialogOpen(false)}>
             {"キャンセル"}
           </Button>
-          <Button 
+          <Button
             onClick={handleRestoreBackup}
             color="warning"
             variant="contained"
@@ -394,10 +407,9 @@ const BackupPanel: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
       {/* 差分表示ダイアログ */}
-      <Dialog 
-        open={diffDialogOpen} 
+      <Dialog
+        open={diffDialogOpen}
         onClose={handleCloseDiffDialog}
         maxWidth="lg"
         fullWidth
@@ -417,7 +429,7 @@ const BackupPanel: React.FC = () => {
               {Object.keys(diffData.events).length > 0 ? (
                 <Grid container spacing={2}>
                   {Object.entries(diffData.events).map(([key, value]: [string, any]) => (
-                    <Grid item xs={12} key={key}>
+                    <Grid key={key} size={12}>
                       <Card variant="outlined">
                         <CardContent sx={{ pb: 1 }}>
                           <Typography variant="subtitle1" gutterBottom>
@@ -430,13 +442,19 @@ const BackupPanel: React.FC = () => {
                             )}
                             {value?.oldValue?.name || value?.newValue?.name || key}
                           </Typography>
-                          
+
                           {value.changed && (
                             <Box sx={{ mt: 1 }}>
                               <Divider sx={{ mb: 2 }} />
                               <Grid container spacing={2}>
-                                <Grid item xs={12} md={6}>
-                                  <Typography variant="caption" color="text.secondary">
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    md: 6
+                                  }}>
+                                  <Typography variant="caption" sx={{
+                                    color: "text.secondary"
+                                  }}>
                                     {"古い値"}:
                                   </Typography>
                                   <Paper
@@ -448,8 +466,14 @@ const BackupPanel: React.FC = () => {
                                     </pre>
                                   </Paper>
                                 </Grid>
-                                <Grid item xs={12} md={6}>
-                                  <Typography variant="caption" color="text.secondary">
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    md: 6
+                                  }}>
+                                  <Typography variant="caption" sx={{
+                                    color: "text.secondary"
+                                  }}>
                                     {"新しい値"}:
                                   </Typography>
                                   <Paper
@@ -474,9 +498,9 @@ const BackupPanel: React.FC = () => {
                   {"イベントの変更がありません"}
                 </Alert>
               )}
-              
+
               <Divider sx={{ my: 3 }} />
-              
+
               {/* スポーツの差分 */}
               <Typography variant="h6" gutterBottom>
                 {"競技の変更"}
@@ -484,7 +508,7 @@ const BackupPanel: React.FC = () => {
               {Object.keys(diffData.sports).length > 0 ? (
                 <Grid container spacing={2}>
                   {Object.entries(diffData.sports).map(([key, value]: [string, any]) => (
-                    <Grid item xs={12} key={key}>
+                    <Grid key={key} size={12}>
                       <Card variant="outlined">
                         <CardContent sx={{ pb: 1 }}>
                           <Typography variant="subtitle1" gutterBottom>
@@ -497,13 +521,19 @@ const BackupPanel: React.FC = () => {
                             )}
                             {value?.oldValue?.name || value?.newValue?.name || key}
                           </Typography>
-                          
+
                           {value.changed && (
                             <Box sx={{ mt: 1 }}>
                               <Divider sx={{ mb: 2 }} />
                               <Grid container spacing={2}>
-                                <Grid item xs={12} md={6}>
-                                  <Typography variant="caption" color="text.secondary">
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    md: 6
+                                  }}>
+                                  <Typography variant="caption" sx={{
+                                    color: "text.secondary"
+                                  }}>
                                     {"古い値"}:
                                   </Typography>
                                   <Paper
@@ -515,8 +545,14 @@ const BackupPanel: React.FC = () => {
                                     </pre>
                                   </Paper>
                                 </Grid>
-                                <Grid item xs={12} md={6}>
-                                  <Typography variant="caption" color="text.secondary">
+                                <Grid
+                                  size={{
+                                    xs: 12,
+                                    md: 6
+                                  }}>
+                                  <Typography variant="caption" sx={{
+                                    color: "text.secondary"
+                                  }}>
                                     {"新しい値"}:
                                   </Typography>
                                   <Paper

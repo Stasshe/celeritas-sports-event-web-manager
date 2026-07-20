@@ -16,7 +16,7 @@ import {
   ArrowDownward as ArrowDownIcon,
   ArrowUpward as ArrowUpIcon,
   Close as CancelIcon,
-  DeleteOutline as DeleteIcon,
+  DeleteOutlined as DeleteIcon,
   DragIndicator as DragIndicatorIcon,
   SaveOutlined as SaveIcon
 } from '@mui/icons-material';
@@ -76,9 +76,12 @@ const timeSlotTypes: { value: TimeSlot['type']; label: string }[] = [
 const FieldLabel: React.FC<React.PropsWithChildren> = ({ children }) => (
   <Typography
     variant="caption"
-    color="text.secondary"
-    sx={{ display: { xs: 'block', md: 'none' }, mb: 0.5, fontWeight: 600 }}
-  >
+    sx={{
+      color: "text.secondary",
+      display: { xs: 'block', md: 'none' },
+      mb: 0.5,
+      fontWeight: 600
+    }}>
     {children}
   </Typography>
 );
@@ -108,21 +111,26 @@ const ScheduleRowFields = React.memo<ScheduleRowFieldsProps>(({
             size="small"
             value={slot.startTime}
             onChange={event => onUpdateField(index, 'startTime', event.target.value)}
-            inputProps={{ 'aria-label': `${index + 1}行目の開始時間` }}
             fullWidth
+            slotProps={{
+              htmlInput: { 'aria-label': `${index + 1}行目の開始時間` }
+            }}
           />
-          <Typography variant="body2" color="text.secondary">–</Typography>
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>–</Typography>
           <TextField
             type="time"
             size="small"
             value={slot.endTime}
             onChange={event => onUpdateField(index, 'endTime', event.target.value)}
-            inputProps={{ 'aria-label': `${index + 1}行目の終了時間` }}
             fullWidth
+            slotProps={{
+              htmlInput: { 'aria-label': `${index + 1}行目の終了時間` }
+            }}
           />
         </Box>
       </Box>
-
       <Box sx={{ gridColumn: { xs: '1 / span 2', md: 'auto' } }}>
         <FieldLabel>種別</FieldLabel>
         <Select
@@ -137,7 +145,6 @@ const ScheduleRowFields = React.memo<ScheduleRowFieldsProps>(({
           ))}
         </Select>
       </Box>
-
       <Box>
         <FieldLabel>コート</FieldLabel>
         <Select
@@ -151,7 +158,6 @@ const ScheduleRowFields = React.memo<ScheduleRowFieldsProps>(({
           {courtNames?.court2 && <MenuItem value="court2">{courtNames.court2}</MenuItem>}
         </Select>
       </Box>
-
       <Box sx={{ minWidth: 0, gridColumn: { xs: '1 / -1', md: 'auto' } }}>
         <FieldLabel>内容</FieldLabel>
         <TextField
@@ -160,11 +166,11 @@ const ScheduleRowFields = React.memo<ScheduleRowFieldsProps>(({
           value={detail}
           onChange={event => onUpdateField(index, 'matchDescription', event.target.value)}
           placeholder="例: 1年A vs 2年B"
-          inputProps={{ maxLength: 100, 'aria-label': `${index + 1}行目の内容` }}
-          InputProps={{ readOnly: hasLinkedMatch }}
-        />
+          slotProps={{
+            input: { readOnly: hasLinkedMatch },
+            htmlInput: { maxLength: 100, 'aria-label': `${index + 1}行目の内容` }
+          }} />
       </Box>
-
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gridColumn: { xs: '1 / -1', md: 'auto' } }}>
         <Tooltip title="上へ移動">
           <span>
@@ -329,8 +335,12 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
         }}
       >
         <Box>
-          <Typography variant="subtitle1" fontWeight={700}>タイムラインを編集</Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="subtitle1" sx={{
+            fontWeight: 700
+          }}>タイムラインを編集</Typography>
+          <Typography variant="caption" sx={{
+            color: "text.secondary"
+          }}>
             変更は保存するまで公開されません。ハンドルの長押しまたは矢印で移動できます。
           </Typography>
         </Box>
@@ -372,16 +382,21 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
           </Button>
         </Box>
       </Box>
-
       {rows.timeSlots.length === 0 && (
         <Box sx={{ px: 2, py: 7, textAlign: 'center' }}>
-          <Typography variant="subtitle1" fontWeight={600}>編集する時間枠がありません</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography variant="subtitle1" sx={{
+            fontWeight: 600
+          }}>編集する時間枠がありません</Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              mt: 0.5
+            }}>
             「行を追加」から時間枠を作成してください。
           </Typography>
         </Box>
       )}
-
       {rows.timeSlots.length > 0 && (
         <>
           <Box

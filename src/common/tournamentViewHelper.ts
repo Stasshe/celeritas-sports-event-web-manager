@@ -1,5 +1,4 @@
 import { Sport, Match, LeagueBlock } from '../types/index';
-import { Participant } from '@g-loot/react-tournament-brackets';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
 
 export const generateBracketMatches = (
@@ -16,11 +15,11 @@ export const generateBracketMatches = (
     if (bracket === 'consolation') return match.bracket === 'consolation';
     return match.bracket !== 'consolation';
   });
-  
+
   if (matchesToUse.length === 0) return [];
 
   const maxRound = Math.max(...matchesToUse.map(m => m.round));
-  
+
   const getParticipantName = (teamId: string | null, match: Match, position: 'team1' | 'team2'): string => {
     if (!teamId) {
       const otherTeamId = position === 'team1' ? match.team2Id : match.team1Id;
@@ -76,7 +75,7 @@ export const generateBracketMatches = (
           isWinner: Boolean(match.winnerId === match.team1Id),
           status: TournamentStructureHelper.isNoTeam(match.team1Id, match, matchesToUse) ? 'no-team' :
                  TournamentStructureHelper.isWaiting(match.team1Id, match, matchesToUse) ? 'waiting' : null
-        } as Participant,
+        },
         {
           id: match.team2Id || `seed-${match.round}-${match.matchNumber}-2`,
           name: getParticipantName(match.team2Id, match, 'team2'),
@@ -84,7 +83,7 @@ export const generateBracketMatches = (
           isWinner: Boolean(match.winnerId === match.team2Id),
           status: TournamentStructureHelper.isNoTeam(match.team2Id, match, matchesToUse) ? 'no-team' :
                  TournamentStructureHelper.isWaiting(match.team2Id, match, matchesToUse) ? 'waiting' : null
-        } as Participant
+        }
       ]
     }));
 };

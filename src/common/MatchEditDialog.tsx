@@ -80,7 +80,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
     const score = parseInt(e.target.value) || 0;
     setEditedMatch(prev => {
       if (!prev) return prev;
-      
+
       return {
         ...prev,
         [`${team}Score`]: score
@@ -105,7 +105,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
 
   const handleConfirmTeamChange = () => {
     if (!editedMatch || !pendingTeamChange) return;
-    
+
     setEditedMatch(prev => {
       if (!prev) return prev;
       return {
@@ -113,7 +113,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
         [`${pendingTeamChange.position}Id`]: pendingTeamChange.teamId
       };
     });
-    
+
     setConfirmDialogOpen(false);
     setPendingTeamChange(null);
     setEditingTeam(null);
@@ -125,7 +125,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
     setEditingTeam(null);
   };
 
-  
+
   const handleSave = () => {
     if (editedMatch) {
       onSave(editedMatch);
@@ -153,7 +153,12 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
           </Alert>
           <Grid container spacing={2}>
             {(['team1', 'team2'] as const).map((position) => (
-              <Grid item xs={12} sm={6} key={position}>
+              <Grid
+                key={position}
+                size={{
+                  xs: 12,
+                  sm: 6
+                }}>
                 <Box
                   sx={{
                     border: '1px solid',
@@ -164,7 +169,9 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="subtitle2" color="text.secondary">
+                    <Typography variant="subtitle2" sx={{
+                      color: "text.secondary"
+                    }}>
                       {position === 'team1' ? "チーム1" : "チーム2"}
                     </Typography>
                     {editingTeam !== position && (
@@ -211,11 +218,19 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                     fullWidth
                     value={editedMatch[`${position}Score`]}
                     onChange={(e) => handleScoreChange(e, position)}
-                    inputProps={{ min: 0 }}
+                    slotProps={{
+                      htmlInput: { min: 0 }
+                    }}
                   />
 
                   {editedMatch.round !== 1 && (
-                    <Typography variant="caption" color="info.main" sx={{ display: 'block', mt: 1 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "info.main",
+                        display: 'block',
+                        mt: 1
+                      }}>
                       1stラウンド以外でチームの選択はできません
                     </Typography>
                   )}
@@ -223,7 +238,11 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
               </Grid>
             ))}
 
-            <Grid item xs={12} sm={6}>
+            <Grid
+              size={{
+                xs: 12,
+                sm: 6
+              }}>
               <TextField
                 name="date"
                 label={"日付"}
@@ -232,11 +251,13 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                 fullWidth
                 value={editedMatch.date || ''}
                 onChange={handleInputChange}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 name="notes"
                 label={"メモ"}
@@ -254,9 +275,9 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
           <Button onClick={onClose} disabled={disabled}>
             {"キャンセル"}
           </Button>
-          <Button 
-            variant="contained" 
-            color="primary" 
+          <Button
+            variant="contained"
+            color="primary"
             onClick={handleSave}
             disabled={disabled}
           >
@@ -264,7 +285,6 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={confirmDialogOpen}
         onClose={handleCancelTeamChange}
@@ -279,8 +299,8 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
           <Button onClick={handleCancelTeamChange}>
             {"キャンセル"}
           </Button>
-          <Button 
-            onClick={handleConfirmTeamChange} 
+          <Button
+            onClick={handleConfirmTeamChange}
             color="error"
             variant="contained"
           >

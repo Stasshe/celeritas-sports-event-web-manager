@@ -28,7 +28,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, sport, onEdit }) => {
   const getTeamName = (teamId: string) => {
     if (!teamId) return "未定";
     if (!sport?.teams) return teamId;
-    
+
     const team = sport.teams.find(t => t.id === teamId);
     return team ? team.name : teamId;
   };
@@ -70,10 +70,9 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, sport, onEdit }) => {
           </Tooltip>
         </Box>
       </Box>
-
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
         gap: 1,
         p: 1,
         bgcolor: 'background.default',
@@ -90,9 +89,14 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, sport, onEdit }) => {
           isWinner={match.winnerId === match.team2Id}
         />
       </Box>
-
       {match.date && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+        <Typography
+          variant="caption"
+          sx={{
+            color: "text.secondary",
+            mt: 1,
+            display: 'block'
+          }}>
           {new Date(match.date).toLocaleDateString()}
         </Typography>
       )}
@@ -100,16 +104,16 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, sport, onEdit }) => {
   );
 };
 
-const TeamScore: React.FC<{ name: string; score: number; isWinner: boolean }> = ({ 
-  name, 
-  score, 
-  isWinner 
+const TeamScore: React.FC<{ name: string; score: number; isWinner: boolean }> = ({
+  name,
+  score,
+  isWinner
 }) => {
   const { alpha } = useThemeContext();  // ここにも alpha を追加
-  
+
   return (
-    <Box sx={{ 
-      display: 'flex', 
+    <Box sx={{
+      display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
       p: 1,

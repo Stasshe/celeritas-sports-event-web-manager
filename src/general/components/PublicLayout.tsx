@@ -8,7 +8,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router';
 import { useThemeContext } from '../../contexts/ThemeContext';
 
 const PublicLayout = () => {
@@ -53,7 +53,6 @@ const PublicLayout = () => {
           </IconButton>
         </Toolbar>
       </AppBar>
-
       <Container
         component="main"
         sx={{
@@ -64,7 +63,6 @@ const PublicLayout = () => {
       >
         <Outlet />
       </Container>
-
       <Box
         component="footer"
         sx={{
@@ -75,7 +73,9 @@ const PublicLayout = () => {
         }}
       >
         <Container maxWidth="sm">
-          <Typography variant="body2" color="text.secondary" align="center">
+          <Typography variant="body2" align="center" sx={{
+            color: "text.secondary"
+          }}>
             © Roughfts 2025 all rights reserved.
             <br />
             Contact: <a href="mailto:eterynity2024workplace@gmail.com">eterynity2024workplace@gmail.com</a>

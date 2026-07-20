@@ -22,10 +22,10 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
     if (sport.roster) {
       const teams: Team[] = [];
       const grades = ['grade1', 'grade2', 'grade3'];
-      
+
       grades.forEach(gradeKey => {
         const classes = sport.roster?.[gradeKey as keyof typeof sport.roster] || {};
-        
+
         Object.entries(classes).forEach(([className, members]) => {
           if (members && members.length > 0) {
             teams.push({
@@ -77,7 +77,9 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
             {"トーナメント表生成"}
           </Button>
         ) : (
-          <Typography color="text.secondary" align="center">
+          <Typography align="center" sx={{
+            color: "text.secondary"
+          }}>
             {"名簿がありません"}
           </Typography>
         )}

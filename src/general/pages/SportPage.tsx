@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Paper, 
+import { useParams, useNavigate } from 'react-router';
+import {
+  Container,
+  Typography,
+  Box,
+  Paper,
   CircularProgress,
   Button,
   Chip,
@@ -76,41 +76,51 @@ const SportPage: React.FC = () => {
 
   // タブのリストを動的に生成
   const tabs: SportTab[] = [
-    { 
-      label: "試合", 
-      value: 0 
+    {
+      label: "試合",
+      value: 0
     },
-    { 
-      label: "スケジュール", 
-      icon: <ScheduleIcon />, 
+    {
+      label: "スケジュール",
+      icon: <ScheduleIcon />,
       iconPosition: "start",
       value: 1,
       disabled: !sport.scheduleSettings?.timeSlots?.length
     }
   ];
-  
+
   return (
     <Container maxWidth="lg">
       <Box sx={{ mb: 4 }}>
         <IconButton onClick={() => navigate('/')} aria-label="back" sx={{ mb: 1 }}>
           <ArrowBackIcon />
         </IconButton>
-        
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
+
+        <Grid container spacing={2} sx={{
+          alignItems: "center"
+        }}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 6
+            }}>
             <Typography variant="h4" component="h1" gutterBottom>
               {sport.name}
             </Typography>
-            <Chip 
-              label={getSportTypeLabel(sport.type)} 
-              color="primary" 
-              size="small" 
-              sx={{ mr: 1 }} 
+            <Chip
+              label={getSportTypeLabel(sport.type)}
+              color="primary"
+              size="small"
+              sx={{ mr: 1 }}
             />
           </Grid>
           {sport.coverImageUrl && (
-            <Grid item xs={12} md={6}>
-              <Box 
+            <Grid
+              size={{
+                xs: 12,
+                md: 6
+              }}>
+              <Box
                 component="img"
                 src={sport.coverImageUrl}
                 alt={sport.name}
@@ -126,13 +136,19 @@ const SportPage: React.FC = () => {
         </Grid>
 
         {sport.description && (
-          <Typography variant="body1" color="text.secondary" paragraph sx={{ mt: 2 }}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "text.secondary",
+              mt: 2,
+              marginBottom: "16px"
+            }}>
             {sport.description}
           </Typography>
         )}
-        
+
         <Divider sx={{ my: 3 }} />
-        
+
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
@@ -142,21 +158,20 @@ const SportPage: React.FC = () => {
           aria-label="sport tabs"
         >
           {tabs.map((tab) => (
-            <Tab 
-              key={tab.value} 
-              label={tab.label} 
-              icon={tab.icon} 
+            <Tab
+              key={tab.value}
+              label={tab.label}
+              icon={tab.icon}
               iconPosition={tab.iconPosition}
-              disabled={tab.disabled} 
+              disabled={tab.disabled}
             />
           ))}
         </Tabs>
       </Box>
-      
       <Box sx={{ mt: 4, display: tabValue === 0 ? 'block' : 'none' }}>
         {sport.type === 'tournament' && (
-          <TournamentScoring 
-            sport={sport} 
+          <TournamentScoring
+            sport={sport}
             onUpdate={handleSportUpdate}
             readOnly
           />
@@ -168,8 +183,8 @@ const SportPage: React.FC = () => {
         )}
         {sport.type === 'ranking' && (
           <Box>
-            <RankingScoring 
-              sport={sport} 
+            <RankingScoring
+              sport={sport}
               onUpdate={handleSportUpdate}
               readOnly
             />
@@ -177,21 +192,19 @@ const SportPage: React.FC = () => {
         )}
         {sport.type === 'league' && (
           <Box>
-            <LeagueScoring 
-              sport={sport} 
+            <LeagueScoring
+              sport={sport}
               onUpdate={handleSportUpdate}
               readOnly
             />
           </Box>
         )}
       </Box>
-      
       <Box sx={{ mt: 4, display: tabValue === 1 ? 'block' : 'none' }}>
         <Paper sx={{ p: 3 }}>
           <ScheduleTimeline sport={sport} />
         </Paper>
       </Box>
-      
     </Container>
   );
 };

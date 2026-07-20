@@ -18,7 +18,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 
@@ -27,7 +27,7 @@ const ScoreboardDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: event, loading: eventLoading } = useDatabase<Event>(`/events/${eventId}`);
   const { data: allSports } = useDatabase<Record<string, Sport>>('/sports');
-  
+
   if (eventLoading || !event) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -48,7 +48,7 @@ const ScoreboardDetailsPage: React.FC = () => {
         {"競技別ポイント設定"}
       </Typography>
       <Divider sx={{ mb: 2 }} />
-      
+
       <TableContainer>
         <Table>
           <TableHead>
@@ -62,7 +62,7 @@ const ScoreboardDetailsPage: React.FC = () => {
             {eventSports?.map(sport => {
               const settings = event.sportPointSettings?.[sport.id];
               if (!settings?.enabled) return null;
-              
+
               return (
                 <TableRow key={sport.id}>
                   <TableCell>{sport.name}</TableCell>
@@ -99,7 +99,7 @@ const ScoreboardDetailsPage: React.FC = () => {
           {"競技別獲得ポイント"}
         </Typography>
         <Divider sx={{ mb: 2 }} />
-        
+
         <TableContainer>
           <Table size="small">
             <TableHead>

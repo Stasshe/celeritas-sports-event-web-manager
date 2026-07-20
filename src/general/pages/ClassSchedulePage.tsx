@@ -20,7 +20,7 @@ import {
   Refresh as RefreshIcon,
   Help as HelpIcon
 } from '@mui/icons-material';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 import ClassSelector from '../components/schedule/ClassSelector';
@@ -125,18 +125,24 @@ const ClassSchedulePage: React.FC = () => {
           <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
           ホーム
         </Link>
-        <Typography color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+        <Typography
+          sx={{
+            color: "text.primary",
+            display: 'flex',
+            alignItems: 'center'
+          }}>
           <ScheduleIcon sx={{ mr: 0.5 }} fontSize="small" />
           クラス別スケジュール
         </Typography>
       </Breadcrumbs>
-
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
         <Box>
           <Typography variant="h4" component="h1" gutterBottom>
             クラス別スケジュール
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
+          <Typography variant="subtitle1" sx={{
+            color: "text.secondary"
+          }}>
             {activeEvent.name}
           </Typography>
         </Box>
@@ -164,9 +170,7 @@ const ClassSchedulePage: React.FC = () => {
           </Tooltip>
         </Box>
       </Box>
-
       <ClassSelector activeEvent={activeEvent} selectedClasses={selectedClasses} onClassSelect={handleClassSelect} />
-
       {scheduleEntries.length > 0 ? (
         <ClassScheduleTimeline scheduleEntries={scheduleEntries} selectedClasses={selectedClasses} />
       ) : (
@@ -175,20 +179,28 @@ const ClassSchedulePage: React.FC = () => {
           <Typography variant="h6" gutterBottom>
             {selectedClasses.length > 0 ? '該当するスケジュールが見つかりません' : '表示するクラスを選択してください'}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
             {selectedClasses.length > 0 ? '他のクラスを選択してみてください' : '上記のクラス選択から、表示したいクラスを選んでください'}
           </Typography>
         </Paper>
       )}
-
       <Paper variant="outlined" sx={{ p: 2, mt: 3, bgcolor: 'action.hover' }}>
         <Typography variant="subtitle2" gutterBottom>
           注意事項
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>
           スケジュールは変更される場合があります。最新情報をご確認ください。
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            mt: 0.5
+          }}>
           ※「可能性」と表示されている試合は、組み合わせによって出場する可能性のある試合です。
         </Typography>
       </Paper>

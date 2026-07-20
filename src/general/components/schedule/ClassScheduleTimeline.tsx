@@ -8,7 +8,7 @@ import {
 } from '@mui/icons-material';
 import { timeToMinutes } from '../../../utils/scheduleGenerator';
 import { ClassScheduleEntry } from '../../../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 interface ClassScheduleTimelineProps {
   scheduleEntries: ClassScheduleEntry[];
@@ -69,7 +69,9 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({ scheduleE
   if (scheduleEntries.length === 0) {
     return (
       <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{
+          color: "text.secondary"
+        }}>
           スケジュールが見つかりません
         </Typography>
       </Paper>
@@ -84,9 +86,15 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({ scheduleE
         <Box key={dateGroup.date} sx={{ mb: 3 }}>
           <Typography
             variant="subtitle1"
-            fontWeight={700}
-            sx={{ px: 1.5, py: 0.75, mb: 1.5, bgcolor: 'primary.main', color: 'primary.contrastText', borderRadius: 1 }}
-          >
+            sx={{
+              fontWeight: 700,
+              px: 1.5,
+              py: 0.75,
+              mb: 1.5,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              borderRadius: 1
+            }}>
             {dateGroup.formattedDate}
           </Typography>
 
@@ -139,18 +147,24 @@ const ClassScheduleTimeline: React.FC<ClassScheduleTimelineProps> = ({ scheduleE
 
                       <Typography
                         variant="body2"
-                        fontWeight={isHighlighted(entry.teams.team1Id) ? 700 : 400}
                         color={isHighlighted(entry.teams.team1Id) ? 'primary.main' : 'text.primary'}
+                        sx={{
+                          fontWeight: isHighlighted(entry.teams.team1Id) ? 700 : 400
+                        }}
                       >
                         {entry.teams.team1Name}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                      }}>
                         vs
                       </Typography>
                       <Typography
                         variant="body2"
-                        fontWeight={isHighlighted(entry.teams.team2Id) ? 700 : 400}
                         color={isHighlighted(entry.teams.team2Id) ? 'primary.main' : 'text.primary'}
+                        sx={{
+                          fontWeight: isHighlighted(entry.teams.team2Id) ? 700 : 400
+                        }}
                       >
                         {entry.teams.team2Name}
                       </Typography>

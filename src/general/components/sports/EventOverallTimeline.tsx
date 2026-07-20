@@ -38,7 +38,7 @@ import { getMatchStatusLabel, getScheduleTypeLabel } from '../../../utils/labels
 import { timeToMinutes, minutesToTime } from '../../../utils/scheduleGenerator';
 import { getParticipantName, getTimeSlotLabel } from '../../../utils/match';
 import { Sport, TimeSlot, Event, Match } from '../../../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 interface EventOverallTimelineProps {
   sports: Sport[];
@@ -119,14 +119,14 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
       // コート名を取得する関数
       const getCourtName = (courtId?: 'court1' | 'court2'): string | undefined => {
         if (!courtId) return undefined;
-        return sport.scheduleSettings?.courtNames?.[courtId] || 
+        return sport.scheduleSettings?.courtNames?.[courtId] ||
               (courtId === 'court1' ? '第1コート' : '第2コート');
       };
 
       sport.scheduleSettings.timeSlots.forEach(slot => {
         const startMinutes = timeToMinutes(slot.startTime);
         const endMinutes = timeToMinutes(slot.endTime);
-        
+
         // 時間の最小値と最大値を更新
         minTimeMinutes = Math.min(minTimeMinutes, startMinutes);
         maxTimeMinutes = Math.max(maxTimeMinutes, endMinutes);
@@ -177,29 +177,29 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
   const sportGroupedEvents = useMemo(() => {
     const grouped: Record<string, TimelineEvent[]> = {};
     const metaInfo: Record<string, any> = {}; // メタ情報を別のオブジェクトに保存
-    
+
     allEvents.forEach(event => {
       if (!grouped[event.sportId]) {
         grouped[event.sportId] = [];
       }
       grouped[event.sportId].push(event);
     });
-    
+
     // 各スポーツごとに時間が重なるイベントを処理して垂直位置を計算
     Object.keys(grouped).forEach(sportId => {
       const events = grouped[sportId];
-      
+
       // 開始時間でソート
       events.sort((a, b) => a.startMinutes - b.startMinutes);
-      
+
       // 各イベントに垂直位置（row）を割り当て
       const rows: { end: number, row: number }[] = [];
-      
+
       events.forEach(event => {
         // このイベントを配置できる適切な行を探す
         let rowIndex = 0;
         let placed = false;
-        
+
         for (let i = 0; i < rows.length; i++) {
           if (event.startMinutes >= rows[i].end) {
             // この行に配置可能
@@ -209,28 +209,28 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
             break;
           }
         }
-        
+
         if (!placed) {
           // 新しい行を追加
           rows.push({ end: event.endMinutes, row: rows.length });
           rowIndex = rows.length - 1;
         }
-        
+
         // イベントにrow情報を追加
         (event as any).row = rowIndex;
       });
-      
+
       // 行の総数を記録（メタ情報として別に保存）
       metaInfo[`${sportId}_rowCount`] = Math.max(1, rows.length);
     });
-    
+
     return { events: grouped, meta: metaInfo };
   }, [allEvents]);
 
   // イベントをクリックしたときの処理
   const handleEventClick = (event: TimelineEvent) => {
     setSelectedEvent(event);
-    
+
     // 試合情報がある場合は試合データも取得
     if (event.matchInfo?.matchId) {
       const sport = sports.find(s => s.id === event.sportId);
@@ -242,7 +242,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
         }
       }
     }
-    
+
     setDialogOpen(true);
   };
 
@@ -266,7 +266,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
   const handleZoomIn = () => {
     setScale(prev => Math.min(prev + 0.5, 10));
   };
-  
+
   const handleZoomOut = () => {
     setScale(prev => Math.max(prev - 0.5, 1));
   };
@@ -325,7 +325,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
 
   // タイムラインのピクセル/分の比率を計算（固定値から動的な値に変更）
   const pixelPerMinute = scale;
-  
+
   // 総合タイムラインのコンテンツ幅
   const totalTimelineWidth = (maxTime - minTime) * pixelPerMinute;
 
@@ -342,11 +342,11 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
           <ScheduleIcon sx={{ mr: 1 }} />
           {"総合タイムスケジュール"}
         </Typography>
-        
+
         <Box sx={{ mt: { xs: 1, sm: 0 } }}>
           {/* 現在時刻表示 */}
           {currentTimePosition > 0 && (
-            <Chip 
+            <Chip
               icon={<TimeIcon fontSize="small" />}
               label={`${"現在時刻"}: ${minutesToTime(currentTime)}`}
               size="small"
@@ -356,22 +356,21 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
           )}
         </Box>
       </Box>
-      
       {/* スケール調整コントロールをスライダーからボタンに変更 */}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
         <Typography variant="body2" sx={{ mr: 2 }}>
           {"タイムライン縮尺"}:
         </Typography>
-        
+
         <ButtonGroup size="small" sx={{ mr: 2 }}>
-          <Button 
+          <Button
             onClick={handleZoomOut}
             disabled={scale <= 1}
             startIcon={<RemoveIcon />}
           >
             {"小さくする"}
           </Button>
-          <Button 
+          <Button
             onClick={handleZoomIn}
             disabled={scale >= 10}
             startIcon={<AddIcon />}
@@ -379,11 +378,11 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
             {"大きくする"}
           </Button>
         </ButtonGroup>
-        
+
         {/* プリセットスケールボタン */}
         <ButtonGroup size="small" sx={{ mr: 2 }}>
           {[2, 4, 6, 8].map(presetScale => (
-            <Button 
+            <Button
               key={`scale-${presetScale}`}
               onClick={() => handleScaleSet(presetScale)}
               variant={Math.abs(scale - presetScale) < 0.1 ? 'contained' : 'outlined'}
@@ -392,25 +391,24 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
             </Button>
           ))}
         </ButtonGroup>
-        
+
         <Tooltip title={"縮尺をリセット"}>
-          <Button 
-            size="small" 
+          <Button
+            size="small"
             onClick={() => setScale(isMobile ? 3 : isTablet ? 4 : 5)}
             variant="outlined"
           >
             {"リセット"}
           </Button>
         </Tooltip>
-        
+
         <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
           {"現在の縮尺"}: {scale}x
         </Typography>
       </Box>
-
-      <Paper 
-        elevation={2} 
-        sx={{ 
+      <Paper
+        elevation={2}
+        sx={{
           overflow: 'hidden',
           border: '1px solid',
           borderColor: 'divider',
@@ -418,7 +416,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
         }}
       >
         {/* 固定ヘッダーエリア - 競技名とタイムヘッダー */}
-        <Box sx={{ 
+        <Box sx={{
           display: 'flex',
           borderBottom: '1px solid',
           borderColor: 'divider',
@@ -428,8 +426,8 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
           zIndex: 10,
         }}>
           {/* 左側の競技名ヘッダーエリア */}
-          <Box sx={{ 
-            minWidth: isMobile ? 100 : 160, 
+          <Box sx={{
+            minWidth: isMobile ? 100 : 160,
             p: 1.5,
             borderRight: '1px solid',
             borderColor: 'divider',
@@ -444,8 +442,8 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
           </Box>
 
           {/* 時間ヘッダー - スクロール同期のためにコンテナで囲む */}
-          <Box 
-            sx={{ 
+          <Box
+            sx={{
               position: 'relative',
               width: `calc(100% - ${isMobile ? 100 : 160}px)`,
               overflowX: 'auto',
@@ -465,7 +463,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
               }
             }}
           >
-            <Box sx={{ 
+            <Box sx={{
               position: 'relative',
               width: `${totalTimelineWidth}px`,
               height: 40,
@@ -476,12 +474,12 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
               {timeRanges.map((time, index) => {
                 const timeInMinutes = timeToMinutes(time);
                 const position = (timeInMinutes - minTime) * pixelPerMinute;
-                
+
                 return (
-                  <Typography 
-                    key={`time-${index}`} 
-                    variant="caption" 
-                    sx={{ 
+                  <Typography
+                    key={`time-${index}`}
+                    variant="caption"
+                    sx={{
                       position: 'absolute',
                       left: `${position}px`,
                       transform: 'translateX(-50%)',
@@ -495,15 +493,15 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
             </Box>
           </Box>
         </Box>
-        
+
         {/* スケジュールのメインコンテンツエリア */}
-        <Box sx={{ 
+        <Box sx={{
           display: 'flex',
           position: 'relative',
           maxHeight: '500px',
         }}>
           {/* 左側の競技名列 - 固定表示 */}
-          <Box sx={{ 
+          <Box sx={{
             minWidth: isMobile ? 100 : 160,
             borderRight: '1px solid',
             borderColor: 'divider',
@@ -515,16 +513,16 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
             {Object.entries(sportGroupedEvents.events).map(([sportId, events]) => {
               const sport = sports.find(s => s.id === sportId);
               if (!sport) return null;
-              
+
               // 各スポーツの行数を取得
               const rowCount = sportGroupedEvents.meta[`${sportId}_rowCount`] || 1;
               // 行数に基づいて高さを調整（最低60px、行数に応じて増加）
               const rowHeight = Math.max(60, rowCount * 50);
-              
+
               return (
-                <Box 
+                <Box
                   key={`sport-${sportId}`}
-                  sx={{ 
+                  sx={{
                     p: 1.5,
                     height: rowHeight,
                     borderBottom: '1px solid',
@@ -539,9 +537,9 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                   onClick={() => navigate(`/sport/${sportId}`)}
                 >
                   <Tooltip title={"クリックして詳細を表示"}>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
+                    <Typography
+                      variant="body2"
+                      sx={{
                         fontWeight: 'medium',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -555,10 +553,10 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
               );
             })}
           </Box>
-          
+
           {/* タイムラインコンテンツ - スクロール可能エリア */}
-          <Box 
-            sx={{ 
+          <Box
+            sx={{
               position: 'relative',
               width: `calc(100% - ${isMobile ? 100 : 160}px)`,
               overflowX: 'auto',
@@ -578,7 +576,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
               }
             }}
           >
-            <Box sx={{ 
+            <Box sx={{
               width: `${totalTimelineWidth}px`,
               position: 'relative'
             }}>
@@ -586,9 +584,9 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
               {timeRanges.map((time, index) => {
                 const timeInMinutes = timeToMinutes(time);
                 const position = (timeInMinutes - minTime) * pixelPerMinute;
-                
+
                 return (
-                  <Box 
+                  <Box
                     key={`line-${time}`}
                     sx={{
                       position: 'absolute',
@@ -606,7 +604,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
 
               {/* 現在時刻の線 */}
               {currentTimePosition > 0 && (
-                <Box 
+                <Box
                   sx={{
                     position: 'absolute',
                     left: `${currentTimePosition}px`,
@@ -628,18 +626,18 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                   }}
                 />
               )}
-              
+
               {/* スポーツごとの行 */}
               {Object.entries(sportGroupedEvents.events).map(([sportId, events]) => {
                 // 各スポーツの行数を取得
                 const rowCount = sportGroupedEvents.meta[`${sportId}_rowCount`] || 1;
                 // 行数に基づいて高さを調整（最低60px、行数に応じて増加）
                 const rowHeight = Math.max(60, rowCount * 50);
-                
+
                 return (
-                  <Box 
+                  <Box
                     key={`timeline-${sportId}`}
-                    sx={{ 
+                    sx={{
                       height: rowHeight,
                       borderBottom: '1px solid',
                       borderColor: 'divider',
@@ -652,12 +650,12 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                       const width = (event.endMinutes - event.startMinutes) * pixelPerMinute;
                       const minWidth = 40;
                       const finalWidth = Math.max(width, minWidth);
-                      
+
                       // 行の位置を取得（デフォルトは0）
                       const row = (event as any).row || 0;
                       // 行に基づいて上からの位置を計算
                       const top = 5 + (row * 45);
-                      
+
                       return (
                         <Box
                           key={`event-${sportId}-${index}`}
@@ -668,8 +666,8 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                             height: 40,
                             top: `${top}px`,
                             borderRadius: 1,
-                            bgcolor: event.type === 'match' 
-                              ? alpha(theme.palette.primary.main, 0.85) 
+                            bgcolor: event.type === 'match'
+                              ? alpha(theme.palette.primary.main, 0.85)
                               : alpha(getEventColor(event.type), 0.7),
                             border: '1px solid',
                             borderColor: getEventColor(event.type),
@@ -691,9 +689,9 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                         >
                           {/* 試合の場合はチーム情報を表示、それ以外はアイコンのみ */}
                           {event.type === 'match' && (
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
+                            <Typography
+                              variant="caption"
+                              sx={{
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -717,16 +715,24 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
           </Box>
         </Box>
       </Paper>
-      
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-        <Typography variant="caption" color="text.secondary">
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          alignItems: "center",
+          mt: 1
+        }}>
+        <Typography variant="caption" sx={{
+          color: "text.secondary"
+        }}>
           {"タイムラインヒント"}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" sx={{
+          color: "text.secondary"
+        }}>
           ({"現在の縮尺"}: {scale}x)
         </Typography>
       </Stack>
-
       {/* イベント詳細ダイアログ */}
       <Dialog
         open={dialogOpen}
@@ -736,7 +742,7 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
       >
         {selectedEvent && (
           <>
-            <DialogTitle sx={{ 
+            <DialogTitle sx={{
               bgcolor: alpha(getEventColor(selectedEvent.type), 0.1),
               display: 'flex',
               justifyContent: 'space-between',
@@ -746,11 +752,13 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                 <Typography variant="h6">
                   {selectedEvent.sportName}
                 </Typography>
-                <Typography variant="subtitle2" color="text.secondary">
+                <Typography variant="subtitle2" sx={{
+                  color: "text.secondary"
+                }}>
                   {selectedEvent.timeSlot.startTime} - {selectedEvent.timeSlot.endTime}
                 </Typography>
               </Box>
-              <Chip 
+              <Chip
                 label={getScheduleTypeLabel(selectedEvent.type)}
                 color={selectedEvent.type === 'match' ? 'primary' : 'default'}
                 size="small"
@@ -761,9 +769,9 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
               {selectedEvent.type === 'match' && selectedEvent.matchInfo ? (
                 <Box>
                   {/* 試合情報 */}
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'center',
                     my: 2
                   }}>
@@ -786,8 +794,14 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
 
                       <Grid container spacing={2}>
                         {selectedMatch.status && (
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="body2" color="text.secondary">
+                          <Grid
+                            size={{
+                              xs: 12,
+                              sm: 6
+                            }}>
+                            <Typography variant="body2" sx={{
+                              color: "text.secondary"
+                            }}>
                               {"状態"}
                             </Typography>
                             <Typography variant="body1">
@@ -797,8 +811,14 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                         )}
 
                         {selectedEvent.matchInfo.courtName && (
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="body2" color="text.secondary">
+                          <Grid
+                            size={{
+                              xs: 12,
+                              sm: 6
+                            }}>
+                            <Typography variant="body2" sx={{
+                              color: "text.secondary"
+                            }}>
                               {"場所"}
                             </Typography>
                             <Typography variant="body1">
@@ -810,8 +830,14 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                         {/* round情報表示を削除 */}
 
                         {selectedMatch.blockId && (
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="body2" color="text.secondary">
+                          <Grid
+                            size={{
+                              xs: 12,
+                              sm: 6
+                            }}>
+                            <Typography variant="body2" sx={{
+                              color: "text.secondary"
+                            }}>
                               {"ブロック"}
                             </Typography>
                             <Typography variant="body1">
@@ -821,8 +847,10 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                         )}
 
                         {selectedMatch.notes && (
-                          <Grid item xs={12}>
-                            <Typography variant="body2" color="text.secondary">
+                          <Grid size={12}>
+                            <Typography variant="body2" sx={{
+                              color: "text.secondary"
+                            }}>
                               {"備考"}
                             </Typography>
                             <Typography variant="body1">
@@ -836,17 +864,16 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
                 </Box>
               ) : (
                 // 試合以外の時間枠
-                <Box sx={{ py: 2 }}>
+                (<Box sx={{ py: 2 }}>
                   <Typography variant="h6">
                     {selectedEvent.label}
                   </Typography>
-                  
                   {selectedEvent.timeSlot.description && (
                     <Typography variant="body1" sx={{ mt: 2 }}>
                       {selectedEvent.timeSlot.description}
                     </Typography>
                   )}
-                </Box>
+                </Box>)
               )}
             </DialogContent>
 
@@ -854,9 +881,9 @@ const EventOverallTimeline: React.FC<EventOverallTimelineProps> = ({ sports, act
               <Button onClick={handleCloseDialog} color="inherit">
                 {"閉じる"}
               </Button>
-              <Button 
-                onClick={handleViewDetails} 
-                variant="contained" 
+              <Button
+                onClick={handleViewDetails}
+                variant="contained"
                 color="primary"
               >
                 {"詳細を表示"}

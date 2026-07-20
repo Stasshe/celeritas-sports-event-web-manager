@@ -27,8 +27,8 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
   const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<Event>>(
-    event 
-      ? { ...event } 
+    event
+      ? { ...event }
       : {
           name: '',
           date: new Date().toISOString().split('T')[0],
@@ -38,7 +38,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
           sports: []
         }
   );
-  
+
   // ダイアログが開かれたときに初期値をセット
   useEffect(() => {
     if (open) {
@@ -56,7 +56,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
       }
     }
   }, [open, event]);
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
     if (name) {
@@ -68,11 +68,11 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
     const { name, checked } = e.target;
     setNewEvent(prev => ({ ...prev, [name]: checked }));
   };
-  
+
   // 送信処理の最適化
   const handleSubmit = async () => {
     if (!newEvent.name || isSubmittingRef.current) return;
-    
+
     // 既存のタイマーをクリア
     if (submitTimeoutRef.current) {
       clearTimeout(submitTimeoutRef.current);
@@ -102,13 +102,13 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
             if (eventData.isActive && newId && allEventsData) {
               // 新規イベントをアクティブにする場合、他のイベントを非アクティブに
               const updates: Record<string, Event> = {};
-              
+
               Object.entries(allEventsData).forEach(([id, ev]) => {
                 if (id !== newId && ev.isActive) {
                   updates[id] = { ...ev, isActive: false };
                 }
               });
-              
+
               if (Object.keys(updates).length > 0) {
                 await updateData(updates);
               }
@@ -140,25 +140,27 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
       isSubmittingRef.current = false;
     };
   }, []);
-  
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       fullWidth
       maxWidth="sm"
-      TransitionProps={{
-        onExited: () => {
-          // ダイアログが閉じられた後にステートをリセット
-          if (!event) {
-            setNewEvent({
-              name: '',
-              date: new Date().toISOString().split('T')[0],
-              alternativeDate: '',
-              description: '',
-              isActive: false,
-              sports: []
-            });
+      slotProps={{
+        transition: {
+          onExited: () => {
+            // ダイアログが閉じられた後にステートをリセット
+            if (!event) {
+              setNewEvent({
+                name: '',
+                date: new Date().toISOString().split('T')[0],
+                alternativeDate: '',
+                description: '',
+                isActive: false,
+                sports: []
+              });
+            }
           }
         }
       }}
@@ -166,10 +168,13 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
       <DialogTitle>
         {event ? "編集" : "イベント作成"}
       </DialogTitle>
-      
       <DialogContent dividers sx={{ pt: 2 }}>
         <Grid container spacing={1.5}>
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <TextField
               name="name"
               label={"イベント名"}
@@ -180,7 +185,11 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
               required
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <TextField
               name="date"
               label={"日付"}
@@ -189,10 +198,16 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
               fullWidth
               value={newEvent.date}
               onChange={handleInputChange}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{
+                inputLabel: { shrink: true }
+              }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <TextField
               name="alternativeDate"
               label={"予備日"}
@@ -201,11 +216,18 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
               fullWidth
               value={newEvent.alternativeDate || ''}
               onChange={handleInputChange}
-              InputLabelProps={{ shrink: true }}
               helperText={"予備日を設定できます"}
+              slotProps={{
+                inputLabel: { shrink: true }
+              }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center' }}>
+          <Grid
+            sx={{ display: 'flex', alignItems: 'center' }}
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <FormControlLabel
               control={
                 <Switch
@@ -218,7 +240,7 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
               label={"アクティブに設定"}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               name="description"
               label={"説明"}
@@ -232,14 +254,13 @@ const CreateEventDialog: React.FC<CreateEventDialogProps> = ({ open, onClose, on
           </Grid>
         </Grid>
       </DialogContent>
-      
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>
           {"キャンセル"}
         </Button>
-        <Button 
-          onClick={handleSubmit} 
-          variant="contained" 
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
           color="primary"
           disabled={isSubmitting || !newEvent.name}
         >

@@ -31,11 +31,12 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
 
   return (
     <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-      <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+      <Typography variant="subtitle1" gutterBottom sx={{
+        fontWeight: 600
+      }}>
         基本設定
       </Typography>
       <Divider sx={{ mb: 2 }} />
-
       <Box
         sx={{
           display: 'grid',
@@ -53,7 +54,9 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
           type="time"
           value={settings.startTime}
           onChange={e => form.handleFieldChange('startTime', e.target.value)}
-          InputLabelProps={{ shrink: true }}
+          slotProps={{
+            inputLabel: { shrink: true }
+          }}
         />
         <TextField
           fullWidth
@@ -62,7 +65,9 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
           type="time"
           value={settings.endTime}
           onChange={e => form.handleFieldChange('endTime', e.target.value)}
-          InputLabelProps={{ shrink: true }}
+          slotProps={{
+            inputLabel: { shrink: true }
+          }}
         />
 
         {sport.type !== 'ranking' && (
@@ -74,7 +79,9 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
               type="number"
               value={settings.matchDuration}
               onChange={e => form.handleFieldChange('matchDuration', e.target.value)}
-              InputProps={{ inputProps: { min: 5 } }}
+              slotProps={{
+                input: { inputProps: { min: 5 } }
+              }}
             />
             <TextField
               fullWidth
@@ -83,7 +90,9 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
               type="number"
               value={settings.breakDuration}
               onChange={e => form.handleFieldChange('breakDuration', e.target.value)}
-              InputProps={{ inputProps: { min: 0 } }}
+              slotProps={{
+                input: { inputProps: { min: 0 } }
+              }}
             />
           </>
         )}
@@ -97,7 +106,9 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
               type="number"
               value={leagueSettings.playoffDuration}
               onChange={e => form.handleFieldChange('playoffDuration', e.target.value)}
-              InputProps={{ inputProps: { min: 1 } }}
+              slotProps={{
+                input: { inputProps: { min: 1 } }
+              }}
             />
             <TextField
               fullWidth
@@ -106,12 +117,13 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
               type="number"
               value={leagueSettings.blockToPlayoffBreak ?? ''}
               onChange={e => form.handleFieldChange('blockToPlayoffBreak', e.target.value)}
-              InputProps={{ inputProps: { min: 0 } }}
+              slotProps={{
+                input: { inputProps: { min: 0 } }
+              }}
             />
           </>
         )}
       </Box>
-
       <FormControlLabel
         sx={{ mt: 1.5 }}
         control={
@@ -122,9 +134,7 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
         }
         label="終了時間を超えても全試合を生成"
       />
-
       <Divider sx={{ my: 2 }} />
-
       <Typography variant="subtitle2" gutterBottom>
         コート設定
       </Typography>
@@ -173,13 +183,11 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
           />
         )}
       </Box>
-
       {sport.type === 'ranking' && (
         <Alert severity="info" sx={{ mt: 2 }}>
           ランキング形式は開始・終了時間の枠のみ使用します
         </Alert>
       )}
-
       {sport.type !== 'ranking' && (
         <>
           <Divider sx={{ my: 2 }} />

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router';
 import { Box, Typography, CircularProgress } from '@mui/material';
 
 const NotFoundPage = () => {
@@ -8,7 +8,7 @@ const NotFoundPage = () => {
 
   useEffect(() => {
     const path = location.pathname;
-    
+
     // パスパターンに基づいてリダイレクト
     if (path.startsWith('/admin/')) {
       navigate('/admin');
@@ -21,13 +21,14 @@ const NotFoundPage = () => {
   }, [navigate, location]);
 
   return (
-    <Box 
-      display="flex" 
-      flexDirection="column" 
-      alignItems="center" 
-      justifyContent="center" 
-      minHeight="80vh"
-    >
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "80vh"
+      }}>
       <CircularProgress />
       <Typography variant="h6" sx={{ mt: 2 }}>
         リダイレクト中...

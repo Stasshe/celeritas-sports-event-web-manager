@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  Typography, 
-  Button, 
-  FormControl, 
-  FormControlLabel, 
-  Checkbox, 
-  RadioGroup, 
-  Radio, 
-  TextField, 
-  CircularProgress, 
-  Paper, 
-  Grid, 
-  Divider, 
-  Alert, 
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  FormControl,
+  FormControlLabel,
+  Checkbox,
+  RadioGroup,
+  Radio,
+  TextField,
+  CircularProgress,
+  Paper,
+  Grid,
+  Divider,
+  Alert,
   useTheme,
   Accordion,
   AccordionSummary,
@@ -24,7 +24,7 @@ import {
   IconButton,
   Tooltip
 } from '@mui/material';
-import { 
+import {
   GetApp as DownloadIcon,
   Event as EventIcon,
   SportsSoccer as SportIcon,
@@ -41,14 +41,14 @@ import { useThemeContext } from '../../contexts/ThemeContext';
 const ExportPanel: React.FC = () => {
   const theme = useTheme();
   const { alpha } = useThemeContext();
-  
+
   // 詳細エラー表示の状態
   const [showErrorDetails, setShowErrorDetails] = useState(false);
-  
+
   // Fetch data
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
   const { data: sports, loading: sportsLoading } = useDatabase<Record<string, Sport>>('/sports');
-  
+
   // Export options state
   const [exportOptions, setExportOptions] = useState({
     includeOverallWinners: true,
@@ -58,7 +58,7 @@ const ExportPanel: React.FC = () => {
     exportScope: 'all', // 'all', 'selectedEvents', 'selectedSports'
     customFileName: '',
   });
-  
+
   // Export status
   const [exportStatus, setExportStatus] = useState<{
     status: 'idle' | 'loading' | 'success' | 'error';
@@ -68,13 +68,13 @@ const ExportPanel: React.FC = () => {
     originalError?: string;
     context?: any;
   }>({ status: 'idle' });
-  
+
   // Loading state
   const isLoading = eventsLoading || sportsLoading || exportStatus.status === 'loading';
 
   // エラーメッセージの処理を改善
-  const getErrorMessage = (error: ExportError | Error): { 
-    message: string; 
+  const getErrorMessage = (error: ExportError | Error): {
+    message: string;
     details?: string[];
     originalError?: string;
     context?: any;
@@ -87,7 +87,7 @@ const ExportPanel: React.FC = () => {
         context: error.context
       };
     }
-    
+
     // 一般的なエラーの場合
     return {
       message: '予期しないエラーが発生しました',
@@ -95,22 +95,22 @@ const ExportPanel: React.FC = () => {
       originalError: error.message
     };
   };
-  
+
   // Handle export option changes
   const handleOptionChange = (
     event: React.ChangeEvent<HTMLInputElement>,
     field: keyof typeof exportOptions
   ) => {
-    const value = event.target.type === 'checkbox' 
-      ? event.target.checked 
+    const value = event.target.type === 'checkbox'
+      ? event.target.checked
       : event.target.value;
-    
+
     setExportOptions(prev => ({
       ...prev,
       [field]: value
     }));
   };
-  
+
   // Handle event selection
   const handleEventSelectionChange = (eventId: string, checked: boolean) => {
     setExportOptions(prev => {
@@ -127,7 +127,7 @@ const ExportPanel: React.FC = () => {
       }
     });
   };
-  
+
   // Handle sport selection
   const handleSportSelectionChange = (sportId: string, checked: boolean) => {
     setExportOptions(prev => {
@@ -144,7 +144,7 @@ const ExportPanel: React.FC = () => {
       }
     });
   };
-  
+
   // Handle export button click
   const handleExport = async () => {
     try {
@@ -196,16 +196,16 @@ const ExportPanel: React.FC = () => {
         });
         return;
       }
-      
+
       setExportStatus({ status: 'loading' });
-      
+
       // Prepare export options
-      const fileName = exportOptions.customFileName 
-        ? (exportOptions.customFileName.endsWith('.xlsx') 
-            ? exportOptions.customFileName 
+      const fileName = exportOptions.customFileName
+        ? (exportOptions.customFileName.endsWith('.xlsx')
+            ? exportOptions.customFileName
             : `${exportOptions.customFileName}.xlsx`)
         : 'sports-results.xlsx';
-      
+
       interface ExportOptions {
         includeOverallWinners: boolean;
         includeIndividualEvents: boolean;
@@ -213,13 +213,13 @@ const ExportPanel: React.FC = () => {
         eventIds?: string[];
         sportIds?: string[];
       }
-      
+
       let finalOptions: ExportOptions = {
         includeOverallWinners: exportOptions.includeOverallWinners,
         includeIndividualEvents: exportOptions.includeIndividualEvents,
         fileName,
       };
-      
+
       // Add event/sport filters based on scope
       if (exportOptions.exportScope === 'selectedEvents' && exportOptions.selectedEventIds.length > 0) {
         finalOptions = {
@@ -232,23 +232,23 @@ const ExportPanel: React.FC = () => {
           sportIds: exportOptions.selectedSportIds,
         };
       }
-      
+
       // Execute export
       await exportToExcel(events, sports, finalOptions);
-      
+
       setExportStatus({
         status: 'success',
         message: "エクスポート成功"
       });
-      
+
       // Reset status after a delay
       setTimeout(() => {
         setExportStatus({ status: 'idle' });
       }, 5000);
-      
+
     } catch (error) {
       console.error('Export error:', error);
-      
+
       const errorInfo = getErrorMessage(error as ExportError | Error);
       setExportStatus({
         status: 'error',
@@ -265,7 +265,7 @@ const ExportPanel: React.FC = () => {
       }, 15000); // エラーは15秒表示
     }
   };
-  
+
   // Select all events
   const handleSelectAllEvents = (checked: boolean) => {
     if (checked && events) {
@@ -280,7 +280,7 @@ const ExportPanel: React.FC = () => {
       }));
     }
   };
-  
+
   // Select all sports
   const handleSelectAllSports = (checked: boolean) => {
     if (checked && sports) {
@@ -295,13 +295,13 @@ const ExportPanel: React.FC = () => {
       }));
     }
   };
-  
+
   // Group sports by event
   const getSportsByEvent = (eventId: string): Sport[] => {
     if (!sports) return [];
     return Object.values(sports).filter(sport => sport.eventId === eventId);
   };
-  
+
   // エラーログをクリップボードにコピーする関数
   const copyErrorToClipboard = () => {
     if (exportStatus.status === 'error') {
@@ -339,41 +339,45 @@ const ExportPanel: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         {"エクスポート"}
       </Typography>
-      
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
             {"手順"}
           </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              marginBottom: "16px"
+            }}>
             {"エクスポート手順"}
           </Typography>
-          
+
           {exportStatus.status === 'success' && (
             <Alert severity="success" sx={{ mb: 2 }}>
               {exportStatus.message}
             </Alert>
           )}
-          
+
           {exportStatus.status === 'error' && (
-            <Alert 
-              severity="error" 
+            <Alert
+              severity="error"
               sx={{ mb: 2 }}
               action={
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Tooltip title="エラーログをクリップボードにコピー">
-                    <IconButton 
-                      color="inherit" 
-                      size="small" 
+                    <IconButton
+                      color="inherit"
+                      size="small"
                       onClick={copyErrorToClipboard}
                     >
                       <ContentCopyIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   {(exportStatus.details || exportStatus.originalError || exportStatus.context) && (
-                    <Button 
-                      color="inherit" 
-                      size="small" 
+                    <Button
+                      color="inherit"
+                      size="small"
                       onClick={() => setShowErrorDetails(!showErrorDetails)}
                       startIcon={<BugReportIcon />}
                     >
@@ -388,15 +392,15 @@ const ExportPanel: React.FC = () => {
                   {exportStatus.message}
                 </Typography>
                 {exportStatus.errorCode && (
-                  <Chip 
-                    label={`エラーコード: ${exportStatus.errorCode}`} 
-                    size="small" 
-                    variant="outlined" 
-                    sx={{ mt: 1 }} 
+                  <Chip
+                    label={`エラーコード: ${exportStatus.errorCode}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ mt: 1 }}
                   />
                 )}
               </Box>
-              
+
               {showErrorDetails && (
                 <Accordion sx={{ mt: 2, bgcolor: 'transparent' }} elevation={0}>
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -414,7 +418,7 @@ const ExportPanel: React.FC = () => {
                           ))}
                         </Box>
                       )}
-                      
+
                       {exportStatus.originalError && (
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="subtitle2" gutterBottom>元エラー:</Typography>
@@ -423,13 +427,13 @@ const ExportPanel: React.FC = () => {
                           </Typography>
                         </Box>
                       )}
-                      
+
                       {exportStatus.context && (
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="subtitle2" gutterBottom>コンテキスト:</Typography>
-                          <pre style={{ 
-                            fontSize: '0.75rem', 
-                            margin: 0, 
+                          <pre style={{
+                            fontSize: '0.75rem',
+                            margin: 0,
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-word'
                           }}>
@@ -437,7 +441,7 @@ const ExportPanel: React.FC = () => {
                           </pre>
                         </Box>
                       )}
-                      
+
                       <Box>
                         <Typography variant="subtitle2" gutterBottom>エクスポート設定:</Typography>
                         <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
@@ -454,20 +458,24 @@ const ExportPanel: React.FC = () => {
               )}
             </Alert>
           )}
-          
+
           <Divider sx={{ my: 2 }} />
-          
+
           <Typography variant="h6" gutterBottom>
             {"エクスポートオプション"}
           </Typography>
-          
+
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 6
+              }}>
               <Paper sx={{ p: 2, mb: 2 }}>
                 <Typography variant="subtitle1" gutterBottom>
                   {"コンテンツオプション"}
                 </Typography>
-                
+
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -477,7 +485,7 @@ const ExportPanel: React.FC = () => {
                   }
                   label={"総合優勝者を含める"}
                 />
-                
+
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -487,7 +495,7 @@ const ExportPanel: React.FC = () => {
                   }
                   label={"個別イベントを含める"}
                 />
-                
+
                 <Box sx={{ mt: 2 }}>
                   <TextField
                     label={"カスタムファイル名"}
@@ -502,13 +510,17 @@ const ExportPanel: React.FC = () => {
                 </Box>
               </Paper>
             </Grid>
-            
-            <Grid item xs={12} md={6}>
+
+            <Grid
+              size={{
+                xs: 12,
+                md: 6
+              }}>
               <Paper sx={{ p: 2, mb: 2 }}>
                 <Typography variant="subtitle1" gutterBottom>
                   {"エクスポート範囲"}
                 </Typography>
-                
+
                 <FormControl component="fieldset">
                   <RadioGroup
                     value={exportOptions.exportScope}
@@ -534,14 +546,14 @@ const ExportPanel: React.FC = () => {
               </Paper>
             </Grid>
           </Grid>
-          
+
           {exportOptions.exportScope === 'selectedEvents' && (
             <Paper sx={{ p: 2, mb: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="subtitle1">
                   {"イベントを選択"}
                 </Typography>
-                
+
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -552,9 +564,9 @@ const ExportPanel: React.FC = () => {
                   label={"すべて選択"}
                 />
               </Box>
-              
+
               <Divider sx={{ mb: 2 }} />
-              
+
               {eventsLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                   <CircularProgress size={24} />
@@ -562,10 +574,16 @@ const ExportPanel: React.FC = () => {
               ) : events && Object.values(events).length > 0 ? (
                 <Grid container spacing={2}>
                   {Object.values(events).map((event) => (
-                    <Grid item xs={12} sm={6} md={4} key={event.id}>
-                      <Box 
+                    <Grid
+                      key={event.id}
+                      size={{
+                        xs: 12,
+                        sm: 6,
+                        md: 4
+                      }}>
+                      <Box
                         sx={{
-                          p: 2, 
+                          p: 2,
                           border: `1px solid ${theme.palette.divider}`,
                           borderRadius: 1,
                           display: 'flex',
@@ -578,7 +596,9 @@ const ExportPanel: React.FC = () => {
                         />
                         <Box sx={{ ml: 1 }}>
                           <Typography variant="body1">{event.name}</Typography>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                          }}>
                             {new Date(event.date).toLocaleDateString()}
                           </Typography>
                         </Box>
@@ -587,20 +607,22 @@ const ExportPanel: React.FC = () => {
                   ))}
                 </Grid>
               ) : (
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                  color: "text.secondary"
+                }}>
                   {"イベントがありません"}
                 </Typography>
               )}
             </Paper>
           )}
-          
+
           {exportOptions.exportScope === 'selectedSports' && (
             <Paper sx={{ p: 2, mb: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="subtitle1">
                   {"競技を選択"}
                 </Typography>
-                
+
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -611,9 +633,9 @@ const ExportPanel: React.FC = () => {
                   label={"すべて選択"}
                 />
               </Box>
-              
+
               <Divider sx={{ mb: 2 }} />
-              
+
               {sportsLoading || eventsLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                   <CircularProgress size={24} />
@@ -623,12 +645,12 @@ const ExportPanel: React.FC = () => {
                   {Object.values(events).map((event) => {
                     const eventSports = getSportsByEvent(event.id);
                     if (eventSports.length === 0) return null;
-                    
+
                     return (
                       <Box key={event.id} sx={{ mb: 3 }}>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
+                        <Box sx={{
+                          display: 'flex',
+                          alignItems: 'center',
                           mb: 1,
                           p: 1,
                           bgcolor: alpha(theme.palette.primary.main, 0.1),
@@ -639,13 +661,18 @@ const ExportPanel: React.FC = () => {
                             {event.name}
                           </Typography>
                         </Box>
-                        
                         <Grid container spacing={2}>
                           {eventSports.map((sport) => (
-                            <Grid item xs={12} sm={6} md={4} key={sport.id}>
-                              <Box 
+                            <Grid
+                              key={sport.id}
+                              size={{
+                                xs: 12,
+                                sm: 6,
+                                md: 4
+                              }}>
+                              <Box
                                 sx={{
-                                  p: 2, 
+                                  p: 2,
                                   border: `1px solid ${theme.palette.divider}`,
                                   borderRadius: 1,
                                   display: 'flex',
@@ -660,7 +687,9 @@ const ExportPanel: React.FC = () => {
                                   <SportIcon sx={{ mr: 1, fontSize: 16 }} />
                                   <div>
                                     <Typography variant="body1">{sport.name}</Typography>
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography variant="body2" sx={{
+                                      color: "text.secondary"
+                                    }}>
                                       {getSportTypeLabel(sport.type)}
                                     </Typography>
                                   </div>
@@ -674,13 +703,15 @@ const ExportPanel: React.FC = () => {
                   })}
                 </>
               ) : (
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                  color: "text.secondary"
+                }}>
                   {"競技がありません"}
                 </Typography>
               )}
             </Paper>
           )}
-          
+
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
             <Button
               variant="contained"

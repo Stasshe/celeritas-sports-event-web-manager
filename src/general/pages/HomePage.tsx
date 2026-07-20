@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Typography, 
-  Grid, 
-  Card, 
-  CardActionArea, 
-  CardContent, 
+import { Link as RouterLink, useNavigate } from 'react-router';
+import {
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardActionArea,
+  CardContent,
   CardMedia,
-  Fab, 
-  Box, 
+  Fab,
+  Box,
   CircularProgress,
   Stack,
   Paper,
@@ -18,7 +18,7 @@ import {
   Divider,
   Button
 } from '@mui/material';
-import { 
+import {
   AdminPanelSettings as AdminIcon,
   Login as LoginIcon,
   Schedule as ScheduleIcon,
@@ -55,7 +55,7 @@ const HomePage: React.FC = () => {
       const activeEventObj = Object.values(events).find(event => event.isActive);
       if (activeEventObj) {
         setActiveEvent(activeEventObj);
-        
+
         // アクティブなイベントに関連する競技を設定
         const relatedSports = Object.values(sports).filter(
           sport => sport.eventId === activeEventObj.id
@@ -115,7 +115,9 @@ const HomePage: React.FC = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{
+          color: "text.secondary"
+        }}>
           このサイトでは、情報は全てリアルタイム更新されています。<br />
           ページリロードをする必要は全くありません！
         </Typography>
@@ -127,10 +129,11 @@ const HomePage: React.FC = () => {
         {activeEvent && (
           <Typography
             variant="subtitle1"
-            color="text.secondary"
             gutterBottom
-            sx={{ whiteSpace: 'pre-line' }}
-          >
+            sx={{
+              color: "text.secondary",
+              whiteSpace: 'pre-line'
+            }}>
             {activeEvent.description}
           </Typography>
         )}
@@ -173,11 +176,10 @@ const HomePage: React.FC = () => {
           {"クラスごとのスケジュールを表示"}
         </Button>
       </Box>
-
       {activeSports.length > 0 && (
         <Box sx={{ mb: 4 }}>
           {/* 総合成績カードを追加 - 最初に表示 */}
-          {activeEvent && activeEvent.overallScoreboard?.enabled && 
+          {activeEvent && activeEvent.overallScoreboard?.enabled &&
            activeEvent.overallScoreboard.displayOnHome && (
             <Box sx={{ mb: 4 }}>
               <OverallScoreCard event={activeEvent} sports={activeSports} />
@@ -196,21 +198,21 @@ const HomePage: React.FC = () => {
               textColor="primary"
               aria-label="view mode tabs"
             >
-              <Tab 
-                icon={<GridViewIcon />} 
-                label={"グリッド表示"} 
+              <Tab
+                icon={<GridViewIcon />}
+                label={"グリッド表示"}
                 value="grid"
                 iconPosition="start"
               />
-              <Tab 
-                icon={<ScheduleIcon />} 
-                label={"スケジュール表示"} 
+              <Tab
+                icon={<ScheduleIcon />}
+                label={"スケジュール表示"}
                 value="timeline"
                 iconPosition="start"
               />
-              <Tab 
-                icon={<TimelineIcon />} 
-                label={"総合タイムライン"} 
+              <Tab
+                icon={<TimelineIcon />}
+                label={"総合タイムライン"}
                 value="overall-timeline"
                 iconPosition="start"
               />
@@ -219,8 +221,14 @@ const HomePage: React.FC = () => {
           {viewMode === 'grid' ? (
             <Grid container spacing={3}>
               {activeSports.map((sport, index) => (
-                <Grid item xs={12} sm={6} md={4} key={sport.id}>
-                  <MotionCard 
+                <Grid
+                  key={sport.id}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4
+                  }}>
+                  <MotionCard
                     whileHover={{ scale: 1.05 }}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -237,7 +245,9 @@ const HomePage: React.FC = () => {
                         <Typography gutterBottom variant="h5" component="div">
                           {sport.name}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                          color: "text.secondary"
+                        }}>
                           {sport.description || getSportTypeLabel(sport.type)}
                         </Typography>
                       </CardContent>
@@ -257,23 +267,24 @@ const HomePage: React.FC = () => {
           )}
         </Box>
       )}
-
       {/* クラススケジュールへの追加リンク - 下部にも表示 */}
-      <Paper 
-        sx={{ 
-          p: 3, 
-          mb: 4, 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' }, 
-          alignItems: 'center', 
-          justifyContent: 'space-between' 
+      <Paper
+        sx={{
+          p: 3,
+          mb: 4,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: 'center',
+          justifyContent: 'space-between'
         }}
       >
         <Box sx={{ mb: { xs: 2, sm: 0 } }}>
           <Typography variant="h6" gutterBottom>
             {"クイックアクセス"}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
             {"クラスのスケジュールに簡単にアクセス"}
           </Typography>
         </Box>
@@ -288,15 +299,15 @@ const HomePage: React.FC = () => {
           {"スケジュールを表示"}
         </Button>
       </Paper>
-
       {activeSports.length === 0 && (
         <Box sx={{ textAlign: 'center', my: 8 }}>
-          <Typography variant="h5" color="text.secondary">
+          <Typography variant="h5" sx={{
+            color: "text.secondary"
+          }}>
             {"競技がありません"}
           </Typography>
         </Box>
       )}
-
       <FloatingButtons />
     </Container>
   );

@@ -75,11 +75,13 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
         </Select>
       </FormControl>
       {disabled && !compact && (
-        <Typography 
-          variant="caption" 
-          color="info.main" 
-          sx={{ display: 'block', mt: 0.5 }}
-        >
+        <Typography
+          variant="caption"
+          sx={{
+            color: "info.main",
+            display: 'block',
+            mt: 0.5
+          }}>
           1stラウンド以外でチームの選択はできません。
         </Typography>
       )}

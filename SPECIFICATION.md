@@ -2,9 +2,9 @@
 
 ## 実行基盤
 
-Vite + React 18 SPA固定。Next.js移行禁止。`@g-loot/react-tournament-brackets`のトーナメント表描画、Next.js環境と非互換。選好でなく制約。
+Vite + React 19 SPA固定。Next.js移行禁止。トーナメント表はReact 19とstyled-components 6対応の`@cm3tahkuh/react-tournament-brackets`で描画する。
 
-画面遷移、公開領域、管理領域ともReact Router v6管理。server rendering前提の構造へ寄せない。
+画面遷移、公開領域、管理領域ともReact Router v7 Declarative Mode管理。server rendering前提の構造へ寄せない。UIはMaterial UI v9の`Grid`、`sx`、slot APIを正本とし、削除済みlegacy propsへ依存しない。
 
 ## Source ownership
 

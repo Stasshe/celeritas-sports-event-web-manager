@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, Typography, Box, Paper, IconButton, Breadcrumbs, Link } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Home as HomeIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import ExportPanel from '../components/ExportPanel';
 
 const ExportPage: React.FC = () => {
@@ -18,21 +18,22 @@ const ExportPage: React.FC = () => {
             {"エクスポートページ"}
           </Typography>
         </Box>
-        
+
         <Breadcrumbs aria-label="breadcrumb">
-          <Link 
-            underline="hover" 
-            color="inherit" 
+          <Link
+            underline="hover"
+            color="inherit"
             onClick={() => navigate('/admin')}
             sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
           >
             <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
             {"ダッシュボード"}
           </Link>
-          <Typography color="text.primary">{"エクスポートページ"}</Typography>
+          <Typography sx={{
+            color: "text.primary"
+          }}>{"エクスポートページ"}</Typography>
         </Breadcrumbs>
       </Box>
-
       <Paper elevation={0} square sx={{ p: 0, bgcolor: 'transparent' }}>
         <ExportPanel />
       </Paper>

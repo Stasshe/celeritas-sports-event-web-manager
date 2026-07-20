@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import {
   Container,
   Typography,
@@ -70,14 +70,17 @@ const ScoringPage: React.FC = () => {
         <IconButton onClick={() => navigate(`/admin/sports/${sportId}`)} aria-label="back" size="small">
           <ArrowBackIcon fontSize="small" />
         </IconButton>
-        <Typography variant="h6" component="h1" fontWeight={700}>
+        <Typography variant="h6" component="h1" sx={{
+          fontWeight: 700
+        }}>
           {localSport.name}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>
           {getSportTypeLabel(localSport.type)} ・ スコア管理
         </Typography>
       </Box>
-
       {/* スポーツタイプに合わせたスコアリングコンポーネント */}
       {localSport.type === 'tournament' && (
         <TournamentScoring sport={localSport} onUpdate={handleSportUpdate} />

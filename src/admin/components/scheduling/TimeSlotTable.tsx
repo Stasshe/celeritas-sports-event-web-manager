@@ -35,10 +35,17 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
         </Box>
         {match ? (
           <>
-            <Typography variant="body2" fontWeight={600} sx={{ overflowWrap: 'anywhere' }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                overflowWrap: 'anywhere'
+              }}>
               {getMatchupLabel(match, sport)}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{
+              color: "text.secondary"
+            }}>
               {getMatchContext(match, sport)}
             </Typography>
           </>
@@ -48,7 +55,12 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
               {slot.title || getTimeSlotLabel(slot, sport) || getScheduleTypeLabel(slot.type)}
             </Typography>
             {slot.description && (
-              <Typography variant="caption" color="text.secondary" display="block">
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  display: "block"
+                }}>
                 {slot.description}
               </Typography>
             )}
@@ -87,7 +99,6 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
           </Box>
         ))}
       </Box>
-
       <Box>
         {blocks.map(block => (
           <Box key={block.key} sx={{ borderBottom: '1px solid', borderColor: 'divider', '&:last-of-type': { borderBottom: 0 } }}>
@@ -117,7 +128,9 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
                 {courtColumns.map(court => (
                   <Box key={court} sx={{ p: { xs: 0.75, sm: 1 }, borderLeft: '1px solid', borderColor: 'divider', minWidth: 0, minHeight: 44 }}>
                     {block.byCourt[court] ? renderSlotContent(block.byCourt[court]!) : (
-                      <Typography variant="caption" color="text.disabled">
+                      <Typography variant="caption" sx={{
+                        color: "text.disabled"
+                      }}>
                         -
                       </Typography>
                     )}

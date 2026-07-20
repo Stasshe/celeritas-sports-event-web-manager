@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
   TableRow,
   Tooltip,
   useTheme,
@@ -41,7 +41,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
     }
 
     const stats: Record<string, TeamStats> = {};
-    
+
     // チームの初期統計情報を作成
     sport.teams.forEach(team => {
       stats[team.id] = {
@@ -130,7 +130,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
     }
 
     const grid: Record<string, Record<string, Match | null>> = {};
-    
+
     // グリッドを初期化
     sport.teams.forEach(team1 => {
       grid[team1.id] = {};
@@ -142,7 +142,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
     // 試合情報をグリッドに配置
     sport.matches.forEach(match => {
       // チームIDが有効な場合のみグリッドに配置（空文字列や未定義も除外）
-      if (match.team1Id && match.team2Id && 
+      if (match.team1Id && match.team2Id &&
           match.team1Id.trim() !== '' && match.team2Id.trim() !== '' &&
           grid[match.team1Id] && grid[match.team2Id]) {
         grid[match.team1Id][match.team2Id] = match;
@@ -173,7 +173,9 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
   if (!sport || !sport.teams || sport.teams.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', my: 4 }}>
-        <Typography variant="h6" color="text.secondary">
+        <Typography variant="h6" sx={{
+          color: "text.secondary"
+        }}>
           {"チームがありません"}
         </Typography>
       </Box>
@@ -190,12 +192,20 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
     <Box>
       {/* 上位チーム表示 */}
       <Paper sx={{ p: 2, mb: 4, bgcolor: theme.palette.primary.light }}>
-        <Typography variant="h6" gutterBottom color="primary.contrastText">
+        <Typography variant="h6" gutterBottom sx={{
+          color: "primary.contrastText"
+        }}>
           {"順位"}
         </Typography>
         <Grid container spacing={2}>
           {topTeams.map((team, index) => (
-            <Grid item xs={12} sm={6} md={4} key={team.teamId}>
+            <Grid
+              key={team.teamId}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4
+              }}>
               <Paper sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <Typography variant="h4" sx={{ mr: 2, color: 'primary.main' }}>
@@ -210,7 +220,7 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
                   </Typography>
                 </Box>
                 <Typography variant="body2">
-                  {"得失点"}: {team.goalsFor}-{team.goalsAgainst} 
+                  {"得失点"}: {team.goalsFor}-{team.goalsAgainst}
                   ({team.goalsFor - team.goalsAgainst > 0 ? '+' : ''}{team.goalsFor - team.goalsAgainst})
                 </Typography>
               </Paper>
@@ -218,7 +228,6 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
           ))}
         </Grid>
       </Paper>
-
       {/* 成績表 */}
       <Typography variant="h6" gutterBottom>
         {"一覧"}
@@ -257,7 +266,6 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
           </TableBody>
         </Table>
       </TableContainer>
-
       {/* 対戦表 */}
       <Typography variant="h6" gutterBottom>
         {"総当たり表"}
@@ -280,17 +288,16 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
                 </TableCell>
                 {sport.teams.map(team2 => {
                   const match = team1.id === team2.id ? null : matchGrid[team1.id]?.[team2.id];
-                  
+
                   return (
-                    <TableCell 
-                      key={team2.id} 
-                      align="center" 
+                    <TableCell
+                      key={team2.id}
+                      align="center"
                       sx={{
-                        backgroundColor: team1.id === team2.id ? theme.palette.action.hover : 
+                        backgroundColor: team1.id === team2.id ? theme.palette.action.hover :
                           match?.status === 'completed' ? (
-                            match.winnerId === team1.id ? theme.palette.success.light :
-                            match.winnerId === team2.id ? theme.palette.error.light :
-                            theme.palette.warning.light // 引き分けの場合
+                            (match.winnerId === team1.id ? theme.palette.success.light : match.winnerId === team2.id ? theme.palette.error.light :
+                            theme.palette.warning.light) // 引き分けの場合
                           ) : 'inherit',
                         position: 'relative',
                         ...(team1.id === team2.id && {
@@ -310,8 +317,8 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
                       {team1.id === team2.id ? (
                         ''
                       ) : match ? (
-                        <Tooltip 
-                          title={match.date ? `${new Date(match.date).toLocaleDateString()} ${match.notes || ''}` : ''} 
+                        <Tooltip
+                          title={match.date ? `${new Date(match.date).toLocaleDateString()} ${match.notes || ''}` : ''}
                           arrow
                         >
                           <Box>
@@ -325,7 +332,9 @@ const RoundRobinTable: React.FC<RoundRobinTableProps> = ({ sport }) => {
                           </Box>
                         </Tooltip>
                       ) : (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{
+                          color: "text.secondary"
+                        }}>
                           {"未実施"}
                         </Typography>
                       )}

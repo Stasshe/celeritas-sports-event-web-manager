@@ -21,11 +21,12 @@ interface ScheduleBreakSettingsCardProps {
 const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ settings, form }) => {
   return (
     <Box sx={{ p: { xs: 1.5, sm: 2 }, borderTop: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+      <Typography variant="subtitle1" gutterBottom sx={{
+        fontWeight: 600
+      }}>
         休憩設定
       </Typography>
       <Divider sx={{ mb: 2 }} />
-
       <FormControlLabel
         control={
           <Switch
@@ -35,7 +36,6 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
         }
         label="昼休みを含める"
       />
-
       {form.hasLunchBreak && (
         <Box
           sx={{
@@ -55,7 +55,9 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
             type="time"
             value={settings.lunchBreak?.startTime || '12:00'}
             onChange={e => form.handleLunchBreakChange('startTime', e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{
+              inputLabel: { shrink: true }
+            }}
           />
           <TextField
             fullWidth
@@ -64,13 +66,13 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
             type="time"
             value={settings.lunchBreak?.endTime || '13:00'}
             onChange={e => form.handleLunchBreakChange('endTime', e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{
+              inputLabel: { shrink: true }
+            }}
           />
         </Box>
       )}
-
       <Divider sx={{ my: 2 }} />
-
       <Typography variant="subtitle2" gutterBottom>
         追加の休憩
       </Typography>
@@ -92,7 +94,9 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
           type="time"
           value={form.newBreakTime.startTime}
           onChange={e => form.handleNewBreakTimeChange('startTime', e.target.value)}
-          InputLabelProps={{ shrink: true }}
+          slotProps={{
+            inputLabel: { shrink: true }
+          }}
         />
         <TextField
           fullWidth
@@ -101,7 +105,9 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
           type="time"
           value={form.newBreakTime.endTime}
           onChange={e => form.handleNewBreakTimeChange('endTime', e.target.value)}
-          InputLabelProps={{ shrink: true }}
+          slotProps={{
+            inputLabel: { shrink: true }
+          }}
         />
         <TextField
           fullWidth
@@ -124,10 +130,11 @@ const ScheduleBreakSettingsCard: React.FC<ScheduleBreakSettingsCardProps> = ({ s
           <AddIcon fontSize="small" />
         </Button>
       </Box>
-
       <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
         {(settings.breakTimes || []).length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
             追加の休憩はありません
           </Typography>
         ) : (

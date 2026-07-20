@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router';
 import { CssBaseline } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { CustomThemeProvider } from './contexts/ThemeContext';
@@ -35,12 +35,7 @@ function App() {
     <CustomThemeProvider>
       <CssBaseline />
       <AuthProvider>
-        <Router
-          future={{
-            v7_relativeSplatPath: true,
-            v7_startTransition: true
-          }}
-        >
+        <Router>
           <Routes>
             <Route element={<PublicLayout />}>
               <Route index element={<HomePage />} />

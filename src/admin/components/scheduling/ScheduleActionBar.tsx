@@ -67,8 +67,12 @@ const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
         }}
       >
         <Box>
-          <Typography variant="subtitle1" fontWeight={700}>{heading}</Typography>
-          <Typography variant="caption" color="text.secondary">{description}</Typography>
+          <Typography variant="subtitle1" sx={{
+            fontWeight: 700
+          }}>{heading}</Typography>
+          <Typography variant="caption" sx={{
+            color: "text.secondary"
+          }}>{description}</Typography>
         </Box>
 
         {!editing && (
@@ -136,11 +140,9 @@ const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
           </Box>
         )}
       </Box>
-
       {history.error && (
         <Alert severity="error" sx={{ m: 1.5 }}>{history.error}</Alert>
       )}
-
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>スケジュールを作り直しますか？</DialogTitle>
         <DialogContent>

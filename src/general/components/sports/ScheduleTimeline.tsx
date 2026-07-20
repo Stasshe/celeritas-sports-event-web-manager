@@ -56,10 +56,19 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
         </Box>
         {match ? (
           <>
-            <Typography variant="body1" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
-              {getParticipantName(match, 'team1', sport)} <Typography component="span" variant="body2" color="text.secondary">vs</Typography> {getParticipantName(match, 'team2', sport)}
+            <Typography
+              variant="body1"
+              sx={{
+                fontWeight: 700,
+                overflowWrap: 'anywhere'
+              }}>
+              {getParticipantName(match, 'team1', sport)} <Typography component="span" variant="body2" sx={{
+              color: "text.secondary"
+            }}>vs</Typography> {getParticipantName(match, 'team2', sport)}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{
+              color: "text.secondary"
+            }}>
               {getMatchContext(match, sport)}
               {match.location ? ` ・ ${match.location}` : ''}
             </Typography>
@@ -79,10 +88,11 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
         <ScheduleIcon fontSize="small" />
         タイムライン
       </Typography>
-      <Typography variant="body2" color="text.secondary" gutterBottom>
+      <Typography variant="body2" gutterBottom sx={{
+        color: "text.secondary"
+      }}>
         開催時間: {sport.scheduleSettings?.startTime} - {sport.scheduleSettings?.endTime}
       </Typography>
-
       <Box sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
         {showCourtColumn && (
           <Box sx={{ display: 'grid', gridTemplateColumns, bgcolor: 'action.hover', fontSize: { xs: '0.7rem', sm: '0.8rem' }, fontWeight: 600 }}>
@@ -127,7 +137,9 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
                       {block.byCourt[court] ? (
                         renderSlot(block.byCourt[court]!, !showCourtColumn)
                       ) : (
-                        <Typography variant="caption" color="text.disabled">-</Typography>
+                        <Typography variant="caption" sx={{
+                          color: "text.disabled"
+                        }}>-</Typography>
                       )}
                     </Box>
                   ))}

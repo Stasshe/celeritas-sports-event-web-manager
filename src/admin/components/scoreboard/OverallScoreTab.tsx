@@ -41,7 +41,7 @@ import {
 import { useDatabase } from '../../../hooks/useDatabase';
 import { Event, Sport, OverallScoreEntry } from '../../../types';
 import { alpha } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useAdminLayout } from '../../context/AdminLayoutContext';
 
 interface OverallScoreTabProps {
@@ -53,7 +53,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
   const { data: allSports } = useDatabase<Record<string, Sport>>('/sports');
   const navigate = useNavigate();
   const { showSnackbar } = useAdminLayout();
-  
+
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
   const [settings, setSettings] = useState({
@@ -66,27 +66,27 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
   });
   const [newTeam, setNewTeam] = useState('');
   const [calculatedScores, setCalculatedScores] = useState<OverallScoreEntry[]>([]);
-  
+
   // イベントに関連する競技のみをフィルタリング
   const eventSports = useMemo(() => {
     if (!allSports || !event.sports) return [];
-    
+
     return event.sports
       .map(sportId => allSports[sportId])
       .filter(sport => sport !== undefined);
   }, [allSports, event.sports]);
-  
+
   // スポーツのポイント設定をイベントから取得
   const getSportPointSettings = (sportId: string) => {
     if (!event.sportPointSettings) return null;
     return event.sportPointSettings[sportId];
   };
-  
+
   // 各スポーツの有効なポイント設定を取得（イベント側の設定を優先）
   const getEffectivePointSettings = (sport: Sport) => {
     const eventSettings = getSportPointSettings(sport.id);
     if (eventSettings) return eventSettings;
-    
+
     // イベントに設定がない場合はデフォルト値を返す
     return {
       enabled: false,
@@ -94,7 +94,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
       weight: 1.0
     };
   };
-  
+
   // 初期設定
   useEffect(() => {
     if (event.overallScoreboard) {
@@ -107,13 +107,13 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
         displayOnHome: true
       });
     }
-    
+
     // 計算済みスコアがあれば読み込む
     if (event.overallScores) {
       loadCalculatedScores();
     }
   }, [event]);
-  
+
   // チームリストを生成
   const teamList = useMemo(() => {
     switch (settings.teamType) {
@@ -132,33 +132,33 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
           }
         }
         return classList.sort();
-        
+
       case 'grade':
         // 学年リストの固定
         return ['1年', '2年', '3年'];
-        
+
       case 'custom':
         // カスタムチーム
         return settings.customTeams;
-        
+
       default:
         return [];
     }
   }, [settings.teamType, settings.customTeams, event.roster]);
-  
+
   // 設定の保存
   const saveSettings = () => {
     setLoading(true);
-    
+
     try {
       const updatedEvent = {
         ...event,
         overallScoreboard: settings
       };
-      
+
       // onUpdate関数を呼び出して親コンポーネントに通知
       onUpdate(updatedEvent);
-      
+
       // 成功メッセージ
       showSnackbar("総合成績ボード設定を保存しました", 'success');
     } catch (error) {
@@ -180,23 +180,23 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
       customTeams: settings.customTeams || [],
       displayOnHome: settings.displayOnHome !== undefined ? settings.displayOnHome : true
     };
-    
+
     // ローカル状態を更新
     setSettings(newSettings);
-    
+
     // 直ちに保存操作を実行
     const updatedEvent = {
       ...event,
       overallScoreboard: newSettings
     };
-    
+
     console.log('保存する設定:', JSON.stringify(newSettings));
     onUpdate(updatedEvent);
-    
+
     // 保存成功メッセージ
     showSnackbar("設定を更新しました", 'success');
   };
-  
+
   // カスタムチームの追加
   const addCustomTeam = () => {
     if (newTeam.trim() && !settings.customTeams.includes(newTeam.trim())) {
@@ -208,7 +208,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
       setNewTeam('');
     }
   };
-  
+
   // カスタムチームの削除
   const removeCustomTeam = (team: string) => {
     const updatedTeams = settings.customTeams.filter(t => t !== team);
@@ -217,11 +217,11 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
       customTeams: updatedTeams
     });
   };
-  
+
   // 計算済みスコアの読み込み
   const loadCalculatedScores = () => {
     if (!event.overallScores) return;
-    
+
     const entries: OverallScoreEntry[] = Object.entries(event.overallScores)
       .map(([teamId, points]) => ({
         teamId,
@@ -230,26 +230,26 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
         rank: 0, // 後で計算
         sportPoints: {} // 詳細は保持されていない
       }));
-    
+
     // ランク付け
     entries.sort((a, b) => b.totalPoints - a.totalPoints);
     entries.forEach((entry, index) => {
       entry.rank = index + 1;
     });
-    
+
     setCalculatedScores(entries);
   };
-  
+
   // 総合成績を計算
   const calculateOverallScores = () => {
     setCalculating(true);
-    
+
     // 各チームの得点を集計するオブジェクト
     const teamScores: Record<string, {
       totalPoints: number,
       sportPoints: Record<string, number>
     }> = {};
-    
+
     // チームリストの初期化
     teamList.forEach(team => {
       teamScores[team] = {
@@ -257,18 +257,18 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
         sportPoints: {}
       };
     });
-    
+
     // 各競技の結果からポイントを集計
     eventSports.forEach(sport => {
       const pointSettings = getEffectivePointSettings(sport);
       if (!pointSettings.enabled) return;
-      
+
       const points = pointSettings.points || [5, 3, 1];
       const weight = pointSettings.weight || 1.0;
-      
+
       // 競技の結果からランキングを取得
       const rankings = getTeamRankingsForSport(sport, teamList);
-      
+
       // ポイント割り当て
       rankings.forEach((teamId, index) => {
         if (index < points.length && teamScores[teamId]) {
@@ -278,7 +278,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
         }
       });
     });
-    
+
     // OverallScoreEntry の形式に変換
     const entries: OverallScoreEntry[] = Object.entries(teamScores)
       .map(([teamId, data]) => ({
@@ -288,37 +288,37 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
         rank: 0, // 後で設定
         sportPoints: data.sportPoints
       }));
-    
+
     // 合計点数でソートしてランク付け
     entries.sort((a, b) => b.totalPoints - a.totalPoints);
     entries.forEach((entry, index) => {
       entry.rank = index + 1;
     });
-    
+
     setCalculatedScores(entries);
-    
+
     // イベントに保存
     const overallScores: Record<string, number> = {};
     entries.forEach(entry => {
       overallScores[entry.teamId] = entry.totalPoints;
     });
-    
+
     const updatedEvent = {
       ...event,
       overallScores
     };
     onUpdate(updatedEvent);
-    
+
     setCalculating(false);
   };
-  
+
   // 競技ごとのチームランキングを取得するサンプル関数
   // 実際のアプリでは、競技の結果から適切にランキングを生成する必要があります
   const getTeamRankingsForSport = (sport: Sport, teams: string[]): string[] => {
     const shuffled = [...teams].sort(() => 0.5 - Math.random());
     return shuffled;
   };
-  
+
   // ポイント表示のフォーマット
   const formatPoints = (points: number) => {
     return Math.round(points * 10) / 10;
@@ -327,11 +327,11 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
   // 競技のポイント設定を更新する関数
   const handleSportPointUpdate = async (sportId: string, enabled: boolean, weight?: number, points?: number[]) => {
     if (!allSports || !allSports[sportId]) return;
-    
+
     try {
       // 現在のイベントのスポーツポイント設定を取得
       const currentSportPointSettings = event.sportPointSettings || {};
-      
+
       // 特定のスポーツの設定を更新
       const updatedPointSettings = {
         ...(currentSportPointSettings[sportId] || { points: [5, 3, 1], weight: 1.0 }),
@@ -339,7 +339,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
         ...(weight !== undefined ? { weight } : {}),
         ...(points !== undefined ? { points } : {})
       };
-      
+
       // 更新されたイベント全体
       const updatedEvent = {
         ...event,
@@ -348,10 +348,10 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
           [sportId]: updatedPointSettings
         }
       };
-      
+
       // イベント全体を更新
       onUpdate(updatedEvent);
-      
+
       // 成功したら再計算を促すメッセージを表示
       if (calculatedScores.length > 0) {
         showSnackbar("設定を更新しました。「成績を計算する」をクリックして再計算してください", 'info');
@@ -368,7 +368,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
     silver: '#C0C0C0',
     bronze: '#CD7F32'
   };
-  
+
   return (
     <Box>
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -376,9 +376,9 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
           {"総合成績ボード設定"}
         </Typography>
         <Divider sx={{ mb: 2 }} />
-        
+
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <FormControlLabel
               control={
                 <Switch
@@ -389,11 +389,15 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
               label={"総合成績ボードを有効にする"}
             />
           </Grid>
-          
+
           {settings.enabled && (
             <>
               {/* 新しい設定を追加 */}
-              <Grid item xs={12} sm={6}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6
+                }}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -407,7 +411,11 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   label={"ホームページに表示する"}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6
+                }}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -421,8 +429,12 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   label={"詳細スコアを表示する"}
                 />
               </Grid>
-              
-              <Grid item xs={12} sm={6}>
+
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6
+                }}>
                 <Typography variant="subtitle2" gutterBottom>
                   {"表示順位数"}
                 </Typography>
@@ -439,8 +451,8 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   valueLabelDisplay="auto"
                 />
               </Grid>
-              
-              <Grid item xs={12}>
+
+              <Grid size={12}>
                 <FormControl fullWidth>
                   <InputLabel>{"チーム種別"}</InputLabel>
                   <Select
@@ -457,9 +469,9 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   </Select>
                 </FormControl>
               </Grid>
-              
+
               {settings.teamType === 'custom' && (
-                <Grid item xs={12}>
+                <Grid size={12}>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="subtitle2" gutterBottom>
                       {"カスタムチーム"}
@@ -491,7 +503,9 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                         />
                       ))}
                       {settings.customTeams.length === 0 && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                          color: "text.secondary"
+                        }}>
                           {"カスタムチームが登録されていません"}
                         </Typography>
                       )}
@@ -499,8 +513,8 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                   </Box>
                 </Grid>
               )}
-              
-              <Grid item xs={12}>
+
+              <Grid size={12}>
                 <Button
                   variant="contained"
                   color="primary"
@@ -515,7 +529,6 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
           )}
         </Grid>
       </Paper>
-      
       {settings.enabled && (
         <>
           <Paper sx={{ p: 3, mb: 3 }}>
@@ -537,7 +550,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
               </Button>
             </Box>
             <Divider sx={{ mb: 3 }} />
-            
+
             <TableContainer>
               <Table>
                 <TableHead>
@@ -589,11 +602,6 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                             <TextField
                               type="number"
                               size="small"
-                              inputProps={{ 
-                                min: 0.1, 
-                                max: 3, 
-                                step: 0.1 
-                              }}
                               value={pointSettings.weight || 1.0}
                               onChange={(e) => {
                                 const value = parseFloat(e.target.value);
@@ -602,6 +610,13 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                                 }
                               }}
                               sx={{ width: 80 }}
+                              slotProps={{
+                                htmlInput: {
+                                  min: 0.1,
+                                  max: 3,
+                                  step: 0.1
+                                }
+                              }}
                             />
                             <Tooltip title={"重み付け係数の説明"}>
                               <IconButton size="small">
@@ -613,7 +628,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                       </TableRow>
                     );
                   })}
-                  
+
                   {eventSports.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} align="center">
@@ -625,21 +640,21 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
               </Table>
             </TableContainer>
           </Paper>
-          
+
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               {"現在の順位"}
             </Typography>
             <Divider sx={{ mb: 3 }} />
-            
+
             {calculatedScores.length > 0 ? (
               <>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>
                   {calculatedScores.slice(0, 3).map((entry) => (
-                    <Card 
-                      key={entry.teamId} 
-                      variant="outlined" 
-                      sx={{ 
+                    <Card
+                      key={entry.teamId}
+                      variant="outlined"
+                      sx={{
                         width: 200,
                         bgcolor: entry.rank === 1 ? MEDAL_COLORS.gold : (
                           entry.rank === 2 ? MEDAL_COLORS.silver : MEDAL_COLORS.bronze
@@ -662,7 +677,7 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                     </Card>
                   ))}
                 </Box>
-            
+
                 <TableContainer>
                   <Table>
                     <TableHead>
@@ -677,9 +692,9 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                     </TableHead>
                     <TableBody>
                       {calculatedScores.map((entry) => (
-                        <TableRow 
+                        <TableRow
                           key={entry.teamId}
-                          sx={{ 
+                          sx={{
                             bgcolor: entry.rank <= 3 ? alpha(
                               entry.rank === 1 ? MEDAL_COLORS.gold : (
                                 entry.rank === 2 ? MEDAL_COLORS.silver : MEDAL_COLORS.bronze
@@ -694,8 +709,8 @@ const OverallScoreTab: React.FC<OverallScoreTabProps> = ({ event, onUpdate }) =>
                           </TableCell>
                           {settings.displayScores && eventSports.map(sport => (
                             <TableCell key={sport.id} align="right">
-                              {entry.sportPoints[sport.id] 
-                                ? formatPoints(entry.sportPoints[sport.id]) 
+                              {entry.sportPoints[sport.id]
+                                ? formatPoints(entry.sportPoints[sport.id])
                                 : '-'}
                             </TableCell>
                           ))}

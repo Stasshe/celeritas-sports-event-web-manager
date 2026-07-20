@@ -28,7 +28,7 @@ import {
   Place as PlaceIcon
 } from '@mui/icons-material';
 import { Sport, TimeSlot, Event } from '../../../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { timeToMinutes } from '../../../utils/scheduleGenerator';
 import ScheduleTimeline from './ScheduleTimeline';
 
@@ -50,7 +50,7 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
     const sportsWithSchedule = sports.filter(
       sport => sport.scheduleSettings?.timeSlots && sport.scheduleSettings.timeSlots.length > 0
     );
-    
+
     // 開始時間順にソート
     return [...sportsWithSchedule].sort((a, b) => {
       const aStart = a.scheduleSettings?.startTime || '00:00';
@@ -75,33 +75,33 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
   // 各競技の同時進行試合の数をカウント
   const getSimultaneousMatchCount = (sport: Sport): number => {
     if (!sport.scheduleSettings?.timeSlots) return 0;
-    
+
     // タイムスロットを開始時間でグループ化
     const timeGroups: Record<string, TimeSlot[]> = {};
     sport.scheduleSettings.timeSlots.forEach(slot => {
       if (slot.type !== 'match') return;
-      
+
       if (!timeGroups[slot.startTime]) {
         timeGroups[slot.startTime] = [];
       }
       timeGroups[slot.startTime].push(slot);
     });
-    
+
     // 同時進行の最大数を計算
     let maxSimultaneous = 0;
     Object.values(timeGroups).forEach(slots => {
       maxSimultaneous = Math.max(maxSimultaneous, slots.length);
     });
-    
+
     return maxSimultaneous;
   };
 
   // スポーツのタイムスロット分布を簡略表示するための関数
   const renderTimeDistribution = (sport: Sport) => {
     if (!sport.scheduleSettings?.timeSlots) return null;
-    
+
     const timeSlots = sport.scheduleSettings.timeSlots;
-    
+
     // 時間枠タイプごとのカウント
     const counts = {
       match: timeSlots.filter(slot => slot.type === 'match').length,
@@ -109,7 +109,7 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
       lunch: timeSlots.filter(slot => slot.type === 'lunch').length,
       other: timeSlots.filter(slot => !['match', 'break', 'lunch'].includes(slot.type)).length
     };
-    
+
     // 同時進行数
     const simultaneousCount = getSimultaneousMatchCount(sport);
     const hasMultipleCourts = simultaneousCount > 1;
@@ -118,16 +118,16 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
       <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         {counts.match > 0 && (
           <Tooltip title={hasMultipleCourts ? "同時進行の試合あり" : ''}>
-            <Badge 
-              badgeContent={hasMultipleCourts ? simultaneousCount : 0} 
+            <Badge
+              badgeContent={hasMultipleCourts ? simultaneousCount : 0}
               color="primary"
               overlap="circular"
               invisible={!hasMultipleCourts}
             >
-              <Chip 
-                icon={<SportIcon fontSize="small" />} 
-                label={`${"試合数"}:${counts.match}`} 
-                size="small" 
+              <Chip
+                icon={<SportIcon fontSize="small" />}
+                label={`${"試合数"}:${counts.match}`}
+                size="small"
                 color="primary"
                 variant="outlined"
               />
@@ -135,28 +135,28 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
           </Tooltip>
         )}
         {counts.break > 0 && (
-          <Chip 
-            icon={<BreakIcon fontSize="small" />} 
-            label={`${"休憩回数"}:${counts.break}`} 
-            size="small" 
+          <Chip
+            icon={<BreakIcon fontSize="small" />}
+            label={`${"休憩回数"}:${counts.break}`}
+            size="small"
             color="secondary"
             variant="outlined"
           />
         )}
         {counts.lunch > 0 && (
-          <Chip 
-            icon={<LunchIcon fontSize="small" />} 
-            label={"昼休み"} 
-            size="small" 
+          <Chip
+            icon={<LunchIcon fontSize="small" />}
+            label={"昼休み"}
+            size="small"
             color="warning"
             variant="outlined"
           />
         )}
         {sport.scheduleSettings?.courtCount > 1 && (
-          <Chip 
-            icon={<PlaceIcon fontSize="small" />} 
-            label={`${sport.scheduleSettings.courtCount}${"コート"}`} 
-            size="small" 
+          <Chip
+            icon={<PlaceIcon fontSize="small" />}
+            label={`${sport.scheduleSettings.courtCount}${"コート"}`}
+            size="small"
             color="info"
             variant="outlined"
           />
@@ -176,52 +176,56 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
     if (matchSlots.length === 0) return null;
 
     // 最初と最後の試合時間を取得
-    const firstMatch = matchSlots.reduce((earliest, slot) => 
+    const firstMatch = matchSlots.reduce((earliest, slot) =>
       timeToMinutes(slot.startTime) < timeToMinutes(earliest.startTime) ? slot : earliest, matchSlots[0]);
-    
-    const lastMatch = matchSlots.reduce((latest, slot) => 
+
+    const lastMatch = matchSlots.reduce((latest, slot) =>
       timeToMinutes(slot.startTime) > timeToMinutes(latest.startTime) ? slot : latest, matchSlots[0]);
 
     return (
       <Card variant="outlined" sx={{ mb: 2 }}>
         <CardContent>
-          <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
+          <Typography variant="subtitle1" gutterBottom sx={{
+            fontWeight: "medium"
+          }}>
             {"試合時間帯"}
           </Typography>
-          <Box sx={{ 
-            display: 'flex', 
+          <Box sx={{
+            display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center', 
+            alignItems: 'center',
             mb: 1
           }}>
-            <Chip 
+            <Chip
               label={`${"第1試合"}: ${firstMatch.startTime}`}
               size="small"
               color="primary"
               variant="outlined"
             />
             <Box sx={{ mx: 1, flexGrow: 1, textAlign: 'center' }}>→</Box>
-            <Chip 
+            <Chip
               label={`${"最終試合"}: ${lastMatch.startTime}`}
               size="small"
               color="primary"
               variant="outlined"
             />
           </Box>
-          
+
           {/* コート情報 */}
           {sport.scheduleSettings.courtCount > 1 && (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 {"コート情報"}:
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                <Chip 
+                <Chip
                   label={sport.scheduleSettings.courtNames?.court1 || "コート1"}
                   size="small"
                   variant="outlined"
                 />
-                <Chip 
+                <Chip
                   label={sport.scheduleSettings.courtNames?.court2 || "コート2"}
                   size="small"
                   variant="outlined"
@@ -256,13 +260,15 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
         <EventIcon sx={{ mr: 1 }} />
         {activeEvent?.name ? `${activeEvent.name} ${"概要"}` : "イベントスケジュール"}
       </Typography>
-      
-      <Typography variant="body2" color="text.secondary" paragraph>
+      <Typography
+        variant="body2"
+        sx={{
+          color: "text.secondary",
+          marginBottom: "16px"
+        }}>
         {"クリックで展開"}
       </Typography>
-      
       <Divider sx={{ mb: 3 }} />
-      
       {/* スポーツ一覧とタイムライン */}
       <Box>
         {activeSports.map((sport) => (
@@ -270,7 +276,7 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
             key={sport.id}
             expanded={expanded === `sport-${sport.id}`}
             onChange={handleChange(`sport-${sport.id}`)}
-            sx={{ 
+            sx={{
               mb: 1,
               transition: 'all 0.2s ease',
               ':hover': {
@@ -283,8 +289,14 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
               aria-controls={`sport-${sport.id}-content`}
               id={`sport-${sport.id}-header`}
             >
-              <Grid container alignItems="center" spacing={1}>
-                <Grid item xs={12} sm={4}>
+              <Grid container spacing={1} sx={{
+                alignItems: "center"
+              }}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 4
+                  }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <SportIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
                     <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
@@ -292,31 +304,41 @@ const EventTimelineOverview: React.FC<EventTimelineOverviewProps> = ({ sports, a
                     </Typography>
                   </Box>
                 </Grid>
-                
-                <Grid item xs={12} sm={3}>
-                  <Typography variant="body2" color="text.secondary">
+
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 3
+                  }}>
+                  <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                  }}>
                     {sport.scheduleSettings?.startTime} - {sport.scheduleSettings?.endTime}
                   </Typography>
                 </Grid>
-                
-                <Grid item xs={12} sm={5}>
+
+                <Grid
+                  size={{
+                    xs: 12,
+                    sm: 5
+                  }}>
                   {renderTimeDistribution(sport)}
                 </Grid>
               </Grid>
             </AccordionSummary>
-            
+
             <AccordionDetails sx={{ p: isMobile ? 1 : 2 }}>
               <Paper variant="outlined" sx={{ p: 2 }}>
                 {/* スケジュールサマリー */}
                 {renderSportScheduleSummary(sport)}
-                
+
                 {/* 詳細スケジュール */}
                 <ScheduleTimeline sport={sport} />
-                
+
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                   <Chip
                     label={"詳細を表示"}
-                    color="primary" 
+                    color="primary"
                     onClick={() => navigate(`/sport/${sport.id}`)}
                     clickable
                   />

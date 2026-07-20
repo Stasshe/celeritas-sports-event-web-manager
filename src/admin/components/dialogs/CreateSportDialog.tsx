@@ -24,22 +24,22 @@ interface CreateSportDialogProps {
   sport?: Sport; // 既存の競技（編集の場合）
 }
 
-const CreateSportDialog: React.FC<CreateSportDialogProps> = ({ 
-  open, 
-  onClose, 
-  onSuccess, 
-  eventId, 
-  sport 
+const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
+  open,
+  onClose,
+  onSuccess,
+  eventId,
+  sport
 }) => {
   const { pushData, updateData } = useDatabase<Record<string, Sport>>('/sports');
   const { data: events, updateData: updateEvent } = useDatabase<Record<string, Event>>('/events');
-  
+
   const isSubmittingRef = useRef(false);
   const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSport, setNewSport] = useState<Partial<Sport>>(
-    sport 
-      ? { ...sport } 
+    sport
+      ? { ...sport }
       : {
           name: '',
           eventId,
@@ -49,7 +49,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           matches: []
         }
   );
-  
+
   // ダイアログが開かれたときに初期値をセット
   useEffect(() => {
     if (open) {
@@ -67,18 +67,18 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
       }
     }
   }, [open, sport, eventId]);
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
     if (name) {
       setNewSport(prev => ({ ...prev, [name]: value }));
     }
   };
-  
+
   // 型定義エラーを修正
   const handleSubmit = async () => {
     if (!newSport.name || !newSport.eventId || isSubmittingRef.current) return;
-    
+
     // 既存のタイマーをクリア
     if (submitTimeoutRef.current) {
       clearTimeout(submitTimeoutRef.current);
@@ -124,7 +124,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
       submitTimeoutRef.current = setTimeout(async () => {
         try {
           let sportId: string = '';
-          
+
           if (sport && sport.id) {
             sportId = sport.id;
             await updateData({ [sport.id]: { ...sportData, id: sport.id } as Sport });
@@ -137,14 +137,14 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
                 ...event,
                 sports: [...(event.sports || []), newSportId]
               };
-              
+
               // イベントの更新を個別に実行
               await updateEvent({
                 [eventId]: updatedEvent
               });
             }
           }
-          
+
           if (sportId) {
             onSuccess(sportId);
           }
@@ -172,25 +172,27 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
       isSubmittingRef.current = false;
     };
   }, []);
-  
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       fullWidth
       maxWidth="xs"
-      TransitionProps={{
-        onExited: () => {
-          // ダイアログが閉じられた後にステートをリセット
-          if (!sport) {
-            setNewSport({
-              name: '',
-              eventId,
-              type: 'tournament',
-              description: '',
-              teams: [],
-              matches: []
-            });
+      slotProps={{
+        transition: {
+          onExited: () => {
+            // ダイアログが閉じられた後にステートをリセット
+            if (!sport) {
+              setNewSport({
+                name: '',
+                eventId,
+                type: 'tournament',
+                description: '',
+                teams: [],
+                matches: []
+              });
+            }
           }
         }
       }}
@@ -198,10 +200,9 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
       <DialogTitle>
         {sport ? "競技編集" : "競技作成"}
       </DialogTitle>
-      
       <DialogContent dividers sx={{ pt: 2 }}>
         <Grid container spacing={1.5}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TextField
               name="name"
               label={"競技名"}
@@ -213,7 +214,7 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid size={12}>
             <FormControl fullWidth size="small" required>
               <InputLabel>{"タイプ"}</InputLabel>
               <Select
@@ -232,14 +233,13 @@ const CreateSportDialog: React.FC<CreateSportDialogProps> = ({
           </Grid>
         </Grid>
       </DialogContent>
-      
       <DialogActions>
         <Button onClick={onClose} disabled={isSubmitting}>
           {"キャンセル"}
         </Button>
-        <Button 
-          onClick={handleSubmit} 
-          variant="contained" 
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
           color="primary"
           disabled={isSubmitting || !newSport.name || !newSport.eventId}
         >

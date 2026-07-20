@@ -1,20 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { SVGViewer } from '@g-loot/react-tournament-brackets';
+import { SVGViewer } from '@cm3tahkuh/react-tournament-brackets';
 
 interface BracketViewportProps {
-  children: React.ReactNode;
+  children: React.ReactElement;
   bracketWidth: number;
   bracketHeight: number;
-  startAt?: [number, number];
+  startAt: number[];
 }
 
-const BracketViewport: React.FC<BracketViewportProps> = ({
+const BracketViewport = ({
   children,
   bracketWidth,
   bracketHeight,
   startAt
-}) => {
+}: BracketViewportProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const containerRef = useRef<HTMLDivElement>(null);

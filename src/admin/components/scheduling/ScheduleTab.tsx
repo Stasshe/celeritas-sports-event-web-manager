@@ -64,10 +64,17 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         }}
       >
         <Box>
-          <Typography variant="h5" component="h2" fontWeight={700}>
+          <Typography variant="h5" component="h2" sx={{
+            fontWeight: 700
+          }}>
             運営スケジュール
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              mt: 0.25
+            }}>
             生成条件の調整から当日の並び替えまで、この画面で完結します。
           </Typography>
         </Box>
@@ -77,7 +84,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
           <Chip size="small" variant="outlined" label={scheduleRange} />
         </Box>
       </Box>
-
       <Button
         fullWidth
         variant="outlined"
@@ -89,7 +95,6 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
       >
         {settingsButtonLabel}
       </Button>
-
       <Box
         sx={{
           display: 'grid',
@@ -107,8 +112,12 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
         >
           <Paper variant="outlined" sx={{ overflow: 'hidden', containerType: 'inline-size' }}>
             <Box sx={{ px: 2, py: 1.5, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="subtitle1" fontWeight={700}>生成条件</Typography>
-              <Typography variant="caption" color="text.secondary">変更内容は自動保存されます</Typography>
+              <Typography variant="subtitle1" sx={{
+                fontWeight: 700
+              }}>生成条件</Typography>
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>変更内容は自動保存されます</Typography>
             </Box>
             <ScheduleBasicSettingsCard sport={sport} settings={form.settings} form={form} />
             <ScheduleBreakSettingsCard settings={form.settings} form={form} />
@@ -140,10 +149,20 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
           {!editing && history.timeSlots.length === 0 && (
             <Box sx={{ px: 2, py: { xs: 7, sm: 10 }, textAlign: 'center' }}>
               <EmptyScheduleIcon sx={{ width: 40, height: 40, color: 'text.disabled' }} />
-              <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 1 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 700,
+                  mt: 1
+                }}>
                 進行表はまだありません
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  mt: 0.5
+                }}>
                 生成条件を確認して「自動生成」を押してください。
               </Typography>
             </Box>

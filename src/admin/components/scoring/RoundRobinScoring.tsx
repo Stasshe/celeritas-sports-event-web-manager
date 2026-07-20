@@ -57,10 +57,10 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
 
     const newTeams: Team[] = [];
     const existingTeams = new Set(teams.map(t => t.name));
-    
+
     // 全学年のデータを処理
     const grades = ['grade1', 'grade2', 'grade3'] as const;
-    
+
     grades.forEach(grade => {
       const gradeData = sport.roster?.[grade];
       if (!gradeData) return;
@@ -85,12 +85,12 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
       // 新しいチームと既存のチームを結合
       const updatedTeams = [...teams, ...newTeams];
       setTeams(updatedTeams);
-      
+
       // 新しいチーム間の試合を生成
       const generatedMatches = generateAllMatches(updatedTeams);
       const updatedMatches = [...matches, ...generatedMatches];
       setMatches(updatedMatches);
-      
+
       // スポーツデータを更新
       onUpdate({
         ...sport,
@@ -112,7 +112,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
         // 既存の対戦がない場合のみ新しい試合を作成
         const pairKey = `${team1.id}-${team2.id}`;
         const reversePairKey = `${team2.id}-${team1.id}`;
-        
+
         if (!existingPairs.has(pairKey) && !existingPairs.has(reversePairKey)) {
           newMatches.push({
             id: `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -144,10 +144,10 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
 
     const newTeams: Team[] = [];
     const existingTeams = new Set(teams.map(t => t.name));
-    
+
     // 全学年のデータを処理
     const grades = ['grade1', 'grade2', 'grade3'] as const;
-    
+
     grades.forEach(grade => {
       const gradeData = sport.roster?.[grade];
       if (!gradeData) return;
@@ -200,7 +200,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
 
     setTeams(updatedTeams);
     setMatches(updatedMatches);
-    
+
     // スポーツデータを更新
     onUpdate({
       ...sport,
@@ -217,8 +217,8 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
   const matchGrid = teams.reduce((acc, team1) => {
     acc[team1.id] = teams.reduce((innerAcc, team2) => {
       innerAcc[team2.id] = matches.find(
-        match => 
-          (match.team1Id === team1.id && match.team2Id === team2.id) || 
+        match =>
+          (match.team1Id === team1.id && match.team2Id === team2.id) ||
           (match.team1Id === team2.id && match.team2Id === team1.id)
       ) || null;
       return innerAcc;
@@ -274,7 +274,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
           // 明示的にステータスが設定されていればそれを維持、そうでなければ完了にする
           status: selectedMatch.status || 'completed'
         };
-        
+
         if (updatedMatch.team1Score > updatedMatch.team2Score) {
           updatedMatch.winnerId = updatedMatch.team1Id;
         } else if (updatedMatch.team1Score < updatedMatch.team2Score) {
@@ -284,10 +284,10 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
         }
 
         // マッチリストを更新
-        const updatedMatches = matches.map(m => 
+        const updatedMatches = matches.map(m =>
           m.id === updatedMatch.id ? updatedMatch : m
         );
-        
+
         // スポーツデータを更新（エラーハンドリングを追加）
         await onUpdate({
           ...sport,
@@ -323,7 +323,6 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
           {"チームを生成"}
         </Button>
       </Box>
-
       <Typography variant="h6" gutterBottom>
         対戦表
         <p>
@@ -331,17 +330,16 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
           試合をクリックしてスコアを追加
         </p>
       </Typography>
-      
       <TableContainer component={Paper} sx={{ mb: 4, overflow: 'auto' }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
               <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>チーム</TableCell>
               {teams.map(team => (
-                <TableCell 
-                  key={team.id} 
-                  align="center" 
-                  sx={{ 
+                <TableCell
+                  key={team.id}
+                  align="center"
+                  sx={{
                     minWidth: 80,
                     bgcolor: theme.palette.primary.light,
                     color: theme.palette.primary.contrastText,
@@ -361,15 +359,15 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
                 </TableCell>
                 {teams.map(team2 => {
                   const match = team1.id === team2.id ? null : matchGrid[team1.id]?.[team2.id];
-                  
+
                   return (
-                    <TableCell 
-                      key={team2.id} 
-                      align="center" 
+                    <TableCell
+                      key={team2.id}
+                      align="center"
                       onClick={team1.id !== team2.id ? () => handleOpenMatchDialog(match, team1.id, team2.id) : undefined}
                       sx={{
-                        backgroundColor: team1.id === team2.id ? theme.palette.action.hover : 
-                          match?.status === 'completed' ? theme.palette.success.light : 
+                        backgroundColor: team1.id === team2.id ? theme.palette.action.hover :
+                          match?.status === 'completed' ? theme.palette.success.light :
                           match?.status === 'inProgress' ? theme.palette.info.light : 'inherit',
                         cursor: team1.id !== team2.id ? 'pointer' : 'default',
                         '&:hover': {
@@ -389,24 +387,24 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
                               `${match.team2Score} - ${match.team1Score}`
                             )}
                           </Typography>
-                          <Chip 
-                            size="small" 
+                          <Chip
+                            size="small"
                             label={
-                              match.status === 'completed' ? "完了" : 
-                              match.status === 'inProgress' ? "進行中" : 
+                              match.status === 'completed' ? "完了" :
+                              match.status === 'inProgress' ? "進行中" :
                               "予定"
                             }
                             color={
-                              match.status === 'completed' ? 'success' : 
-                              match.status === 'inProgress' ? 'primary' : 
+                              match.status === 'completed' ? 'success' :
+                              match.status === 'inProgress' ? 'primary' :
                               'default'
                             }
                             sx={{ mt: 0.5, fontSize: '0.6rem' }}
                           />
                         </Box>
                       ) : (
-                        <Button 
-                          variant="outlined" 
+                        <Button
+                          variant="outlined"
                           size="small"
                           color="primary"
                           sx={{ minWidth: 'auto', p: '2px 8px' }}
@@ -422,7 +420,6 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
           </TableBody>
         </Table>
       </TableContainer>
-
       {/* 閲覧用テーブルの追加 */}
       <Box sx={{ mt: 4 }}>
         <Typography variant="h6" gutterBottom>
@@ -430,7 +427,6 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
         </Typography>
         <RoundRobinTable sport={sport} />
       </Box>
-      
       {/* スコア入力ダイアログ */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
@@ -438,55 +434,67 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
         </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={3}>
-            <Grid item xs={12} sx={{ mb: 2 }}>
-              <Grid container alignItems="center" spacing={2}>
-                <Grid item xs={5} sx={{ textAlign: 'center' }}>
-                  <Typography variant="subtitle1" fontWeight="bold">
+            <Grid sx={{ mb: 2 }} size={12}>
+              <Grid container spacing={2} sx={{
+                alignItems: "center"
+              }}>
+                <Grid sx={{ textAlign: 'center' }} size={5}>
+                  <Typography variant="subtitle1" sx={{
+                    fontWeight: "bold"
+                  }}>
                     {selectedMatch ? getTeamName(selectedMatch.team1Id) : ''}
                   </Typography>
                 </Grid>
-                <Grid item xs={2} sx={{ textAlign: 'center' }}>
+                <Grid sx={{ textAlign: 'center' }} size={2}>
                   <Typography variant="body1">VS</Typography>
                 </Grid>
-                <Grid item xs={5} sx={{ textAlign: 'center' }}>
-                  <Typography variant="subtitle1" fontWeight="bold">
+                <Grid sx={{ textAlign: 'center' }} size={5}>
+                  <Typography variant="subtitle1" sx={{
+                    fontWeight: "bold"
+                  }}>
                     {selectedMatch ? getTeamName(selectedMatch.team2Id) : ''}
                   </Typography>
                 </Grid>
               </Grid>
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Grid container spacing={2}>
-                <Grid item xs={5}>
+                <Grid size={5}>
                   <TextField
                     fullWidth
                     label="スコア"
                     type="number"
                     value={selectedMatch?.team1Score || 0}
                     onChange={(e) => handleScoreChange('team1Score', e.target.value)}
-                    inputProps={{ min: 0 }}
                     disabled={selectedMatch?.status === 'completed'}
+                    slotProps={{
+                      htmlInput: { min: 0 }
+                    }}
                   />
                 </Grid>
-                <Grid item xs={2} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Grid
+                  sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                  size={2}>
                   <Typography variant="h5">-</Typography>
                 </Grid>
-                <Grid item xs={5}>
+                <Grid size={5}>
                   <TextField
                     fullWidth
                     label="スコア"
                     type="number"
                     value={selectedMatch?.team2Score || 0}
                     onChange={(e) => handleScoreChange('team2Score', e.target.value)}
-                    inputProps={{ min: 0 }}
                     disabled={selectedMatch?.status === 'completed'}
+                    slotProps={{
+                      htmlInput: { min: 0 }
+                    }}
                   />
                 </Grid>
               </Grid>
             </Grid>
 
-            <Grid item xs={12} sx={{ mt: 2 }}>
+            <Grid sx={{ mt: 2 }} size={12}>
               <FormControl fullWidth>
                 <InputLabel>状態</InputLabel>
                 <Select
@@ -500,7 +508,7 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} sx={{ mt: 1 }}>
+            <Grid sx={{ mt: 1 }} size={12}>
               <TextField
                 fullWidth
                 label="メモ"
@@ -514,16 +522,15 @@ const RoundRobinScoring: React.FC<RoundRobinScoringProps> = ({ sport, onUpdate }
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>キャンセル</Button>
-          <Button 
-            onClick={handleSaveMatch} 
-            variant="contained" 
+          <Button
+            onClick={handleSaveMatch}
+            variant="contained"
             color="primary"
           >
             保存
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* 確認ダイアログ */}
       <Dialog
         open={showResetConfirm}

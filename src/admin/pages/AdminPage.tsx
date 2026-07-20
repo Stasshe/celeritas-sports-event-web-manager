@@ -19,7 +19,7 @@ import {
   ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 import { getSportTypeDescription, getSportTypeLabel } from '../../utils/labels';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useDatabase } from '../../hooks/useDatabase';
 import { Event, Sport } from '../../types';
 import { useThemeContext } from '../../contexts/ThemeContext';
@@ -32,32 +32,32 @@ const AdminPage: React.FC = () => {
   const navigate = useNavigate();
   const { alpha } = useThemeContext();
   const { showSnackbar, registerSaveHandler, unregisterSaveHandler, save } = useAdminLayout();
-  const { 
-    data: events, 
-    loading: eventsLoading, 
+  const {
+    data: events,
+    loading: eventsLoading,
     updateData: updateEvents
   } = useDatabase<Record<string, Event>>('/events');
-  
-  const { 
-    data: sports, 
-    loading: sportsLoading 
+
+  const {
+    data: sports,
+    loading: sportsLoading
   } = useDatabase<Record<string, Sport>>('/sports');
-  
+
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [createEventDialogOpen, setCreateEventDialogOpen] = useState(false);
   const [createSportDialogOpen, setCreateSportDialogOpen] = useState(false);
   const [localEventState, setLocalEventState] = useState<Record<string, Event> | null>(null);
-  
+
   // 変更されたイベントを追跡
   const modifiedEventsRef = useRef<Set<string>>(new Set());
-  
+
   // localEventStateの初期化
   useEffect(() => {
     if (events && !localEventState) {
       setLocalEventState(events);
     }
   }, [events, localEventState]);
-  
+
   // 最初にアクティブなイベントを選択
   useEffect(() => {
     if (events) {
@@ -78,7 +78,7 @@ const AdminPage: React.FC = () => {
         if (modifiedEventsRef.current.size === 0) {
           return true; // 変更がなければ成功を返す
         }
-        
+
         // 変更されたイベントのみを更新
         if (localEventState) {
           const updates: Record<string, Event> = {};
@@ -87,22 +87,22 @@ const AdminPage: React.FC = () => {
               updates[eventId] = localEventState[eventId];
             }
           });
-          
+
           if (Object.keys(updates).length > 0) {
             await updateEvents(updates);
             modifiedEventsRef.current.clear();
           }
         }
-        
+
         return true;
       } catch (error) {
         console.error('Error saving events:', error);
         return false;
       }
     };
-    
+
     registerSaveHandler(handleSave, 'adminDashboard');
-    
+
     return () => {
       unregisterSaveHandler('adminDashboard');
     };
@@ -111,7 +111,7 @@ const AdminPage: React.FC = () => {
   // イベントを設定する関数（最適化版）
   const handleSetActiveEvent = useCallback(async (eventId: string) => {
     if (!events) return;
-    
+
     try {
       // 型安全な更新オブジェクトを作成
       const updates: Record<string, Event> = Object.entries(events).reduce((acc, [id, event]) => {
@@ -121,17 +121,17 @@ const AdminPage: React.FC = () => {
         };
         return acc;
       }, {} as Record<string, Event>);
-      
+
       // 楽観的UI更新
       setLocalEventState(prev => prev ? {
         ...prev,
         ...updates
       } : null);
-      
+
       // バックエンド更新
       await updateEvents(updates);
       showSnackbar("アクティブイベントが更新されました", 'success');
-      
+
     } catch (error) {
       // エラー時にローカル状態を元に戻す
       if (events) {
@@ -170,7 +170,7 @@ const AdminPage: React.FC = () => {
   // イベントごとの競技を取得
   const getSportsForEvent = (eventId: string): Sport[] => {
     if (!sports) return [];
-    
+
     return Object.values(sports).filter(sport => sport.eventId === eventId);
   };
 
@@ -193,7 +193,12 @@ const AdminPage: React.FC = () => {
   return (
     <>
       <Box sx={{ mb: 2 }}>
-        <Typography variant="overline" color="primary.main" fontWeight={700}>
+        <Typography
+          variant="overline"
+          sx={{
+            color: "primary.main",
+            fontWeight: 700
+          }}>
           Overview
         </Typography>
         <Box
@@ -209,12 +214,18 @@ const AdminPage: React.FC = () => {
             <Typography
               variant="h4"
               component="h1"
-              fontWeight={700}
-              sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}
-            >
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: '1.75rem', sm: '2.125rem' }
+              }}>
               ダッシュボード
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                mt: 0.25
+              }}>
               開催中のイベントと競技をまとめて管理します。
             </Typography>
           </Box>
@@ -236,12 +247,15 @@ const AdminPage: React.FC = () => {
           </Box>
         </Box>
       </Box>
-
       <Box component="section" sx={{ py: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mb: 1 }}>
           <Box>
-            <Typography variant="h6" fontWeight={700}>{"現在のイベント"}</Typography>
-            <Typography variant="caption" color="text.secondary">公開画面に表示するイベント</Typography>
+            <Typography variant="h6" sx={{
+              fontWeight: 700
+            }}>{"現在のイベント"}</Typography>
+            <Typography variant="caption" sx={{
+              color: "text.secondary"
+            }}>公開画面に表示するイベント</Typography>
           </Box>
           <Button
             variant="outlined"
@@ -251,7 +265,7 @@ const AdminPage: React.FC = () => {
             {"イベント作成"}
           </Button>
         </Box>
-        
+
         {activeEvent ? (
           <Box
             sx={{
@@ -267,13 +281,22 @@ const AdminPage: React.FC = () => {
             }}
           >
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="h5" fontWeight={700}>{activeEvent.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="h5" sx={{
+                    fontWeight: 700
+                  }}>{activeEvent.name}</Typography>
+                  <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                  }}>
                     {new Date(activeEvent.date).toLocaleDateString()}
                     {activeEvent.alternativeDate && ` (${"予備日"}: ${new Date(activeEvent.alternativeDate).toLocaleDateString()})`}
                   </Typography>
                   {activeEvent.description && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "text.secondary",
+                        mt: 1
+                      }}>
                       {activeEvent.description}
                     </Typography>
                   )}
@@ -282,11 +305,13 @@ const AdminPage: React.FC = () => {
           </Box>
         ) : (
           <Box sx={{ textAlign: 'center', py: 3, bgcolor: alpha('#f5f5f5', 0.5) }}>
-            <Typography color="text.secondary">
+            <Typography sx={{
+              color: "text.secondary"
+            }}>
               {"アクティブなイベントがありません"}
             </Typography>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               startIcon={<EventIcon />}
               onClick={handleOpenCreateEventDialog}
               sx={{ mt: 2 }}
@@ -296,7 +321,6 @@ const AdminPage: React.FC = () => {
           </Box>
         )}
       </Box>
-
       {selectedEvent && (
         <Box component="section" sx={{ pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
           <Box
@@ -310,16 +334,20 @@ const AdminPage: React.FC = () => {
             }}
           >
             <Box>
-              <Typography variant="h6" fontWeight={700}>
+              <Typography variant="h6" sx={{
+                fontWeight: 700
+              }}>
                 {selectedEvent.name} - {"競技管理"}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 競技数: {eventSports.length}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 startIcon={<EditIcon />}
                 onClick={() => navigate(`/admin/events/${selectedEvent.id}`)}
               >
@@ -334,7 +362,7 @@ const AdminPage: React.FC = () => {
               </Button>
             </Box>
           </Box>
-          
+
           <Divider />
 
           {eventSports.length > 0 ? (
@@ -367,23 +395,35 @@ const AdminPage: React.FC = () => {
                   }}
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 0.75 }}>
-                    <Typography variant="h6" fontWeight={700}>{sport.name}</Typography>
+                    <Typography variant="h6" sx={{
+                      fontWeight: 700
+                    }}>{sport.name}</Typography>
                     <Chip
                       label={getSportTypeLabel(sport.type)}
                       color={sport.type === 'tournament' ? 'primary' : sport.type === 'roundRobin' ? 'secondary' : 'default'}
                       size="small"
                     />
                   </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1, flexGrow: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      mb: 1,
+                      flexGrow: 1
+                    }}>
                     {sport.description || getSportTypeDescription(sport.type)}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 4 }}>
                     <Box>
-                      <Typography variant="caption" color="text.secondary">チーム</Typography>
+                      <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                      }}>チーム</Typography>
                       <Typography variant="body2">{sport.teams?.length || 0}</Typography>
                     </Box>
                     <Box>
-                      <Typography variant="caption" color="text.secondary">試合数</Typography>
+                      <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                      }}>試合数</Typography>
                       <Typography variant="body2">{sport.matches?.length || 0}</Typography>
                     </Box>
                   </Box>
@@ -396,7 +436,11 @@ const AdminPage: React.FC = () => {
             </Box>
           ) : (
             <Box sx={{ textAlign: 'center', py: 3 }}>
-              <Typography color="text.secondary" paragraph>
+              <Typography
+                sx={{
+                  color: "text.secondary",
+                  marginBottom: "16px"
+                }}>
                 {"このイベントには競技がありません"}
               </Typography>
               <Button
@@ -408,7 +452,7 @@ const AdminPage: React.FC = () => {
               </Button>
             </Box>
           )}
-          
+
           {!selectedEvent.isActive && (
             <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Button
@@ -423,7 +467,6 @@ const AdminPage: React.FC = () => {
           )}
         </Box>
       )}
-
       {/* ダイアログコンポーネント */}
       <CreateEventDialog
         open={createEventDialogOpen}
@@ -433,7 +476,6 @@ const AdminPage: React.FC = () => {
           showSnackbar("イベントが作成されました", 'success');
         }}
       />
-      
       <CreateSportDialog
         open={createSportDialogOpen}
         onClose={() => setCreateSportDialogOpen(false)}

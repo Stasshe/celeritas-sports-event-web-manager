@@ -41,7 +41,9 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({ activeEvent, selectedClas
   return (
     <Paper variant="outlined" sx={{ mb: 3, overflow: 'hidden' }}>
       <Box sx={{ p: 2 }}>
-        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+        <Typography variant="subtitle1" gutterBottom sx={{
+          fontWeight: 600
+        }}>
           クラスを選択
         </Typography>
 
@@ -63,7 +65,9 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({ activeEvent, selectedClas
         </Tabs>
 
         {visibleClasses.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
             この学年にクラスがありません
           </Typography>
         ) : (
@@ -84,13 +88,20 @@ const ClassSelector: React.FC<ClassSelectorProps> = ({ activeEvent, selectedClas
           </Box>
         )}
       </Box>
-
       {selectedClasses.length > 0 && (
         <Box sx={{ p: 2, bgcolor: 'action.hover', borderTop: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              mb: 1,
+              display: 'block'
+            }}>
             選択中のクラス
           </Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={1} useFlexGap sx={{
+            flexWrap: "wrap"
+          }}>
             {selectedClasses.map(classId => (
               <Chip key={classId} label={classId} size="small" color="primary" onDelete={() => onClassSelect(classId)} />
             ))}

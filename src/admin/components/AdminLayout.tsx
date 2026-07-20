@@ -36,7 +36,7 @@ import {
   FileDownload as ExportIcon,
   Backup as BackupIcon
 } from '@mui/icons-material';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useThemeContext } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDatabase } from '../../hooks/useDatabase';
@@ -56,7 +56,12 @@ const SaveStatus = () => {
       {hasUnsavedChanges && <Chip label="未保存" color="warning" size="small" />}
       {savingStatus === 'saving' && <CircularProgress size={18} sx={{ ml: 1 }} />}
       {savingStatus === 'saved' && lastSaved && (
-        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            color: "text.secondary",
+            ml: 1
+          }}>
           {lastSaved.toLocaleTimeString()} 保存
         </Typography>
       )}
@@ -76,21 +81,21 @@ const AdminLayout = () => {
   const location = useLocation();
   const { currentUser, logout } = useAuth();
   const { showSnackbar, setSavingStatus, hasUnsavedChanges: hasPendingChanges } = useAdminLayout();
-  
+
   // メインコンテンツのローディング状態を管理
   const [contentLoading, setContentLoading] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  
+
   // ユーザーメニュー
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   // モバイルビューの状態管理を追加
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
-  
+
   // イベント展開状態
   const [expandedEventIds, setExpandedEventIds] = useState<string[]>([]);
-  
+
   // データ取得
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
   const { data: sports, loading: sportsLoading } = useDatabase<Record<string, Sport>>('/sports');
@@ -99,7 +104,7 @@ const AdminLayout = () => {
   useEffect(() => {
     if (events && sports) {
       let eventIdsToExpand: string[] = [];
-      
+
       // イベント詳細ページの場合
       if (location.pathname.includes('/admin/events/')) {
         const eventId = location.pathname.split('/').pop();
@@ -107,7 +112,7 @@ const AdminLayout = () => {
           eventIdsToExpand.push(eventId);
         }
       }
-      
+
       // 競技詳細ページの場合
       if (location.pathname.includes('/admin/sports/')) {
         const sportId = location.pathname.split('/').pop();
@@ -119,7 +124,7 @@ const AdminLayout = () => {
           }
         }
       }
-      
+
       // イベントが有効なものを特定し、その競技も展開
       if (!isMobile) {
         Object.values(events).forEach(event => {
@@ -128,12 +133,12 @@ const AdminLayout = () => {
           }
         });
       }
-      
+
       // 重複を排除して展開状態を更新
       setExpandedEventIds([...new Set(eventIdsToExpand)]);
     }
   }, [location.pathname, events, sports, isMobile]);
-  
+
   const handleDrawerToggle = () => {
     setMobileOpen((open) => !open);
   };
@@ -147,42 +152,42 @@ const AdminLayout = () => {
         if (!confirmNavigation) {
           return; // ナビゲーションをキャンセル
         }
-        
+
         // 保存状態をリセット
         setSavingStatus('idle');
       }
     }
-    
+
     // コンテンツ部分のローディングを表示
     setContentLoading(true);
-    
+
     // URLを変更して、React Routerの通常のナビゲーションを使用
     navigate(`/admin/events/${eventId}`);
     setMobileOpen(false);
-    
+
     // スクロール位置をトップに戻す
     if (contentRef.current) {
       contentRef.current.scrollTop = 0;
     }
-    
+
     // ローディング状態を少し遅延させて解除（データ取得のための時間）
     setTimeout(() => {
       setContentLoading(false);
     }, 500);
   };
-  
+
   const handleEventToggle = (eventId: string, e: React.MouseEvent) => {
     // クリックイベントが親要素に伝播しないようにする
     e.stopPropagation();
-    
+
     // イベントID展開のトグル処理のみ行う
-    setExpandedEventIds(prev => 
-      prev.includes(eventId) 
-        ? prev.filter(id => id !== eventId) 
+    setExpandedEventIds(prev =>
+      prev.includes(eventId)
+        ? prev.filter(id => id !== eventId)
         : [...prev, eventId]
     );
   };
-  
+
   const handleSportClick = (sportId: string) => {
     // 現在のパスと異なる場合のみナビゲーション
     if (location.pathname !== `/admin/sports/${sportId}`) {
@@ -192,31 +197,31 @@ const AdminLayout = () => {
         if (!confirmNavigation) {
           return; // ナビゲーションをキャンセル
         }
-        
+
         // 保存状態をリセット
         setSavingStatus('idle');
       }
-      
+
       // コンテンツ部分のローディングを表示
       setContentLoading(true);
-      
+
       // React Routerのナビゲーションを使用
       navigate(`/admin/sports/${sportId}`);
       setMobileOpen(false);
-      
+
       // スクロール位置をトップに戻す
       if (contentRef.current) {
         contentRef.current.scrollTop = 0;
       }
-      
+
       // URLが変わった後で対象のイベントを展開する
       const sportObj = sports?.[sportId];
       if (sportObj && sportObj.eventId) {
-        setExpandedEventIds(prev => 
+        setExpandedEventIds(prev =>
           prev.includes(sportObj.eventId) ? prev : [...prev, sportObj.eventId]
         );
       }
-      
+
       // ローディング状態を少し遅延させて解除（データ取得のための時間）
       setTimeout(() => {
         setContentLoading(false);
@@ -228,7 +233,7 @@ const AdminLayout = () => {
     setMobileOpen(false);
     setEventDialogOpen(true);
   };
-  
+
   const handleCreateSport = (eventId: string) => {
     setMobileOpen(false);
     setSelectedEventId(eventId);
@@ -244,11 +249,11 @@ const AdminLayout = () => {
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
-  
+
   const handleUserMenuClose = () => {
     setAnchorEl(null);
   };
-  
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -296,9 +301,10 @@ const AdminLayout = () => {
       >
         <Typography
           variant="h6"
-          fontWeight={800}
-          color="primary.main"
-        >
+          sx={{
+            fontWeight: 800,
+            color: "primary.main"
+          }}>
           CELERITAS
         </Typography>
         <IconButton
@@ -311,11 +317,11 @@ const AdminLayout = () => {
         </IconButton>
       </Toolbar>
       <Divider />
-      
+
       {/* ダッシュボードリンク */}
       <List dense>
         <ListItem disablePadding>
-          <ListItemButton 
+          <ListItemButton
             selected={location.pathname === '/admin'}
             onClick={() => handleNavigate('/admin')}
           >
@@ -337,11 +343,11 @@ const AdminLayout = () => {
           </ListItemButton>
         </ListItem>
       </List>
-      
+
       {/*エクスポートタブ */}
       <List dense>
         <ListItem disablePadding>
-          <ListItemButton 
+          <ListItemButton
             selected={location.pathname === '/admin/export'}
             onClick={() => handleNavigate('/admin/export')}
           >
@@ -352,7 +358,7 @@ const AdminLayout = () => {
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton 
+          <ListItemButton
             selected={location.pathname === '/admin/backup'}
             onClick={() => handleNavigate('/admin/backup')}
           >
@@ -364,7 +370,7 @@ const AdminLayout = () => {
         </ListItem>
       </List>
       <Divider />
-      
+
       {/* イベントリスト */}
       <List
         dense
@@ -394,12 +400,12 @@ const AdminLayout = () => {
             .map((event) => {
             // 現在のイベントまたはその下の競技が選択されているかどうかを確認
             const isCurrentPath = location.pathname === `/admin/events/${event.id}`;
-            const hasSelectedSport = sports && 
-              Object.values(sports).some(sport => 
+            const hasSelectedSport = sports &&
+              Object.values(sports).some(sport =>
                 sport.eventId === event.id && location.pathname === `/admin/sports/${sport.id}`
               );
             const shouldExpand = expandedEventIds.includes(event.id) || isCurrentPath || hasSelectedSport;
-            
+
             return (
               <React.Fragment key={event.id}>
                 <ListItem disablePadding>
@@ -411,8 +417,8 @@ const AdminLayout = () => {
                     <ListItemIcon>
                       <EventIcon color={event.isActive ? "primary" : "inherit"} />
                     </ListItemIcon>
-                    <ListItemText 
-                      primary={event.name} 
+                    <ListItemText
+                      primary={event.name}
                       secondary={new Date(event.date).toLocaleDateString()}
                     />
                   </ListItemButton>
@@ -425,7 +431,6 @@ const AdminLayout = () => {
                     {shouldExpand ? <ExpandLess /> : <ExpandMore />}
                   </IconButton>
                 </ListItem>
-                
                 {/* 競技リスト - 縮小時は自動展開しない */}
                 <Collapse in={shouldExpand || false} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding>
@@ -434,18 +439,20 @@ const AdminLayout = () => {
                         <ListItemIcon>
                           <AddIcon fontSize="small" />
                         </ListItemIcon>
-                        <ListItemText 
+                        <ListItemText
                           primary={"競技作成"}
-                          primaryTypographyProps={{ variant: 'body2' }}
+                          slotProps={{
+                            primary: { variant: 'body2' }
+                          }}
                         />
                       </ListItemButton>
                     </ListItem>
-                    
+
                     {getSportsByEventId(event.id).map((sport) => {
                       const isSportSelected = location.pathname === `/admin/sports/${sport.id}`;
                       return (
                         <ListItem disablePadding key={sport.id}>
-                          <ListItemButton 
+                          <ListItemButton
                             sx={{ pl: 4 }}
                             selected={isSportSelected}
                             onClick={() => handleSportClick(sport.id)}
@@ -453,21 +460,25 @@ const AdminLayout = () => {
                             <ListItemIcon>
                               <SportIcon fontSize="small" />
                             </ListItemIcon>
-                            <ListItemText 
+                            <ListItemText
                               primary={sport.name}
-                              primaryTypographyProps={{ variant: 'body2' }}
+                              slotProps={{
+                                primary: { variant: 'body2' }
+                              }}
                             />
                           </ListItemButton>
                         </ListItem>
                       );
                     })}
-                    
+
                     {getSportsByEventId(event.id).length === 0 && (
                       <ListItem sx={{ pl: 4 }}>
-                        <ListItemText 
+                        <ListItemText
                           secondary={"このイベントには競技がありません"}
-                          secondaryTypographyProps={{ variant: 'body2' }}
                           className="item-label"
+                          slotProps={{
+                            secondary: { variant: 'body2' }
+                          }}
                         />
                       </ListItem>
                     )}
@@ -510,7 +521,6 @@ const AdminLayout = () => {
       >
         {renderDrawerContent()}
       </Box>
-
       <Drawer
         variant="temporary"
         open={mobileOpen}
@@ -529,7 +539,6 @@ const AdminLayout = () => {
       >
         {renderDrawerContent()}
       </Drawer>
-
       <Box
         component="main"
         ref={contentRef}
@@ -559,7 +568,13 @@ const AdminLayout = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="subtitle1"
+            noWrap
+            sx={{
+              fontWeight: 700,
+              flexGrow: 1
+            }}>
             管理ワークスペース
           </Typography>
 
@@ -620,14 +635,12 @@ const AdminLayout = () => {
           <Outlet />
         </Box>
       </Box>
-
       {/* ダイアログの追加 */}
       <CreateEventDialog
         open={eventDialogOpen}
         onClose={() => setEventDialogOpen(false)}
         onSuccess={handleEventSuccess}
       />
-
       <CreateSportDialog
         open={sportDialogOpen}
         onClose={() => setSportDialogOpen(false)}
