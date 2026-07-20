@@ -35,7 +35,7 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
         </Box>
         {match ? (
           <>
-            <Typography variant="body2" fontWeight={600}>
+            <Typography variant="body2" fontWeight={600} sx={{ overflowWrap: 'anywhere' }}>
               {getMatchupLabel(match, sport)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -44,7 +44,9 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
           </>
         ) : (
           <>
-            <Typography variant="body2">{slot.title || getTimeSlotLabel(slot, sport) || getScheduleTypeLabel(slot.type)}</Typography>
+            <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+              {slot.title || getTimeSlotLabel(slot, sport) || getScheduleTypeLabel(slot.type)}
+            </Typography>
             {slot.description && (
               <Typography variant="caption" color="text.secondary" display="block">
                 {slot.description}
@@ -59,36 +61,43 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
   if (blocks.length === 0) return null;
 
   const courtColumns: Array<'court1' | 'court2'> = courtCount === 2 ? ['court1', 'court2'] : ['court1'];
-  const gridTemplateColumns = `110px repeat(${courtColumns.length}, 1fr)`;
+  const gridTemplateColumns = {
+    xs: `64px repeat(${courtColumns.length}, minmax(0, 1fr))`,
+    sm: `110px repeat(${courtColumns.length}, minmax(0, 1fr))`
+  };
+  const sharedGridTemplateColumns = { xs: '64px 1fr', sm: '110px 1fr' };
 
   return (
-    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+    <Box>
       <Box
         sx={{
-          display: { xs: 'none', sm: 'grid' },
+          display: 'grid',
           gridTemplateColumns,
           bgcolor: 'action.hover',
-          fontSize: '0.8rem',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          fontSize: { xs: '0.7rem', sm: '0.8rem' },
           fontWeight: 600
         }}
       >
-        <Box sx={{ p: 1 }}>時間</Box>
+        <Box sx={{ p: { xs: 0.75, sm: 1 } }}>時間</Box>
         {courtColumns.map(court => (
-          <Box key={court} sx={{ p: 1, borderLeft: '1px solid', borderColor: 'divider' }}>
+          <Box key={court} sx={{ p: { xs: 0.75, sm: 1 }, borderLeft: '1px solid', borderColor: 'divider', overflowWrap: 'anywhere' }}>
             {courtNames?.[court] || (court === 'court1' ? '第1コート' : '第2コート')}
           </Box>
         ))}
       </Box>
 
-      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+      <Box>
         {blocks.map(block => (
-          <Box key={block.key} sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
+          <Box key={block.key} sx={{ borderBottom: '1px solid', borderColor: 'divider', '&:last-of-type': { borderBottom: 0 } }}>
             {block.shared.length > 0 && (
-              <Box sx={{ display: 'grid', gridTemplateColumns: '110px 1fr' }}>
-                <Box sx={{ p: 1, fontSize: '0.8rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                  {block.startTime} - {block.endTime}
+              <Box sx={{ display: 'grid', gridTemplateColumns: sharedGridTemplateColumns }}>
+                <Box sx={{ p: { xs: 0.75, sm: 1 }, fontSize: { xs: '0.7rem', sm: '0.8rem' }, color: 'text.secondary' }}>
+                  <Box component="span" sx={{ display: 'block' }}>{block.startTime}</Box>
+                  <Box component="span" sx={{ display: 'block' }}>–{block.endTime}</Box>
                 </Box>
-                <Box sx={{ p: 1, borderLeft: '1px solid', borderColor: 'divider', display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ p: { xs: 0.75, sm: 1 }, borderLeft: '1px solid', borderColor: 'divider', display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   {block.shared.map((slot, i) => (
                     <Box key={i}>{renderSlotContent(slot)}</Box>
                   ))}
@@ -97,11 +106,16 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
             )}
             {(courtColumns.some(court => block.byCourt[court]) || block.shared.length === 0) && (
               <Box sx={{ display: 'grid', gridTemplateColumns }}>
-                <Box sx={{ p: 1, fontSize: '0.8rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                  {block.shared.length === 0 && `${block.startTime} - ${block.endTime}`}
+                <Box sx={{ p: { xs: 0.75, sm: 1 }, fontSize: { xs: '0.7rem', sm: '0.8rem' }, color: 'text.secondary' }}>
+                  {block.shared.length === 0 && (
+                    <>
+                      <Box component="span" sx={{ display: 'block' }}>{block.startTime}</Box>
+                      <Box component="span" sx={{ display: 'block' }}>–{block.endTime}</Box>
+                    </>
+                  )}
                 </Box>
                 {courtColumns.map(court => (
-                  <Box key={court} sx={{ p: 1, borderLeft: '1px solid', borderColor: 'divider', minHeight: 40 }}>
+                  <Box key={court} sx={{ p: { xs: 0.75, sm: 1 }, borderLeft: '1px solid', borderColor: 'divider', minWidth: 0, minHeight: 44 }}>
                     {block.byCourt[court] ? renderSlotContent(block.byCourt[court]!) : (
                       <Typography variant="caption" color="text.disabled">
                         -
@@ -111,52 +125,6 @@ const TimeSlotTable: React.FC<TimeSlotTableProps> = ({ timeSlots, sport }) => {
                 ))}
               </Box>
             )}
-          </Box>
-        ))}
-      </Box>
-
-      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-        {blocks.map(block => (
-          <Box
-            key={block.key}
-            sx={{
-              p: 1.5,
-              borderTop: '1px solid',
-              borderColor: 'divider',
-              '&:first-of-type': { borderTop: 'none' }
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              {block.startTime} - {block.endTime}
-            </Typography>
-
-            {block.shared.map((slot, index) => (
-              <Box key={index} sx={{ mb: 1.5 }}>
-                {renderSlotContent(slot)}
-              </Box>
-            ))}
-
-            {courtColumns.map(court => {
-              const slot = block.byCourt[court];
-              if (!slot) return null;
-
-              return (
-                <Box
-                  key={court}
-                  sx={{
-                    mt: 1,
-                    pt: 1,
-                    borderTop: '1px solid',
-                    borderColor: 'divider'
-                  }}
-                >
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-                    {courtNames?.[court] || (court === 'court1' ? '第1コート' : '第2コート')}
-                  </Typography>
-                  {renderSlotContent(slot)}
-                </Box>
-              );
-            })}
           </Box>
         ))}
       </Box>

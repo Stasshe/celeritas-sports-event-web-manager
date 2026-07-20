@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Alert, Box, Chip, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Alert, Box, Chip, Typography } from '@mui/material';
 import { Schedule as ScheduleIcon, Place as PlaceIcon } from '@mui/icons-material';
 import { getScheduleTypeLabel } from '../../../utils/labels';
 import { Sport, TimeSlot } from '../../../types';
@@ -19,8 +19,6 @@ const typeColor: Record<TimeSlot['type'], 'primary' | 'secondary' | 'warning' | 
 };
 
 const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const timeSlots = sport.scheduleSettings?.timeSlots || [];
   const courtCount = sport.scheduleSettings?.courtCount || 1;
   const courtNames = sport.scheduleSettings?.courtNames;
@@ -34,9 +32,13 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
     );
   }
 
-  const courtColumns: Array<'court1' | 'court2'> = courtCount === 2 && !isMobile ? ['court1', 'court2'] : ['court1'];
+  const courtColumns: Array<'court1' | 'court2'> = courtCount === 2 ? ['court1', 'court2'] : ['court1'];
   const showCourtColumn = courtColumns.length > 1;
-  const gridTemplateColumns = `${isMobile ? 76 : 100}px repeat(${courtColumns.length}, 1fr)`;
+  const gridTemplateColumns = {
+    xs: `64px repeat(${courtColumns.length}, minmax(0, 1fr))`,
+    sm: `100px repeat(${courtColumns.length}, minmax(0, 1fr))`
+  };
+  const sharedGridTemplateColumns = { xs: '64px 1fr', sm: '100px 1fr' };
 
   const getCourtName = (court: 'court1' | 'court2') =>
     courtNames?.[court] || (court === 'court1' ? '第1コート' : '第2コート');
@@ -54,7 +56,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
         </Box>
         {match ? (
           <>
-            <Typography variant="body1" fontWeight={700}>
+            <Typography variant="body1" fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
               {getParticipantName(match, 'team1', sport)} <Typography component="span" variant="body2" color="text.secondary">vs</Typography> {getParticipantName(match, 'team2', sport)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -63,7 +65,7 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
             </Typography>
           </>
         ) : (
-          <Typography variant="body2">
+          <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
             {getTimeSlotLabel(slot, sport) || getScheduleTypeLabel(slot.type)}
           </Typography>
         )}
@@ -83,10 +85,10 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
 
       <Box sx={{ mt: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
         {showCourtColumn && (
-          <Box sx={{ display: 'grid', gridTemplateColumns, bgcolor: 'action.hover', fontSize: '0.8rem', fontWeight: 600 }}>
-            <Box sx={{ p: 1 }}>時間</Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns, bgcolor: 'action.hover', fontSize: { xs: '0.7rem', sm: '0.8rem' }, fontWeight: 600 }}>
+            <Box sx={{ p: { xs: 0.75, sm: 1 } }}>時間</Box>
             {courtColumns.map(court => (
-              <Box key={court} sx={{ p: 1, borderLeft: '1px solid', borderColor: 'divider' }}>
+              <Box key={court} sx={{ p: { xs: 0.75, sm: 1 }, borderLeft: '1px solid', borderColor: 'divider', overflowWrap: 'anywhere' }}>
                 {getCourtName(court)}
               </Box>
             ))}
@@ -98,11 +100,12 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
           return (
             <Box key={block.key} sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
               {block.shared.length > 0 && (
-                <Box sx={{ display: 'grid', gridTemplateColumns: `${isMobile ? 76 : 100}px 1fr` }}>
-                  <Box sx={{ p: 1, fontSize: '0.8rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                    {block.startTime}-{block.endTime}
+                <Box sx={{ display: 'grid', gridTemplateColumns: sharedGridTemplateColumns }}>
+                  <Box sx={{ p: { xs: 0.75, sm: 1 }, fontSize: { xs: '0.7rem', sm: '0.8rem' }, color: 'text.secondary' }}>
+                    <Box component="span" sx={{ display: 'block' }}>{block.startTime}</Box>
+                    <Box component="span" sx={{ display: 'block' }}>–{block.endTime}</Box>
                   </Box>
-                  <Box sx={{ p: 1, borderLeft: '1px solid', borderColor: 'divider' }}>
+                  <Box sx={{ p: { xs: 0.75, sm: 1 }, borderLeft: '1px solid', borderColor: 'divider' }}>
                     {block.shared.map((slot, i) => (
                       <Box key={i}>{renderSlot(slot, false)}</Box>
                     ))}
@@ -111,11 +114,16 @@ const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ sport }) => {
               )}
               {(hasCourtContent || block.shared.length === 0) && (
                 <Box sx={{ display: 'grid', gridTemplateColumns }}>
-                  <Box sx={{ p: 1, fontSize: '0.8rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                    {block.shared.length === 0 && `${block.startTime}-${block.endTime}`}
+                  <Box sx={{ p: { xs: 0.75, sm: 1 }, fontSize: { xs: '0.7rem', sm: '0.8rem' }, color: 'text.secondary' }}>
+                    {block.shared.length === 0 && (
+                      <>
+                        <Box component="span" sx={{ display: 'block' }}>{block.startTime}</Box>
+                        <Box component="span" sx={{ display: 'block' }}>–{block.endTime}</Box>
+                      </>
+                    )}
                   </Box>
                   {courtColumns.map(court => (
-                    <Box key={court} sx={{ p: 1, borderLeft: '1px solid', borderColor: 'divider', minHeight: 44 }}>
+                    <Box key={court} sx={{ p: { xs: 0.75, sm: 1 }, borderLeft: '1px solid', borderColor: 'divider', minWidth: 0, minHeight: 44 }}>
                       {block.byCourt[court] ? (
                         renderSlot(block.byCourt[court]!, !showCourtColumn)
                       ) : (

@@ -1,38 +1,68 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
   FormControlLabel,
   IconButton,
   MenuItem,
   Select,
   Switch,
   TextField,
-  Typography,
-  useMediaQuery,
-  useTheme
+  Tooltip,
+  Typography
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Delete as DeleteIcon,
-  DragIndicator as DragIndicatorIcon
+  ArrowDownward as ArrowDownIcon,
+  ArrowUpward as ArrowUpIcon,
+  Close as CancelIcon,
+  DeleteOutline as DeleteIcon,
+  DragIndicator as DragIndicatorIcon,
+  SaveOutlined as SaveIcon
 } from '@mui/icons-material';
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Sport, TimeSlot } from '../../../types';
-import { useManualScheduleRows } from '../../../hooks/useManualScheduleRows';
+import { TimeSlotField, useManualScheduleRows } from '../../../hooks/useManualScheduleRows';
 import { getTimeSlotLabel } from '../../../utils/match';
 
 interface ManualScheduleEditorProps {
-  open: boolean;
-  onClose: () => void;
   timeSlots: TimeSlot[];
-  onChange: (slots: TimeSlot[]) => void;
+  onSave: (slots: TimeSlot[]) => void;
+  onCancel: () => void;
   courtNames?: { court1: string; court2?: string };
   sport: Sport;
+}
+
+interface ScheduleRowFieldsProps {
+  index: number;
+  slot: TimeSlot;
+  rowCount: number;
+  courtNames?: { court1: string; court2?: string };
+  sport: Sport;
+  onUpdateField: (index: number, field: TimeSlotField, value: string) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
+  onRemove: (index: number) => void;
+}
+
+interface ScheduleRowProps extends ScheduleRowFieldsProps {
+  id: string;
 }
 
 const timeSlotTypes: { value: TimeSlot['type']; label: string }[] = [
@@ -43,213 +73,364 @@ const timeSlotTypes: { value: TimeSlot['type']; label: string }[] = [
   { value: 'cleanup', label: '片付け' }
 ];
 
+const FieldLabel: React.FC<React.PropsWithChildren> = ({ children }) => (
+  <Typography
+    variant="caption"
+    color="text.secondary"
+    sx={{ display: { xs: 'block', md: 'none' }, mb: 0.5, fontWeight: 600 }}
+  >
+    {children}
+  </Typography>
+);
+
+const ScheduleRowFields = React.memo<ScheduleRowFieldsProps>(({
+  index,
+  slot,
+  rowCount,
+  courtNames,
+  sport,
+  onUpdateField,
+  onReorder,
+  onRemove
+}) => {
+  const hasLinkedMatch = slot.type === 'match'
+    && Boolean(slot.matchId && sport.matches.some(match => match.id === slot.matchId));
+  let detail = slot.matchDescription ?? slot.description ?? slot.title ?? '';
+  if (hasLinkedMatch) detail = getTimeSlotLabel(slot, sport);
+
+  return (
+    <Box sx={{ display: 'contents' }}>
+      <Box sx={{ gridColumn: { xs: '2 / -1', md: 'auto' } }}>
+        <FieldLabel>時間</FieldLabel>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', alignItems: 'center', gap: 0.75 }}>
+          <TextField
+            type="time"
+            size="small"
+            value={slot.startTime}
+            onChange={event => onUpdateField(index, 'startTime', event.target.value)}
+            inputProps={{ 'aria-label': `${index + 1}行目の開始時間` }}
+            fullWidth
+          />
+          <Typography variant="body2" color="text.secondary">–</Typography>
+          <TextField
+            type="time"
+            size="small"
+            value={slot.endTime}
+            onChange={event => onUpdateField(index, 'endTime', event.target.value)}
+            inputProps={{ 'aria-label': `${index + 1}行目の終了時間` }}
+            fullWidth
+          />
+        </Box>
+      </Box>
+
+      <Box sx={{ gridColumn: { xs: '1 / span 2', md: 'auto' } }}>
+        <FieldLabel>種別</FieldLabel>
+        <Select
+          fullWidth
+          size="small"
+          value={slot.type}
+          onChange={event => onUpdateField(index, 'type', event.target.value)}
+          inputProps={{ 'aria-label': `${index + 1}行目の種別` }}
+        >
+          {timeSlotTypes.map(option => (
+            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+          ))}
+        </Select>
+      </Box>
+
+      <Box>
+        <FieldLabel>コート</FieldLabel>
+        <Select
+          fullWidth
+          size="small"
+          value={slot.courtId || 'court1'}
+          onChange={event => onUpdateField(index, 'courtId', event.target.value)}
+          inputProps={{ 'aria-label': `${index + 1}行目のコート` }}
+        >
+          <MenuItem value="court1">{courtNames?.court1 || '第1コート'}</MenuItem>
+          {courtNames?.court2 && <MenuItem value="court2">{courtNames.court2}</MenuItem>}
+        </Select>
+      </Box>
+
+      <Box sx={{ minWidth: 0, gridColumn: { xs: '1 / -1', md: 'auto' } }}>
+        <FieldLabel>内容</FieldLabel>
+        <TextField
+          fullWidth
+          size="small"
+          value={detail}
+          onChange={event => onUpdateField(index, 'matchDescription', event.target.value)}
+          placeholder="例: 1年A vs 2年B"
+          inputProps={{ maxLength: 100, 'aria-label': `${index + 1}行目の内容` }}
+          InputProps={{ readOnly: hasLinkedMatch }}
+        />
+      </Box>
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gridColumn: { xs: '1 / -1', md: 'auto' } }}>
+        <Tooltip title="上へ移動">
+          <span>
+            <IconButton
+              onClick={() => onReorder(index, index - 1)}
+              disabled={index === 0}
+              aria-label={`${index + 1}行目を上へ移動`}
+              sx={{ width: 44, height: 44 }}
+            >
+              <ArrowUpIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="下へ移動">
+          <span>
+            <IconButton
+              onClick={() => onReorder(index, index + 1)}
+              disabled={index === rowCount - 1}
+              aria-label={`${index + 1}行目を下へ移動`}
+              sx={{ width: 44, height: 44 }}
+            >
+              <ArrowDownIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="削除">
+          <IconButton
+            onClick={() => onRemove(index)}
+            aria-label={`${index + 1}行目を削除`}
+            color="error"
+            sx={{ width: 44, height: 44 }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
+  );
+});
+
+ScheduleRowFields.displayName = 'ScheduleRowFields';
+
+const ScheduleRow = React.memo<ScheduleRowProps>(({
+  id,
+  index,
+  slot,
+  rowCount,
+  courtNames,
+  sport,
+  onUpdateField,
+  onReorder,
+  onRemove
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  let rowBackground = 'background.paper';
+  let rowOpacity = 1;
+  let rowZIndex: number | 'auto' = 'auto';
+  let handleCursor = 'grab';
+  if (isDragging) {
+    rowBackground = 'action.selected';
+    rowOpacity = 0.75;
+    rowZIndex = 1;
+    handleCursor = 'grabbing';
+  }
+
+  return (
+    <Box
+      ref={setNodeRef}
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: {
+          xs: '44px minmax(0, 1fr) 132px',
+          md: '44px minmax(176px, 0.9fr) 116px 116px minmax(180px, 1.4fr) 132px'
+        },
+        gap: { xs: 1, md: 1.25 },
+        alignItems: 'center',
+        px: { xs: 1, sm: 1.5 },
+        py: { xs: 1.25, md: 1 },
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        bgcolor: rowBackground,
+        opacity: rowOpacity,
+        position: 'relative',
+        zIndex: rowZIndex,
+        transform: CSS.Transform.toString(transform),
+        transition,
+        willChange: 'transform',
+        '&:last-of-type': { borderBottom: 0 }
+      }}
+    >
+      <Tooltip title="ドラッグして並べ替え">
+        <IconButton
+          aria-label={`${index + 1}行目を並べ替え`}
+          {...attributes}
+          {...listeners}
+          sx={{
+            width: 44,
+            height: 44,
+            color: 'text.secondary',
+            cursor: handleCursor,
+            touchAction: 'none'
+          }}
+        >
+          <DragIndicatorIcon />
+        </IconButton>
+      </Tooltip>
+      <ScheduleRowFields
+        index={index}
+        slot={slot}
+        rowCount={rowCount}
+        courtNames={courtNames}
+        sport={sport}
+        onUpdateField={onUpdateField}
+        onReorder={onReorder}
+        onRemove={onRemove}
+      />
+    </Box>
+  );
+});
+
+ScheduleRow.displayName = 'ScheduleRow';
+
 const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
-  open,
-  onClose,
   timeSlots,
-  onChange,
+  onSave,
+  onCancel,
   courtNames,
   sport
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const rows = useManualScheduleRows(timeSlots, onChange);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const rows = useManualScheduleRows(timeSlots);
+  const itemIds = React.useMemo(
+    () => Array.from({ length: rows.rowCount }, (_, index) => `schedule-row-${index}`),
+    [rows.rowCount]
+  );
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
-  const handleDrop = (targetIndex: number) => {
-    if (dragIndex !== null) rows.reorder(dragIndex, targetIndex);
-    setDragIndex(null);
-    setDropIndex(null);
-  };
+  const handleDragEnd = React.useCallback((event: DragEndEvent) => {
+    if (!event.over || event.active.id === event.over.id) return;
+    const fromIndex = itemIds.indexOf(String(event.active.id));
+    const toIndex = itemIds.indexOf(String(event.over.id));
+    rows.reorder(fromIndex, toIndex);
+  }, [itemIds, rows.reorder]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth fullScreen={isMobile}>
-      <DialogTitle>スケジュール手動編集</DialogTitle>
-      <DialogContent>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'stretch', sm: 'center' },
-            justifyContent: 'space-between',
-            gap: 1,
-            mb: 2
-          }}
-        >
-          <Button variant="contained" startIcon={<AddIcon />} onClick={rows.addRow}>
-            行を追加
-          </Button>
+    <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          justifyContent: 'space-between',
+          gap: 1.5,
+          px: { xs: 1.5, sm: 2 },
+          py: 1.5,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'action.hover'
+        }}
+      >
+        <Box>
+          <Typography variant="subtitle1" fontWeight={700}>タイムラインを編集</Typography>
+          <Typography variant="caption" color="text.secondary">
+            変更は保存するまで公開されません。ハンドルの長押しまたは矢印で移動できます。
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
           <FormControlLabel
-            control={
+            sx={{ m: 0, mr: { sm: 1 } }}
+            control={(
               <Switch
                 checked={rows.moveTimes}
-                onChange={e => rows.setMoveTimes(e.target.checked)}
+                onChange={event => rows.setMoveTimes(event.target.checked)}
               />
-            }
-            label="並べ替え時に時間も移動"
+            )}
+            label={<Typography variant="body2">時刻ごと移動</Typography>}
           />
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={rows.addRow}
+            sx={{ minHeight: 44 }}
+          >
+            行を追加
+          </Button>
+          <Button
+            variant="text"
+            color="inherit"
+            startIcon={<CancelIcon />}
+            onClick={onCancel}
+            sx={{ minHeight: 44 }}
+          >
+            キャンセル
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<SaveIcon />}
+            onClick={() => onSave(rows.timeSlots)}
+            sx={{ minHeight: 44 }}
+          >
+            保存
+          </Button>
         </Box>
+      </Box>
 
-        {timeSlots.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-            行がありません。「行を追加」から作成してください
+      {rows.timeSlots.length === 0 && (
+        <Box sx={{ px: 2, py: 7, textAlign: 'center' }}>
+          <Typography variant="subtitle1" fontWeight={600}>編集する時間枠がありません</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            「行を追加」から時間枠を作成してください。
           </Typography>
-        ) : (
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-            {/* ヘッダー */}
-            <Box
-              sx={{
-                display: { xs: 'none', sm: 'grid' },
-                gridTemplateColumns: '32px 1fr 110px 110px 1fr 40px',
-                gap: 1,
-                px: 1.5,
-                py: 1,
-                bgcolor: 'action.hover',
-                fontSize: '0.75rem',
-                color: 'text.secondary'
-              }}
-            >
-              <span />
-              <span>時間</span>
-              <span>タイプ</span>
-              <span>コート</span>
-              <span>詳細</span>
-              <span />
-            </Box>
-            <Divider />
+        </Box>
+      )}
 
-            {timeSlots.map((slot, index) => {
-              const hasLinkedMatch = slot.type === 'match'
-                && Boolean(slot.matchId && sport.matches.some(match => match.id === slot.matchId));
-              let detail = slot.matchDescription ?? slot.description ?? slot.title ?? '';
-              if (hasLinkedMatch) detail = getTimeSlotLabel(slot, sport);
-
-              return (
-                <Box
-                  key={index}
-                  draggable={!isMobile}
-                  onDragStart={() => setDragIndex(index)}
-                  onDragOver={e => {
-                    e.preventDefault();
-                    if (dropIndex !== index) setDropIndex(index);
-                  }}
-                  onDrop={() => handleDrop(index)}
-                  onDragEnd={() => {
-                    setDragIndex(null);
-                    setDropIndex(null);
-                  }}
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: 'minmax(0, 1fr) 44px', sm: '32px 1fr 110px 110px 1fr 40px' },
-                    gap: 1,
-                    px: 1.5,
-                    py: 1,
-                    alignItems: 'center',
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: dropIndex === index ? 'action.selected' : 'transparent',
-                    opacity: dragIndex === index ? 0.4 : 1,
-                    '&:last-of-type': { borderBottom: 'none' }
-                  }}
-                >
-                  <DragIndicatorIcon
-                    fontSize="small"
-                    sx={{ display: { xs: 'none', sm: 'block' }, color: 'text.disabled', cursor: 'grab' }}
-                  />
-
-                  <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 0.5 }}>
-                      時間
-                    </Typography>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', alignItems: 'center', gap: 0.5 }}>
-                    <TextField
-                      type="time"
-                      size="small"
-                      value={slot.startTime}
-                      onChange={e => rows.updateField(index, 'startTime', e.target.value)}
-                      fullWidth
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      ～
-                    </Typography>
-                    <TextField
-                      type="time"
-                      size="small"
-                      value={slot.endTime}
-                      onChange={e => rows.updateField(index, 'endTime', e.target.value)}
-                      fullWidth
-                    />
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 0.5 }}>
-                      タイプ
-                    </Typography>
-                    <Select
-                      fullWidth
-                      size="small"
-                      value={slot.type}
-                      onChange={e => rows.updateField(index, 'type', e.target.value)}
-                    >
-                      {timeSlotTypes.map(opt => (
-                        <MenuItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </Box>
-
-                  <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 0.5 }}>
-                      コート
-                    </Typography>
-                    <Select
-                      fullWidth
-                      size="small"
-                      value={slot.courtId || 'court1'}
-                      onChange={e => rows.updateField(index, 'courtId', e.target.value)}
-                    >
-                      <MenuItem value="court1">{courtNames?.court1 || '第1コート'}</MenuItem>
-                      {courtNames?.court2 && <MenuItem value="court2">{courtNames.court2}</MenuItem>}
-                    </Select>
-                  </Box>
-
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, mb: 0.5 }}>
-                      詳細
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={detail}
-                      onChange={e => rows.updateField(index, 'matchDescription', e.target.value)}
-                      placeholder="例: 1年A vs 2年B"
-                      inputProps={{ maxLength: 100 }}
-                      InputProps={{ readOnly: hasLinkedMatch }}
-                    />
-                  </Box>
-
-                  <IconButton
-                    onClick={() => rows.removeRow(index)}
-                    aria-label="行を削除"
-                    sx={{ minWidth: { xs: 44, sm: 40 }, minHeight: { xs: 44, sm: 40 }, alignSelf: 'end' }}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              );
-            })}
+      {rows.timeSlots.length > 0 && (
+        <>
+          <Box
+            sx={{
+              display: { xs: 'none', md: 'grid' },
+              gridTemplateColumns: '44px minmax(176px, 0.9fr) 116px 116px minmax(180px, 1.4fr) 132px',
+              gap: 1.25,
+              px: 1.5,
+              py: 1,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              color: 'text.secondary',
+              fontSize: '0.75rem',
+              fontWeight: 700
+            }}
+          >
+            <span />
+            <span>時間</span>
+            <span>種別</span>
+            <span>コート</span>
+            <span>内容</span>
+            <span>行操作</span>
           </Box>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} variant="contained">
-          閉じる
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+              {rows.timeSlots.map((slot, index) => (
+                <ScheduleRow
+                  key={itemIds[index]}
+                  id={itemIds[index]}
+                  index={index}
+                  slot={slot}
+                  rowCount={rows.rowCount}
+                  courtNames={courtNames}
+                  sport={sport}
+                  onUpdateField={rows.updateField}
+                  onReorder={rows.reorder}
+                  onRemove={rows.removeRow}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+        </>
+      )}
+    </Box>
   );
 };
 

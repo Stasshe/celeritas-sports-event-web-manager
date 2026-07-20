@@ -5,7 +5,6 @@ import {
   Checkbox,
   Divider,
   FormControlLabel,
-  Paper,
   Switch,
   TextField,
   ToggleButton,
@@ -31,13 +30,22 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
   const leagueSettings = settings as LeagueScheduleSettings;
 
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
       <Typography variant="subtitle1" fontWeight={600} gutterBottom>
         基本設定
       </Typography>
       <Divider sx={{ mb: 2 }} />
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gap: 2,
+          '@container (min-width: 540px)': {
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+          }
+        }}
+      >
         <TextField
           fullWidth
           size="small"
@@ -120,10 +128,21 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
       <Typography variant="subtitle2" gutterBottom>
         コート設定
       </Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'auto 1fr 1fr' }, gap: 2, alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gap: 2,
+          alignItems: 'center',
+          '@container (min-width: 720px)': {
+            gridTemplateColumns: 'auto repeat(2, minmax(0, 1fr))'
+          }
+        }}
+      >
         <ToggleButtonGroup
           value={settings.courtCount}
           exclusive
+          fullWidth
           size="small"
           aria-label="court count"
           onChange={(_, value) => value !== null && form.handleCourtCountChange(value)}
@@ -196,7 +215,7 @@ const ScheduleBasicSettingsCard: React.FC<ScheduleBasicSettingsCardProps> = ({ s
           )}
         </>
       )}
-    </Paper>
+    </Box>
   );
 };
 

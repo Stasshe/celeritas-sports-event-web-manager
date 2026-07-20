@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TimeSlot } from '../types';
-import { moveTimeSlot } from './scheduleEditor';
+import { moveTimeSlot, reorderTimeSlots } from './scheduleEditor';
 
 const slots: TimeSlot[] = [
   {
@@ -37,5 +37,28 @@ describe('moveTimeSlot', () => {
 
   it('leaves the list unchanged at a boundary', () => {
     expect(moveTimeSlot(slots, 0, -1, true)).toBe(slots);
+  });
+});
+
+describe('reorderTimeSlots', () => {
+  const thirdSlot: TimeSlot = {
+    startTime: '09:50',
+    endTime: '10:10',
+    type: 'break',
+    title: '給水休憩'
+  };
+
+  it('moves content to a drag target while preserving time positions', () => {
+    const reordered = reorderTimeSlots([...slots, thirdSlot], 0, 2, false);
+
+    expect(reordered.map(slot => slot.matchId || slot.title)).toEqual(['second', '給水休憩', 'first']);
+    expect(reordered.map(slot => slot.startTime)).toEqual(['09:00', '09:25', '09:50']);
+  });
+
+  it('moves complete rows to a drag target when time movement is enabled', () => {
+    const reordered = reorderTimeSlots([...slots, thirdSlot], 0, 2, true);
+
+    expect(reordered.map(slot => slot.matchId || slot.title)).toEqual(['second', '給水休憩', 'first']);
+    expect(reordered.map(slot => slot.startTime)).toEqual(['09:25', '09:50', '09:00']);
   });
 });
