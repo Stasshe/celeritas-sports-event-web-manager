@@ -1,8 +1,10 @@
 import React, { useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { Box, Button, Chip, Paper, Typography } from '@mui/material';
 import {
   CalendarMonthOutlined as EmptyScheduleIcon,
   ExpandLess as ExpandLessIcon,
+  SportsSoccer as SportIcon,
   Tune as TuneIcon
 } from '@mui/icons-material';
 import { Sport, TimeSlot } from '../../../types';
@@ -20,6 +22,7 @@ interface ScheduleTabProps {
 }
 
 const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
+  const navigate = useNavigate();
   const hasInitialSchedule = (sport.scheduleSettings?.timeSlots?.length || 0) > 0;
   const [settingsOpen, setSettingsOpen] = useState(!hasInitialSchedule);
   const [editing, setEditing] = useState(false);
@@ -165,6 +168,16 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ sport, onUpdate }) => {
                 }}>
                 生成条件を確認して「自動生成」を押してください。
               </Typography>
+              {sport.type !== 'ranking' && (sport.matches?.length || 0) === 0 && (
+                <Button
+                  variant="contained"
+                  startIcon={<SportIcon />}
+                  onClick={() => navigate(`/admin/scoring/${sport.id}`)}
+                  sx={{ mt: 2 }}
+                >
+                  試合を生成する
+                </Button>
+              )}
             </Box>
           )}
         </Paper>
