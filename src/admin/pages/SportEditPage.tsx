@@ -435,12 +435,19 @@ const SportEditPage: React.FC = () => {
       </Paper>
       {/* ホームタブ */}
       <TabPanel value={activeTab} index={0}>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
           <Button
             variant="contained"
             color="primary"
+            size="large"
             onClick={() => navigate(`/admin/scoring/${sportId}`)}
             startIcon={<SportIcon />}
+            sx={{
+              width: { xs: '100%', sm: 480 },
+              py: 2,
+              fontSize: '1.25rem',
+              fontWeight: 700
+            }}
           >
             {"スコアを編集"}
           </Button>
