@@ -22,16 +22,25 @@ type CustomThemeProviderProps = {
   children: ReactNode;
 };
 
-export const CustomThemeProvider = ({ children }: CustomThemeProviderProps) => {
-  // ローカルストレージから初期モードを取得、または'light'をデフォルトとして設定
-  const [mode, setMode] = useState<PaletteMode>(() => {
+const loadThemeMode = (): PaletteMode => {
+  try {
     const savedMode = localStorage.getItem('themeMode');
-    return (savedMode as PaletteMode) || 'light';
-  });
+    return savedMode === 'dark' ? 'dark' : 'light';
+  } catch (error) {
+    console.error('Failed to load the saved theme', error);
+    return 'light';
+  }
+};
 
-  // モードが変更されたらローカルストレージに保存
+export const CustomThemeProvider = ({ children }: CustomThemeProviderProps) => {
+  const [mode, setMode] = useState<PaletteMode>(loadThemeMode);
+
   useEffect(() => {
-    localStorage.setItem('themeMode', mode);
+    try {
+      localStorage.setItem('themeMode', mode);
+    } catch (error) {
+      console.error('Failed to save the selected theme', error);
+    }
   }, [mode]);
 
   // alpha関数のラッパー

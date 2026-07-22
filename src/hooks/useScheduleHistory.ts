@@ -2,17 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { LeagueScheduleSettings, ScheduleSettings, Sport, TimeSlot } from '../types';
 import { generateSchedule } from '../utils/scheduleGenerator';
 
-const historyKey = (sportId: string) => `scheduleHistory_${sportId}`;
-
-const loadHistory = (sportId: string): TimeSlot[][] | null => {
-  const saved = localStorage.getItem(historyKey(sportId));
-  if (!saved) return null;
-  try {
-    return JSON.parse(saved) as TimeSlot[][];
-  } catch {
-    return null;
-  }
-};
+const MAX_HISTORY_ENTRIES = 20;
 
 const buildSafeSettings = (settings: ScheduleSettings | LeagueScheduleSettings) => ({
   ...settings,
@@ -41,37 +31,26 @@ export interface ScheduleHistory {
 export const useScheduleHistory = ({ sport, settings, onUpdate }: UseScheduleHistoryArgs): ScheduleHistory => {
   const sportIdRef = useRef(sport.id);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(sport.scheduleSettings?.timeSlots || []);
-  const [history, setHistory] = useState<TimeSlot[][]>(() => {
-    const saved = loadHistory(sport.id);
-    return saved ?? [sport.scheduleSettings?.timeSlots || []];
-  });
-  const [historyIndex, setHistoryIndex] = useState<number>(() => {
-    const saved = loadHistory(sport.id);
-    return saved ? saved.length - 1 : 0;
-  });
+  const [history, setHistory] = useState<TimeSlot[][]>([sport.scheduleSettings?.timeSlots || []]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   // スポーツ切り替え時のみローカルstateを再初期化
   useEffect(() => {
     if (sportIdRef.current === sport.id) return;
     sportIdRef.current = sport.id;
-    const saved = loadHistory(sport.id);
     const initialSlots = sport.scheduleSettings?.timeSlots || [];
-    setTimeSlots(saved ? saved[saved.length - 1] : initialSlots);
-    setHistory(saved ?? [initialSlots]);
-    setHistoryIndex(saved ? saved.length - 1 : 0);
+    setTimeSlots(initialSlots);
+    setHistory([initialSlots]);
+    setHistoryIndex(0);
     setError(null);
   }, [sport.id, sport.scheduleSettings]);
 
-  useEffect(() => {
-    if (history.length === 0) return;
-    localStorage.setItem(historyKey(sport.id), JSON.stringify(history));
-  }, [history, sport.id]);
-
   const pushHistory = (slots: TimeSlot[]) => {
     const truncated = history.slice(0, historyIndex + 1);
-    setHistory([...truncated, slots]);
-    setHistoryIndex(truncated.length);
+    const nextHistory = [...truncated, slots].slice(-MAX_HISTORY_ENTRIES);
+    setHistory(nextHistory);
+    setHistoryIndex(nextHistory.length - 1);
   };
 
   const applyManualEdit = (slots: TimeSlot[]) => {
