@@ -57,7 +57,7 @@ Vite + React 19 SPA固定。Next.js移行禁止。トーナメント表はReact 
 
 ## Firebase write
 
-Firebase必須環境変数を起動時に検証する。設定不足またはSDK初期化失敗時、通常のrouteとdata hookを開始せず、原因を示す全画面エラーを表示する。render時の未処理例外もroot error boundaryで捕捉し、再読み込み可能なエラー画面へ切り替える。空白画面のまま停止させない。
+Firebase必須環境変数を起動時に検証する。設定不足またはSDK初期化失敗時、通常のrouteとdata hookを開始せず、原因を示す全画面エラーを表示する。render時の未処理例外もroot error boundaryで捕捉し、再読み込み可能なエラー画面へ切り替える。共通エラー画面はエラー名、メッセージ、URL、発生時刻、user agent、stackを表示し、一括コピーできる。空白画面のまま停止させない。
 
 `src/hooks/useDatabase.ts`の更新、Firebase RTDB `update()`一回による複数fieldのatomic write。transaction、server-side version追跡、競合解決layerなし。複数client同一field編集、last-write-wins。
 

@@ -22,7 +22,7 @@ body {
 }
 
 .error-panel {
-  width: min(100%, 680px);
+  width: min(100%, 820px);
   padding: 40px;
   border-top: 6px solid #c62828;
   background: #ffffff;
@@ -84,9 +84,43 @@ body {
   overflow-wrap: anywhere;
 }
 
-.error-retry {
+.error-report {
   margin-top: 28px;
-  padding: 12px 20px;
+  border-block: 1px solid #d9dee7;
+}
+
+.error-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.error-report-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.error-report pre {
+  max-height: 320px;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  border: 1px solid #d9dee7;
+  color: #172033;
+  background: #f4f6f9;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.error-copy,
+.error-retry {
+  padding: 10px 16px;
   border: 0;
   color: #ffffff;
   background: #172033;
@@ -96,13 +130,25 @@ body {
   transition: background-color 200ms ease;
 }
 
+.error-copy:hover,
 .error-retry:hover {
   background: #2d3b57;
 }
 
+.error-copy:focus-visible,
 .error-retry:focus-visible {
   outline: 3px solid #f2b84b;
   outline-offset: 3px;
+}
+
+.error-copy-failure {
+  margin: 10px 0 0;
+  color: #8b1d1d;
+  font-size: 0.875rem;
+}
+
+.error-retry {
+  margin-top: 28px;
 }
 
 @media (max-width: 600px) {
@@ -112,6 +158,11 @@ body {
 
   .error-panel {
     padding: 28px 24px;
+  }
+
+  .error-report-header {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 
