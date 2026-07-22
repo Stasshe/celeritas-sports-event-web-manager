@@ -120,6 +120,7 @@ const HomePage: React.FC = () => {
         }}>
           このサイトでは、情報は全てリアルタイム更新されています。<br />
           ページリロードをする必要は全くありません！
+          トーナメントなどの試合は完全ランダムで生成されます。
         </Typography>
       </Box>
       <Box sx={{ mb: 4, textAlign: 'center' }}>
