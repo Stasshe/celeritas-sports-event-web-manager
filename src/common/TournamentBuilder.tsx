@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import {
   Box,
   Typography,
@@ -15,6 +16,7 @@ interface TournamentBuilderProps {
 }
 
 export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBuilderProps) => {
+  const navigate = useNavigate();
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
 
   // 名簿からチームを自動生成
@@ -77,11 +79,18 @@ export const TournamentBuilder = memo(({ sport, onMatchesCreate }: TournamentBui
             {"トーナメント表生成"}
           </Button>
         ) : (
-          <Typography align="center" sx={{
-            color: "text.secondary"
-          }}>
-            {"名簿がありません"}
-          </Typography>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography sx={{ color: "text.secondary" }}>
+              {"名簿がありません"}
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => navigate(`/admin/sports/${sport.id}?tab=roster`)}
+              sx={{ mt: 2 }}
+            >
+              名簿を追加する
+            </Button>
+          </Box>
         )}
       </Paper>
     </Box>

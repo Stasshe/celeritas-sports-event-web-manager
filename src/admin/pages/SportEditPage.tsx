@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useSearchParams } from 'react-router';
 import {
   Container,
   Box,
@@ -87,6 +87,8 @@ interface TabStates {
 const SportEditPage: React.FC = () => {
   const { sportId } = useParams<{ sportId?: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'roster' ? 2 : 0;
   const theme = useTheme();
   const { alpha } = useThemeContext();
   const isProcessingRef = useRef(false);
@@ -95,7 +97,7 @@ const SportEditPage: React.FC = () => {
   const { data: sport, loading: sportLoading, updateData, removeData } = useDatabase<Sport>(`/sports/${sportId}`);
   const { data: events, loading: eventsLoading } = useDatabase<Record<string, Event>>('/events');
 
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [localSport, setLocalSport] = useState<Sport | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -113,7 +115,7 @@ const SportEditPage: React.FC = () => {
   useEffect(() => {
     // sportIdが変更されたら、すべての状態をリセット
     setLocalSport(null);
-    setActiveTab(0); // タブを最初のタブにリセット
+    setActiveTab(initialTab);
 
     // タブの状態もリセット
     setTabStates({
@@ -128,7 +130,7 @@ const SportEditPage: React.FC = () => {
     if (sport) {
       setLocalSport(JSON.parse(JSON.stringify(sport)));
     }
-  }, [sportId]);
+  }, [sportId, initialTab]);
 
   // sport変更時のlocalSport更新ロジックを修正
   useEffect(() => {
