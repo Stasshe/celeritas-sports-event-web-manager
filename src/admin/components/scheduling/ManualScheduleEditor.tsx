@@ -18,7 +18,9 @@ import {
   Close as CancelIcon,
   DeleteOutlined as DeleteIcon,
   DragIndicator as DragIndicatorIcon,
-  SaveOutlined as SaveIcon
+  Redo as RedoIcon,
+  SaveOutlined as SaveIcon,
+  Undo as UndoIcon
 } from '@mui/icons-material';
 import {
   closestCenter,
@@ -318,6 +320,28 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
     rows.reorder(fromIndex, toIndex);
   }, [itemIds, rows.reorder]);
 
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((!event.ctrlKey && !event.metaKey) || event.altKey) return;
+
+      const key = event.key.toLowerCase();
+      const undoRequested = key === 'z' && !event.shiftKey;
+      const redoRequested = key === 'y' || (key === 'z' && event.shiftKey);
+
+      if (undoRequested && rows.canUndo) {
+        event.preventDefault();
+        rows.undo();
+      }
+      if (redoRequested && rows.canRedo) {
+        event.preventDefault();
+        rows.redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [rows.canRedo, rows.canUndo, rows.redo, rows.undo]);
+
   return (
     <Box>
       <Box
@@ -345,6 +369,32 @@ const ManualScheduleEditor: React.FC<ManualScheduleEditorProps> = ({
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex' }}>
+            <Tooltip title="元に戻す (Ctrl+Z)">
+              <span>
+                <IconButton
+                  onClick={rows.undo}
+                  disabled={!rows.canUndo}
+                  aria-label="編集を元に戻す"
+                  sx={{ width: 44, height: 44 }}
+                >
+                  <UndoIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="やり直す (Ctrl+Y)">
+              <span>
+                <IconButton
+                  onClick={rows.redo}
+                  disabled={!rows.canRedo}
+                  aria-label="編集をやり直す"
+                  sx={{ width: 44, height: 44 }}
+                >
+                  <RedoIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
           <FormControlLabel
             sx={{ m: 0, mr: { sm: 1 } }}
             control={(

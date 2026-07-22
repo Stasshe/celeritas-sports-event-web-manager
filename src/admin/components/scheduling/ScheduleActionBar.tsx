@@ -8,16 +8,12 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  IconButton,
-  Tooltip,
   Typography
 } from '@mui/material';
 import {
   EditNote as EditNoteIcon,
-  Redo as RedoIcon,
   Refresh as RefreshIcon,
-  Schedule as ScheduleIcon,
-  Undo as UndoIcon
+  Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { ScheduleHistory } from '../../../hooks/useScheduleHistory';
 
@@ -111,32 +107,6 @@ const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
             >
               直接編集
             </Button>
-            <Box sx={{ display: 'flex', ml: { sm: 0.5 }, order: 4 }}>
-              <Tooltip title="元に戻す">
-                <span>
-                  <IconButton
-                    onClick={history.undo}
-                    disabled={!history.canUndo}
-                    aria-label="元に戻す"
-                    sx={{ width: 44, height: 44 }}
-                  >
-                    <UndoIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title="やり直す">
-                <span>
-                  <IconButton
-                    onClick={history.redo}
-                    disabled={!history.canRedo}
-                    aria-label="やり直す"
-                    sx={{ width: 44, height: 44 }}
-                  >
-                    <RedoIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
           </Box>
         )}
       </Box>
@@ -147,7 +117,7 @@ const ScheduleActionBar: React.FC<ScheduleActionBarProps> = ({
         <DialogTitle>スケジュールを作り直しますか？</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            現在の時間枠を置き換え、試合順を組み直します。元の状態には「元に戻す」で戻れます。
+            現在の時間枠を置き換え、試合順を組み直します。
           </DialogContentText>
         </DialogContent>
         <DialogActions>
