@@ -9,6 +9,7 @@ import {
   Typography
 } from '@mui/material';
 import { Team } from '../types';
+import { getTeamDisplayName } from '../utils/match';
 
 interface TeamSelectorProps {
   selectedTeamId: string;
@@ -49,7 +50,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
             <MenuItem key={team.id} value={team.id}>
               <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                 <Typography>
-                  {team.name}
+                  {getTeamDisplayName(team)}
                 </Typography>
                 {!compact && rosters[team.id] && (
                   <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>

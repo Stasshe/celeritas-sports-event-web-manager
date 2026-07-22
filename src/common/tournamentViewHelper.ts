@@ -1,4 +1,5 @@
 import { Sport, Match, LeagueBlock } from '../types/index';
+import { getTeamDisplayName } from '../utils/match';
 import { TournamentStructureHelper } from './TournamentStructureHelper';
 
 export const generateBracketMatches = (
@@ -28,7 +29,8 @@ export const generateBracketMatches = (
       }
       return "未定";
     }
-    return sport.teams.find(t => t.id === teamId)?.name || "未定";
+    const team = sport.teams.find(candidate => candidate.id === teamId);
+    return team ? getTeamDisplayName(team) : "未定";
   };
 
   // 明示的な型定義を追加

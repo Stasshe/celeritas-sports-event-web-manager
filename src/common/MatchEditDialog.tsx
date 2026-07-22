@@ -21,6 +21,7 @@ import {
 import { Edit as EditIcon } from '@mui/icons-material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { Match, Sport } from '../types';
+import { getTeamDisplayName } from '../utils/match';
 import TeamSelector from './TeamSelector';
 
 interface MatchEditDialogProps {
@@ -133,6 +134,11 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
   };
 
   const maxRound = Math.max(...sport.matches.map(m => m.round));
+  const getTeamName = (teamId: string): string => {
+    const team = sport.teams.find(candidate => candidate.id === teamId);
+    return team ? getTeamDisplayName(team) : "未定";
+  };
+
   const getMatchTitle = (): string => {
     if (!match) return '';
     if (match.round === maxRound && match.matchNumber === 1) return '決勝';
@@ -207,7 +213,7 @@ const MatchEditDialog: React.FC<MatchEditDialogProps> = ({
                     </Box>
                   ) : (
                     <Typography variant="h6" sx={{ fontWeight: 'medium', mb: 1.5 }} noWrap>
-                      {sport.teams.find(t => t.id === editedMatch[`${position}Id`])?.name || "未定"}
+                      {getTeamName(editedMatch[`${position}Id`])}
                     </Typography>
                   )}
 
