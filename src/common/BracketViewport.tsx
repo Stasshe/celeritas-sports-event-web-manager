@@ -31,6 +31,20 @@ const BracketViewport = ({
     return () => resizeObserver.disconnect();
   }, []);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !isMobile) return;
+
+    const preventPageGesture = (event: TouchEvent) => {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+    };
+
+    container.addEventListener('touchmove', preventPageGesture, { passive: false });
+    return () => container.removeEventListener('touchmove', preventPageGesture);
+  }, [isMobile]);
+
   if (!isMobile) {
     return (
       <Box

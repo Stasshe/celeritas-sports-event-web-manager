@@ -269,12 +269,16 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
   // トーナメント表示のコンポーネント部分を修正
   const renderMatchComponent = useCallback(({
     match,
-    onPartyClick,
     topParty,
     bottomParty
   }: MatchComponentProps) => {
     // 現在の試合データを取得
     const currentMatch = matches.find(m => m.id === match.id);
+    const stopEditableCardTouch = (event: React.TouchEvent) => {
+      if (!readOnly) {
+        event.stopPropagation();
+      }
+    };
 
     return (
       <Box
@@ -300,10 +304,10 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
             handleEditMatch(currentMatch);
           }
         }}
-        onTouchStart={event => event.stopPropagation()}
-        onTouchMove={event => event.stopPropagation()}
-        onTouchEnd={event => event.stopPropagation()}
-        onTouchCancel={event => event.stopPropagation()}
+        onTouchStart={stopEditableCardTouch}
+        onTouchMove={stopEditableCardTouch}
+        onTouchEnd={stopEditableCardTouch}
+        onTouchCancel={stopEditableCardTouch}
       >
         <Box sx={{ p: 0.5, backgroundColor: theme.palette.grey[100], borderBottom: `1px solid ${theme.palette.divider}` }}>
           <Typography variant="caption" noWrap>
@@ -325,7 +329,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
               : 'inherit',
             '&:hover': { backgroundColor: theme.palette.action.hover }
           }}
-          onClick={() => onPartyClick(topParty, Boolean(topParty.isWinner))}
         >
           <Typography variant="body2" noWrap sx={{
             maxWidth: '70%',
@@ -367,7 +370,6 @@ const TournamentScoring: React.FC<TournamentScoringProps> = ({
             borderTop: `1px solid ${theme.palette.divider}`,
             '&:hover': { backgroundColor: theme.palette.action.hover }
           }}
-          onClick={() => onPartyClick(bottomParty, Boolean(bottomParty.isWinner))}
         >
           <Typography variant="body2" noWrap sx={{
             maxWidth: '70%',
